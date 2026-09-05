@@ -1004,16 +1004,7 @@ Laravel [Redis](https://laravel.com/docs/redis) connection manager and first-par
 
 ### M18 — Events (`avalon.events`)
 
-Application-level event dispatcher — distinct from Articulate **model** events (already shipped).
-
-- `Event` / `dispatch` / `listen` / `subscribe`; queued listeners when M11 exists
-- `EventServiceProvider`-shaped registration or `Event::listen` in providers
-- Wildcard / class listeners; `ShouldBroadcast` hooks deferred to **M26**
-- Docs: Starlight **Events** (Digging Deeper); Articulate model-events page stays separate
-
-**Depends on:** Application container (done); M11 for queued listeners (sync always).
-
-**Gate:** dispatcher + provider registration exhausted, docs published, coverage ≥ 98%.
+**Status (M18):** Ladder exhausted — `Event` / `event()` / `listen()`; dispatcher with wildcards + subscribers; queued listeners via `ShouldQueue` + `CallQueuedListener`; `ShouldBroadcast` stub (M26); `make:event` / `make:listener` / `event:list`; fakes; Starlight Events; progress `progress:events`.
 
 ### M19 — Authorization (`avalon.auth` Gates / Policies)
 
@@ -1183,6 +1174,6 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 
 ## Next implementation focus
 
-**M17 Encryption gate met** — Crypt + JSON-safe encrypt + previous keys + shared cookie cipher. **Next: M18** Events when ready. Roadmap continues **M18–M29**.
+**M18 Events gate met** — dispatcher + queued listeners + provider registration. **Next: M19** Authorization when ready. Roadmap continues **M19–M29**.
 
 **Docs (anytime):** Localization page (M4 code done); Mutators & Casts Articulate how-to (M5 code done).
