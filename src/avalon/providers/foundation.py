@@ -55,14 +55,17 @@ class FoundationServiceProvider(ServiceProvider):
 
         NotificationServiceProvider(app).register()
         from avalon.cache.provider import CacheServiceProvider
+        from avalon.encryption.provider import EncryptionServiceProvider
 
         CacheServiceProvider(app).register()
+        EncryptionServiceProvider(app).register()
 
     def boot(self) -> None:
         from avalon.auth.provider import AuthServiceProvider
         from avalon.cache.provider import CacheServiceProvider
         from avalon.caliburn.provider import CaliburnServiceProvider
         from avalon.console.provider import ConsoleServiceProvider
+        from avalon.encryption.provider import EncryptionServiceProvider
         from avalon.exceptions.provider import ExceptionsServiceProvider
         from avalon.filesystem.provider import FilesystemServiceProvider
         from avalon.log.provider import LoggingServiceProvider
@@ -87,3 +90,4 @@ class FoundationServiceProvider(ServiceProvider):
         MailServiceProvider(self.app).boot()
         NotificationServiceProvider(self.app).boot()
         CacheServiceProvider(self.app).boot()
+        EncryptionServiceProvider(self.app).boot()

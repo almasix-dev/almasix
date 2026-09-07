@@ -445,8 +445,22 @@ pytest -q tests/test_m16_*.py tests/smoke/test_m16_smoke.py
 
 ---
 
+## M17 — Encryption
+
+```bash
+pytest -q tests/test_m17_*.py tests/smoke/test_m17_smoke.py
+```
+
+### M17 exit criteria
+
+- [x] `Crypt` façade + JSON-safe encrypt (no pickle) + `encrypt_string`
+- [x] `APP_PREVIOUS_KEYS` rotation; shared cipher with cookie encrypt
+- [x] Docs + smoke; no M18 until green
+
+---
+
 ## Out of scope until later milestones
 
-- Digging Deeper: encryption, events, authorization, HTTP client, processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M17–M29)
+- Digging Deeper: events, authorization, HTTP client, processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M18–M29)
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

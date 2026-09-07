@@ -178,13 +178,17 @@ def _milestones() -> list[dict]:
         {
             "id": "M17",
             "name": "Encryption",
-            "status": "next",
-            "proof": ["Crypt façade", "APP_KEY serialize-aware encrypt"],
+            "status": "complete",
+            "proof": [
+                "Crypt façade",
+                "JSON-safe encrypt + previous keys",
+                "progress:encryption",
+            ],
         },
         {
             "id": "M18",
             "name": "Events",
-            "status": "planned",
+            "status": "next",
             "proof": ["dispatch / listen / subscribe", "queued listeners"],
         },
         {

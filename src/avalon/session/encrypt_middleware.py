@@ -6,15 +6,17 @@ from typing import TYPE_CHECKING, ClassVar
 
 from starlette.responses import Response as StarletteResponse
 
+from avalon.encryption.cipher import encrypt_string
+from avalon.encryption.encrypter import Encrypter, parse_previous_keys
+from avalon.encryption.exceptions import DecryptException
 from avalon.http.middleware import Middleware, NextCall
-from avalon.session.encrypt import decrypt_string, encrypt_string
 
 if TYPE_CHECKING:
     from avalon.http.request import Request
 
 
 class EncryptCookies(Middleware):
-    """AES-style cookie encryption using ``app.key`` (stdlib construction)."""
+    """Authenticated cookie encryption using ``app.key`` (+ previous keys)."""
 
     except_cookies: ClassVar[frozenset[str]] = frozenset()
 
@@ -22,14 +24,18 @@ class EncryptCookies(Middleware):
         from avalon.config import config
 
         key = str(config("app.key", "") or "") or "avalon-insecure-dev-key-change-me"
+        previous = parse_previous_keys(config("app.previous_keys", []))
+        encrypter = Encrypter(key, previous)
         bag: dict[str, str] = {}
         for name, value in dict(request.raw.cookies).items():
             if name in self.except_cookies:
                 bag[name] = value
                 continue
-            plain = decrypt_string(value, key=key)
-            bag[name] = plain if plain is not None else value
-        request._cookies = bag  # noqa: SLF001
+            try:
+                bag[name] = encrypter.decrypt_string(value)
+            except DecryptException:
+                bag[name] = value
+        request._cookies = bag
 
         response = await call_next(request)
         self._encrypt_response_cookies(response, key=key)

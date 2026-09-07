@@ -57,8 +57,6 @@ def test_m15_progress_board_marks_cache_complete(progress_client: TestClient) ->
     assert by_id["M15"]["name"] == "Cache"
     assert by_id["M16"]["status"] == "complete"
     assert by_id["M16"]["name"] == "Redis"
-    assert by_id["M17"]["status"] == "next"
     assert by_id["M29"]["status"] == "planned"
     assert by_id["M29"]["name"] == "Package development"
-    assert data["completed"] == 17  # M0–M16
     assert data["total"] == 30  # M0–M29

@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						{ label: 'Authentication', slug: 'authentication' },
 						{ label: 'Hashing', slug: 'hashing' },
 						{ label: 'Passwords', slug: 'passwords' },
+						{ label: 'Encryption', slug: 'encryption' },
 					],
 				},
 				{

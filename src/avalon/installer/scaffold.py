@@ -165,6 +165,8 @@ APP_URL=http://127.0.0.1:3000
 # Public path prefix when hosted under a subpath, e.g. /apps/{display.lower()}
 APP_BASE_PATH=
 APP_KEY=base64:local-dev-key-change-me
+# Comma-separated previous keys for graceful rotation (optional)
+# APP_PREVIOUS_KEYS=
 APP_LOCALE=en
 APP_FALLBACK_LOCALE=en
 DB_CONNECTION=sqlite
@@ -359,6 +361,7 @@ config = {{
     "url": env("APP_URL", "http://127.0.0.1:3000"),
     "base_path": env("APP_BASE_PATH", ""),
     "key": env("APP_KEY", "base64:local-dev-key-change-me"),
+    "previous_keys": env("APP_PREVIOUS_KEYS", ""),
     "locale": env("APP_LOCALE", "en"),
     "fallback_locale": env("APP_FALLBACK_LOCALE", "en"),
     "providers": [

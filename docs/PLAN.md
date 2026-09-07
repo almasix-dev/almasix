@@ -321,7 +321,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Avalon as fol
 | Strings | `strings` | **M14** | Shipped |
 | Cache | `cache` | **M15** | Shipped |
 | Redis | `redis` | **Done (M16)** | Redis page + Cache/Session/Queues updates |
-| Encryption | `encryption` | **M17** | Write when Crypt façade ships (cookie encrypt already in M7) |
+| Encryption | `encryption` | **M17** | `Crypt` façade, JSON-safe encrypt, `APP_PREVIOUS_KEYS`, `key:generate` |
 | Events | `events` | **M18** | Write when app event dispatcher ships (model events already in Articulate) |
 | Broadcasting | `broadcasting` | **M26** | Write when broadcasting ships |
 | Authorization | `authorization` | **M19** | Write when Gates/Policies ship |
@@ -1000,19 +1000,7 @@ Laravel [Redis](https://laravel.com/docs/redis) connection manager and first-par
 
 **Status (M16):** Ladder exhausted — `Redis` / `redis()` façade; `config/redis.py`; `avalon[redis]` extra; Redis drivers for **cache** (tags + locks), **session**, and **queue**; Worker generalized beyond database; Starlight Redis; progress `progress:redis`; tests via FakeRedis (no server required in CI).
 
-### M17 — Encryption (`avalon.encryption`)
-
-Laravel [Encryption](https://laravel.com/docs/encryption) — app-facing `Crypt` beyond cookie middleware.
-
-- `Crypt.encrypt` / `decrypt` / `encrypt_string` / `decrypt_string` using `APP_KEY`
-- Serialize-aware encrypt (PHP `serialize` → Python pickle/JSON policy documented; prefer JSON-safe payloads)
-- Rotate / previous keys story if Laravel parity requires it
-- Reuse or wrap the M7 cookie cipher so there is one keying story
-- Docs: Starlight **Encryption** (Security sidebar)
-
-**Depends on:** M7 `APP_KEY` + cookie encrypt (done). Can land parallel to M14–M16 if keying stays shared.
-
-**Gate:** façade tested (tamper → fail), docs published, coverage ≥ 98%.
+**Status (M17):** Ladder exhausted — `Crypt` / helpers; JSON-safe `encrypt`/`decrypt` (no pickle); `encrypt_string`/`decrypt_string`; `APP_PREVIOUS_KEYS` rotation; shared cipher with M7 cookie encrypt; `grail key:generate`; Starlight Encryption; progress `progress:encryption`.
 
 ### M18 — Events (`avalon.events`)
 
@@ -1195,6 +1183,6 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 
 ## Next implementation focus
 
-**M16 Redis gate met** — connections + cache/session/queue drivers exhausted (see M16 status). **Next: M17** Encryption when ready. Roadmap continues **M17–M29**.
+**M17 Encryption gate met** — Crypt + JSON-safe encrypt + previous keys + shared cookie cipher. **Next: M18** Events when ready. Roadmap continues **M18–M29**.
 
 **Docs (anytime):** Localization page (M4 code done); Mutators & Casts Articulate how-to (M5 code done).
