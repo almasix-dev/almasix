@@ -278,7 +278,7 @@ Mirror Laravel’s Basics **order and coverage**. Deep Caliburn how-tos stay in 
 | Views | `views` | **Shipped (M6)** — `view()` / `ViewFactory` | **Done** — overview + link to Caliburn |
 | Blade Templates | *(Caliburn section)* | **Shipped (M6)** | **Done** as Caliburn group (not duplicated under Basics) |
 | Asset Bundling | `asset-bundling` | **Partial (M6)** — `asset()` / `@asset` + `public/` on `grail serve`; default `avalon new` ships **Vite + Tailwind** → `public/build`; Python core stays Node-free; starter kits may replace/extend | **Partial** — default scaffold + docs; full `@vite` helper follow-up |
-| URL Generation | `urls` | **Partial (M3)** — `url()`, `asset()`, `redirect()`; named `route()` = Later | **Done** |
+| URL Generation | `urls` | **Partial (M3)** — `url()`, `asset()`, `redirect()`; named `route()` = **M33** | **Update with M33** |
 | Session | `session` | **Shipped (M7 foundation)** — cookie driver, encrypt, flash | **Done** |
 | Authentication | `authentication` | **Shipped (M7)** — guards, remember-me, events, docs | **Done** |
 | Hashing | `hashing` | **Shipped (M7)** — bcrypt + optional argon2id | **Done** |
@@ -506,7 +506,7 @@ Group DX is deliberately **context-manager only**. Laravel's fluent `Route::midd
 | --- | --- |
 | `head`, `redirect` / `permanentRedirect`, `fallback`, named `route()` helper | Small DX pass after M3 (or end of M3 if `make:*` is light) |
 | **Group options: `name=` (name prefixing), `controller=`, `domain=`, `where=` constraints, `without_middleware`** | Same post-M3 DX pass; `name=` should land with `route()` since they pair |
-| `resource` / `apiResource` | When CRUD scaffolding needs them (post-M5 or with API starter) |
+| `resource` / `apiResource` | **M33** |
 | `view` routes | Caliburn (M6) |
 
 ## Decision: Security roadmap
@@ -522,7 +522,7 @@ M2 shipped the middleware **pipeline + group mechanism** only — `web` and `api
 | XSS escaping | `{{ }}` escaped vs `{!! !!}` raw | Caliburn M6 |
 | CSP nonces | Tied to view rendering | Caliburn M6 ladder (framework directives) |
 | Trusted proxies | Request / URL generation | With subpath helpers |
-| Rate limiting | Optional middleware | Later |
+| Rate limiting | Optional middleware | **M35** |
 | `auth` / `guest` | Guards | M7 |
 
 **Rules:**
@@ -809,8 +809,8 @@ Full Eloquent parity — see the ORM decision above for the binding ladder. M5 e
 
 | Item | Home |
 | --- | --- |
-| Starter-kit auth UI (Breeze-class scaffolds) | Starter kits |
-| Sanctum / Passport / Socialite | First-party packages / Later |
+| Starter-kit auth UI (Breeze-class scaffolds) | Starter kits (**M36**) |
+| Sanctum / Passport / Socialite | First-party packages (**M37**) |
 | Authorization (Gates / Policies) | **M19** (Laravel’s separate Authorization docs) |
 | Email verification | **M13** notifications (+ mail channel) |
 | Real outbound reset mail | **M12** mail / **M13** notifications — broker + token API ships now |
@@ -855,7 +855,7 @@ Grail today is a thin Typer entry (`version`, `serve`, `make:*`, `migrate`, …)
 
 **Depends on:** solid Application boot (done); M8 for console exception rendering. Does **not** require queues — scheduled closures/commands run in-process; queue integration is M11. The REPL may land with M9 or as a fast follow once the console kernel exists — it must not be forgotten.
 
-**Status (M9):** Ladder shipped — `Command` base + discovery (`app/console/commands`, `avalon.console.commands`); `grail list` / `make:command` / `inspire`; schedule DSL (`every_minute` / `hourly` / `daily` / cron) + `schedule:run` / `schedule:work` + filesystem mutex; console exceptions report through M8 Handler; **`grail fiddle`** REPL (IPython preferred → ptpython → Rich fallback); **Avalon Prompts** (`avalon.console.prompts` — Laravel Prompts-shaped `text`/`select`/`confirm`/`spin`/`progress` + Command `ask`/`choice`/`secret`/`anticipate`); **`dump()` / `dd()`** (`avalon.debug` — Rich CLI + HTML/JSON HTTP dump pages); progress `progress:hello` / `progress:prompts` + `/dd` · `/api/dd` + `routes/console.py`; smoke + docs.
+**Status (M9):** Ladder shipped, **page not exhausted** — the Artisan surface is finished in **M30** (one command surface, closure commands, `Artisan.call` / `queue`, isolatable commands, signal traps, console events, signature shortcuts / arrays / descriptions, stub publishing, missing built-ins) and the scheduler in **M31** (full frequency + hook vocabulary, `schedule:list` / `schedule:test`). What M9 delivered: `Command` base + discovery (`app/console/commands`, `avalon.console.commands`); `grail list` / `make:command` / `inspire`; schedule DSL (`every_minute` / `hourly` / `daily` / cron) + `schedule:run` / `schedule:work` + filesystem mutex; console exceptions report through M8 Handler; **`grail fiddle`** REPL (IPython preferred → ptpython → Rich fallback); **Avalon Prompts** (`avalon.console.prompts` — Laravel Prompts-shaped `text`/`select`/`confirm`/`spin`/`progress` + Command `ask`/`choice`/`secret`/`anticipate`); **`dump()` / `dd()`** (`avalon.debug` — Rich CLI + HTML/JSON HTTP dump pages); progress `progress:hello` / `progress:prompts` + `/dd` · `/api/dd` + `routes/console.py`; smoke + docs.
 
 ### M10 — Filesystem (`avalon.filesystem`)
 
@@ -1155,19 +1155,170 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 
 **Gate:** guidelines published and followed by at least one in-repo optional package or documented example.
 
+### M30 — Grail Console exhaust (Artisan parity)
+
+Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the ladder (`Command` base, discovery, prompts, REPL, scheduler seed) but did **not** exhaust the page. M30 closes it and unifies the two console surfaces.
+
+- **One command surface:** migrate the ~28 hard-coded Typer callbacks in `avalon/grail/cli.py` to `Command` classes so signatures, events, isolation, `Artisan.call`, and test helpers apply uniformly. Typer stays the argv front door only.
+- **Signature parser:** option shortcuts (`{--Q|queue=}`), input arrays (`{user*}`, `{--id=*}`), argument/option descriptions (`{user : The user ID}`) feeding `grail help`
+- **Command surface:** exit-code constants (`SUCCESS` / `FAILURE` / `INVALID`), `fail()`, `arguments()` / `options()`, `question()` / `alert()` / `new_line()`, progress bars on the command (`with_progress_bar`), `choice(multiple=…)`
+- **Prompting for missing input:** `PromptsForMissingInput`-class hook + `prompt_for_missing_arguments_using` (dogfoods M9 prompts)
+- **Closure commands:** `Artisan.command("mail:send {user}", callback)` in `routes/console.py` with `purpose()` descriptions and container-resolved parameters
+- **Programmatic execution:** `Artisan` façade — `call` (dict or string argv, array/bool values), `output`, `queue` (→ M11), plus `self.call` / `self.call_silently` between commands
+- **Isolatable commands:** `--isolated` with lock id / expiry, sharing the M15 cache lock and the M9 filesystem mutex fallback
+- **Signal handling:** `trap(SIGTERM, …)` (single + multiple signals), honored by long-running commands (`queue:work`, `schedule:work`, `serve`)
+- **Events:** `CommandStarting` / `CommandFinished` (+ a startup event) through the M18 dispatcher
+- **Stub customization:** move generator stubs out of inline f-strings into a real stub set + `grail stub:publish`; app stubs override framework stubs
+- **Missing built-ins** (only where the underlying feature exists): `about`, `help`, `route:list`, `config:show`, `db:wipe`, `db:show`/`db:table`, `queue:restart` / `queue:clear` / `queue:monitor`, `env:encrypt` / `env:decrypt`, `optimize` / `optimize:clear` + `config:cache` / `view:cache` and their `:clear` pairs (cache targets may land with M31/M15 work), `vendor:publish`, and the `make:*` set for shipped features (`make:job`, `make:mail`, `make:notification`, `make:rule`, `make:cast`, `make:exception`, `make:view`, `make:class`, `make:enum`, `make:interface`, `make:observer`). Generators for unshipped features stay with their milestone (`make:factory` → M24, `make:test` → M28, `make:resource` → M23, `make:channel` → M26).
+- **Fiddle allow-list:** Tinker-class `commands` / `dont_alias` configuration for the REPL
+- Docs: rewrite Starlight **Grail Console** to the Artisan section order; document every built-in command
+- Living example: progress app gains a closure command, an isolatable command, and a signal-trapping worker demo
+
+**Depends on:** M9 (base), M11 (queueing commands), M15 cache (isolation locks), M18 (events). Console **test** helpers land with M28 and must be able to drive everything M30 adds.
+
+**Gate:** every section of Laravel's Artisan page either implemented or listed as a deliberate deviation with a reason; one command surface (no command reachable only through Typer); `avalon.console` + `avalon.grail` at 100% coverage; docs published.
+
+### M31 — Task Scheduling exhaust
+
+Laravel [Task Scheduling](https://laravel.com/docs/scheduling) — M9 shipped a 5-frequency DSL; the page is far from exhausted.
+
+- Full frequency vocabulary: `daily_at`, `twice_daily`, `weekly` / `weekly_on`, `monthly` / `monthly_on`, `quarterly`, `yearly`, `every_two_minutes` … `every_thirty_minutes`, `hourly_at`, plus `between` / `unless_between`, `at`, `days`, `timezone`
+- Constraints and hooks: `when` / `skip`, `before` / `after` / `on_success` / `on_failure`, `ping_before` / `then_ping`
+- Execution modes: `run_in_background`, `on_one_server` (cache lock), `without_overlapping` expiry, job scheduling (`schedule.job(...)` → M11) and shell tasks (`schedule.exec(...)` → M21)
+- Output handling: `send_output_to` / `append_output_to`, `email_output_to` (→ M12)
+- Commands: `schedule:list`, `schedule:test`, `schedule:clear-cache`, and a documented `schedule:work` vs cron story
+- Docs: rewrite Starlight **Task Scheduling**
+
+**Depends on:** M30 (command surface), M11 (queued jobs), M15/M16 (locks), M12 (output email), M21 (shell tasks).
+
+**Gate:** frequency + hook vocabulary exhausted against the Laravel page; `schedule:list` proves the registry; docs published.
+
+### M32 — Installer + scaffold stacks (`avalon new`)
+
+Laravel [Installation](https://laravel.com/docs/installation) — `laravel new` is interactive; `avalon new` currently takes only a name and `--path`.
+
+- **Interactive install** built on M9 prompts: stack, database, test runner, git init, dependency install, migrations — with `--no-interaction` and an explicit flag for every prompt so CI stays scriptable
+- **Stack choice** (beyond Laravel, which is Tailwind-only): `tailwind` (default), `bootstrap`, `plain` CSS, and `none` — a zero-Node, server-rendered Caliburn app. Stack selection also picks the `errors:publish` bundle so error pages match the chosen CSS.
+- **Database choice:** SQLite (default, with the file created) / Postgres / MySQL / MariaDB, writing the matching `.env` + `config/database.py` and offering to run migrations
+- **Restructured scaffold:** replace the flat inlined `path -> content` dict in `avalon/installer/scaffold.py` with a parameterized stub tree shared with M30's `stub:publish`
+- Post-create ergonomics: git init (`--git`, `--branch`), optional `uv` / `pip` install, `npm install && npm run build` when a Node stack is chosen, and next-step output that matches what was actually installed
+- Docs: rewrite Starlight **Installation** with the prompt walkthrough and every flag
+
+**Depends on:** M9 prompts (done), M30 stub tree. Starter kits are **M36**, not this milestone.
+
+**Gate:** every prompt has a flag and a documented non-interactive default; each stack produces a booting app proven by smoke tests; docs published.
+
+### M33 — Routing DX + named routes
+
+Completes Laravel [Routing](https://laravel.com/docs/routing) and [URL Generation](https://laravel.com/docs/urls) (previously "Later"; URL Generation has been **Partial** since M3).
+
+- Verb + shape sugar: `head`, `redirect` / `permanent_redirect`, `fallback`, `match`, `any`
+- **Named routes** end to end: `name()` on routes and groups, `route()` / `RouteFacade.has`, signed URLs, and `route()` inside Caliburn
+- Resource routing: `resource` / `api_resource`, `only` / `except`, shallow nesting, `resources` plural registration, and the `make:controller --resource` pairing
+- `route:list` gains name / middleware columns (M30 ships the command)
+- Docs: update Starlight **Routing** + **URL Generation**
+
+**Depends on:** M2/M3 (done), M30 for `route:list`.
+
+**Gate:** named routes usable from routes, controllers, redirects, and templates; resource routing exhausted; docs updated.
+
+### M34 — Security headers + CORS
+
+Post-M3 hardening pack, secure-by-default for the web stack.
+
+- Header middleware (CSP with nonce support, HSTS, `X-Content-Type-Options`, referrer + permissions policy), configurable per group
+- CORS middleware + `config/cors.py`, sensible API defaults
+- Default web / API middleware stacks updated; scaffold ships them enabled
+- Docs: Starlight **Security headers & CORS**
+
+**Depends on:** M2 middleware (done), M7 web stack (done).
+
+**Gate:** defaults on in the scaffold, documented opt-outs, smoke asserts the headers.
+
+### M35 — Rate limiting
+
+Laravel [Rate Limiting](https://laravel.com/docs/rate-limiting) — the cache-backed limiter plus the `throttle` middleware.
+
+- `RateLimiter` façade (`attempt`, `too_many_attempts`, `remaining`, `available_in`, `clear`) on M15 cache
+- `throttle` middleware with named limiters, per-user / per-IP keys, `Retry-After` + `X-RateLimit-*` headers
+- Login throttling wired into M7 auth; queue/worker friendliness documented
+- Docs: Starlight **Rate Limiting**
+
+**Depends on:** M15 cache (locks/counters), M16 Redis for the production driver.
+
+**Gate:** limiter + middleware + auth throttling shipped with fakes; docs published.
+
+### M36 — Starter kits
+
+Laravel [Starter Kits](https://laravel.com/docs/starter-kits) — opt-in application kits on top of the M32 scaffolder.
+
+- **Web kit:** Caliburn auth UI (register / login / password reset / verify / profile) honoring the chosen M32 CSS stack
+- **API kit:** JSON-polarity routes, token auth (pairs with M37), no session/CSRF middleware
+- **SPA kit:** Vue / React front end over an Inertia-class bridge (server-side adapter + client package), the one stack M32 deliberately defers
+- Selected by `avalon new` prompt / flag; each kit is a stub overlay, not a fork of the scaffold
+- Docs: Starlight **Starter Kits** per kit
+
+**Depends on:** M32 (scaffold stacks), M7 auth (done), M37 for API tokens, M6 Caliburn for the web kit.
+
+**Gate:** each kit boots, authenticates, and is covered by smoke; kits share the scaffold stub tree.
+
+### M37 — API tokens, OAuth, and social auth
+
+First-party packages in Laravel: [Sanctum](https://laravel.com/docs/sanctum), [Passport](https://laravel.com/docs/passport), [Socialite](https://laravel.com/docs/socialite).
+
+- **Sanctum-class** first: personal access tokens, ability scopes, SPA cookie auth, `auth:api` guard
+- **Socialite-class** provider abstraction (OAuth2 redirect / callback / user mapping) with a couple of real providers
+- **Passport-class** full OAuth2 server evaluated on demand — heavier, may stay an optional extra
+- Shipped as optional extras (`avalon[tokens]`, …) following M29 package guidelines
+- Docs: Starlight page per shipped package
+
+**Depends on:** M7 auth, M19 authorization, M20 HTTP client (Socialite), M29 guidelines.
+
+**Gate:** tokens exhausted and used by the M36 API kit; social auth proven with at least two providers; anything unshipped named explicitly.
+
+### M38 — Deployment + production ops
+
+Laravel [Deployment](https://laravel.com/docs/deployment) — how an Avalon app actually runs in production.
+
+- `grail serve --workers` and the documented ASGI story (uvicorn/gunicorn workers, proxy headers, static + `public/build`)
+- `optimize` / cache-warm story tied to M30's commands; health check endpoint conventions
+- Env / secret handling, log shipping, migration + queue worker deployment notes, container example
+- Docs: Starlight **Deployment**
+
+**Depends on:** M30 (optimize commands), M11 (workers), M34 (headers behind a proxy).
+
+**Gate:** documented and reproducible for at least one container + one bare-metal path; `--workers` shipped.
+
+### M39 — Docs site: versioning + Prologue
+
+The documentation-site commitments from the Documentation decision above, promoted out of "Later".
+
+- Major-version switching (`1.x` / `2.x`) on the Starlight site
+- **Prologue** sidebar group: Release Notes / Changelog, Upgrade Guide, orientation pages
+- Changelogs and upgrade guides authored as docs content, not only GitHub Releases prose
+
+**Depends on:** nothing in code; wants a first tagged release to be meaningful.
+
+**Gate:** a reader can open docs for the major they run; Prologue published and maintained per release.
+
+### Docs track (may land anytime)
+
+Not milestones — outstanding pages for code that already shipped:
+
+- Localization Starlight page (M4 code done)
+- Articulate **Mutators & Casts** how-to (M5 code done)
+- Full `@vite` / hot-file Caliburn directive on top of `asset()` (M6 partial)
+
 ### Later (still deferred)
 
-- Additional NoSQL engines beyond Mongo (Cosmos API, Dynamo-shaped, …) — same M25 store abstraction; exhaust per driver when demanded
-- Sanctum / Passport / Socialite (first-party packages)
-- Starter kits (web kit vs API kit reflecting route polarity)
-- Full Caliburn advanced parity (ongoing on M6 track)
-- Router DX sugar: `head`, `redirect`, `fallback`, `route()`, then `resource` / `apiResource`
-- Default security-headers + CORS middleware pack (post-M3 hardening; before or with M7 web stack — land when ready)
-- Production docs / optional `grail serve --workers`
-- **Docs site:** major-version switching + **Prologue** (changelogs, upgrade guides, release notes) — see Documentation site decision
-- **Docs track (may land anytime):** Localization Starlight page (M4 code done); Articulate **Mutators & Casts** dedicated how-to (M5 code done)
-- Rate limiting middleware (pairs with cache locks once M15 exists)
-- Notification inbox SPA / marketing drip (outside framework core)
+Everything that had a foreseeable shape has been promoted to **M30–M39** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
+
+- Additional NoSQL engines beyond Mongo (Cosmos API, Dynamo-shaped, …) — same M25 store abstraction; exhaust per driver when demanded, so there is no honest milestone count
+- Full Caliburn advanced parity — an ongoing **M6 track** by design, not a one-shot milestone
+- Notification inbox SPA / marketing drip — outside framework core; belongs to an application, not Avalon
+- Passport-class full OAuth2 server — scoped inside **M37**, but may stay an optional extra rather than ship
+
+Promoted in this pass: console exhaust (**M30**), scheduler exhaust (**M31**), interactive installer + stacks (**M32**), router DX and named routes (**M33**), security headers + CORS (**M34**), rate limiting (**M35**), starter kits (**M36**), tokens / OAuth / social auth (**M37**), deployment (**M38**), docs versioning + Prologue (**M39**), plus the docs track above.
 
 ## Quality bar for “solid core”
 
@@ -1181,6 +1332,10 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 
 ## Next implementation focus
 
-**M20 HTTP Client gate met** — `Http` façade + fakes + retry + pool + async verbs. **Next: M21** Processes when ready. Roadmap continues **M21–M29**.
+**M20 HTTP Client gate met** — `Http` façade + fakes + retry + pool + batch + macros + events, exhausted against the Laravel page.
 
-**Docs (anytime):** Localization page (M4 code done); Mutators & Casts Articulate how-to (M5 code done).
+**Now: M30 Grail Console exhaust.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
+
+**Milestones M21–M29** (Processes → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+
+**Docs (anytime):** see the Docs track above — Localization page (M4 code done); Mutators & Casts Articulate how-to (M5 code done); `@vite` directive (M6 partial).
