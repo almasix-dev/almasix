@@ -1,4 +1,4 @@
-"""M19 smoke — Authorization docs, progress command, board."""
+"""M20 smoke — HTTP Client docs, progress command, board."""
 
 from __future__ import annotations
 
@@ -29,32 +29,24 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
     return PROGRESS
 
 
-def test_m19_docs_and_sidebar_exist() -> None:
-    assert (ROOT / "website" / "src" / "content" / "docs" / "authorization.md").is_file()
+def test_m20_docs_and_sidebar_exist() -> None:
+    assert (ROOT / "website" / "src" / "content" / "docs" / "http-client.md").is_file()
     sidebar = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
-    assert "authorization" in sidebar
+    assert "http-client" in sidebar
 
 
-def test_m19_progress_authorization_command(progress_cwd: Path) -> None:
+def test_m20_progress_http_command(progress_cwd: Path) -> None:
     del progress_cwd
-    result = runner.invoke(grail_app, ["progress:authorization"])
+    result = runner.invoke(grail_app, ["progress:http"])
     assert result.exit_code == 0, result.stdout + result.stderr
-    assert "authorization demo ok" in (result.stdout + result.stderr).lower()
+    assert "http client demo ok" in (result.stdout + result.stderr).lower()
 
 
-def test_m19_board_marks_authorization_complete(progress_cwd: Path) -> None:
+def test_m20_board_marks_http_client_complete(progress_cwd: Path) -> None:
     del progress_cwd
     from app.http.controllers.progress_controller import _milestones
 
-    m19 = next(m for m in _milestones() if m["id"] == "M19")
-    assert m19["status"] == "complete"
     m20 = next(m for m in _milestones() if m["id"] == "M20")
     assert m20["status"] == "complete"
-
-
-def test_m19_scaffold_registers_can_alias(tmp_path: Path) -> None:
-    from avalon.installer.scaffold import scaffold_app
-
-    root = scaffold_app("m19_authz", destination=tmp_path / "m19_authz")
-    boot = (root / "bootstrap" / "app.py").read_text(encoding="utf-8")
-    assert '"can": Authorize' in boot or "'can': Authorize" in boot
+    m21 = next(m for m in _milestones() if m["id"] == "M21")
+    assert m21["status"] in {"next", "planned"}

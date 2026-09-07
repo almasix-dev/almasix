@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						{ label: 'Cache', slug: 'cache' },
 						{ label: 'Redis', slug: 'redis' },
 						{ label: 'Events', slug: 'events' },
+						{ label: 'HTTP Client', slug: 'http-client' },
 					],
 				},
 				{

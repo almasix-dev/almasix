@@ -487,8 +487,24 @@ pytest -q tests/test_m19_*.py tests/smoke/test_m19_smoke.py
 
 ---
 
+## M20 — HTTP Client
+
+```bash
+pytest -q tests/test_m20_*.py tests/smoke/test_m20_smoke.py
+```
+
+### M20 exit criteria
+
+- [x] `Http` façade + `PendingRequest` fluency (headers, auth, timeouts, bodies, attachments)
+- [x] `Response` helpers (JSON / collect / status predicates / throw policies) + retry + `Http.pool`
+- [x] Fakes: URL maps, sequences, stray prevention, `recorded()` + `assert_sent*`
+- [x] Async verbs (`aget` … `aoptions`) over `httpx.AsyncClient`
+- [x] Docs + smoke; no M21 until green
+
+---
+
 ## Out of scope until later milestones
 
-- Digging Deeper: HTTP client, processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M20–M29)
+- Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

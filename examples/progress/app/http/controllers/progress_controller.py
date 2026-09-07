@@ -208,13 +208,17 @@ def _milestones() -> list[dict]:
         {
             "id": "M20",
             "name": "HTTP Client",
-            "status": "next",
-            "proof": ["Http.get/post façade", "fakes / retry / pool"],
+            "status": "complete",
+            "proof": [
+                "Http.get/post façade",
+                "fakes / retry / pool",
+                "progress:http",
+            ],
         },
         {
             "id": "M21",
             "name": "Processes",
-            "status": "planned",
+            "status": "next",
             "proof": ["Process::run / pool", "subprocess fakes"],
         },
         {
