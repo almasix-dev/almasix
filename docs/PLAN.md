@@ -99,7 +99,7 @@ avalon/
     encryption/                # M17 — Crypt façade
     events/                    # M18 — app event dispatcher (model events stay in orm)
     auth/                      # M7 (+ M19 Gates/Policies)
-    client/                    # M20 — outbound HTTP client (or avalon.http.client)
+    client/                    # M20 — outbound HTTP client (inbound HTTP stays in http/)
     process/                   # M21 — Laravel Processes parity
     concurrency/               # M22 — concurrent closures / pools
     scout/                     # M27 — search (optional extra)
@@ -133,7 +133,7 @@ avalon/
 - later: `from avalon.encryption import Crypt`
 - later: `from avalon.events import Event, dispatch as event`
 - `from avalon.auth import Gate, Policy`  # M19
-- later: `from avalon.http.client import Http`  # M20 naming TBD
+- `from avalon.client import Http`  # M20
 - later: `from avalon.process import Process`
 - later: `from avalon.concurrency import Concurrency`
 - `from avalon.exceptions import Handler`
@@ -164,6 +164,7 @@ avalon/
 | `avalon.redis` | Redis connection manager + drivers for cache/session/queue (M16) |
 | `avalon.encryption` | `Crypt` façade — encrypt/decrypt/serialize (M17); cookie encrypt already under `avalon.session` (M7) |
 | `avalon.events` | Application event dispatcher / listeners / subscribers (M18) |
+| `avalon.client` | Outbound HTTP client — `Http` façade, fakes, retry, pool (M20) |
 | `avalon.installer` | Installer CLI (`avalon new`) |
 | `avalon.orm` | Eloquent-like ORM (M5); model factories (M24); NoSQL / document-store drivers (M25) |
 | `avalon.caliburn` | Caliburn compiler/runtime (M6) |
@@ -325,7 +326,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Avalon as fol
 | Events | `events` | **M18** | Write when app event dispatcher ships (model events already in Articulate) |
 | Broadcasting | `broadcasting` | **M26** | Write when broadcasting ships |
 | Authorization | `authorization` | **M19** | Write when Gates/Policies ship |
-| HTTP Client | `http-client` | **M20** | Write when HTTP client ships |
+| HTTP Client | `http-client` | **M20** | Shipped |
 | Processes | `processes` | **M21** | Write when Processes ship |
 | Concurrency | `concurrency` | **M22** | Write when Concurrency ships |
 | Eloquent: Mutators & Casting | Articulate page / section | **M5** (code **Done**) | **Docs deepen** — dedicated Mutators & Casts how-to (surface lives in Articulate index today) |
@@ -1035,6 +1036,8 @@ Laravel [HTTP Client](https://laravel.com/docs/http-client) — outbound fluent 
 
 **Gate:** façade + fakes green in CI, docs published, coverage ≥ 98%.
 
+**Status (M20):** Ladder exhausted — `Http` façade mirroring `PendingRequest` (headers, `with_token` / basic / digest auth, URL + query parameters, cookies, timeouts, `as_json` / `as_form` / `as_multipart` / `body_format`, `attach`, `sink`, `base_url`, request/response middleware, `before_sending`, `when` / `unless`, `dump` / `dd`); `Response` (json / object / collect / status predicates / `throw*` / dict protocol); Laravel-shaped `retry` (max attempts, `when`, `throw`); `Http.pool` (named + indexed); async verbs `aget` … `aoptions` on `httpx.AsyncClient`; fakes — URL maps, sequences (`when_empty` / `fail_when_empty`), single-response + callable + exception stubs, `prevent_stray_requests`, `recorded()` and the `assert_sent*` / `assert_sequences_are_empty` family; `ClientServiceProvider`; Starlight HTTP Client; progress `progress:http`.
+
 ### M21 — Processes
 
 Laravel [Processes](https://laravel.com/docs/processes) — first-class subprocess DX.
@@ -1176,6 +1179,6 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 
 ## Next implementation focus
 
-**M19 Authorization gate met** — Gates + Policies + `@can` + `make:policy`. **Next: M20** HTTP Client when ready. Roadmap continues **M20–M29**.
+**M20 HTTP Client gate met** — `Http` façade + fakes + retry + pool + async verbs. **Next: M21** Processes when ready. Roadmap continues **M21–M29**.
 
 **Docs (anytime):** Localization page (M4 code done); Mutators & Casts Articulate how-to (M5 code done).

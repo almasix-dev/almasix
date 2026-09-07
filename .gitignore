@@ -49,3 +49,6 @@ Thumbs.db
 # Caliburn compiled views (future)
 storage/framework/views/
 .caliburn_cache/
+
+# File cache store written by the examples at runtime
+**/storage/framework/cache/data/
