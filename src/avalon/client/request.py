@@ -30,8 +30,11 @@ class RecordedRequest:
                 return value
         return default
 
-    def has_header(self, key: str) -> bool:
-        return self.header(key) is not None
+    def has_header(self, key: str, value: str | None = None) -> bool:
+        found = self.header(key)
+        if found is None:
+            return False
+        return value is None or found == value
 
     def data_get(self, key: str, default: Any = None) -> Any:
         if isinstance(self.data, dict):
@@ -56,5 +59,18 @@ class RecordedRequest:
         return values[0] if len(values) == 1 else values
 
     def is_json(self) -> bool:
-        ctype = self.header("Content-Type") or ""
-        return "json" in ctype.lower()
+        return "json" in self._content_type()
+
+    def is_form(self) -> bool:
+        return "application/x-www-form-urlencoded" in self._content_type()
+
+    def is_multipart(self) -> bool:
+        return "multipart/form-data" in self._content_type() or bool(self.files)
+
+    def has_file(self, name: str | None = None) -> bool:
+        if not self.files:
+            return False
+        return name is None or name in self.files
+
+    def _content_type(self) -> str:
+        return (self.header("Content-Type") or "").lower()

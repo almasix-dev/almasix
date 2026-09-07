@@ -196,11 +196,16 @@ class Response:
             callback(self)
         return self
 
-    def throw(self, callback: Callable[[Response], Any] | None = None) -> Response:
+    def throw(
+        self,
+        callback: Callable[[Response], Any] | None = None,
+        *,
+        truncate_at: int | None = None,
+    ) -> Response:
         if self.failed():
             if callback is not None:
                 callback(self)
-            raise RequestException(self)
+            raise RequestException(self, truncate_at)
         return self
 
     def throw_if(self, condition: bool | Callable[[Response], bool]) -> Response:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import copy
-import inspect
 import json
 import time
 from collections.abc import Callable, Mapping
@@ -13,30 +12,22 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import httpx
 
+from avalon.client.arity import accepts_two_arguments
+from avalon.client.events import ConnectionFailed, RequestSending, ResponseReceived
 from avalon.client.exceptions import (
     ConnectionException,
     PendingRequestException,
+    RequestException,
     StrayRequestException,
 )
 from avalon.client.request import RecordedRequest
 from avalon.client.response import Response
+from avalon.client.uri_template import expand as expand_uri_template
+from avalon.events import Event
 
 _JSON_TYPES = (dict, list)
 _BODY_FORMATS = frozenset({"json", "form", "multipart", "body"})
 
-
-def _accepts_two_arguments(callback: Callable[..., Any]) -> bool:
-    """``when`` may be ``(error)`` or Laravel's ``(error, pending_request)``."""
-    try:
-        parameters = inspect.signature(callback).parameters
-    except (TypeError, ValueError):  # pragma: no cover - builtins without signatures
-        return False
-    if any(p.kind is p.VAR_POSITIONAL for p in parameters.values()):
-        return True
-    positional = [
-        p for p in parameters.values() if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
-    ]
-    return len(positional) >= 2
 
 
 class PendingRequest:
@@ -51,9 +42,10 @@ class PendingRequest:
         self._timeout: float | None = 30.0
         self._connect_timeout: float | None = 10.0
         self._tries: int = 1
-        self._retry_delay: float = 0.0
+        self._retry_sleep: Any = 0
         self._retry_when: Callable[..., bool] | None = None
         self._retry_throw: bool = True
+        self._mutable: bool = False
         self._throw: bool = False
         self._throw_if: Callable[[Response], bool] | bool | None = None
         self._throw_callback: Callable[[Response], Any] | None = None
@@ -67,8 +59,13 @@ class PendingRequest:
         self._auth: Any = None
         self._files: dict[str, Any] = {}
         self._sink: Any = None
+        self._truncate_at: int | None = None
 
     def _clone(self) -> PendingRequest:
+        if self._mutable:
+            # Inside a ``retry`` callback the request is live, as in Laravel, so
+            # fluent calls reconfigure the next attempt instead of forking.
+            return self
         cloned = copy.copy(self)
         cloned.headers = dict(self.headers)
         cloned._query = dict(self._query)
@@ -140,14 +137,24 @@ class PendingRequest:
 
     def retry(
         self,
-        times: int,
-        sleep: float = 0,
+        times: int | list[float],
+        sleep: float | list[float] | Callable[..., float] = 0,
         when: Callable[..., bool] | None = None,
         throw: bool = True,
     ) -> PendingRequest:
+        """Attempt a request up to ``times`` times, sleeping ``sleep`` ms between.
+
+        ``times`` may be a list of millisecond delays instead, in which case the
+        attempt count is derived from it. ``sleep`` may also be a list of delays
+        or a callable receiving ``(attempt[, error])``.
+        """
         cloned = self._clone()
-        cloned._tries = max(1, int(times))
-        cloned._retry_delay = float(sleep) / 1000.0 if sleep else 0.0
+        if isinstance(times, (list, tuple)):
+            cloned._retry_sleep = list(times)
+            cloned._tries = len(times) + 1
+        else:
+            cloned._tries = max(1, int(times))
+            cloned._retry_sleep = list(sleep) if isinstance(sleep, (list, tuple)) else sleep
         cloned._retry_when = when
         cloned._retry_throw = throw
         return cloned
@@ -217,9 +224,17 @@ class PendingRequest:
     def accept_json(self) -> PendingRequest:
         return self.accept("application/json")
 
-    def with_body(self, content: Any) -> PendingRequest:
+    def with_body(self, content: Any, content_type: str | None = None) -> PendingRequest:
         cloned = self._clone()
         cloned._options["content"] = content
+        cloned._body_format = "body"
+        if content_type is not None:
+            cloned.headers["Content-Type"] = content_type
+        return cloned
+
+    def truncate_exceptions_at(self, length: int) -> PendingRequest:
+        cloned = self._clone()
+        cloned._truncate_at = length
         return cloned
 
     def attach(
@@ -361,62 +376,84 @@ class PendingRequest:
         return await self.send_async("OPTIONS", url, data)
 
     def send(self, method: str, url: str, data: Any = None) -> Response:
+        request = self._retry_view()
         attempt = 0
         while True:
             attempt += 1
             try:
-                response = self._dispatch(method, url, data)
+                response = request._dispatch(method, url, data)
             except ConnectionException as exc:
-                if attempt >= self._tries or not self._should_retry(exc, None):
+                if attempt >= request._tries or not request._should_retry(exc):
                     raise
-                self._sleep()
+                request._wait(attempt, exc)
                 continue
-            if not self._retrying(response):
-                return self._finalize(response)
-            if attempt >= self._tries:
-                return self._finalize(response, exhausted=True)
-            self._sleep()
+            error = request._retry_error(response)
+            if error is None:
+                return request._finalize(response)
+            if attempt >= request._tries:
+                return request._finalize(response, exhausted=True)
+            request._wait(attempt, error)
 
     async def send_async(self, method: str, url: str, data: Any = None) -> Response:
+        request = self._retry_view()
         attempt = 0
         while True:
             attempt += 1
             try:
-                response = await self._dispatch_async(method, url, data)
+                response = await request._dispatch_async(method, url, data)
             except ConnectionException as exc:
-                if attempt >= self._tries or not self._should_retry(exc, None):
+                if attempt >= request._tries or not request._should_retry(exc):
                     raise
-                await self._sleep_async()
+                await request._wait_async(attempt, exc)
                 continue
-            if not self._retrying(response):
-                return self._finalize(response)
-            if attempt >= self._tries:
-                return self._finalize(response, exhausted=True)
-            await self._sleep_async()
+            error = request._retry_error(response)
+            if error is None:
+                return request._finalize(response)
+            if attempt >= request._tries:
+                return request._finalize(response, exhausted=True)
+            await request._wait_async(attempt, error)
 
-    def _retrying(self, response: Response) -> bool:
-        return self._tries > 1 and response.failed() and self._should_retry(None, response)
+    def _retry_view(self) -> PendingRequest:
+        """A live request for the retry loop, so ``when`` can reconfigure attempts."""
+        if self._tries <= 1:
+            return self
+        view = self._clone()
+        view._mutable = True
+        return view
 
-    def _should_retry(
-        self,
-        exception: BaseException | None,
-        response: Response | None,
-    ) -> bool:
+    def _retry_error(self, response: Response) -> RequestException | None:
+        """The error worth retrying, or ``None`` when this response is final."""
+        if self._tries == 1 or not response.failed():
+            return None
+        error = RequestException(response)
+        return error if self._should_retry(error) else None
+
+    def _should_retry(self, error: BaseException) -> bool:
         """Laravel default: retry every failure; ``when`` narrows it."""
         if self._retry_when is None:
             return True
-        subject = exception if exception is not None else response
-        if _accepts_two_arguments(self._retry_when):
-            return bool(self._retry_when(subject, self))
-        return bool(self._retry_when(subject))
+        if accepts_two_arguments(self._retry_when):
+            return bool(self._retry_when(error, self))
+        return bool(self._retry_when(error))
 
-    def _sleep(self) -> None:
-        if self._retry_delay > 0:
-            time.sleep(self._retry_delay)
+    def _sleep_for(self, attempt: int, subject: Any) -> float:
+        """Seconds to wait before the next attempt (``sleep`` is milliseconds)."""
+        sleep = self._retry_sleep
+        if callable(sleep):
+            sleep = sleep(attempt, subject) if accepts_two_arguments(sleep) else sleep(attempt)
+        elif isinstance(sleep, list):
+            sleep = sleep[min(attempt, len(sleep)) - 1] if sleep else 0
+        return max(0.0, float(sleep)) / 1000.0
 
-    async def _sleep_async(self) -> None:
-        if self._retry_delay > 0:
-            await asyncio.sleep(self._retry_delay)
+    def _wait(self, attempt: int, subject: Any) -> None:
+        delay = self._sleep_for(attempt, subject)
+        if delay > 0:
+            time.sleep(delay)
+
+    async def _wait_async(self, attempt: int, subject: Any) -> None:
+        delay = self._sleep_for(attempt, subject)
+        if delay > 0:
+            await asyncio.sleep(delay)
 
     def _finalize(self, response: Response, *, exhausted: bool = False) -> Response:
         for mw in self._factory.response_middleware() + self._response_middleware:
@@ -425,7 +462,7 @@ class PendingRequest:
             self._throw and self._throw_condition_met(response)
         ):
             # ``Response.throw`` is a no-op for successful responses.
-            response.throw(self._throw_callback)
+            response.throw(self._throw_callback, truncate_at=self._truncate_at)
         return response
 
     def _throw_condition_met(self, response: Response) -> bool:
@@ -438,34 +475,48 @@ class PendingRequest:
     def _dispatch(self, method: str, url: str, data: Any) -> Response:
         recorded = self._build_recorded(method, url, data)
         stub = self._factory.match_stub(recorded)
+        Event.dispatch(RequestSending(recorded))
         if stub is not None:
-            self._factory.record(recorded)
-            return self._coerce_stub(stub, recorded)
-        if self._factory.is_faking():
-            if self._factory.stray_prevented():
-                raise StrayRequestException(recorded.method, recorded.url)
-            self._factory.record(recorded)
-            return Response.make(None, 200)
-        self._factory.record(recorded)
-        return self._send_httpx(recorded)
+            return self._record(recorded, self._coerce_stub(stub, recorded))
+        self._guard_stray(recorded)
+        try:
+            response = self._send_httpx(recorded)
+        except ConnectionException as exc:
+            Event.dispatch(ConnectionFailed(recorded, exc))
+            raise
+        return self._record(recorded, response)
 
     async def _dispatch_async(self, method: str, url: str, data: Any) -> Response:
         recorded = self._build_recorded(method, url, data)
         stub = self._factory.match_stub(recorded)
+        Event.dispatch(RequestSending(recorded))
         if stub is not None:
-            self._factory.record(recorded)
-            return self._coerce_stub(stub, recorded)
-        if self._factory.is_faking():
-            if self._factory.stray_prevented():
-                raise StrayRequestException(recorded.method, recorded.url)
-            self._factory.record(recorded)
-            return Response.make(None, 200)
-        self._factory.record(recorded)
-        return await self._send_httpx_async(recorded)
+            return self._record(recorded, self._coerce_stub(stub, recorded))
+        self._guard_stray(recorded)
+        try:
+            response = await self._send_httpx_async(recorded)
+        except ConnectionException as exc:
+            Event.dispatch(ConnectionFailed(recorded, exc))
+            raise
+        return self._record(recorded, response)
+
+    def _guard_stray(self, recorded: RecordedRequest) -> None:
+        """Laravel executes un-faked URLs for real unless strays are prevented."""
+        if self._factory.stray_allowed(recorded):
+            return
+        raise StrayRequestException(recorded.method, recorded.url)
+
+    def _record(self, recorded: RecordedRequest, response: Response) -> Response:
+        self._factory.record(recorded, response)
+        Event.dispatch(ResponseReceived(recorded, response))
+        return response
 
     def _coerce_stub(self, stub: Any, recorded: RecordedRequest) -> Response:
         if callable(stub) and not isinstance(stub, Response):
             stub = stub(recorded)
+        if isinstance(stub, RequestException):
+            stub.response._request = recorded
+            raise stub
         if isinstance(stub, Exception):
             raise stub
         if isinstance(stub, Response):
@@ -515,8 +566,8 @@ class PendingRequest:
         return recorded
 
     def _expand_url(self, url: str) -> str:
-        for key, value in self._url_params.items():
-            url = url.replace("{" + str(key) + "}", str(value))
+        if self._url_params:
+            url = expand_uri_template(url, self._url_params)
         if self._base_url and not url.lower().startswith(("http://", "https://")):
             url = urljoin(self._base_url + "/", url.lstrip("/"))
         parts = urlsplit(url)

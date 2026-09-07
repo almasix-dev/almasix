@@ -495,9 +495,11 @@ pytest -q tests/test_m20_*.py tests/smoke/test_m20_smoke.py
 
 ### M20 exit criteria
 
-- [x] `Http` façade + `PendingRequest` fluency (headers, auth, timeouts, bodies, attachments)
-- [x] `Response` helpers (JSON / collect / status predicates / throw policies) + retry + `Http.pool`
-- [x] Fakes: URL maps, sequences, stray prevention, `recorded()` + `assert_sent*`
+- [x] `Http` façade + `PendingRequest` fluency (headers, auth, timeouts, bodies, attachments, RFC 6570 URL parameters)
+- [x] `Response` helpers (JSON / collect / status predicates / throw policies + body truncation)
+- [x] Retry (callable / list delays, throwable `when` with a reconfigurable request), `Http.pool` (concurrency + per-request options), `Http.batch`
+- [x] Fakes: URL maps with real fall-through, sequences that raise when drained, stray prevention + allowlist, `recorded()` pairs + `assert_sent*`
+- [x] `Http.macro`, `RequestSending` / `ResponseReceived` / `ConnectionFailed` events
 - [x] Async verbs (`aget` … `aoptions`) over `httpx.AsyncClient`
 - [x] Docs + smoke; no M21 until green
 

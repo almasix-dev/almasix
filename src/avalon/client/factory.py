@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import urlsplit
 
+from avalon.client.arity import accepts_two_arguments
 from avalon.client.exceptions import OutOfFakeResponses
 from avalon.client.pending import PendingRequest
 from avalon.client.request import RecordedRequest
@@ -19,7 +20,9 @@ class Sequence:
     def __init__(self) -> None:
         self._responses: list[Any] = []
         self._empty: Any = None
-        self._fail_when_empty = False
+        # Laravel throws once a sequence is drained; ``when_empty`` /
+        # ``dont_fail_when_empty`` opt out of that.
+        self._fail_when_empty = True
 
     def push(self, body: Any = None, status: int = 200, headers: dict[str, str] | None = None) -> Sequence:
         self._responses.append(Response.make(body, status, headers))
@@ -55,10 +58,8 @@ class Sequence:
             return self._responses.pop(0)
         if self._fail_when_empty:
             raise OutOfFakeResponses(f"No more fake responses for {request.method} {request.url}")
-        if self._empty is not None:
-            empty = self._empty
-            return empty(request) if callable(empty) and not isinstance(empty, Response) else empty
-        return Response.make(None, 200)
+        empty = self._empty
+        return empty(request) if callable(empty) and not isinstance(empty, Response) else empty
 
 
 class Factory:
@@ -66,14 +67,16 @@ class Factory:
 
     def __init__(self) -> None:
         self._stubs: list[tuple[Callable[[RecordedRequest], bool], Any]] = []
-        self._recorded: list[RecordedRequest] = []
+        self._recorded: list[tuple[RecordedRequest, Response]] = []
         self._faking = False
         self._prevent_stray = False
+        self._stray_allowed: list[Callable[[RecordedRequest], bool]] = []
         self._global_headers: dict[str, str] = {}
         self._global_options: dict[str, Any] = {}
         self._request_middleware: list[Callable[[RecordedRequest], RecordedRequest]] = []
         self._response_middleware: list[Callable[[Response], Response]] = []
         self._default_base_url = ""
+        self._macros: dict[str, Callable[..., Any]] = {}
 
     def pending(self) -> PendingRequest:
         request = PendingRequest(self)
@@ -105,6 +108,23 @@ class Factory:
 
     def with_options(self, options: Mapping[str, Any]) -> Factory:
         self._global_options.update(dict(options))
+        return self
+
+    def global_options(self, options: Mapping[str, Any]) -> Factory:
+        return self.with_options(options)
+
+    def macro(self, name: str, callback: Callable[..., Any]) -> Factory:
+        self._macros[name] = callback
+        return self
+
+    def has_macro(self, name: str) -> bool:
+        return name in self._macros
+
+    def macro_for(self, name: str) -> Callable[..., Any]:
+        return self._macros[name]
+
+    def flush_macros(self) -> Factory:
+        self._macros.clear()
         return self
 
     def request_middleware(self) -> list[Callable[[RecordedRequest], RecordedRequest]]:
@@ -150,9 +170,19 @@ class Factory:
         self._prevent_stray = prevent
         return self
 
-    def allow_stray_requests(self) -> Factory:
-        self._prevent_stray = False
+    def allow_stray_requests(self, patterns: list[str] | None = None) -> Factory:
+        """Allow every stray request, or only those matching the given URL patterns."""
+        if patterns is None:
+            self._prevent_stray = False
+            self._stray_allowed = []
+            return self
+        self._stray_allowed.extend(_url_matcher(pattern) for pattern in patterns)
         return self
+
+    def stray_allowed(self, request: RecordedRequest) -> bool:
+        if not self._prevent_stray:
+            return True
+        return any(matcher(request) for matcher in self._stray_allowed)
 
     def match_stub(self, request: RecordedRequest) -> Any | None:
         if not self._faking:
@@ -162,39 +192,33 @@ class Factory:
                 return handler
         return None
 
-    def record(self, request: RecordedRequest) -> None:
-        self._recorded.append(request)
+    def record(self, request: RecordedRequest, response: Response) -> None:
+        self._recorded.append((request, response))
 
     def recorded(
-        self, callback: Callable[[RecordedRequest], bool] | None = None
-    ) -> list[RecordedRequest]:
+        self, callback: Callable[..., bool] | None = None
+    ) -> list[tuple[RecordedRequest, Response]]:
+        """Request / response pairs, optionally filtered by ``(request[, response])``."""
         if callback is None:
             return list(self._recorded)
-        return [req for req in self._recorded if callback(req)]
-
-    def assert_sent(
-        self,
-        callback: str | Callable[[RecordedRequest], bool],
-    ) -> None:
         matcher = _as_request_predicate(callback)
-        if not any(matcher(req) for req in self._recorded):
+        return [pair for pair in self._recorded if matcher(*pair)]
+
+    def assert_sent(self, callback: str | Callable[..., bool]) -> None:
+        matcher = _as_request_predicate(callback)
+        if not any(matcher(*pair) for pair in self._recorded):
             raise AssertionError("An expected request was not recorded.")
 
-    def assert_not_sent(
-        self,
-        callback: str | Callable[[RecordedRequest], bool],
-    ) -> None:
+    def assert_not_sent(self, callback: str | Callable[..., bool]) -> None:
         matcher = _as_request_predicate(callback)
-        if any(matcher(req) for req in self._recorded):
+        if any(matcher(*pair) for pair in self._recorded):
             raise AssertionError("An unexpected request was recorded.")
 
-    def assert_sent_in_order(
-        self, callbacks: list[str | Callable[[RecordedRequest], bool]]
-    ) -> None:
+    def assert_sent_in_order(self, callbacks: list[str | Callable[..., bool]]) -> None:
         remaining = list(self._recorded)
         for callback in callbacks:
             matcher = _as_request_predicate(callback)
-            found_at = next((i for i, req in enumerate(remaining) if matcher(req)), None)
+            found_at = next((i for i, pair in enumerate(remaining) if matcher(*pair)), None)
             if found_at is None:
                 raise AssertionError("Requests were not recorded in the expected order.")
             remaining = remaining[found_at + 1 :]
@@ -233,9 +257,12 @@ def urlunsplit_no_query(parsed: Any) -> str:
 
 
 def _as_request_predicate(
-    callback: str | Callable[[RecordedRequest], bool],
-) -> Callable[[RecordedRequest], bool]:
-    if callable(callback) and not isinstance(callback, str):
+    callback: str | Callable[..., bool],
+) -> Callable[[RecordedRequest, Response], bool]:
+    """Normalize a URL pattern or a ``(request[, response])`` callable."""
+    if isinstance(callback, str):
+        matcher = _url_matcher(callback)
+        return lambda request, _response: matcher(request)
+    if accepts_two_arguments(callback):
         return callback
-    matcher = _url_matcher(str(callback))
-    return matcher
+    return lambda request, _response: bool(callback(request))

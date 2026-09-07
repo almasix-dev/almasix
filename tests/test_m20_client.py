@@ -63,6 +63,11 @@ def ok_handler(payload: Any = None, status: int = 200) -> Callable[[httpx.Reques
     return handler
 
 
+def sent() -> list[RecordedRequest]:
+    """The request half of every ``Http.recorded()`` pair."""
+    return [request for request, _response in Http.recorded()]
+
+
 # --- Response ---------------------------------------------------------------
 
 
@@ -352,20 +357,31 @@ def test_factory_stub_url_matches_host_path_and_wildcards() -> None:
     assert Http.get(URL, {"page": 2}).json() == {"matched": "prefix"}
 
 
-def test_factory_stub_that_does_not_match_falls_through_to_empty_200() -> None:
+def test_unfaked_urls_are_executed_for_real() -> None:
+    """Laravel only fakes what you asked for; everything else really goes out."""
     Http.fake({"https://other.test/*": Http.response({"nope": True})})
-    assert Http.get(URL).body() == ""
+    response = Http.with_options(transport(ok_handler({"real": True}))).get(URL)
+    assert response.json() == {"real": True}
 
 
 def test_factory_prevent_stray_requests() -> None:
     Http.fake({"https://other.test/*": Http.response({"ok": True})})
     Http.prevent_stray_requests()
-    with pytest.raises(StrayRequestException):
+    with pytest.raises(StrayRequestException, match="without a matching fake"):
         Http.get(URL)
     assert Http.recorded() == []
 
     Http.allow_stray_requests()
-    assert Http.get(URL).status() == 200
+    assert Http.with_options(transport(ok_handler())).get(URL).ok()
+
+
+def test_stray_requests_may_be_allowed_by_pattern() -> None:
+    Http.prevent_stray_requests()
+    Http.allow_stray_requests(["https://api.example.test/*"])
+
+    assert Http.with_options(transport(ok_handler())).get(URL).ok()
+    with pytest.raises(StrayRequestException):
+        Http.get("https://elsewhere.test/data")
 
 
 def test_factory_match_stub_is_inert_until_faking(fresh_factory: Factory) -> None:
@@ -375,12 +391,13 @@ def test_factory_match_stub_is_inert_until_faking(fresh_factory: Factory) -> Non
     assert not fresh_factory.stray_prevented()
 
 
-def test_sequence_pops_queued_responses_then_falls_back_to_empty() -> None:
+def test_sequence_pops_queued_responses_then_raises_when_drained() -> None:
     Http.fake_sequence().push({"id": 1}).push_status(500).push_response(Http.response("third"))
     assert Http.get(URL).json() == {"id": 1}
     assert Http.get(URL).status() == 500
     assert Http.get(URL).body() == "third"
-    assert Http.get(URL).status() == 200
+    with pytest.raises(OutOfFakeResponses, match="No more fake responses"):
+        Http.get(URL)
 
 
 def test_sequence_when_empty_accepts_response_or_callable() -> None:
@@ -409,11 +426,26 @@ def test_sequence_fail_when_empty_and_dont_fail_when_empty() -> None:
 def test_sequence_can_be_scoped_to_a_url_and_passed_to_fake() -> None:
     Http.fake_sequence("https://api.example.test/users").push({"scoped": True})
     assert Http.get(URL).json() == {"scoped": True}
-    assert Http.get("https://api.example.test/other").body() == ""
 
     set_factory(Factory())
     Http.fake(Sequence().push({"direct": True}))
     assert Http.get(URL).json() == {"direct": True}
+
+
+def test_sequence_can_be_attached_to_a_url_map() -> None:
+    Http.fake(
+        {
+            "https://api.example.test/users": Http.sequence()
+            .push("Hello World")
+            .push({"foo": "bar"})
+            .push_status(404),
+            "*": Http.response({"other": True}),
+        }
+    )
+    assert Http.get(URL).body() == "Hello World"
+    assert Http.get(URL).json() == {"foo": "bar"}
+    assert Http.get(URL).status() == 404
+    assert Http.get("https://api.example.test/other").json() == {"other": True}
 
 
 def test_assert_sequences_are_empty() -> None:
@@ -430,8 +462,8 @@ def test_recording_and_assertions() -> None:
     Http.get(URL)
     Http.post("https://api.example.test/orders", {"name": "Ada"})
 
-    assert len(Http.recorded()) == 2
-    assert [r.method for r in Http.recorded(lambda r: r.method == "POST")] == ["POST"]
+    assert len(sent()) == 2
+    assert [req.method for req, _resp in Http.recorded(lambda r: r.method == "POST")] == ["POST"]
 
     Http.assert_sent("https://api.example.test/users")
     Http.assert_sent(lambda r: r.method == "POST" and r["name"] == "Ada")
@@ -467,7 +499,7 @@ def test_factory_globals_seed_every_pending_request(fresh_factory: Factory) -> N
     Http.fake()
 
     Http.get("/users")
-    recorded = Http.recorded()[0]
+    recorded = sent()[0]
     assert recorded.url == URL
     assert recorded.header("X-App") == "avalon"
     assert fresh_factory.global_headers() == {"X-App": "avalon"}
@@ -479,7 +511,7 @@ def test_factory_global_middleware_wraps_requests_and_responses() -> None:
     Http.fake({"*": Http.response({"original": True})})
 
     assert Http.get(URL).json() == {"rewritten": True}
-    assert Http.recorded()[0].header("X-Tag") == "global"
+    assert sent()[0].header("X-Tag") == "global"
     assert len(get_factory().request_middleware()) == 1
     assert len(get_factory().response_middleware()) == 1
 
@@ -518,7 +550,7 @@ def test_fluent_setters_never_mutate_the_source_request() -> None:
     assert configured.headers == {"X-One": "1", "X-Two": "2"}
     assert configured._base_url == "https://api.example.test"
     assert configured._tries == 3
-    assert configured._retry_delay == pytest.approx(0.01)
+    assert configured._retry_sleep == 10
 
 
 def test_header_helpers() -> None:
@@ -589,46 +621,46 @@ def test_url_parameters_base_url_and_query_merging() -> None:
     Http.base_url("https://api.example.test").with_url_parameters({"id": 7}).get(
         "/users/{id}?tag=a", {"page": 2}
     )
-    assert Http.recorded()[0].url == "https://api.example.test/users/7?tag=a&page=2"
+    assert sent()[0].url == "https://api.example.test/users/7?tag=a&page=2"
 
     Http.base_url("https://api.example.test").get("https://other.test/absolute")
-    assert Http.recorded()[1].url == "https://other.test/absolute"
+    assert sent()[1].url == "https://other.test/absolute"
 
 
 def test_dict_and_list_payloads_default_to_json() -> None:
     Http.fake()
     Http.post(URL, {"name": "Ada"})
-    recorded = Http.recorded()[0]
+    recorded = sent()[0]
     assert recorded.body == '{"name": "Ada"}'
     assert recorded.header("Content-Type") == "application/json"
 
     Http.post(URL, [1, 2])
-    assert Http.recorded()[1].body == "[1, 2]"
+    assert sent()[1].body == "[1, 2]"
 
 
 def test_form_bytes_and_scalar_payload_encoding() -> None:
     Http.fake()
     Http.as_form().post(URL, {"name": "Ada", "tags": ["a", "b"]})
-    assert Http.recorded()[0].body == "name=Ada&tags=a&tags=b"
+    assert sent()[0].body == "name=Ada&tags=a&tags=b"
 
     Http.as_form().post(URL, "already=encoded")
-    assert Http.recorded()[1].body == "already=encoded"
+    assert sent()[1].body == "already=encoded"
 
     Http.post(URL, b"bytes")
-    assert Http.recorded()[2].body == b"bytes"
+    assert sent()[2].body == b"bytes"
 
     Http.post(URL, 42)
-    assert Http.recorded()[3].body == "42"
+    assert sent()[3].body == "42"
 
     Http.with_body("raw override").post(URL, {"ignored": True})
-    assert Http.recorded()[4].body == "raw override"
+    assert sent()[4].body == "raw override"
 
 
 def test_accept_and_global_headers_are_defaults_not_overrides() -> None:
     get_factory().with_headers({"X-App": "avalon", "Accept": "text/html"})
     Http.fake()
     Http.accept("text/csv").with_header("X-App", "mine").get(URL)
-    recorded = Http.recorded()[0]
+    recorded = sent()[0]
     assert recorded.header("Accept") == "text/csv"
     assert recorded.header("X-App") == "mine"
 
@@ -636,10 +668,10 @@ def test_accept_and_global_headers_are_defaults_not_overrides() -> None:
 def test_attach_switches_to_multipart_and_records_files() -> None:
     Http.fake()
     Http.attach("photo", b"binary", "me.jpg").post(URL)
-    assert Http.recorded()[0].files == {"photo": ("me.jpg", b"binary")}
+    assert sent()[0].files == {"photo": ("me.jpg", b"binary")}
 
     Http.attach("doc", b"pdf", headers={"Content-Type": "application/pdf"}).post(URL)
-    assert Http.recorded()[1].files == {
+    assert sent()[1].files == {
         "doc": ("doc", b"pdf", None, {"Content-Type": "application/pdf"})
     }
 
@@ -658,7 +690,7 @@ def test_request_middleware_and_before_sending_hooks_see_the_recorded_request() 
         .get(URL)
     )
     assert seen == ["middleware"]
-    assert Http.recorded()[0].header("X-Tag") == "middleware"
+    assert sent()[0].header("X-Tag") == "middleware"
 
 
 # --- Verbs, async, and live httpx -------------------------------------------
@@ -674,7 +706,7 @@ def test_every_sync_verb_is_recorded() -> None:
     Http.delete(URL)
     Http.options(URL)
     Http.send("TRACE", URL)
-    assert [r.method for r in Http.recorded()] == [
+    assert [r.method for r in sent()] == [
         "GET",
         "HEAD",
         "POST",
@@ -695,7 +727,7 @@ async def test_every_async_verb_is_recorded() -> None:
     assert (await Http.apatch(URL, {"n": 1})).ok()
     assert (await Http.adelete(URL)).ok()
     assert (await Http.aoptions(URL)).ok()
-    assert [r.method for r in Http.recorded()] == [
+    assert [r.method for r in sent()] == [
         "GET",
         "HEAD",
         "POST",
@@ -713,9 +745,10 @@ async def test_async_stray_requests_are_prevented_too() -> None:
         await Http.aget(URL)
 
 
-async def test_async_fake_falls_through_to_empty_200() -> None:
+async def test_async_unfaked_urls_are_executed_for_real() -> None:
     Http.fake({"https://other.test/*": Http.response({})})
-    assert (await Http.aget(URL)).body() == ""
+    response = await Http.with_options(transport(ok_handler({"real": True}))).aget(URL)
+    assert response.json() == {"real": True}
 
 
 def test_live_request_goes_through_httpx() -> None:
@@ -732,7 +765,7 @@ def test_live_request_goes_through_httpx() -> None:
         .get(URL)
     )
     assert response.json() == {"echo": URL}
-    assert Http.recorded()[0].url == URL
+    assert sent()[0].url == URL
 
 
 async def test_live_async_request_goes_through_httpx() -> None:
@@ -1011,7 +1044,7 @@ def test_pool_queries_are_forwarded() -> None:
     Http.fake()
     responses = Http.pool(lambda pool: pool.get(URL, {"page": 2}))
     assert responses[0].ok()
-    assert Http.recorded()[0].query("page") == "2"
+    assert sent()[0].query("page") == "2"
 
 
 # --- Façade delegation, helpers, provider -----------------------------------
