@@ -9,11 +9,35 @@ class AuthServiceProvider(ServiceProvider):
     """Binds auth helpers and shares CSRF / auth state with Caliburn."""
 
     def register(self) -> None:
+        from avalon.auth.access.facade import Gate
+        from avalon.auth.access.gate import Gate as AccessGate
         from avalon.auth.guard import AuthManager
 
         self.app.container.singleton(AuthManager, lambda _c: AuthManager())
 
+        app = self.app
+
+        def gate_factory(_container):
+            def user_resolver():
+                from avalon.auth.guard import get_auth
+
+                manager = get_auth()
+                return None if manager is None else manager.user()
+
+            instance = AccessGate(container=app.container, user_resolver=user_resolver)
+            Gate.set_gate(instance)
+            return instance
+
+        app.container.singleton(AccessGate, gate_factory)
+        app.container.alias(AccessGate, "gate")
+
     def boot(self) -> None:
+        from avalon.auth.access.facade import Gate
+        from avalon.auth.access.gate import Gate as AccessGate
+
+        if self.app.container.bound(AccessGate):
+            Gate.set_gate(self.app.make(AccessGate))
+
         try:
             from avalon.caliburn.helpers import get_engine
             from avalon.session.csrf import csrf_token

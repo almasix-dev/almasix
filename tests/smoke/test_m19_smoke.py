@@ -1,4 +1,4 @@
-"""M18 smoke — Events docs, progress command, board."""
+"""M19 smoke — Authorization docs, progress command, board."""
 
 from __future__ import annotations
 
@@ -29,23 +29,32 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
     return PROGRESS
 
 
-def test_m18_docs_and_sidebar_exist() -> None:
-    assert (ROOT / "website" / "src" / "content" / "docs" / "events.md").is_file()
-    assert "events" in (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
+def test_m19_docs_and_sidebar_exist() -> None:
+    assert (ROOT / "website" / "src" / "content" / "docs" / "authorization.md").is_file()
+    sidebar = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
+    assert "authorization" in sidebar
 
 
-def test_m18_progress_events_command(progress_cwd: Path) -> None:
+def test_m19_progress_authorization_command(progress_cwd: Path) -> None:
     del progress_cwd
-    result = runner.invoke(grail_app, ["progress:events"])
+    result = runner.invoke(grail_app, ["progress:authorization"])
     assert result.exit_code == 0, result.stdout + result.stderr
-    assert "events demo ok" in (result.stdout + result.stderr).lower()
+    assert "authorization demo ok" in (result.stdout + result.stderr).lower()
 
 
-def test_m18_board_marks_events_complete(progress_cwd: Path) -> None:
+def test_m19_board_marks_authorization_complete(progress_cwd: Path) -> None:
     del progress_cwd
     from app.http.controllers.progress_controller import _milestones
 
-    m18 = next(m for m in _milestones() if m["id"] == "M18")
-    assert m18["status"] == "complete"
     m19 = next(m for m in _milestones() if m["id"] == "M19")
     assert m19["status"] == "complete"
+    m20 = next(m for m in _milestones() if m["id"] == "M20")
+    assert m20["status"] == "next"
+
+
+def test_m19_scaffold_registers_can_alias(tmp_path: Path) -> None:
+    from avalon.installer.scaffold import scaffold_app
+
+    root = scaffold_app("m19_authz", destination=tmp_path / "m19_authz")
+    boot = (root / "bootstrap" / "app.py").read_text(encoding="utf-8")
+    assert '"can": Authorize' in boot or "'can': Authorize" in boot

@@ -295,6 +295,8 @@ class HttpKernel:
             return cls(guard=param)  # type: ignore[call-arg]
         if alias_name in {"auth.basic", "basic"}:
             return cls(field=param)  # type: ignore[call-arg]
+        if alias_name == "can":
+            return cls(param)  # type: ignore[call-arg]
         try:
             return cls(param)  # type: ignore[call-arg]
         except TypeError:
@@ -362,7 +364,45 @@ class HttpKernel:
                     f"Cannot resolve controller parameter {name!r} for {handler!r}"
                 )
 
+        self._authorize_controller_resource(handler, request, kwargs)
+
         result = handler(**kwargs) if kwargs else handler()
         if inspect.isawaitable(result):
             return await result
         return result
+
+    def _authorize_controller_resource(
+        self,
+        handler: Callable[..., Any],
+        request: Request,
+        kwargs: dict[str, Any],
+    ) -> None:
+        owner = getattr(handler, "__self__", None)
+        if owner is None:
+            return
+        spec = getattr(type(owner), "authorizes_resource", None)
+        if spec in (None, False):
+            return
+        parameter = None
+        model = spec
+        if isinstance(spec, (tuple, list)):
+            model = spec[0]
+            parameter = spec[1] if len(spec) > 1 else None
+        if not isinstance(model, type):
+            return
+        action = getattr(handler, "__name__", "")
+        from avalon.auth.access.gate import CONTROLLER_RESOURCE_ABILITIES
+        from avalon.auth.access.facade import Gate
+        from avalon.orm.inflector import snake
+
+        ability = CONTROLLER_RESOURCE_ABILITIES.get(action)
+        if ability is None:
+            return
+        if action in {"index", "create", "store"}:
+            Gate.authorize(ability, model)
+            return
+        name = str(parameter or snake(model.__name__))
+        argument = kwargs.get(name)
+        if argument is None:
+            argument = request.path_params.get(name)
+        Gate.authorize(ability, argument if argument is not None else model)

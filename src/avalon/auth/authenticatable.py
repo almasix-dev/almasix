@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from avalon.auth.access.authorizable import Authorizable
 
-class AuthenticatableMixin:
+
+class AuthenticatableMixin(Authorizable):
     """Mixin / base helpers for user models (Laravel Authenticatable trait)."""
 
     remember_token_name = "remember_token"

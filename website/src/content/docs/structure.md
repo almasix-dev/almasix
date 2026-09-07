@@ -9,7 +9,7 @@ The default Avalon application structure provides a sensible starting point for 
 
 ### The `app` directory
 
-The core of your application lives here: HTTP controllers, middleware, models, and service providers.
+The core of your application lives here: HTTP controllers, middleware, models, policies, and service providers.
 
 Avalon uses **PascalCase** for class names and **snake_case** for Python packages and modules:
 
@@ -20,7 +20,7 @@ Avalon uses **PascalCase** for class names and **snake_case** for Python package
 | Module files | snake_case | `post.py`, `post_controller.py` |
 | Imports | dotted snake_case | `from app.models.post import Post` |
 
-Generators follow the same rules. `grail make:model Post` writes `app/models/post.py` containing `class Post`. Nested namespaces snake-case as well: `Admin/UserController` → `app/http/controllers/admin/user_controller.py`.
+Generators follow the same rules. `grail make:model Post` writes `app/models/post.py` containing `class Post`. Nested namespaces snake-case as well: `Admin/UserController` → `app/http/controllers/admin/user_controller.py`. `grail make:policy PostPolicy --model=Post` writes `app/policies/post_policy.py`.
 
 ### The `bootstrap` directory
 

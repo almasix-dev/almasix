@@ -17,6 +17,7 @@ description: "Conditionals, loops, and @python blocks in Caliburn."
 | `@while` / `@endwhile` | While loop |
 | `@auth` / `@endauth` | Body when `auth_user` or `__authenticated` is set |
 | `@guest` / `@endguest` | Inverse of `@auth` |
+| `@can` / `@cannot` / `@canany` / `@cannotany` | Gate / policy checks — see [Authorization](/authorization/) |
 | `@python` / `@endpython` | Escape hatch |
 
 ## Loop variable
@@ -34,9 +35,7 @@ Inside `@foreach` / `@forelse`, `loop` exposes:
 Bare `@empty` inside `@forelse` remains the empty branch. Standalone
 `@empty(expr)` … `@endempty` is a separate empty-check directive.
 
-## Auth stubs
-
-Until the auth milestone wires real guards, use context keys:
+## Auth and authorization
 
 ```html
 <!-- resources/views/partials/nav.cal.html -->
@@ -47,7 +46,13 @@ Until the auth milestone wires real guards, use context keys:
 @guest
   <a href="/login">Sign in</a>
 @endguest
+
+@can('update', post)
+  <a href="/edit">Edit</a>
+@endcan
 ```
+
+`@can` / `@cannot` / `@canany` call the [authorization](/authorization/) gate.
 
 ## Localization in views
 

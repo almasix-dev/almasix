@@ -13,3 +13,9 @@ class AppServiceProvider(ServiceProvider):
 
     def boot(self) -> None:
         """Bootstrap application services."""
+        from app.models.post import Post
+        from app.policies.post_policy import PostPolicy
+
+        from avalon.auth import Gate
+
+        Gate.policy(Post, PostPolicy)

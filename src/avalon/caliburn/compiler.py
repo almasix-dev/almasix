@@ -73,6 +73,14 @@ _TAG_RE = re.compile(
     rf"|@auth\b"
     rf"|@endguest\b"
     rf"|@guest\b"
+    rf"|@endcannotany\b"
+    rf"|@cannotany\b"
+    rf"|@endcanany\b"
+    rf"|@canany\b"
+    rf"|@endcannot\b"
+    rf"|@cannot\b"
+    rf"|@endcan\b"
+    rf"|@can\b"
     rf"|@dump\b"
     rf"|@dd\b"
     rf"|@asset\b"
@@ -104,6 +112,10 @@ _BALANCED_ALWAYS = frozenset(
         "@choice",
         "@props",
         "@aware",
+        "@can",
+        "@cannot",
+        "@canany",
+        "@cannotany",
     }
 )
 # Balanced only when the next non-space character is ``(``.
@@ -380,6 +392,14 @@ def _tag_kind(
         ("@auth", "auth"),
         ("@endguest", "endguest"),
         ("@guest", "guest"),
+        ("@endcannotany", "endcannotany"),
+        ("@cannotany", "cannotany"),
+        ("@endcanany", "endcanany"),
+        ("@canany", "canany"),
+        ("@endcannot", "endcannot"),
+        ("@cannot", "cannot"),
+        ("@endcan", "endcan"),
+        ("@can", "can"),
         ("@dump", "dump"),
         ("@dd", "dd"),
         ("@asset", "asset"),
@@ -494,7 +514,10 @@ def _compile_fragment(
         "    from avalon.translation import __, trans_choice",
         "    __b = []",
         "    __w = __b.append",
+        "    from avalon.auth.access.helpers import gate_allows as __gate_allows, gate_any as __gate_any",
         "    __ns = dict(context)",
+        "    __ns['__gate_allows'] = __gate_allows",
+        "    __ns['__gate_any'] = __gate_any",
         "    def __sync():",
         "        __ns.update(context)",
         "        context.update({k: v for k, v in __ns.items() if not str(k).startswith('__')})",
@@ -866,6 +889,30 @@ def _compile_fragment(
             emit("if not (context.get('auth_user') or context.get('__authenticated')):")
             indent += 1
         elif kind == "endguest":
+            indent -= 1
+        elif kind == "can":
+            args = _directive_expr(match, r"@can\s*\((.+)\)")
+            emit(f"if __eval({_py_str(f'__gate_allows({args})')}):")
+            indent += 1
+        elif kind == "endcan":
+            indent -= 1
+        elif kind == "cannot":
+            args = _directive_expr(match, r"@cannot\s*\((.+)\)")
+            emit(f"if not __eval({_py_str(f'__gate_allows({args})')}):")
+            indent += 1
+        elif kind == "endcannot":
+            indent -= 1
+        elif kind == "canany":
+            args = _directive_expr(match, r"@canany\s*\((.+)\)")
+            emit(f"if __eval({_py_str(f'__gate_any({args})')}):")
+            indent += 1
+        elif kind == "endcanany":
+            indent -= 1
+        elif kind == "cannotany":
+            args = _directive_expr(match, r"@cannotany\s*\((.+)\)")
+            emit(f"if not __eval({_py_str(f'__gate_any({args})')}):")
+            indent += 1
+        elif kind == "endcannotany":
             indent -= 1
         elif kind == "dump":
             args = _paren_inner(match.group(0) or "")
