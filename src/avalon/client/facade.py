@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from avalon.client.batch import Batch
+from avalon.client.exceptions import ConnectionException, HttpClientException, RequestException
 from avalon.client.factory import Factory, Sequence
 from avalon.client.pending import PendingRequest
 from avalon.client.pool import Pool
@@ -26,12 +28,30 @@ def set_factory(factory: Factory | None) -> None:
     _factory = factory
 
 
-class Http:
+class _HttpMeta(type):
+    """Resolves ``Http.macro(...)`` names registered on the factory."""
+
+    def __getattr__(cls, name: str) -> Any:
+        factory = get_factory()
+        if factory.has_macro(name):
+            return factory.macro_for(name)
+        raise AttributeError(f"{cls.__name__} has no attribute or macro {name!r}")
+
+
+class Http(metaclass=_HttpMeta):
     """Static façade over the HTTP client factory."""
 
     @classmethod
     def factory(cls) -> Factory:
         return get_factory()
+
+    @classmethod
+    def macro(cls, name: str, callback: Callable[..., Any]) -> Factory:
+        return cls.factory().macro(name, callback)
+
+    @classmethod
+    def flush_macros(cls) -> Factory:
+        return cls.factory().flush_macros()
 
     @classmethod
     def pending(cls) -> PendingRequest:
@@ -55,6 +75,24 @@ class Http:
         return cls.factory().fake_sequence(urls)
 
     @classmethod
+    def sequence(cls) -> Sequence:
+        """An unattached sequence, for use inside a ``fake`` URL map."""
+        return Sequence()
+
+    @classmethod
+    def failed_connection(cls, message: str = "Connection failed.") -> ConnectionException:
+        return ConnectionException(message)
+
+    @classmethod
+    def failed_request(
+        cls,
+        body: Any = None,
+        status: int = 500,
+        headers: dict[str, str] | None = None,
+    ) -> RequestException:
+        return RequestException(Response.make(body, status, headers))
+
+    @classmethod
     def stub_url(cls, url: str, callback: Any) -> Factory:
         return cls.factory().stub_url(url, callback)
 
@@ -63,27 +101,25 @@ class Http:
         return cls.factory().prevent_stray_requests(prevent)
 
     @classmethod
-    def allow_stray_requests(cls) -> Factory:
-        return cls.factory().allow_stray_requests()
+    def allow_stray_requests(cls, patterns: list[str] | None = None) -> Factory:
+        return cls.factory().allow_stray_requests(patterns)
 
     @classmethod
     def recorded(
-        cls, callback: Callable[[RecordedRequest], bool] | None = None
-    ) -> list[RecordedRequest]:
+        cls, callback: Callable[..., bool] | None = None
+    ) -> list[tuple[RecordedRequest, Response]]:
         return cls.factory().recorded(callback)
 
     @classmethod
-    def assert_sent(cls, callback: str | Callable[[RecordedRequest], bool]) -> None:
+    def assert_sent(cls, callback: str | Callable[..., bool]) -> None:
         cls.factory().assert_sent(callback)
 
     @classmethod
-    def assert_not_sent(cls, callback: str | Callable[[RecordedRequest], bool]) -> None:
+    def assert_not_sent(cls, callback: str | Callable[..., bool]) -> None:
         cls.factory().assert_not_sent(callback)
 
     @classmethod
-    def assert_sent_in_order(
-        cls, callbacks: list[str | Callable[[RecordedRequest], bool]]
-    ) -> None:
+    def assert_sent_in_order(cls, callbacks: list[str | Callable[..., bool]]) -> None:
         cls.factory().assert_sent_in_order(callbacks)
 
     @classmethod
@@ -109,10 +145,22 @@ class Http:
         return cls.factory().global_response_middleware(middleware)
 
     @classmethod
-    def pool(cls, callback: Callable[[Pool], Any]) -> dict[str | int, Response]:
-        pool = Pool(cls.factory())
+    def global_options(cls, options: Mapping[str, Any]) -> Factory:
+        return cls.factory().global_options(options)
+
+    @classmethod
+    def pool(
+        cls, callback: Callable[[Pool], Any], concurrency: int | None = None
+    ) -> dict[str | int, Response | HttpClientException]:
+        pool = Pool(cls.factory(), concurrency)
         callback(pool)
         return pool.run()
+
+    @classmethod
+    def batch(cls, callback: Callable[[Batch], Any]) -> Batch:
+        batch = Batch(cls.factory())
+        callback(batch)
+        return batch
 
     @classmethod
     def get(cls, url: str, query: Mapping[str, Any] | None = None) -> Response:
@@ -229,8 +277,8 @@ class Http:
     @classmethod
     def retry(
         cls,
-        times: int,
-        sleep: float = 0,
+        times: int | list[float],
+        sleep: float | list[float] | Callable[..., float] = 0,
         when: Callable[..., bool] | None = None,
         throw: bool = True,
     ) -> PendingRequest:
@@ -295,8 +343,12 @@ class Http:
         return cls.pending().attach(name, contents, filename, headers)
 
     @classmethod
-    def with_body(cls, content: Any) -> PendingRequest:
-        return cls.pending().with_body(content)
+    def with_body(cls, content: Any, content_type: str | None = None) -> PendingRequest:
+        return cls.pending().with_body(content, content_type)
+
+    @classmethod
+    def truncate_exceptions_at(cls, length: int) -> PendingRequest:
+        return cls.pending().truncate_exceptions_at(length)
 
     @classmethod
     def sink(cls, dest: Any) -> PendingRequest:
