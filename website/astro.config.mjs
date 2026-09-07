@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					collapsed: true,
 					items: [
 						{ label: 'Authentication', slug: 'authentication' },
+						{ label: 'Authorization', slug: 'authorization' },
 						{ label: 'Hashing', slug: 'hashing' },
 						{ label: 'Passwords', slug: 'passwords' },
 						{ label: 'Encryption', slug: 'encryption' },

@@ -20,7 +20,7 @@ Python web framework with Adonis-class DX, built on FastAPI/Starlette — inspir
 
 ## Status
 
-**Status:** M0–M16 closed (through Redis). Living example: [`examples/progress`](examples/progress). Next: **M17 — Encryption**.
+**Status:** M0–M19 closed (through Authorization). Living example: [`examples/progress`](examples/progress). Next: **M20 — HTTP Client**.
 
 ## Quick start (dev)
 

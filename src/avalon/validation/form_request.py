@@ -134,8 +134,16 @@ class FormRequest:
 
     def validate(self) -> None:
         self.prepare_for_validation()
-        if not self.authorize():
+        allowed = self.authorize()
+        from avalon.auth.access.exceptions import AuthorizationException
+        from avalon.auth.access.response import AuthorizationResponse
+
+        if isinstance(allowed, AuthorizationResponse):
+            allowed.authorize()
+        elif allowed is False:
             raise ForbiddenHttpException("This action is unauthorized.")
+        elif isinstance(allowed, AuthorizationException):
+            raise allowed
 
         try:
             model = self.__schema__.model_validate(self.validation_data())

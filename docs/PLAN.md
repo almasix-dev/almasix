@@ -132,7 +132,7 @@ avalon/
 - later: `from avalon.cache import Cache`
 - later: `from avalon.encryption import Crypt`
 - later: `from avalon.events import Event, dispatch as event`
-- later: `from avalon.auth import Gate, Policy`  # M19
+- `from avalon.auth import Gate, Policy`  # M19
 - later: `from avalon.http.client import Http`  # M20 naming TBD
 - later: `from avalon.process import Process`
 - later: `from avalon.concurrency import Concurrency`
@@ -1020,6 +1020,8 @@ Laravel [Authorization](https://laravel.com/docs/authorization) — Gates and Po
 
 **Gate:** Gates + Policies exhausted, docs published, progress demo of a policy, coverage ≥ 98%.
 
+**Status (M19):** Ladder exhausted — `Gate` / `gate()` / `authorize()`; policies + `Policy` / `HandlesAuthorization` / `AuthorizationResponse` (`deny_as_not_found` → 404); `before`/`after`; guest-safe signatures; `Authorizable` on `AuthenticatableMixin`; controller `authorize` / `authorizes_resource`; FormRequest bool or response; `can` middleware + `Route.can()`; Caliburn `@can` / `@cannot` / `@canany` / `@cannotany`; `grail make:policy`; Starlight Authorization; progress `progress:authorization`.
+
 ### M20 — HTTP Client
 
 Laravel [HTTP Client](https://laravel.com/docs/http-client) — outbound fluent HTTP for apps and package code.
@@ -1174,6 +1176,6 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 
 ## Next implementation focus
 
-**M18 Events gate met** — dispatcher + queued listeners + provider registration. **Next: M19** Authorization when ready. Roadmap continues **M19–M29**.
+**M19 Authorization gate met** — Gates + Policies + `@can` + `make:policy`. **Next: M20** HTTP Client when ready. Roadmap continues **M20–M29**.
 
 **Docs (anytime):** Localization page (M4 code done); Mutators & Casts Articulate how-to (M5 code done).

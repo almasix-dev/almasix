@@ -198,13 +198,17 @@ def _milestones() -> list[dict]:
         {
             "id": "M19",
             "name": "Authorization",
-            "status": "next",
-            "proof": ["Gates / Policies", "@can / @cannot", "make:policy"],
+            "status": "complete",
+            "proof": [
+                "Gate / Policy / Authorizable",
+                "@can / @cannot / can middleware",
+                "progress:authorization",
+            ],
         },
         {
             "id": "M20",
             "name": "HTTP Client",
-            "status": "planned",
+            "status": "next",
             "proof": ["Http.get/post façade", "fakes / retry / pool"],
         },
         {

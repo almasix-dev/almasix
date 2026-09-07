@@ -18,7 +18,7 @@ Surfaces owned by other packages stay on those packages:
 | Concern | Import from |
 | --- | --- |
 | Config | `avalon.config` → `config`, `env` |
-| Auth | `avalon.auth` → `auth` |
+| Auth | `avalon.auth` → `auth`, `Gate`, `authorize` |
 | Views | `avalon.caliburn` → `view` |
 | Storage | `avalon.filesystem` → `storage` / `Storage` |
 | Cache | `avalon.cache` → `cache` / `Cache` |

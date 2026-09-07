@@ -19,6 +19,17 @@ class RouteDefinition:
     name: str | None = None
     middleware: list[str] = field(default_factory=list)
 
+    def can(self, ability: str, model: str | type | None = None) -> RouteDefinition:
+        """Append ``can`` middleware (Laravel ``Route::can``)."""
+        if model is None:
+            token = f"can:{ability}"
+        elif isinstance(model, type):
+            token = f"can:{ability},{model.__module__}.{model.__qualname__}"
+        else:
+            token = f"can:{ability},{model}"
+        self.middleware.append(token)
+        return self
+
 
 @dataclass
 class _GroupOptions:

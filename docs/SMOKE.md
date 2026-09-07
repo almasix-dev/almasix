@@ -473,8 +473,22 @@ pytest -q tests/test_m18_*.py tests/smoke/test_m18_smoke.py
 
 ---
 
+## M19 — Authorization
+
+```bash
+pytest -q tests/test_m19_*.py tests/smoke/test_m19_smoke.py
+```
+
+### M19 exit criteria
+
+- [x] `Gate` façade + Policies + `Authorizable` / `authorize`
+- [x] Caliburn `@can` / `@cannot` + `can` middleware + `make:policy`
+- [x] Docs + smoke; no M20 until green
+
+---
+
 ## Out of scope until later milestones
 
-- Digging Deeper: authorization, HTTP client, processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M19–M29)
+- Digging Deeper: HTTP client, processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M20–M29)
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

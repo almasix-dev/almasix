@@ -9,6 +9,7 @@ from app.http.middleware.demo_tag_middleware import DemoTagMiddleware
 from avalon.auth import (
     Authenticate,
     AuthenticateWithBasicAuth,
+    Authorize,
     EnsureEmailIsVerified,
     RedirectIfAuthenticated,
     RequirePassword,
@@ -38,6 +39,7 @@ def configure_middleware(middleware: Middleware) -> None:
             "password.confirm": RequirePassword,
             "auth.basic": AuthenticateWithBasicAuth,
             "verified": EnsureEmailIsVerified,
+            "can": Authorize,
             "demo.tag": DemoTagMiddleware,
         }
     )
