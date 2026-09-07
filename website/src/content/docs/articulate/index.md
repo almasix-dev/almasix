@@ -104,6 +104,19 @@ def set_name_attribute(self, value: str) -> str:
 
 `appends = ("display",)` includes computed attributes in `to_dict()`.
 
+### Serialization visibility
+
+`hidden` is a denylist and `visible` an allowlist, both declared on the model. To adjust them for a single record, use the instance methods — they affect **that model only**, never the class:
+
+```python
+user.make_hidden("email").to_dict()      # hide more on this record
+user.make_visible("meta").to_dict()      # reveal a normally hidden attribute
+user.set_hidden(["email"]).to_dict()     # replace the denylist outright
+user.set_visible(["id", "name"]).to_dict()
+```
+
+Each returns the model, so they chain. Relation names may be hidden the same way.
+
 ## Dirty tracking
 
 - `is_dirty("name")` / `is_clean()` / `get_dirty()` / `get_changes()` / `get_original("name")` / `was_changed("name")`
