@@ -42,6 +42,53 @@ class SendDigest(Command):
 
 Generate a stub with `grail make:command SendDigest`.
 
+### Exit codes
+
+`handle()` may return an `int`, or nothing at all (which means success). Use the constants rather than bare numbers:
+
+```python
+def handle(self) -> int:
+    if not self.argument("user"):
+        return self.INVALID      # 2
+    return self.SUCCESS          # 0 — self.FAILURE is 1
+```
+
+To stop immediately with a message, call `fail()`. It raises `CommandFailed`, prints the message on stderr, and the command exits with `FAILURE`:
+
+```python
+if not queue_is_reachable():
+    self.fail("The queue connection is unreachable.")
+```
+
+## Closure commands
+
+Commands do not need a class. Define them in `routes/console.py`, the way Laravel defines them in `routes/console.php`:
+
+```python
+# routes/console.py
+from avalon.console import Artisan
+
+def send(user: str, queue: str) -> int:
+    print(f"Sending to {user} on {queue}")
+    return 0
+
+Artisan.command("mail:send {user} {--queue=default}", send).purpose("Send a message")
+```
+
+Parameters are filled by name from the command's arguments and options. A parameter named `command` receives the `Command` instance itself, and any parameter type-hinted with a class is resolved from the container:
+
+```python
+def report(command, reports: ReportService, format: str = "text") -> int:
+    command.info(reports.render(format))
+    return 0
+
+Artisan.command("report:daily {--format=text}", report)
+```
+
+`purpose()` (aliased as `describe()`) sets the description shown by `grail list`. Without it, the callable's first docstring line is used.
+
+## Defining input expectations
+
 ### Signature tokens
 
 | Token | Meaning |
@@ -49,13 +96,153 @@ Generate a stub with `grail make:command SendDigest`.
 | `{name}` | Required argument |
 | `{name?}` | Optional argument |
 | `{name=value}` | Optional with default |
-| `{tags...}` | Variadic |
+| `{names*}` | Argument array (all remaining values) |
+| `{names?*}` | Optional argument array |
+| `{names=*a,b}` | Argument array with defaults |
+| `{tags...}` | Variadic — Avalon's original spelling of `{tags*}` |
 | `{--flag}` | Boolean option |
-| `{--queue=default}` | Option with default |
+| `{--queue=}` | Option that accepts a value |
+| `{--queue=default}` | Option with a default |
+| `{--id=*}` | Option array — repeat the flag to collect values |
+| `{--Q\|queue=}` | Option with a `-Q` shortcut |
+| `{user : The user ID}` | Any token, with a description |
 
-### Output helpers
+Descriptions are separated by a colon surrounded by spaces, so defaults containing colons (`{--url=https://…}`) are safe.
 
-`line`, `info`, `comment`, `warn`, `error`, `success`, `table`, `confirm` — typed output helpers on `Command`.
+```python
+signature = "mail:send {user : Who to notify} {--Q|queue=default : Which queue} {--cc=*}"
+```
+
+```bash
+grail mail:send 7 -Q bulk --cc=a@example.com --cc=b@example.com
+```
+
+`--cc` arrives as `["a@example.com", "b@example.com"]`. Everything after a bare `--` is treated as a positional value.
+
+### Prompting for missing input
+
+Mix in `PromptsForMissingInput` and a required argument that was not supplied is asked for instead of erroring:
+
+```python
+from avalon.console import Command, PromptsForMissingInput
+
+class SendDigest(PromptsForMissingInput, Command):
+    signature = "mail:digest {user}"
+
+    def prompt_for_missing_arguments_using(self) -> dict:
+        return {"user": "Which user should receive the digest?"}
+```
+
+Values may be callables for full control, and `prompt_for_missing_argument(name)` can be overridden outright. Without a mapping, Avalon asks `What is the user?`. In a non-interactive shell the underlying prompt raises rather than hanging.
+
+## Command I/O
+
+### Retrieving input
+
+`argument(key, default)` and `option(key, default)` read single values; `arguments()` and `options()` return the whole bag; `has_option(key)` checks presence. Every value is also set as an attribute before `handle()` runs, so `self.user` works alongside `self.argument("user")`.
+
+### Writing output
+
+`line`, `info`, `comment`, `question`, `warn`, `error`, `success`, and `alert` write styled output (`error` goes to stderr). `new_line(count)` adds blank lines, and `table(headers, rows)` prints an aligned table.
+
+```python
+self.alert("Digest complete")
+self.table(["Queue", "Sent"], [["bulk", 128]])
+```
+
+### Progress bars
+
+`with_progress_bar()` maps over an iterable while advancing a bar, returning the results:
+
+```python
+sent = self.with_progress_bar(users, lambda user: mailer.send(user))
+```
+
+### Asking questions
+
+`ask`, `secret`, `confirm`, `anticipate`, and `choice` are the Laravel-shaped wrappers over [Prompts](/prompts/). `choice(..., multiple=True)` collects several answers.
+
+## Programmatically executing commands
+
+The `Artisan` façade runs commands from anywhere — controllers, jobs, other commands:
+
+```python
+from avalon.console import Artisan
+
+Artisan.call("mail:send 7 --queue=bulk")
+Artisan.call("mail:send", {"user": 7, "--queue": "bulk", "--cc": ["a@x.test", "b@x.test"]})
+```
+
+Keys beginning with `--` are options; a `True` boolean passes the flag and `False` omits it; lists repeat the option. `Artisan.output()` returns everything the last call printed, and `Artisan.call_silently()` runs without echoing it.
+
+To run a command on a queue worker, `await Artisan.queue()` (Avalon's queue dispatch is async):
+
+```python
+await Artisan.queue("mail:send", {"user": 7}, queue="bulk")
+```
+
+### Calling commands from other commands
+
+```python
+def handle(self) -> int:
+    self.call("cache:clear")
+    self.call_silently("queue:restart")
+    return self.SUCCESS
+```
+
+## Isolatable commands
+
+Mix in `Isolatable` and the command gains an `--isolated` flag. While one instance holds the lock, other invocations exit immediately instead of running concurrently:
+
+```python
+from avalon.console import Command, Isolatable
+
+class ImportOrders(Isolatable, Command):
+    signature = "orders:import"
+
+    def isolatable_id(self) -> str:
+        return f"orders:import:{self.option('tenant')}"
+
+    def isolation_lock_seconds(self) -> int:
+        return 300
+```
+
+```bash
+grail orders:import --isolated       # exits 0 when already running
+grail orders:import --isolated=12    # exits 12 instead
+```
+
+The lock uses the [cache](/cache/) when a store is configured, and falls back to a filesystem mutex under `storage/framework/schedule`.
+
+## Signal handling
+
+`trap()` registers OS signal handlers for long-running commands:
+
+```python
+def handle(self) -> int:
+    self.stopping = False
+    self.trap([signal.SIGTERM, signal.SIGINT], lambda _sig: setattr(self, "stopping", True))
+    while not self.stopping:
+        self.work()
+    return self.SUCCESS
+```
+
+## Events
+
+The console dispatches through the [event dispatcher](/events/):
+
+| Event | When |
+| --- | --- |
+| `ConsoleStarting` | The kernel finished discovering commands |
+| `CommandStarting` | Before `handle()` runs — carries name, arguments, options |
+| `CommandFinished` | After it returns — adds `exit_code` |
+
+```python
+from avalon.console import CommandFinished
+from avalon.events import Event
+
+Event.listen(CommandFinished, lambda event: log_duration(event.command, event.exit_code))
+```
 
 ## Discovery
 
@@ -64,6 +251,7 @@ Generate a stub with `grail make:command SendDigest`.
 1. Framework commands in `avalon.console.commands` (e.g. `inspire`)
 2. App package `app.console.commands`
 3. Files under `app/console/commands/*.py`
+4. Closure commands defined in `routes/console.py`
 
 Register extras via the container-bound `ConsoleKernel` if needed. Failed command runs report through the exception `Handler` before exiting.
 

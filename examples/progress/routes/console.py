@@ -4,7 +4,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from avalon.console import schedule
+from avalon.console import Artisan, schedule
+
+
+def _greet(name: str, loud: bool, command) -> int:
+    """M30 living example — a closure command."""
+    message = f"Hello from routes/console.py, {name}"
+    command.info(message.upper() if loud else message)
+    return 0
+
+
+Artisan.command("progress:greet {name=world} {--loud}", _greet).purpose(
+    "M30 living example — closure command"
+)
 
 
 def _heartbeat() -> None:

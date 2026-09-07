@@ -31,6 +31,13 @@ class Output:
     def success(self, message: str) -> None:
         typer.secho(message, fg=typer.colors.GREEN)
 
+    def alert(self, message: str) -> None:
+        """Laravel ``$this->alert()`` — the message inside an asterisk box."""
+        rule = "*" * (len(message) + 12)
+        typer.secho(rule, fg=typer.colors.YELLOW)
+        typer.secho(f"*     {message}     *", fg=typer.colors.YELLOW)
+        typer.secho(rule, fg=typer.colors.YELLOW)
+
     def new_line(self, count: int = 1) -> None:
         for _ in range(count):
             typer.echo("")
