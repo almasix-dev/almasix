@@ -459,8 +459,22 @@ pytest -q tests/test_m17_*.py tests/smoke/test_m17_smoke.py
 
 ---
 
+## M18 — Events
+
+```bash
+pytest -q tests/test_m18_*.py tests/smoke/test_m18_smoke.py
+```
+
+### M18 exit criteria
+
+- [x] `Event` façade + listen / dispatch / subscribe / wildcards
+- [x] Queued listeners (`ShouldQueue`) + `ShouldBroadcast` stub
+- [x] Docs + smoke; no M19 until green
+
+---
+
 ## Out of scope until later milestones
 
-- Digging Deeper: events, authorization, HTTP client, processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M18–M29)
+- Digging Deeper: authorization, HTTP client, processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M19–M29)
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

@@ -63,5 +63,3 @@ def test_m17_board_marks_encryption_complete(progress_cwd: Path) -> None:
 
     m17 = next(m for m in _milestones() if m["id"] == "M17")
     assert m17["status"] == "complete"
-    m18 = next(m for m in _milestones() if m["id"] == "M18")
-    assert m18["status"] == "next"

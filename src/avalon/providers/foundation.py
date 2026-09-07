@@ -59,6 +59,9 @@ class FoundationServiceProvider(ServiceProvider):
 
         CacheServiceProvider(app).register()
         EncryptionServiceProvider(app).register()
+        from avalon.events.provider import EventServiceProvider
+
+        EventServiceProvider(app).register()
 
     def boot(self) -> None:
         from avalon.auth.provider import AuthServiceProvider
@@ -66,6 +69,7 @@ class FoundationServiceProvider(ServiceProvider):
         from avalon.caliburn.provider import CaliburnServiceProvider
         from avalon.console.provider import ConsoleServiceProvider
         from avalon.encryption.provider import EncryptionServiceProvider
+        from avalon.events.provider import EventServiceProvider
         from avalon.exceptions.provider import ExceptionsServiceProvider
         from avalon.filesystem.provider import FilesystemServiceProvider
         from avalon.log.provider import LoggingServiceProvider
@@ -91,3 +95,4 @@ class FoundationServiceProvider(ServiceProvider):
         NotificationServiceProvider(self.app).boot()
         CacheServiceProvider(self.app).boot()
         EncryptionServiceProvider(self.app).boot()
+        EventServiceProvider(self.app).boot()

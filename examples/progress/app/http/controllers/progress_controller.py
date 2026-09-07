@@ -188,13 +188,17 @@ def _milestones() -> list[dict]:
         {
             "id": "M18",
             "name": "Events",
-            "status": "next",
-            "proof": ["dispatch / listen / subscribe", "queued listeners"],
+            "status": "complete",
+            "proof": [
+                "dispatch / listen / subscribe",
+                "queued listeners",
+                "progress:events",
+            ],
         },
         {
             "id": "M19",
             "name": "Authorization",
-            "status": "planned",
+            "status": "next",
             "proof": ["Gates / Policies", "@can / @cannot", "make:policy"],
         },
         {
