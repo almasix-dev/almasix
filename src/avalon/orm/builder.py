@@ -707,6 +707,53 @@ class QueryBuilder:
         )
         return self._push_where(boolean, _OPERATORS[operator](counted.scalar_subquery(), count))
 
+    def _guess_belongs_to(self, related: type[Any]) -> str:
+        """Find the `belongs_to` on this model that points at ``related``."""
+        from avalon.orm.model import RelationDescriptor
+        from avalon.orm.relations import BelongsTo
+
+        assert self.model is not None
+        instance = self.model()
+        for name in dir(self.model):
+            if not isinstance(getattr(self.model, name, None), RelationDescriptor):
+                continue
+            candidate = instance.get_relation(name)
+            if isinstance(candidate, BelongsTo) and candidate.related is related:
+                return name
+        raise RuntimeError(
+            f"{self.model.__name__} has no belongs_to relation to {related.__name__}"
+        )
+
+    def where_belongs_to(
+        self,
+        parent: Any,
+        relation: str | None = None,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """Constrain to children of a parent model — Laravel's ``whereBelongsTo``.
+
+        Pass one model or many; the relation name is guessed from the parent's
+        class when you leave it out.
+        """
+        from avalon.orm.model import Model as ModelBase
+
+        if self.model is None:
+            raise RuntimeError("Relation constraints require a model")
+
+        parents = [parent] if isinstance(parent, ModelBase) else list(parent)
+        if not parents:
+            raise ValueError("where_belongs_to needs at least one parent model")
+
+        name = relation or self._guess_belongs_to(type(parents[0]))
+        relation_obj = self.model().get_relation(name)
+        keys = [model.get_raw_attribute(relation_obj.owner_key) for model in parents]
+        if len(keys) == 1:
+            return self._push_where(boolean, self.column(relation_obj.foreign_key) == keys[0])
+        return self._push_where(boolean, self.column(relation_obj.foreign_key).in_(keys))
+
+    def or_where_belongs_to(self, parent: Any, relation: str | None = None) -> QueryBuilder:
+        return self.where_belongs_to(parent, relation, boolean="or")
+
     # --- morph to existence -------------------------------------------------
 
     def has_morph(

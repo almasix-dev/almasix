@@ -182,3 +182,57 @@ async def load_aggregates(
             column,
             callback,
         )
+
+
+def _morph_groups(models: Sequence[Any], relation_name: str) -> dict[type[Any], list[Any]]:
+    """Bucket the loaded `morph_to` targets by their concrete class."""
+    groups: dict[type[Any], list[Any]] = {}
+    for model in models:
+        target = model.get_relations().get(relation_name)
+        if target is not None:
+            groups.setdefault(type(target), []).append(target)
+    return groups
+
+
+def _morph_spec(spec: Mapping[Any, Any], group: type[Any]) -> Any:
+    """The relations asked for a given morph target class."""
+    for key, relations in spec.items():
+        if key is group or (isinstance(key, str) and key == group.__name__):
+            return relations
+    return None
+
+
+async def load_morph(
+    models: Sequence[Any],
+    relation_name: str,
+    spec: Mapping[Any, Any],
+) -> None:
+    """Eager load per-type relations behind a `morph_to` — ``loadMorph``.
+
+    A `morph_to` points at different classes on different rows, so one relation
+    list cannot fit them all; the spec maps each target class to its own.
+    """
+    if not models:
+        return
+    await eager_load(models, [relation_name])
+    for group, targets in _morph_groups(models, relation_name).items():
+        relations = _morph_spec(spec, group)
+        if relations:
+            await eager_load(targets, relations)
+
+
+async def load_morph_aggregate(
+    models: Sequence[Any],
+    relation_name: str,
+    spec: Mapping[Any, Any],
+    function: str = "count",
+    column: str | None = None,
+) -> None:
+    """Aggregate per-type relations behind a `morph_to` — ``loadMorphCount``."""
+    if not models:
+        return
+    await eager_load(models, [relation_name])
+    for group, targets in _morph_groups(models, relation_name).items():
+        relations = _morph_spec(spec, group)
+        if relations:
+            await load_aggregates(targets, relations, function, column)

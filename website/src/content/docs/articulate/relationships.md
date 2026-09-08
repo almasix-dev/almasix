@@ -262,6 +262,31 @@ missing from the map, which is how you keep class names from leaking into new
 tables. A row whose type column is empty resolves to `None`; a stored type the
 map does not know is an error.
 
+## Dynamic relationships
+
+A package can relate your models to its own without editing them:
+
+```python
+# app/providers/app_service_provider.py
+User.resolve_relation_using("subscription", lambda user: user.has_one(Subscription))
+```
+
+The relation then behaves like a declared one: `user.subscription()` queries it,
+`with_("subscription")` loads it, and reading it unloaded still raises.
+
+## Querying a relationship's parent
+
+When you already hold the parent, `where_belongs_to` reads better than digging
+out its key. The relation is guessed from the parent's class:
+
+```python
+await Post.query().where_belongs_to(user).get()
+await Post.query().where_belongs_to(user, "author").get()   # name it explicitly
+```
+
+Pass a collection or list to match any of several parents, and use
+`or_where_belongs_to` for the `OR` form.
+
 ## Querying relationship existence
 
 ```python
@@ -440,6 +465,41 @@ await user.load_missing("profile")     # skips what is already loaded
 await users.load("posts")              # a whole Collection, still one query
 ```
 
+### Eager loading by default
+
+A relation that every read needs can be declared on the model, so it loads on
+each `query()` without being asked for:
+
+```python
+class Post(Model):
+    with_ = ("author",)
+```
+
+`new_query()` skips the defaults for the rare read that does not want them, and
+`without("author")` drops one of them from a query you are already building.
+
+### Behind a morph to
+
+A `morph_to` points at a different class on each row, so one relation list
+cannot fit them all. `load_morph` takes a relation per target class:
+
+```python
+comments = await Comment.query().get()
+
+await comments.load_morph("commentable", {
+    Post: ["author"],
+    Video: ["channel"],
+})
+
+await comments.load_morph_count("commentable", {
+    Post: ["comments"],
+    Video: ["clips"],
+})
+```
+
+Types you leave out of the mapping are loaded as-is. Both methods also work on
+a single model. String class names work in place of the classes themselves.
+
 ### Preventing N+1 by default
 
 Laravel lazy-loads on property access and offers `preventLazyLoading()` to turn
@@ -478,6 +538,23 @@ await post.comments().update_or_create({"body": "old"}, {"body": "new"})
 `associate` and `dissociate` set and clear the foreign key on a `belongs_to`
 child.
 
+### Saving a whole graph
+
+`push` saves the model and every relation already loaded on it, however deep:
+
+```python
+post = await Post.query().with_("comments.author").first()
+post.title = "Edited"
+post.comments[0].body = "Also edited"
+
+await post.push()          # post, comments, and their authors
+```
+
+It stops and returns `False` as soon as a save is cancelled by a `saving`
+listener. Relations that hold each other — a chaperoned child pointing back at
+its parent — are saved once rather than walked in circles.
+
+
 ## Touching parent timestamps
 
 When a child changes, the parent's `updated_at` often should change too — a
@@ -507,3 +584,13 @@ When a related model uses soft deletes, put the mixin **before** `Model` so the 
 class Post(SoftDeletes, Model):
     ...
 ```
+
+## Not shipped yet
+
+Two things on Laravel's page are deliberately absent:
+
+- **Scoped relationships** (`withAttributes`), which push a relation's
+  constraints into the models it creates, land with the subquery work in M42.
+- **Automatic eager loading** (`automaticallyEagerLoadRelationships`) has no
+  counterpart, because Avalon does not lazy-load in the first place — see
+  [preventing N+1 by default](#preventing-n1-by-default).

@@ -155,6 +155,7 @@ class Model(metaclass=ModelMeta):
 
     _events: ClassVar[dict[str, list[Callable[..., Any]]]] = {}
     _global_scopes: ClassVar[dict[str, Callable[[QueryBuilder], Any]]] = {}
+    _dynamic_relations: ClassVar[dict[str, Callable[[Model], Any]]] = {}
 
     def __init__(self, attributes: Mapping[str, Any] | None = None, **kwargs: Any) -> None:
         self._attributes: dict[str, Any] = {}
@@ -546,6 +547,10 @@ class Model(metaclass=ModelMeta):
         if callable(accessor):
             return self.get_attribute(name)
 
+        dynamic = type(self)._dynamic_relations.get(name)
+        if dynamic is not None:
+            return PendingRelation(self, dynamic, name)
+
         # A declared relation that was never loaded must fail loudly.
         # Unreachable for class methods (normal lookup finds them before __getattr__);
         # retained for plain callables stashed only on the type without a descriptor.
@@ -680,6 +685,27 @@ class Model(metaclass=ModelMeta):
             await self._fire_event("saved")
             await self.touch_owners()
         return saved
+
+    async def push(self, _seen: set[int] | None = None) -> bool:
+        """Save this model and every loaded relation — Laravel's ``push``.
+
+        Chaperoned children hold a reference back to their parent, so the walk
+        tracks what it has already saved rather than looping forever.
+        """
+        seen = _seen if _seen is not None else set()
+        if id(self) in seen:
+            return True
+        seen.add(id(self))
+
+        if not await self.save():
+            return False
+
+        for value in list(self._relations.values()):
+            group = value if isinstance(value, Collection) else [value]
+            for related in group:
+                if isinstance(related, Model) and not await related.push(seen):
+                    return False
+        return True
 
     async def touch_owners(self) -> None:
         """Bump `updated_at` on the relations named in `touches`."""
@@ -835,11 +861,23 @@ class Model(metaclass=ModelMeta):
 
     # --- relations ----------------------------------------------------------
 
+    @classmethod
+    def resolve_relation_using(cls, name: str, callback: Callable[[Model], Any]) -> None:
+        """Define a relation from outside the class — ``resolveRelationUsing``.
+
+        Useful when a package needs to relate your models to its own without
+        editing them.
+        """
+        cls._dynamic_relations = {**cls._dynamic_relations, name: callback}
+
     def get_relation(self, name: str) -> Any:
         """Build the relation object itself, ignoring any loaded value."""
         declared = getattr(type(self), name, None)
         if isinstance(declared, RelationDescriptor):
             return declared.build(self)
+        dynamic = type(self)._dynamic_relations.get(name)
+        if dynamic is not None:
+            return dynamic(self)
         if declared is None:
             raise AttributeError(f"{type(self).__name__} has no relation {name!r}")
         if callable(declared):
@@ -870,6 +908,20 @@ class Model(metaclass=ModelMeta):
         pending = [name for name in relations if not self.relation_loaded(name.split(".")[0])]
         if pending:
             await self.load(*pending)
+        return self
+
+    async def load_morph(self, relation: str, spec: Mapping[Any, Any]) -> Model:
+        """Eager load per-type relations behind a `morph_to` (``loadMorph``)."""
+        from avalon.orm.eager import load_morph
+
+        await load_morph([self], relation, spec)
+        return self
+
+    async def load_morph_count(self, relation: str, spec: Mapping[Any, Any]) -> Model:
+        """Count per-type relations behind a `morph_to` (``loadMorphCount``)."""
+        from avalon.orm.eager import load_morph_aggregate
+
+        await load_morph_aggregate([self], relation, spec)
         return self
 
     async def load_aggregate(

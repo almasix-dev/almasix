@@ -556,7 +556,11 @@ pytest -q tests/test_m41_*.py tests/smoke/test_m41_smoke.py
 - [x] Morph maps: `morph_map` / `enforce_morph_map`, `morph_to` without an explicit types dict, null types resolving to `None`
 - [x] Touching: `touches`, `without_touching`, `without_touching_on`
 - [x] Relation write helpers: `make` / `make_many` / `create_quietly` / `first_or_new` / `find_or_new` / `update_or_create`
-- [x] `articulate/relationships` rewritten in Laravel section order, with the N+1 deviation documented
+- [x] Whole-graph writes: `push()` saves loaded relations depth-first, stops on a cancelled save, and survives chaperoned cycles
+- [x] Parent queries: `where_belongs_to` / `or_where_belongs_to` with a guessed or named relation, one parent or many
+- [x] Dynamic relations: `resolve_relation_using` relations query, eager-load, and still refuse to lazy-load
+- [x] Morph loading: `load_morph` / `load_morph_count` take a relation list per target class on both `Model` and `Collection`
+- [x] `articulate/relationships` rewritten in Laravel section order, with the N+1 deviation documented and the two unimplemented sections (`withAttributes`, `automaticallyEagerLoadRelationships`) named
 - [x] Living example: `/api/orm` relationship tour (pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates, existence queries); milestone board covers M0–M48 with `partial` statuses
 
 ---

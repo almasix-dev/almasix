@@ -36,12 +36,23 @@ def test_m41_docs_cover_the_laravel_sections() -> None:
         "## Chaperone",
         "## Many to many: the intermediate table",
         "## Custom polymorphic types",
+        "## Dynamic relationships",
+        "## Querying a relationship's parent",
         "## Querying relationship existence",
         "## Aggregating related models",
         "## Eager loading",
+        "### Eager loading by default",
+        "### Behind a morph to",
+        "## Inserting and updating related models",
+        "### Saving a whole graph",
         "## Touching parent timestamps",
     ):
         assert heading in page, heading
+
+    # What we did not build is named rather than left for the reader to discover.
+    assert "## Not shipped yet" in page
+    assert "withAttributes" in page
+    assert "automaticallyEagerLoadRelationships" in page
 
 
 def test_m41_orm_tour_exercises_the_new_relationship_surface(
