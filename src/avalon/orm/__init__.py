@@ -1,7 +1,13 @@
 """Eloquent-like ORM over SQLAlchemy Core (async-first)."""
 
+from avalon.orm.attributes import Attribute, attribute
 from avalon.orm.builder import ModelNotFoundError, QueryBuilder
-from avalon.orm.casts import CastError
+from avalon.orm.casts import (
+    CastError,
+    CastsAttributes,
+    CastsInboundAttributes,
+    EnumCollection,
+)
 from avalon.orm.collection import Collection
 from avalon.orm.connection import Connection, DatabaseManager
 from avalon.orm.facade import DB, get_manager, raw, set_manager
@@ -46,12 +52,16 @@ __all__ = [
     "DB",
     "BelongsTo",
     "BelongsToMany",
+    "Attribute",
     "Blueprint",
     "CastError",
+    "CastsAttributes",
+    "CastsInboundAttributes",
     "Collection",
     "Connection",
     "DatabaseManager",
     "DatabaseServiceProvider",
+    "EnumCollection",
     "HasMany",
     "HasManyThrough",
     "HasOne",
@@ -76,6 +86,7 @@ __all__ = [
     "SimplePaginator",
     "SoftDeletes",
     "WithoutModelEvents",
+    "attribute",
     "get_manager",
     "guess_migration",
     "invoke_seeder",

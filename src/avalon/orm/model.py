@@ -4,11 +4,19 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, ClassVar
 
+from avalon.orm.attributes import Attribute
 from avalon.orm.builder import ModelNotFoundError, QueryBuilder
-from avalon.orm.casts import cast_value, serialize_value, uncast_value
+from avalon.orm.casts import (
+    CastsAttributes,
+    cast_format,
+    cast_value,
+    prepare_for_storage,
+    resolve_cast,
+    serialize_value,
+)
 from avalon.orm.collection import Collection
 from avalon.orm.inflector import foreign_key, snake, table_name
 
@@ -58,6 +66,15 @@ class ModelMeta(type):
         # Each subclass owns its listeners and scopes; never share the parent's.
         cls._events = {event: [] for event in EVENTS}
         cls._global_scopes = {}
+        cls._attribute_casters = {}
+
+        for base in reversed(bases):
+            inherited_casters = getattr(base, "_attribute_casters", None)
+            if inherited_casters:
+                cls._attribute_casters.update(inherited_casters)
+        for key, value in namespace.items():
+            if isinstance(value, Attribute):
+                cls._attribute_casters[key] = value
 
         for base in reversed(bases):
             inherited_scopes = getattr(base, "_global_scopes", None)
@@ -96,7 +113,10 @@ class Model(metaclass=ModelMeta):
     hidden: ClassVar[tuple[str, ...]] = ()
     visible: ClassVar[tuple[str, ...]] = ()
     appends: ClassVar[tuple[str, ...]] = ()
-    casts: ClassVar[dict[str, Any]] = {}
+    # A dict, or a classmethod returning one (Laravel's `casts()`).
+    casts: ClassVar[Any] = {}
+    # strftime format for serialized dates; None means ISO-8601.
+    date_format: ClassVar[str | None] = None
     attributes: ClassVar[dict[str, Any]] = {}
     with_: ClassVar[tuple[str, ...]] = ()
     # When True, `await model.rel` lazy-loads that relation. Attribute use
@@ -115,6 +135,8 @@ class Model(metaclass=ModelMeta):
         # None means "use the class attribute" — overrides stay per instance.
         self._hidden: tuple[str, ...] | None = None
         self._visible: tuple[str, ...] | None = None
+        self._cast_overrides: dict[str, Any] = {}
+        self._attribute_cache: dict[str, Any] = {}
 
         defaults = dict(type(self).attributes)
         if defaults:
@@ -272,7 +294,40 @@ class Model(metaclass=ModelMeta):
     def _totally_guarded(cls) -> bool:
         return not cls.fillable and tuple(cls.guarded) == ("*",)
 
+    # --- casting ------------------------------------------------------------
+
+    @classmethod
+    def class_casts(cls) -> dict[str, Any]:
+        """Declared casts, whether `casts` is a dict or a `casts()` method."""
+        declared = cls.casts
+        if callable(declared):
+            declared = declared(cls) if _accepts_argument(declared) else declared()
+        return dict(declared or {})
+
+    def get_casts(self) -> dict[str, Any]:
+        """Effective casts — declared casts plus any query-time overrides."""
+        return {**type(self).class_casts(), **self._cast_overrides}
+
+    def merge_casts(self, casts: Mapping[str, Any]) -> Model:
+        """Add casts to this instance only (Laravel's ``mergeCasts``)."""
+        self._cast_overrides.update(casts)
+        return self
+
+    def has_cast(self, key: str) -> bool:
+        return key in self.get_casts()
+
+    def _caster(self, key: str) -> Attribute | None:
+        return type(self)._attribute_casters.get(key)
+
+    # --- attribute access ---------------------------------------------------
+
     def set_attribute(self, key: str, value: Any) -> None:
+        caster = self._caster(key)
+        if caster is not None:
+            for name, written in caster.set_value(self, key, value).items():
+                self._write_attribute(name, written)
+            return
+
         mutator = getattr(self, f"set_{key}_attribute", None)
         if callable(mutator):
             mutated = mutator(value)
@@ -280,21 +335,44 @@ class Model(metaclass=ModelMeta):
                 value = mutated
             else:
                 return
-        casts = type(self).casts
-        if key in casts:
-            value = uncast_value(cast_value(value, casts[key]), casts[key])
+        self._write_attribute(key, value)
+
+    def _write_attribute(self, key: str, value: Any) -> None:
+        """Store a value, applying whichever cast is declared for the key."""
+        self._attribute_cache.pop(key, None)
+        cast = self.get_casts().get(key)
+        if cast is not None:
+            resolved = resolve_cast(cast)
+            if isinstance(resolved, CastsAttributes):
+                result = resolved.set(self, key, value, self.get_attributes())
+                if isinstance(result, Mapping):
+                    self._attributes.update(result)
+                    return
+                self._attributes[key] = result
+                return
+            value = prepare_for_storage(value, resolved)
         self._attributes[key] = value
 
     def get_attribute(self, key: str, default: Any = None) -> Any:
+        caster = self._caster(key)
         if key in self._attributes:
-            value = self._attributes[key]
-            casts = type(self).casts
-            if key in casts:
-                value = cast_value(value, casts[key])
+            value = self._cast_for_read(key, self._attributes[key])
+            if caster is not None:
+                return caster.get_value(self, key, value)
             accessor = getattr(self, f"get_{key}_attribute", None)
             if callable(accessor):
                 return accessor(value)
             return value
+
+        if caster is not None and caster.has_getter():
+            return caster.get_value(self, key, None)
+
+        # A class cast may compose other columns, so it has no column itself.
+        cast = self.get_casts().get(key)
+        if cast is not None:
+            resolved = resolve_cast(cast)
+            if isinstance(resolved, CastsAttributes):
+                return resolved.get(self, key, None, self.get_attributes())
 
         accessor = getattr(self, f"get_{key}_attribute", None)
         if callable(accessor):
@@ -303,6 +381,15 @@ class Model(metaclass=ModelMeta):
         if key in self._relations:
             return self._relations[key]
         return self._extra.get(key, default)
+
+    def _cast_for_read(self, key: str, value: Any) -> Any:
+        cast = self.get_casts().get(key)
+        if cast is None:
+            return value
+        resolved = resolve_cast(cast)
+        if isinstance(resolved, CastsAttributes):
+            return resolved.get(self, key, value, self.get_attributes())
+        return cast_value(value, resolved)
 
     def get_raw_attribute(self, key: str, default: Any = None) -> Any:
         return self._attributes.get(key, default)
@@ -317,7 +404,7 @@ class Model(metaclass=ModelMeta):
         relations = self.__dict__.get("_relations", {})
         extra = self.__dict__.get("_extra", {})
 
-        if name in attributes or name in type(self).casts:
+        if name in attributes or name in self.get_casts():
             return self.get_attribute(name)
         if name in relations:
             return relations[name]
@@ -403,8 +490,10 @@ class Model(metaclass=ModelMeta):
     # --- hydration ----------------------------------------------------------
 
     @classmethod
-    def _hydrate(cls, row: Mapping[str, Any]) -> Model:
+    def _hydrate(cls, row: Mapping[str, Any], casts: Mapping[str, Any] | None = None) -> Model:
         instance = cls()
+        if casts:
+            instance._cast_overrides.update(casts)
         instance._attributes = dict(row)
         instance._exists = True
         instance.sync_original()
@@ -732,6 +821,18 @@ class Model(metaclass=ModelMeta):
         """Effective visible allowlist — instance override, else the class."""
         return self._visible if self._visible is not None else tuple(type(self).visible)
 
+    def serialize_date(self, value: date) -> str:
+        """Format a date for `to_dict()` — override to change the default."""
+        fmt = type(self).date_format
+        return value.strftime(fmt) if fmt else value.isoformat()
+
+    def _serialize(self, key: str, value: Any) -> Any:
+        """Serialize one attribute — a cast format wins, else `serialize_date`."""
+        cast = self.get_casts().get(key)
+        if isinstance(value, (datetime, date)) and cast_format(cast) is None:
+            return self.serialize_date(value)
+        return serialize_value(value, cast)
+
     def attributes_to_dict(self) -> dict[str, Any]:
         cls = type(self)
         hidden = self.get_hidden()
@@ -742,14 +843,14 @@ class Model(metaclass=ModelMeta):
                 continue
             if key in hidden:
                 continue
-            data[key] = serialize_value(self.get_attribute(key))
+            data[key] = self._serialize(key, self.get_attribute(key))
         for key in cls.appends:
             if key in hidden:
                 continue
-            data[key] = serialize_value(self.get_attribute(key))
+            data[key] = self._serialize(key, self.get_attribute(key))
         for key, value in self._extra.items():
             if key not in hidden:
-                data[key] = serialize_value(value)
+                data[key] = self._serialize(key, value)
         return data
 
     def relations_to_dict(self) -> dict[str, Any]:

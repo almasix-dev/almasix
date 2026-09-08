@@ -89,20 +89,21 @@ class User(Model):
     hidden = ("meta",)
 ```
 
-Known cast names: `int`, `float`, `string`, `bool`, `decimal[:scale]`, `json` / `array` / `dict`, `datetime`, `date`, `time`, `timestamp`, or an `Enum` class.
+Known cast names: `int`, `float`, `string`, `bool`, `decimal[:scale]`, `json` / `array` / `dict`, `date`, `datetime`, `time`, `timestamp`, `encrypted[:array]`, `hashed`, an `Enum` class, or a custom cast class.
 
 ### Accessors and mutators
 
 ```python
 # app/models/user.py
-def get_display_attribute(self, value=None) -> str:
-    return f"{self.name} <{self.email}>"
+from avalon.orm import Attribute
 
-def set_name_attribute(self, value: str) -> str:
-    return value.strip()
+class User(Model):
+    name = Attribute(get=lambda value: value.title(), set=lambda value: value.strip())
 ```
 
-`appends = ("display",)` includes computed attributes in `to_dict()`.
+The `get_<name>_attribute` / `set_<name>_attribute` methods work too, and `appends = ("display",)` includes computed attributes in `to_dict()`.
+
+See [Mutators & Casts](/articulate/casts/) for attribute objects, custom casts, encrypted and hashed casts, date formats, and query-time casting.
 
 ### Serialization visibility
 
@@ -147,6 +148,7 @@ If you know Laravel Eloquent, Articulate will feel familiar — same Active Reco
 ## Next steps
 
 - [Relationships](/articulate/relationships/)
+- [Mutators & Casts](/articulate/casts/)
 - [Collections](/articulate/collections/)
 - [Soft Deletes & Events](/articulate/events/)
 - [Query Builder](/database/queries/)

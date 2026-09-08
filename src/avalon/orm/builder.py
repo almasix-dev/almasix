@@ -90,6 +90,7 @@ class QueryBuilder:
         self._eager_counts: list[tuple[str, str]] = []
         self._without_scopes: set[str] = set()
         self._all_scopes_disabled = False
+        self._casts: dict[str, Any] = {}
 
     # --- plumbing -----------------------------------------------------------
 
@@ -117,6 +118,7 @@ class QueryBuilder:
         clone._eager_counts = list(self._eager_counts)
         clone._without_scopes = set(self._without_scopes)
         clone._all_scopes_disabled = self._all_scopes_disabled
+        clone._casts = dict(self._casts)
         return clone
 
     def _table_clause(self, name: str) -> TableClause:
@@ -472,6 +474,12 @@ class QueryBuilder:
             self._eager.pop(relation, None)
         return self
 
+    def with_casts(self, casts: Mapping[str, Any]) -> QueryBuilder:
+        """Cast columns for this query only — Laravel's ``withCasts``."""
+        clone = self.clone()
+        clone._casts.update(casts)
+        return clone
+
     def with_count(self, *relations: str) -> QueryBuilder:
         for relation in relations:
             alias = f"{relation}_count"
@@ -586,7 +594,7 @@ class QueryBuilder:
         rows = await self.get_raw()
         if self.model is None:
             return Collection(rows)
-        models = [self.model._hydrate(row) for row in rows]
+        models = [self.model._hydrate(row, casts=self._casts) for row in rows]
         if models and (self._eager or self._eager_counts):
             await self._load_eager(models)
         return Collection(models)
