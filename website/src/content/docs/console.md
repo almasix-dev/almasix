@@ -244,16 +244,66 @@ from avalon.events import Event
 Event.listen(CommandFinished, lambda event: log_duration(event.command, event.exit_code))
 ```
 
-## Discovery
+## Stub customization
 
-`ConsoleKernel` loads:
+Every generator — `make:model`, `make:controller`, `make:migration`, and the rest — renders a `.stub` file. Publish them to change what your application generates:
+
+```bash
+grail stub:publish
+grail stub:publish --force   # overwrite stubs you have already published
+```
+
+The stubs land in `stubs/` at your project root. A generator prefers your copy and falls back to the framework's, so publish only the ones you want to change and delete the rest:
+
+```
+stubs/
+├── model.stub
+├── controller.stub
+├── migration.stub
+└── …
+```
+
+Placeholders are `{{ name }}`-style tokens, filled by the generator that renders the stub.
+
+## Publishing package files
+
+A service provider offers files to the application with `publishes()`, and the user copies them when they choose:
+
+```python
+class CourierServiceProvider(ServiceProvider):
+    def boot(self) -> None:
+        here = Path(__file__).parent
+        self.publishes({here / "config" / "courier.py": self.app.path("config", "courier.py")}, "courier-config")
+```
+
+```bash
+grail vendor:publish                                  # choose from a list
+grail vendor:publish --tag=courier-config
+grail vendor:publish --provider=courier.CourierServiceProvider
+grail vendor:publish --tag=courier-config --force     # overwrite what is there
+```
+
+Declaring a path copies nothing on its own. Avalon publishes its own stubs and language files this way, under the `avalon-stubs` and `avalon-lang` tags.
+
+## Registering commands
+
+`ConsoleKernel` finds commands in four places, in order:
 
 1. Framework commands in `avalon.console.commands` (e.g. `inspire`)
-2. App package `app.console.commands`
-3. Files under `app/console/commands/*.py`
+2. The application package `app.console.commands`
+3. Files under `app/console/commands/*.py`, when that directory is not an importable package
 4. Closure commands defined in `routes/console.py`
 
-Register extras via the container-bound `ConsoleKernel` if needed. Failed command runs report through the exception `Handler` before exiting.
+There is no list to maintain: a `Command` subclass with a `signature` in one of those places is a command. Everything Grail can run is a `Command` class, which is why `Artisan.call`, the scheduler, and the CLI all reach exactly the same set.
+
+A command module that fails to import does not take the rest of the CLI down with it. Grail reports it and carries on:
+
+```
+Some commands could not be loaded:
+  app.console.commands.broken: ModuleNotFoundError: No module named 'nowhere'
+```
+
+Failed command *runs* report through the exception `Handler` before exiting.
 
 ## Fiddle REPL
 
@@ -311,6 +361,28 @@ pip install -e '.[dev]'
 ```
 
 Preloaded names typically include `app`, `config`, `Route`, `url`, `DB`, `Model`, `log`, `run`, and app models such as `User` / `Post` when present.
+
+### Choosing what Fiddle preloads
+
+`config/fiddle.py` decides what is waiting for you in the shell:
+
+```python
+config = {
+    # Commands to have as callables: "inspire" → inspire()
+    "commands": ["inspire"],
+    # Extra names to import, as name -> dotted path
+    "alias": {"Str": "avalon.support.Str"},
+    # Names to keep out, even if a model would have claimed them
+    "dont_alias": ["Post"],
+}
+```
+
+Your models under `app/models` are aliased automatically; `dont_alias` wins over everything, including `alias`. A command listed in `commands` becomes a callable — `:` and `-` become `_`, arguments are positional, and options are keywords:
+
+```python
+inspire()
+queue_work(once=True)     # grail queue:work --once
+```
 
 ## Prompts
 
