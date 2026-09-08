@@ -66,12 +66,13 @@ def _milestones() -> list[dict]:
         },
         {
             "id": "M5",
-            "name": "ORM",
-            "status": "complete",
+            "name": "Articulate ORM",
+            "status": "partial",
             "proof": [
                 "GET /api/orm feature tour",
                 "eager load / soft deletes / pivot / morphs",
                 "grail migrate / make:model",
+                "ladder shipped — query builder + schema owed by M42/M43",
             ],
         },
         {
@@ -218,7 +219,7 @@ def _milestones() -> list[dict]:
         {
             "id": "M21",
             "name": "Processes",
-            "status": "next",
+            "status": "planned",
             "proof": ["Process::run / pool", "subprocess fakes"],
         },
         {
@@ -269,17 +270,158 @@ def _milestones() -> list[dict]:
             "status": "planned",
             "proof": ["provider discovery", "publish tags", "package guidelines"],
         },
+        {
+            "id": "M30",
+            "name": "Grail Console exhaust",
+            "status": "partial",
+            "proof": [
+                "full signature parser + option shortcuts",
+                "Artisan.call / queue / output + closure commands",
+                "--isolated locks · trap · with_progress_bar",
+                "progress:console · progress:import",
+                "owed: one command surface · stub:publish · built-ins",
+            ],
+        },
+        {
+            "id": "M31",
+            "name": "Task scheduling exhaust",
+            "status": "planned",
+            "proof": ["frequency + hook vocabulary", "schedule:list / schedule:test"],
+        },
+        {
+            "id": "M32",
+            "name": "Installer + scaffold stacks",
+            "status": "planned",
+            "proof": ["interactive avalon new", "tailwind / bootstrap / plain CSS"],
+        },
+        {
+            "id": "M33",
+            "name": "Routing DX + named routes",
+            "status": "planned",
+            "proof": ["match / any / fallback / redirect", "route() + resources"],
+        },
+        {
+            "id": "M34",
+            "name": "Security headers + CORS",
+            "status": "planned",
+            "proof": ["header middleware", "CORS middleware"],
+        },
+        {
+            "id": "M35",
+            "name": "Rate limiting",
+            "status": "planned",
+            "proof": ["RateLimiter façade", "throttle middleware"],
+        },
+        {
+            "id": "M36",
+            "name": "Starter kits",
+            "status": "planned",
+            "proof": ["web / API / SPA kits"],
+        },
+        {
+            "id": "M37",
+            "name": "API tokens + social auth",
+            "status": "planned",
+            "proof": ["Sanctum-class tokens", "Socialite-class providers"],
+        },
+        {
+            "id": "M38",
+            "name": "Deployment + production ops",
+            "status": "planned",
+            "proof": ["grail serve --workers", "optimize / cache warm"],
+        },
+        {
+            "id": "M39",
+            "name": "Docs versioning + Prologue",
+            "status": "planned",
+            "proof": ["major-version switching", "Prologue sidebar group"],
+        },
+        {
+            "id": "M40",
+            "name": "Articulate model exhaust",
+            "status": "complete",
+            "proof": [
+                "Attribute accessors + custom casts",
+                "encrypted / hashed casts · with_casts",
+                "User.display_name append · GET /api/users",
+                "Prunable Post + grail model:prune",
+                "UUID/ULID keys · strictness · quiet writes",
+            ],
+        },
+        {
+            "id": "M41",
+            "name": "Relationship exhaust",
+            "status": "complete",
+            "proof": [
+                "GET /api/orm relationship tour",
+                "pivot objects · using / as_ / with_timestamps",
+                "with_sum / with_exists · load_count family",
+                "latest_of_many · with_default · chaperone",
+                "morph maps · touches · where_has_morph",
+            ],
+        },
+        {
+            "id": "M42",
+            "name": "Query builder + database exhaust",
+            "status": "next",
+            "proof": [
+                "unions · locking · JSON wheres",
+                "read/write connections · DB.listen",
+                "db:show / db:table / db:monitor",
+            ],
+        },
+        {
+            "id": "M43",
+            "name": "Schema, migrations, pagination",
+            "status": "planned",
+            "proof": ["column alteration", "cursor pagination", "migrate:refresh"],
+        },
+        {
+            "id": "M44",
+            "name": "Multi-engine database CI",
+            "status": "planned",
+            "proof": ["Postgres + MySQL test matrix"],
+        },
+        {
+            "id": "M45",
+            "name": "Caliburn language support",
+            "status": "planned",
+            "proof": [".cal.html grammar", "syntax highlighting"],
+        },
+        {
+            "id": "M46",
+            "name": "Avalon Language Server",
+            "status": "planned",
+            "proof": ["avalon-lsp", "completion + go-to-definition"],
+        },
+        {
+            "id": "M47",
+            "name": "Editor integrations + stubs",
+            "status": "planned",
+            "proof": ["VS Code + JetBrains plugins", "grail ide:stubs"],
+        },
+        {
+            "id": "M48",
+            "name": "AI agent support",
+            "status": "planned",
+            "proof": ["grail mcp server", "agent guidelines"],
+        },
     ]
+
+
+def _count(milestones: list[dict], status: str) -> int:
+    return len([m for m in milestones if m["status"] == status])
 
 
 def _board() -> dict:
     milestones = _milestones()
-    complete = [m for m in milestones if m["status"] == "complete"]
     return {
         "framework": "avalon",
         "version": __version__,
         "app": str(config("app.name")),
-        "completed": len(complete),
+        "completed": _count(milestones, "complete"),
+        "in_progress": _count(milestones, "partial"),
+        "planned": _count(milestones, "planned") + _count(milestones, "next"),
         "total": len(milestones),
         "milestones": milestones,
     }
@@ -292,16 +434,18 @@ class ProgressController(Controller):
             {**m, "proof_text": ", ".join(m["proof"])}
             for m in board["milestones"]
         ]
+        upcoming = next((m["id"] for m in board["milestones"] if m["status"] == "next"), None)
         return view(
             "progress",
             {
                 "completed": board["completed"],
+                "in_progress": board["in_progress"],
                 "total": board["total"],
+                "next_id": upcoming,
                 "version": board["version"],
                 "milestones": milestones,
                 "home_url": url("/", absolute=False),
                 "api_url": url("/api/progress", absolute=False),
-                "version": board["version"],
             },
         )
 

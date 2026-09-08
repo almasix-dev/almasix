@@ -542,7 +542,7 @@ pytest -q tests/test_m40_*.py tests/smoke/test_m40_smoke.py
 ## M41 — Relationship exhaust
 
 ```bash
-pytest -q tests/test_m41_*.py
+pytest -q tests/test_m41_*.py tests/smoke/test_m41_smoke.py
 ```
 
 ### M41 exit criteria
@@ -557,6 +557,7 @@ pytest -q tests/test_m41_*.py
 - [x] Touching: `touches`, `without_touching`, `without_touching_on`
 - [x] Relation write helpers: `make` / `make_many` / `create_quietly` / `first_or_new` / `find_or_new` / `update_or_create`
 - [x] `articulate/relationships` rewritten in Laravel section order, with the N+1 deviation documented
+- [x] Living example: `/api/orm` relationship tour (pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates, existence queries); milestone board covers M0–M48 with `partial` statuses
 
 ---
 

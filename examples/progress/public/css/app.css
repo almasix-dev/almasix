@@ -318,6 +318,10 @@ code,
   color: var(--warn);
 }
 
+.status.partial {
+  color: var(--accent);
+}
+
 .status.planned {
   color: var(--muted);
 }
