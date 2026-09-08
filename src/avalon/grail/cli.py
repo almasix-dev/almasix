@@ -424,54 +424,199 @@ def list_commands() -> None:
         typer.secho(f"(command discovery skipped: {exc})", fg=typer.colors.YELLOW)
 
 
-@app.command("schedule:run")
-def schedule_run() -> None:
-    """Run due scheduled events once (for cron)."""
+def _scheduler():
+    """Boot the app, load ``routes/console.py``, and hand back what runs tasks."""
     from avalon.console.kernel import ConsoleKernel
-    from avalon.console.scheduling import run_event, schedule
+    from avalon.console.scheduling import schedule
 
     kernel = ConsoleKernel.from_cwd()
     kernel.load_console_routes()
-    due = schedule.due_events()
-    if not due:
-        typer.echo("No scheduled events are ready.")
-        return
 
     def runner(command_name: str) -> int:
         parts = command_name.split()
         return kernel.run_argv(parts[0], parts[1:])
 
-    for event in due:
-        typer.echo(f"Running: {event.description}")
-        run_event(event, base_path=kernel.app.base_path, runner=runner)
+    return kernel, schedule, runner
+
+
+def _report_start(event) -> None:
+    typer.echo(f"Running: {event.summary()}")
+
+
+def _report_finish(outcome) -> None:
+    if outcome.skipped:
+        typer.secho(f"  skipped: {outcome.event.summary()}", fg=typer.colors.YELLOW)
+    elif outcome.code != 0:
+        typer.secho(f"  exit {outcome.code}: {outcome.event.summary()}", fg=typer.colors.RED)
+
+
+@app.command("schedule:run")
+def schedule_run() -> None:
+    """Run the tasks that are due (wire this to cron, every minute)."""
+    from avalon.console.scheduling import run_schedule
+
+    kernel, schedule, runner = _scheduler()
+    if not schedule.due_events() and not schedule.has_sub_minute_events():
+        typer.echo("No scheduled tasks are ready.")
+        return
+
+    outcomes = run_schedule(
+        schedule,
+        base_path=kernel.app.base_path,
+        runner=runner,
+        on_start=_report_start,
+        on_finish=_report_finish,
+    )
+    if any(outcome.code != 0 and not outcome.skipped for outcome in outcomes):
+        raise typer.Exit(code=1)
 
 
 @app.command("schedule:work")
 def schedule_work(
     sleep: int = typer.Option(60, "--sleep", help="Seconds between ticks"),
 ) -> None:
-    """Long-running scheduler ticker."""
+    """Run the scheduler in the foreground, minute after minute."""
     import time
 
-    from avalon.console.kernel import ConsoleKernel
-    from avalon.console.scheduling import run_event, schedule
+    from avalon.console.scheduling import run_schedule
 
-    kernel = ConsoleKernel.from_cwd()
-    kernel.load_console_routes()
+    kernel, schedule, runner = _scheduler()
     typer.echo("Schedule worker started. Press Ctrl-C to stop.")
-
-    def runner(command_name: str) -> int:
-        parts = command_name.split()
-        return kernel.run_argv(parts[0], parts[1:])
-
     try:
         while True:
-            for event in schedule.due_events():
-                typer.echo(f"Running: {event.description}")
-                run_event(event, base_path=kernel.app.base_path, runner=runner)
+            run_schedule(
+                schedule,
+                base_path=kernel.app.base_path,
+                runner=runner,
+                on_start=_report_start,
+                on_finish=_report_finish,
+            )
             time.sleep(max(1, sleep))
     except KeyboardInterrupt:
         typer.echo("Schedule worker stopped.")
+
+
+@app.command("schedule:list")
+def schedule_list(
+    timezone: str = typer.Option("", "--timezone", help="Show next run times in this timezone"),
+) -> None:
+    """List the scheduled tasks and when each next runs."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    _, schedule, _ = _scheduler()
+    if not schedule.events:
+        typer.echo("No scheduled tasks are defined.")
+        return
+
+    zone = ZoneInfo(timezone) if timezone else None
+    rows = []
+    for event in schedule.events:
+        moment = event.next_run_at(datetime.now())
+        if zone is not None:
+            moment = (
+                moment.astimezone(zone) if moment.tzinfo else moment.astimezone().astimezone(zone)
+            )
+        rows.append(
+            (
+                event.frequency(),
+                event.summary(),
+                event.description if event.description != event.summary() else "",
+                moment.strftime("%Y-%m-%d %H:%M:%S"),
+            )
+        )
+
+    width = max(len(row[0]) for row in rows)
+    for frequency, summary, description, next_run in rows:
+        suffix = f"  ({description})" if description else ""
+        typer.echo(f"  {frequency:<{width}}  {summary}{suffix}  next: {next_run}")
+
+
+@app.command("schedule:test")
+def schedule_test(
+    name: str = typer.Option("", "--name", help="Run the task with this name or command"),
+) -> None:
+    """Run one scheduled task now, whatever its frequency says."""
+    from avalon.console.scheduling import run_task
+
+    kernel, schedule, runner = _scheduler()
+    if not schedule.events:
+        typer.echo("No scheduled tasks are defined.")
+        return
+
+    event = _pick_task(schedule.events, name)
+    if event is None:
+        typer.secho(f"No scheduled task matches {name!r}.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
+    typer.echo(f"Running: {event.summary()}")
+    outcome = run_task(event, base_path=kernel.app.base_path, runner=runner)
+    if outcome.output:
+        typer.echo(outcome.output.rstrip())
+    if outcome.code != 0:
+        raise typer.Exit(code=outcome.code)
+
+
+def _pick_task(events, name: str):
+    """Find the named task, or ask which one when nothing was named."""
+    if name:
+        for event in events:
+            if name in (event.summary(), event.mutex_name(), event.description):
+                return event
+        return None
+    if len(events) == 1:
+        return events[0]
+    from avalon.console.prompts import select
+
+    labels = {index: event.summary() for index, event in enumerate(events)}
+    return events[select("Which task would you like to run?", labels, default=0)]
+
+
+@app.command("schedule:interrupt")
+def schedule_interrupt() -> None:
+    """Stop an in-progress schedule:run at the end of this second."""
+    from avalon.console.scheduling import interrupt
+
+    kernel, schedule, _ = _scheduler()
+    interrupt(base_path=kernel.app.base_path, store=schedule.cache_store)
+    typer.echo("Interrupt signalled for the current minute.")
+
+
+@app.command("schedule:clear-cache")
+def schedule_clear_cache() -> None:
+    """Release without-overlapping locks left behind by a stuck task."""
+    from avalon.console.scheduling import clear_cache
+
+    _, schedule, _ = _scheduler()
+    cleared = clear_cache(schedule)
+    if not cleared:
+        typer.echo("No scheduled task locks were held.")
+        return
+    for name in cleared:
+        typer.echo(f"Released lock for: {name}")
+
+
+@app.command("down")
+def down() -> None:
+    """Put the application into maintenance mode (scheduled tasks stop)."""
+    from avalon.console.kernel import ConsoleKernel
+
+    kernel = ConsoleKernel.from_cwd()
+    path = kernel.app.base_path / "storage" / "framework" / "down"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("down", encoding="utf-8")
+    typer.echo("Application is now in maintenance mode.")
+
+
+@app.command("up")
+def up() -> None:
+    """Bring the application out of maintenance mode."""
+    from avalon.console.kernel import ConsoleKernel
+
+    kernel = ConsoleKernel.from_cwd()
+    path = kernel.app.base_path / "storage" / "framework" / "down"
+    path.unlink(missing_ok=True)
+    typer.echo("Application is now live.")
 
 
 @app.command("fiddle")

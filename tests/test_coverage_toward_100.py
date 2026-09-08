@@ -26,9 +26,10 @@ def test_schedule_frequencies_filters_and_command_runner(tmp_path: Path) -> None
 
     monday = datetime(2026, 9, 7, 12, 0, 0)
     saturday = datetime(2026, 9, 5, 12, 0, 0)
-    assert Event("wd").weekdays().cron("* * * * *").is_due(monday)
-    assert Event("we").weekends().cron("* * * * *").is_due(saturday)
-    assert Event("wo").withoutOverlapping().without_overlapping is True
+    # A day constraint writes the cron day field, so cron() comes first now.
+    assert Event("wd").cron("* * * * *").weekdays().is_due(monday)
+    assert Event("we").cron("* * * * *").weekends().is_due(saturday)
+    assert Event("wo").withoutOverlapping().prevents_overlapping is True
 
     assert _field_matches("*", 10, 0, 59)
     assert _field_matches("*/5", 10, 0, 59)

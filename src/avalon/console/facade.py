@@ -33,6 +33,16 @@ class ClosureCommand:
     #: Laravel also exposes ``describe()`` for the same thing.
     describe = purpose
 
+    def schedule(self, arguments: list[Any] | None = None) -> Any:
+        """Schedule this closure command, with arguments (Laravel ``schedule()``).
+
+        Returns the scheduled task, so the frequency is chained onto it:
+        ``Artisan.command(...).purpose(...).schedule(["taylor"]).daily()``.
+        """
+        from avalon.console.scheduling import schedule as task_schedule
+
+        return task_schedule.command(self.command_cls.name(), arguments)
+
 
 class Artisan:
     """Static façade over the console kernel (Laravel's ``Artisan``)."""

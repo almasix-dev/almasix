@@ -285,8 +285,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M31",
             "name": "Task scheduling exhaust",
-            "status": "planned",
-            "proof": ["frequency + hook vocabulary", "schedule:list / schedule:test"],
+            "status": "complete",
+            "proof": [
+                "frequency + constraint + hook vocabulary",
+                "sub-minute tasks · groups · one server · background",
+                "output to file / mail · lifecycle events",
+                "schedule:list / test / interrupt / clear-cache · down / up",
+                "grail progress:schedule",
+            ],
         },
         {
             "id": "M32",

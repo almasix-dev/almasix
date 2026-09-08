@@ -166,6 +166,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M19** | `grail progress:authorization` — Gate / Policy / authorize |
 | **M20** | `grail progress:http` — `Http` façade, fakes, retry, pool |
 | **M30** | `grail progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated` (parts 2–3 owed) |
+| **M31** | `grail progress:schedule` — frequencies, constraints, hooks, a tick; `grail schedule:list` / `test` / `interrupt` |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `grail model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M49** | `grail progress:collections` — higher order messages, lazy streaming |
@@ -174,8 +175,8 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 
 ## Growing with Avalon
 
-M0–M20, M40, M41, M49, and M50 are closed; **M5** and **M30** are partly done.
-Next is **M42 — query builder + database exhaust**. The board on `/progress`
+M0–M20, M31, M40, M41, M49, and M50 are closed; **M5** and **M30** are partly
+done. Next is **M42 — query builder + database exhaust**. The board on `/progress`
 lists the full **M0–M50** roadmap with a status and proof for each milestone.
 ## CLI
 
@@ -194,7 +195,10 @@ grail progress:events
 grail progress:authorization
 grail key:generate
 grail storage:link
+grail progress:schedule
 grail schedule:run
+grail schedule:list
+grail schedule:test --name progress:hello
 grail fiddle          # aliases: tinker, repl
 grail queue:work
 grail migrate

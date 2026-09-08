@@ -31,6 +31,11 @@ _ISOLATED_OPTION: dict[str, Any] = {
 }
 
 
+# ``routes/console.py`` files already executed, and how many scheduled tasks
+# existed before each one ran.
+_loaded_console_routes: dict[Path, int] = {}
+
+
 def _isolated_exit_code(isolated: Any) -> int:
     """``--isolated`` exits successfully unless given an explicit code."""
     if isinstance(isolated, bool):
@@ -110,13 +115,24 @@ class ConsoleKernel:
                 self.register(obj)
 
     def load_console_routes(self) -> None:
-        """Load ``routes/console.py`` (schedule DSL + ``Artisan.command`` closures)."""
+        """Load ``routes/console.py`` (schedule DSL + ``Artisan.command`` closures).
+
+        The file is executed again on every call, because each kernel needs the
+        closure commands it defines. The scheduled tasks from the previous run
+        are dropped first, so loading twice does not schedule everything twice.
+        """
         from avalon.console.facade import Artisan, drain_pending
+        from avalon.console.scheduling import schedule
 
         Artisan.set_kernel(self)
         path = self.app.path("routes", "console.py")
         if not path.is_file():
             return
+        baseline = _loaded_console_routes.get(path)
+        if baseline is None:
+            _loaded_console_routes[path] = len(schedule.events)
+        else:
+            del schedule.events[baseline:]
         module_name = f"avalon_console_routes_{abs(hash(path))}"
         spec = importlib.util.spec_from_file_location(module_name, path)
         if spec is None or spec.loader is None:

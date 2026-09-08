@@ -145,9 +145,19 @@ class ApplicationBuilder:
     def __init__(self, base_path: str | Path | None = None) -> None:
         self._base_path = Path(base_path or Path.cwd()).resolve()
         self._middleware_callbacks: list[MiddlewareCallback] = []
+        self._schedule_callbacks: list[Callable[[Any], None]] = []
 
     def with_middleware(self, callback: MiddlewareCallback) -> Self:
         self._middleware_callbacks.append(callback)
+        return self
+
+    def with_schedule(self, callback: Callable[[Any], None]) -> Self:
+        """Define scheduled tasks here instead of in ``routes/console.py``.
+
+        The callback is handed the schedule as it is registered, which is what
+        Laravel's ``withSchedule`` does.
+        """
+        self._schedule_callbacks.append(callback)
         return self
 
     def create(self) -> Application:
@@ -155,4 +165,10 @@ class ApplicationBuilder:
 
         app = Application(self._base_path)
         app._middleware_callbacks = list(self._middleware_callbacks)  # noqa: SLF001
-        return app.bootstrap()
+        booted = app.bootstrap()
+        if self._schedule_callbacks:
+            from avalon.console.scheduling import schedule
+
+            for callback in self._schedule_callbacks:
+                callback(schedule)
+        return booted
