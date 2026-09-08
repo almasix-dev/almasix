@@ -185,12 +185,13 @@ runnable demonstration in the living example app.
 
 ## Documentation
 
-[`website/`](website/) holds 53 pages of application-developer documentation (Astro Starlight),
+[`website/`](website/) holds 54 pages of application-developer documentation (Astro Starlight),
 written to follow Laravel's structure page for page — including a section per method for
 [collections](website/src/content/docs/collections.md),
 [strings](website/src/content/docs/strings.md), and
-[helpers](website/src/content/docs/helpers.md). Run `make docs` to read it locally at
-`http://localhost:4321`; the hosted site is not published yet.
+[helpers](website/src/content/docs/helpers.md). Read it at
+[almasix-dev.github.io/almasix](https://almasix-dev.github.io/almasix), or run `make docs` for a
+local copy at `http://localhost:4321`.
 
 [`examples/progress`](examples/progress) is the living example — a real Almasix application that
 demonstrates each closed milestone through routes you can visit and `smith progress:*` commands you

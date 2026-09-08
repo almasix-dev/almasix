@@ -1,0 +1,89 @@
+name: Docs
+
+# Builds the Starlight site in website/ and deploys it to GitHub Pages at
+# https://almasix-dev.github.io/almasix/. Pull requests build only, so broken
+# docs are caught before they reach the published site.
+#
+# Requires the repository's Pages source to be set to "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'website/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Let a running deploy finish rather than publishing a half-written site.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # The site is served from a subpath. Starlight rewrites its own navigation
+      # for `base`, but Markdown-authored links are prefixed by a post-build
+      # step; if that ever stops running, every cross-reference 404s in
+      # production while the build still looks green. Fail loudly instead.
+      - name: Every internal link is under the base path
+        run: |
+          stray=$(grep -rhoE '(href|src)="/[^"]*"' --include='*.html' dist \
+                  | grep -vE '="/almasix/' || true)
+          if [ -n "$stray" ]; then
+            echo "::error::Links outside the /almasix base path:"
+            echo "$stray" | sort | uniq -c | sort -rn
+            exit 1
+          fi
+          echo "All internal links are correctly based."
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: website/dist
+
+  deploy:
+    name: Deploy to Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
