@@ -27,12 +27,28 @@ class ProgressConsoleCommand(PromptsForMissingInput, Command):
 
         self.call_silently("progress:hello")
         self.comment(f"  called progress:hello -> {Artisan.output().strip()}")
+        self._show_the_one_surface()
 
         if self.dry_run:
             self.warn("Dry run: nothing written.")
             return self.SUCCESS
         self.success("progress:console ok")
         return self.SUCCESS
+
+    def _show_the_one_surface(self) -> None:
+        """What ``grail`` is made of: commands, stubs, and publishable files.
+
+        Every command below is a ``Command`` class, including this one — the
+        CLI has no second way in, which is what makes ``Artisan.call`` and the
+        scheduler able to reach all of them.
+        """
+        from avalon.console import stub
+        from avalon.providers import ServiceProvider
+
+        commands = sorted({cls.name() for cls in (self.kernel.commands if self.kernel else {}).values()})
+        self.line(f"  commands -> {len(commands)}, every one a Command class")
+        self.line(f"  stubs    -> {len(stub.names())} (grail stub:publish to customise)")
+        self.line(f"  publish  -> {', '.join(ServiceProvider.publishable_tags()) or 'nothing declared'}")
 
 
 class ProgressImportCommand(Isolatable, Command):

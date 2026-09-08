@@ -273,13 +273,15 @@ def _milestones() -> list[dict]:
         {
             "id": "M30",
             "name": "Grail Console exhaust",
-            "status": "partial",
+            "status": "complete",
             "proof": [
+                "84 commands, every one a Command class",
                 "full signature parser + option shortcuts",
                 "Artisan.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",
-                "progress:console · progress:import",
-                "owed: one command surface · stub:publish · built-ins",
+                "stub:publish · vendor:publish · cache/view/optimize",
+                "db:show / db:table / model:show · migrate:reset / refresh",
+                "grail progress:console · grail progress:import",
             ],
         },
         {

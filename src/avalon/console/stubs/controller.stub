@@ -1,0 +1,13 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from avalon.http import Controller
+
+
+class {{ class }}(Controller):
+    """{{ class }}."""
+
+    async def index(self) -> dict[str, str]:
+        # Web routes return html(...); api routes return dict / list.
+        return {"controller": "{{ class }}"}

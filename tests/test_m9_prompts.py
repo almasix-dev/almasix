@@ -66,6 +66,8 @@ def test_text_password_number_fallbacks() -> None:
 
 def test_textarea_fallback() -> None:
     assert textarea("Story", default="once") == "once"
+    with pytest.raises(RuntimeError):
+        textarea("Story", required=True, default="")
 
 
 def test_confirm_select_multi_suggest_search() -> None:
@@ -84,6 +86,8 @@ def test_confirm_select_multi_suggest_search() -> None:
         multiselect("Empty", [])
     with pytest.raises(RuntimeError):
         multiselect("Need", ["a"], required=True, default=[])
+    with pytest.raises(RuntimeError):
+        suggest("City", ["Paris"], required=True, default="")
 
 
 def test_messages_and_table(capsys: pytest.CaptureFixture[str]) -> None:

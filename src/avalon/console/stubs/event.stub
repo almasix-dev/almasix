@@ -1,0 +1,10 @@
+"""Application event."""
+
+from __future__ import annotations
+
+
+class {{ class }}:
+    """Event payload."""
+
+    def __init__(self, **payload) -> None:
+        self.__dict__.update(payload)

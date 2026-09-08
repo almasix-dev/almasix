@@ -147,6 +147,30 @@ class Migrator:
             rolled.append(name)
         return rolled
 
+    async def install(self) -> bool:
+        """Create the repository table, reporting whether this call created it."""
+        if await Schema.has_table(self.table, connection=self.connection):
+            return False
+        await self._ensure_table()
+        return True
+
+    async def reset(self) -> list[str]:
+        """Roll back every migration that has run, newest first."""
+        batch = await self.current_batch()
+        if batch == 0:
+            return []
+        return await self.rollback(batch)
+
+    async def refresh(self, steps: int = 0) -> tuple[list[str], list[str]]:
+        """Roll back and run again, returning ``(rolled back, applied)``.
+
+        ``steps`` rolls back that many batches instead of all of them, so the
+        migrations below them stay applied — Laravel counts migrations there,
+        while ``rollback`` has always counted batches in Avalon.
+        """
+        rolled = await self.rollback(steps) if steps else await self.reset()
+        return rolled, await self.run()
+
     async def fresh(self) -> list[str]:
         names = await Schema.table_names(connection=self.connection)
         for name in names:
@@ -185,6 +209,7 @@ def make_migration(
     *,
     table: str | None = None,
     create: bool = False,
+    base_path: Path | None = None,
 ) -> Path:
     """Write a timestamped migration stub and return its path.
 
@@ -198,6 +223,10 @@ def make_migration(
     (``CreateUsersTable``, ``AddDescriptionColumnToPostsTable``).
     ``--create`` / ``--table`` (passed as ``create`` / ``table``) override inference.
     """
+    # Imported here, not at module scope: the console is a layer above the ORM,
+    # and importing down from up makes the two mutually importing.
+    from avalon.console.stub import render
+
     slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
     if not slug:
         raise MigrationError("A migration name is required.")
@@ -210,82 +239,14 @@ def make_migration(
 
     class_name = studly(slug)
     if table and create:
-        body = _create_stub(class_name, table)
+        stub = "migration.create.stub"
     elif table:
-        body = _update_stub(class_name, table)
+        stub = "migration.update.stub"
     else:
-        body = _blank_stub(class_name)
+        stub = "migration.stub"
+    body = render(stub, {"class": class_name, "table": table or ""}, base_path=base_path)
     path.write_text(body, encoding="utf-8")
     return path
-
-
-def _blank_stub(class_name: str) -> str:
-    return f'''"""{class_name} migration."""
-
-from __future__ import annotations
-
-from avalon.orm import Migration
-
-
-class {class_name}(Migration):
-    """{class_name}."""
-
-    async def up(self) -> None:
-        pass
-
-    async def down(self) -> None:
-        pass
-'''
-
-
-def _create_stub(class_name: str, table: str) -> str:
-    return f'''"""Create the {table} table."""
-
-from __future__ import annotations
-
-from avalon.orm import Migration, Schema
-
-
-class {class_name}(Migration):
-    """{class_name}."""
-
-    async def up(self) -> None:
-        await Schema.create(
-            "{table}",
-            lambda table: (
-                table.id(),
-                table.timestamps(),
-            ),
-        )
-
-    async def down(self) -> None:
-        await Schema.drop_if_exists("{table}")
-'''
-
-
-def _update_stub(class_name: str, table: str) -> str:
-    return f'''"""Alter the {table} table."""
-
-from __future__ import annotations
-
-from avalon.orm import Migration, Schema
-
-
-class {class_name}(Migration):
-    """{class_name}."""
-
-    async def up(self) -> None:
-        await Schema.table(
-            "{table}",
-            lambda table: (),  # e.g. table.string("slug")
-        )
-
-    async def down(self) -> None:
-        await Schema.table(
-            "{table}",
-            lambda table: (),  # e.g. table.drop_column("slug")
-        )
-'''
 
 
 # Callable kept for type checkers looking at Schema.create callbacks.

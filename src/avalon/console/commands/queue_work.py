@@ -27,6 +27,8 @@ class QueueWorkCommand(Command):
             self.comment("No jobs available.")
         elif processed:
             self.info(f"Processed {processed} job(s).")
+        if worker.stopped_for_restart:
+            self.comment("Stopping worker: queue:restart was broadcast.")
         return 0
 
 
@@ -45,4 +47,8 @@ class QueueListenCommand(Command):
             asyncio.run(worker.run(connection, queue=queue, sleep=sleep))
         except KeyboardInterrupt:
             self.comment("Stopping listener.")
+        else:
+            # A listener has no job limit, so the loop only ever returns to say
+            # that a restart was broadcast.
+            self.comment("Stopping listener: queue:restart was broadcast.")
         return 0

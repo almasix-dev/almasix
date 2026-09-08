@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
-from avalon.grail.cli import DEFAULT_ASGI
+from avalon.console.commands.runtime import DEFAULT_ASGI
 from avalon.grail.cli import app as grail_app
 from avalon.installer.cli import app as avalon_app
 from avalon.installer.scaffold import scaffold_app
@@ -78,7 +78,7 @@ def test_s7_grail_serve_invokes_uvicorn(tmp_path: Path, monkeypatch: pytest.Monk
     root = scaffold_app("serve_smoke", destination=tmp_path / "serve_smoke")
     monkeypatch.chdir(root)
     mock_run = MagicMock()
-    monkeypatch.setattr("avalon.grail.cli.uvicorn.run", mock_run)
+    monkeypatch.setattr("avalon.console.commands.runtime.uvicorn.run", mock_run)
 
     result = runner.invoke(grail_app, ["serve", "--host", "127.0.0.1", "--port", "3010"])
     assert result.exit_code == 0, result.stdout

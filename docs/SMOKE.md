@@ -517,7 +517,18 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 - [x] `Command` I/O surface, `fail`, `trap`, `with_progress_bar`, `Isolatable`, `PromptsForMissingInput`
 - [x] `Artisan` façade — `call`, `output`, `queue`, closure commands with container injection
 - [x] Console events (`ConsoleStarting`, `CommandStarting`, `CommandFinished`) + `--isolated` locking
-- [ ] Typer callbacks migrated to `Command` classes, stub tree (`stub:publish`), remaining built-ins — **parts 2–3 still open**
+- [x] One surface: the ~30 Typer callbacks are `Command` classes, `cli.py` declares none of its own, and what the front door offers is exactly what the kernel knows
+- [x] Discovery survives a broken command module, names it on every run rather than only on `list`, and reports a module discovered mid-import instead of dropping its commands
+- [x] `--help` is rendered from the signature — usage line, arguments, options, defaults, shortcuts, and aliases
+- [x] Generators run in a bare directory (`boots_application = False`); commands that need an application boot before `handle()`
+- [x] Stub tree: every generator renders a `.stub`, `grail stub:publish` copies them into `stubs/`, and a published stub wins
+- [x] `ServiceProvider.publishes()` + `grail vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `avalon-stubs` and `avalon-lang`
+- [x] Fiddle allow-list: `config/fiddle.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
+- [x] The built-in catalogue — 84 commands, including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
+- [x] `console` rewritten in Laravel's Artisan section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
+- [x] Living example: `grail progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
+- [x] Deliberate deviations recorded in `docs/PLAN.md` with reasons — `config:cache` / `route:cache` / `event:cache` measured and declined, `view:cache` verifying rather than persisting, `db:show` without a size column, `db:wipe` refusing `--drop-views`
+- [x] 100% line and branch coverage on `avalon.console` and `avalon.grail`, the interactive prompt layer included: `tests/test_m9_prompts_driven.py` types into a real terminal over a pipe (arrows, space, Ctrl-C, corrections) instead of taking the non-interactive branch, and fails rather than hangs when a prompt is left waiting
 
 ---
 

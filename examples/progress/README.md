@@ -165,7 +165,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M18** | `grail progress:events` — Event.listen / dispatch / until |
 | **M19** | `grail progress:authorization` — Gate / Policy / authorize |
 | **M20** | `grail progress:http` — `Http` façade, fakes, retry, pool |
-| **M30** | `grail progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated` (parts 2–3 owed) |
+| **M30** | `grail progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `grail list` shows all 84 commands |
 | **M31** | `grail progress:schedule` — frequencies, constraints, hooks, a tick; `grail schedule:list` / `test` / `interrupt` |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `grail model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
@@ -175,9 +175,9 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 
 ## Growing with Avalon
 
-M0–M20, M31, M40, M41, M49, and M50 are closed; **M5** and **M30** are partly
-done. Next is **M42 — query builder + database exhaust**. The board on `/progress`
-lists the full **M0–M50** roadmap with a status and proof for each milestone.
+M0–M20, M30, M31, M40, M41, M49, and M50 are closed; **M5** is partly done.
+Next is **M42 — query builder + database exhaust**. The board on `/progress`
+lists the full **M0–M51** roadmap with a status and proof for each milestone.
 ## CLI
 
 ```bash
@@ -203,6 +203,21 @@ grail fiddle          # aliases: tinker, repl
 grail queue:work
 grail migrate
 grail serve
+```
+
+The rest of the surface, all of it a `Command` class:
+
+```bash
+grail about                   # environment and drivers
+grail db:show --counts        # tables and their row counts
+grail db:table posts          # columns, indexes, foreign keys
+grail model:show Post         # attributes, relationships, events
+grail route:list              # every route this app answers
+grail migrate:refresh --seed  # reset, re-migrate, then seed
+grail queue:monitor default   # queue sizes, exits 1 when busy
+grail stub:publish            # take over what make:* generates
+grail vendor:publish          # copy in what a package offers
+grail optimize                # and what Avalon deliberately does not cache
 ```
 
 Prefer `grail …` with the venv active. Use `python grail …` only when you want to invoke the root `grail` script explicitly.

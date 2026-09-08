@@ -1,0 +1,21 @@
+"""Create the {{ table }} table."""
+
+from __future__ import annotations
+
+from avalon.orm import Migration, Schema
+
+
+class {{ class }}(Migration):
+    """{{ class }}."""
+
+    async def up(self) -> None:
+        await Schema.create(
+            "{{ table }}",
+            lambda table: (
+                table.id(),
+                table.timestamps(),
+            ),
+        )
+
+    async def down(self) -> None:
+        await Schema.drop_if_exists("{{ table }}")

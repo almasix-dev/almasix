@@ -51,7 +51,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "app/providers/__init__.py": "",
         "app/providers/app_service_provider.py": _app_service_provider(),
         "bootstrap/__init__.py": "",
-        "bootstrap/app.py": _bootstrap_app(display),
+        "bootstrap/app.py": _bootstrap_app(),
         "config/__init__.py": "",
         "config/app.py": _config_app(display),
         "config/http.py": _config_http(),
@@ -66,6 +66,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "config/notifications.py": _config_notifications(),
         "config/cache.py": _config_cache(),
         "config/redis.py": _config_redis(),
+        "config/fiddle.py": _config_fiddle(),
         "app/models/__init__.py": "",
         "app/console/__init__.py": "",
         "app/console/commands/__init__.py": "",
@@ -291,8 +292,8 @@ attr-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"
 """
 
 
-def _bootstrap_app(display: str) -> str:
-    return f'''"""Application entry — boots the Avalon kernel and exposes ASGI."""
+def _bootstrap_app() -> str:
+    return '''"""Application entry — boots the Avalon kernel and exposes ASGI."""
 
 from __future__ import annotations
 
@@ -321,7 +322,7 @@ def configure_middleware(middleware: Middleware) -> None:
     from avalon.session import EncryptCookies, StartSession, VerifyCsrfToken
 
     middleware.alias(
-        {{
+        {
             "locale": SetLocaleMiddleware,
             "cookies.encrypt": EncryptCookies,
             "session.start": StartSession,
@@ -333,7 +334,7 @@ def configure_middleware(middleware: Middleware) -> None:
             "auth.basic": AuthenticateWithBasicAuth,
             "verified": EnsureEmailIsVerified,
             "can": Authorize,
-        }}
+        }
     )
     middleware.web(
         prepend=["cookies.encrypt", "session.start", "csrf", "auth.start"],
@@ -609,6 +610,7 @@ config = {
     },
     "failed": {
         "driver": "database",
+        "connection": env("DB_CONNECTION", "sqlite"),
         "table": "failed_jobs",
     },
 }
@@ -653,6 +655,26 @@ config = {
         "log": {"driver": "log"},
         "array": {"driver": "array"},
     },
+}
+'''
+
+
+def _config_fiddle() -> str:
+    return '''"""Fiddle — what the REPL has waiting for you (`grail fiddle`).
+
+Your models under app/models are aliased automatically; everything here is
+for the rest.
+"""
+
+config = {
+    # Commands to have as callables in the shell: "inspire" → inspire().
+    "commands": [],
+    # Extra names to import, as name -> dotted path.
+    "alias": {
+        # "Str": "avalon.support.Str",
+    },
+    # Names to keep out of the shell, even if a model would have claimed them.
+    "dont_alias": [],
 }
 '''
 

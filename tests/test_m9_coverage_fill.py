@@ -247,7 +247,7 @@ def test_typer_attach_nonzero_exit(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     kernel = ConsoleKernel(app)
     kernel.register(ExitOneCommand)
     typer_app = typer.Typer()
-    kernel._attach(typer_app, ExitOneCommand)
+    kernel.register_on_typer(typer_app)
     from typer.testing import CliRunner
 
     result = CliRunner().invoke(typer_app, ["demo:exit1"])

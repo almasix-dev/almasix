@@ -1,0 +1,18 @@
+"""{{ class }} mailable."""
+
+from __future__ import annotations
+
+from avalon.mail import Attachment, Content, Envelope, Mailable
+
+
+class {{ class }}(Mailable):
+    """Send with ``Mail.to(recipient).send({{ class }}())``."""
+
+    def envelope(self) -> Envelope:
+        return Envelope(subject="{{ subject }}")
+
+    def content(self) -> Content:
+        return Content(markdown="{{ view }}", with_data={})
+
+    def attachments(self) -> list[Attachment]:
+        return []

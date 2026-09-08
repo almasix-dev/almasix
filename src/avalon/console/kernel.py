@@ -7,6 +7,8 @@ import importlib.util
 import inspect
 import pkgutil
 import sys
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -16,6 +18,7 @@ from avalon.console import isolation
 from avalon.console.command import Command, parse_signature
 from avalon.console.events import CommandFinished, CommandStarting, ConsoleStarting
 from avalon.console.exceptions import CommandNotFound
+from avalon.console.help import help_text, metavar
 
 if TYPE_CHECKING:
     from avalon.framework.application import Application
@@ -36,6 +39,21 @@ _ISOLATED_OPTION: dict[str, Any] = {
 _loaded_console_routes: dict[Path, int] = {}
 
 
+@dataclass(frozen=True)
+class DiscoveryFailure:
+    """A command module that would not import.
+
+    Discovery keeps the modules that do work and collects these, so one broken
+    file costs you that file's commands rather than the whole directory's.
+    """
+
+    module: str
+    error: BaseException
+
+    def summary(self) -> str:
+        return f"{self.module}: {type(self.error).__name__}: {self.error}"
+
+
 def _isolated_exit_code(isolated: Any) -> int:
     """``--isolated`` exits successfully unless given an explicit code."""
     if isinstance(isolated, bool):
@@ -52,49 +70,95 @@ class ConsoleKernel:
     def __init__(self, app: Application) -> None:
         self.app = app
         self.commands: dict[str, type[Command]] = {}
+        #: Command modules that could not be imported, newest last.
+        self.failures: list[DiscoveryFailure] = []
 
     @classmethod
     def from_cwd(cls, cwd: Path | None = None) -> ConsoleKernel:
-        from avalon.framework.application import Application
-
-        root = Path(cwd or Path.cwd())
-        application = Application(root)
-        application.load_environment()
-        application.load_configuration()
-        application.apply_middleware_callbacks()
-        application.register_configured_providers()
-        application.boot()
-        application._bootstrapped = True  # noqa: SLF001
-        kernel = cls(application)
+        """Boot the application in ``cwd``, then discover its commands."""
+        kernel = cls.for_cwd(cwd)
+        kernel.boot_application()
         kernel.discover()
         return kernel
+
+    @classmethod
+    def for_cwd(cls, cwd: Path | None = None) -> ConsoleKernel:
+        """A kernel over ``cwd`` with nothing booted yet.
+
+        Generators and ``version`` need no application, so the front door
+        starts here and boots only when a command asks for it.
+        """
+        from avalon.framework.application import Application
+
+        return cls(Application(Path(cwd or Path.cwd())))
+
+    def boot_application(self) -> None:
+        """Env, config, providers, boot — everything except the HTTP routes."""
+        if self.app.is_bootstrapped:
+            return
+        self.app.load_environment()
+        self.app.load_configuration()
+        self.app.apply_middleware_callbacks()
+        self.app.register_configured_providers()
+        self.app.boot()
+        self.app._bootstrapped = True  # noqa: SLF001
 
     def discover(self) -> None:
         from avalon.console.facade import Artisan, drain_pending
 
-        self._load_package("avalon.console.commands")
-        self._load_package("app.console.commands")
-        self._load_path(self.app.path("app", "console", "commands"))
+        self.discover_framework_commands()
+        # An app's command directory is usually an importable package. When it
+        # is not, load the files directly — but never both, or one broken file
+        # is reported twice.
+        if not self._load_package("app.console.commands"):
+            self._load_path(self.app.path("app", "console", "commands"))
         Artisan.set_kernel(self)
         drain_pending(self)
         self._dispatch(ConsoleStarting(sorted(self.commands)))
+
+    def discover_framework_commands(self) -> None:
+        """Register the commands Avalon itself ships — no application needed."""
+        self._load_package("avalon.console.commands")
 
     def register(self, command_cls: type[Command]) -> None:
         if not command_cls.signature:
             return
         self.commands[command_cls.name()] = command_cls
+        for alias in command_cls.aliases:
+            self.commands[alias] = command_cls
 
-    def _load_package(self, package_name: str) -> None:
+    def _load_package(self, package_name: str) -> bool:
+        """Register the commands in a package; ``False`` if there is no package."""
         try:
             package = importlib.import_module(package_name)
         except ImportError:
-            return
+            return False
         paths = list(getattr(package, "__path__", []))
         for module_info in pkgutil.iter_modules(paths):
-            module = importlib.import_module(f"{package_name}.{module_info.name}")
+            name = f"{package_name}.{module_info.name}"
+            try:
+                module = importlib.import_module(name)
+            except Exception as exc:
+                self.failures.append(DiscoveryFailure(name, exc))
+                continue
+            if self._half_imported(module):
+                # Discovery ran from inside this module's own import, so its
+                # commands do not exist yet. Skipping quietly would drop them
+                # from the CLI depending on what was imported first.
+                self.failures.append(
+                    DiscoveryFailure(name, ImportError(f"{name} is still importing — circular import"))
+                )
+                continue
             self._register_module(module)
+        return True
 
     def _load_path(self, directory: Path) -> None:
+        """Load command files directly, for when the import name is unusable.
+
+        ``app`` is a generic package name, and an interpreter that has already
+        imported a different application's ``app`` owns it. Loading each file
+        under a synthetic module name gets this application's commands anyway.
+        """
         if not directory.is_dir():
             return
         for file in sorted(directory.glob("*.py")):
@@ -106,8 +170,17 @@ class ConsoleKernel:
                 continue
             module = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = module
-            spec.loader.exec_module(module)
+            try:
+                spec.loader.exec_module(module)
+            except Exception as exc:
+                del sys.modules[module_name]
+                self.failures.append(DiscoveryFailure(str(file), exc))
+                continue
             self._register_module(module)
+
+    @staticmethod
+    def _half_imported(module: Any) -> bool:
+        return bool(getattr(getattr(module, "__spec__", None), "_initializing", False))
 
     def _register_module(self, module: Any) -> None:
         for _, obj in inspect.getmembers(module, inspect.isclass):
@@ -150,6 +223,7 @@ class ConsoleKernel:
     ) -> int:
         command_cls = self._resolve(name)
         instance = command_cls(self.app)
+        instance.kernel = self
         arguments = dict(arguments or {})
         options = dict(options or {})
         self._dispatch(CommandStarting(name, arguments, options))
@@ -253,25 +327,48 @@ class ConsoleKernel:
             pass
         typer.secho(f"{type(exc).__name__}: {exc}", fg=typer.colors.RED, err=True)
 
-    def register_on_typer(self, typer_app: typer.Typer) -> None:
+    def register_on_typer(
+        self,
+        typer_app: typer.Typer,
+        *,
+        resolve: Callable[[], ConsoleKernel] | None = None,
+    ) -> None:
+        """Put every registered command behind the argv front door.
+
+        ``resolve`` says which kernel should run the command when it is finally
+        typed, which is not necessarily this one — the front door rebuilds its
+        kernel when the working directory changes.
+        """
+        running = resolve or (lambda: self)
         existing = {cmd.name for cmd in typer_app.registered_commands}
         for name, command_cls in sorted(self.commands.items()):
             if command_cls.hidden or name in existing:
                 continue
-            self._attach(typer_app, command_cls)
+            self._attach(typer_app, name, command_cls, running)
 
-    def _attach(self, typer_app: typer.Typer, command_cls: type[Command]) -> None:
-        name = command_cls.name()
-
+    def _attach(
+        self,
+        typer_app: typer.Typer,
+        name: str,
+        command_cls: type[Command],
+        resolve: Callable[[], ConsoleKernel],
+    ) -> None:
         def callback(ctx: typer.Context) -> None:
-            code = self.run_argv(name, list(ctx.args))
+            kernel = resolve()
+            if command_cls.boots_application:
+                kernel.boot_application()
+            code = kernel.run_argv(name, list(ctx.args))
             if code:
                 raise typer.Exit(code=code)
 
-        callback.__doc__ = command_cls.description or command_cls.__doc__
+        body = help_text(command_cls)
+        callback.__doc__ = body or command_cls.__doc__
         typer_app.command(
             name=name,
-            help=command_cls.description or None,
+            help=body or None,
+            # Click prints the usage line from this, and Avalon's parser — not
+            # Click's — reads the argv, so the signature has to describe itself.
+            options_metavar=metavar(command_cls),
             context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
         )(callback)
 

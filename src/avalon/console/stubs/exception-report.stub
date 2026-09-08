@@ -1,0 +1,11 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+
+class {{ class }}(Exception):
+    """{{ class }}."""
+
+    def report(self) -> bool | None:
+        """Report the exception. Return ``False`` to skip the handler's logging."""
+        return None

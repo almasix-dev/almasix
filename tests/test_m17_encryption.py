@@ -229,6 +229,11 @@ def test_key_generate_appends_newline(tmp_path: Path, monkeypatch: pytest.Monkey
     text = (tmp_path / ".env").read_text(encoding="utf-8")
     assert "FOO=1\nAPP_KEY=" in text
 
+    # A file that already ends in a newline must not gain a blank line.
+    (tmp_path / ".env").write_text("FOO=1\n", encoding="utf-8")
+    assert runner.invoke(grail_app, ["key:generate"]).exit_code == 0
+    assert (tmp_path / ".env").read_text(encoding="utf-8").startswith("FOO=1\nAPP_KEY=")
+
 
 def test_cookie_middleware_uses_previous_keys() -> None:
     from avalon.session.encrypt import encrypt_string as session_encrypt

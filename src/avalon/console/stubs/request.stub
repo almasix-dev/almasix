@@ -1,0 +1,17 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from avalon.validation import Field, FormRequest
+
+
+class {{ class }}(FormRequest):
+    """{{ class }}."""
+
+    name: str = Field(min_length=1)
+
+    def authorize(self) -> bool:
+        return True
+
+    def messages(self) -> dict[str, str]:
+        return {}

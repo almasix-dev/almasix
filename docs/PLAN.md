@@ -1191,10 +1191,24 @@ Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the l
 
 **Gate:** every section of Laravel's Artisan page either implemented or listed as a deliberate deviation with a reason; one command surface (no command reachable only through Typer); `avalon.console` + `avalon.grail` at 100% coverage; docs published.
 
-**Status (M30):** *In progress — the command layer has landed; the surface merge and command catalogue have not.*
+**Status (M30):** **Complete** (2026-09-08).
 
-- **Shipped:** signature parser (option shortcuts `{--Q|queue=}`, argument/option arrays, `:` descriptions, argv terminator `--`); exit-code constants + `fail()`; `arguments()` / `options()` / `has_option()`; `question` / `alert` / `new_line` / `with_progress_bar` / `choice(multiple=…)`; `PromptsForMissingInput`; closure commands via `Artisan.command(...).purpose(...)` in `routes/console.py` with container-resolved parameters; `Artisan.call` / `call_silently` / `output` / `queue` / `has` / `all` and `self.call` / `self.call_silently`; `Isolatable` + `--isolated[=CODE]` on cache lock with mutex fallback; `trap()` signal handling; `ConsoleStarting` / `CommandStarting` / `CommandFinished`; `CommandNotFound` / `CommandFailed`. Progress gains `progress:console`, `progress:import`, and a `progress:greet` closure command.
-- **Remaining:** migrate the Typer callbacks in `avalon/grail/cli.py` to `Command` classes (one surface); stub tree + `grail stub:publish`; the missing built-in commands; Fiddle allow-list; the full docs rewrite in Artisan section order.
+- **Shipped in M9's wake:** signature parser (option shortcuts `{--Q|queue=}`, argument/option arrays, `:` descriptions, argv terminator `--`); exit-code constants + `fail()`; `arguments()` / `options()` / `has_option()`; `question` / `alert` / `new_line` / `with_progress_bar` / `choice(multiple=…)`; `PromptsForMissingInput`; closure commands via `Artisan.command(...).purpose(...)` in `routes/console.py` with container-resolved parameters; `Artisan.call` / `call_silently` / `output` / `queue` / `has` / `all` and `self.call` / `self.call_silently`; `Isolatable` + `--isolated[=CODE]` on cache lock with mutex fallback; `trap()` signal handling; `ConsoleStarting` / `CommandStarting` / `CommandFinished`; `CommandNotFound` / `CommandFailed`.
+- **Shipped in M30:** the ~30 Typer callbacks are `Command` classes and `cli.py` is 45 lines of front door — **84 commands, no second way in**; signature-derived `--help`; discovery that reports a broken module and keeps the rest; command aliases; `boots_application` so generators run in a bare directory; the stub tree behind `grail stub:publish`; `ServiceProvider.publishes()` + `vendor:publish`; the Fiddle allow-list (`config/fiddle.py`); and the built-ins — `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:clear` / `cache:forget`, `view:cache` / `view:clear`, `optimize` / `optimize:clear`, `storage:unlink`, and the eleven missing `make:*` generators.
+
+**Deliberate deviations** (Laravel has these; Avalon does not, with reasons):
+
+- **`config:cache`, `route:cache`, `event:cache`** — not implemented. Laravel caches them because PHP rebuilds config, routes, and listeners on *every request*; an Avalon process boots once and serves for its lifetime. Reading a whole config directory measures 0.51ms, so the cache would buy a fraction of one boot and cost a class of bug where an edit does not take. `optimize` prints what it does not cache, and why, so the difference is visible where a Laravel user looks for it.
+- **`view:cache` verifies rather than persists** — Blade compiles to PHP files a deploy can carry; Caliburn compiles to Python functions held by the engine, so there is no artifact to ship. The command compiles every template, which answers what a deploy actually asks: do they all compile.
+- **`db:show` has no size column** — table size means something different in every dialect, and SQLite only answers it when the interpreter ships `dbstat`. No column would mean the same thing across the five drivers.
+- **`db:monitor` on SQLite and Oracle** reports the reason it cannot count sessions instead of raising (SQLite is a file; Oracle's `v$session` needs privileges a framework cannot assume). A breach exits `FAILURE` rather than dispatching Laravel's `DatabaseBusy`, which Avalon has no listener for.
+- **`db:wipe --drop-views` / `--drop-types`** are declared and refused before anything is dropped: the schema layer knows tables only.
+- **`model:show` does not name a policy** — finding one would mean guessing a class path and importing it, which is more than introspection should do.
+- **`queue:flush` asks before deleting**, where Laravel's does not. A flushed job can never be retried, and every other destructive Avalon command asks; `--force` is the way past.
+- **`docs` opens nothing while the site is unpublished** (see M39) — it names the source file and the variable to set rather than opening a dead URL.
+- **`clear-compiled`, `package:discover`, `sail:*`** have no Python equivalent. `test` belongs to M28, and the `*:table` generators to M32, where the default migrations live.
+
+**Two defects this milestone surfaced and fixed:** `avalon.grail` imported the CLI, so a command module importing anything from `avalon.grail` was discovered mid-import and its commands vanished depending on import order; and the failed-job store and database queue both asked `DB` for a connection literally named `"default"`, which no application defines.
 
 ### M31 — Task Scheduling exhaust
 
@@ -1230,6 +1244,7 @@ Laravel [Installation](https://laravel.com/docs/installation) — `laravel new` 
 - **Database choice:** SQLite (default, with the file created) / Postgres / MySQL / MariaDB, writing the matching `.env` + `config/database.py` and offering to run migrations
 - **Restructured scaffold:** replace the flat inlined `path -> content` dict in `avalon/installer/scaffold.py` with a parameterized stub tree shared with M30's `stub:publish`
 - Post-create ergonomics: git init (`--git`, `--branch`), optional `uv` / `pip` install, `npm install && npm run build` when a Node stack is chosen, and next-step output that matches what was actually installed
+- **The default migrations Laravel ships and Avalon does not.** A scaffolded app's `database/migrations/` is *empty*, so `users`, `jobs`, `failed_jobs`, `cache`, and `sessions` do not exist and `grail migrate` says "Nothing to migrate." Found during M30: every failed-job command met a table that nothing creates. The commands now say so instead of raising a database error at the user (`The failed_jobs table does not exist.`), but the tables themselves belong here — Laravel 11 ships them in the default migration set, and an app whose queue, cache, and auth tables are missing is not a working scaffold
 - Docs: rewrite Starlight **Installation** with the prompt walkthrough and every flag
 
 **Depends on:** M9 prompts (done), M30 stub tree. Starter kits are **M36**, not this milestone.
@@ -1533,6 +1548,24 @@ Promoted in this pass: console exhaust (**M30**), scheduler exhaust (**M31**), i
 Scheduled on 2026-09-08: the support and reference-page exhaust track (**M49–M50**) — Collections, then Helpers / `Str` / `Stringable`, code and per-method docs together. Also scheduled the same day: the IDE and editor tooling track (**M45–M48**) — Caliburn language support, the Avalon language server, editor integrations and type stubs, and AI agent support. It is written down with gates rather than left as a wish, but deliberately sequenced last: tooling indexes the framework's vocabulary, and that vocabulary is still moving until the parity milestones close.
 
 Also scheduled on 2026-09-08, out of the README pass: publishing the documentation site to GitHub Pages (**M39**) and releasing Avalon to PyPI under a distribution name that is actually available (**M38**, with the naming constraint recorded under Ecosystem growth). Both are gaps the README could not honestly paper over — no docs URL, no PyPI badges — so they are milestones now rather than README footnotes.
+
+And scheduled on 2026-09-08 during M30: the **lint gate (M51)**, which turned out to be a gate on paper only — CI does not run `make lint`, and `make lint` does not pass. Fixing it properly means choosing a rule set and correcting 932 findings, which is its own milestone rather than a detour inside a parity one. The README's lint claims came out in the meantime.
+
+## Project hygiene (M51)
+
+### M51 — Lint and format gate
+
+Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gates and **CI has never run it**: the workflow runs smoke, tests, and regression only. `[tool.ruff]` sets `line-length` and `target-version` but selects no rules, and the dev extra pins `ruff>=0.8.0` — so the rule set is whatever the installed ruff defaults to. With 0.16.5, `ruff check src tests` reports 932 findings on `main` (243 unused-noqa, 194 redefined-while-unused, 99 blind-except, 57 unsorted-imports, 57 unused-import, 51 naive `datetime` calls, and a long tail). The README's lint badge and gate row were therefore claims nothing enforced; both are removed until this milestone lands.
+
+- **Pin ruff** to an exact version in the dev extra, so the rule set cannot change under the project the way it did here
+- **Select rules explicitly** in `[tool.ruff.lint]` instead of inheriting a moving default. `E4,E7,E9,F` is the floor that already passes; `I`, `UP`, `B`, `DTZ`, `RUF`, `SIM` are the candidates, each judged by what fixing it costs and what it protects. Different selections for `src/` and `tests/` are legitimate
+- **Fix the fallout, or ignore per rule with a reason.** The 243 unused-`noqa` findings are the argument: a suppression with no reason outlives the problem it silenced
+- **Add the CI job** — `ruff check` and `ruff format --check` across the same Python versions as the test matrix
+- **Restore the README** lint badge and the `make lint` row in the gate table, once the job exists to back them
+
+**Depends on:** nothing. Best run between milestones, since fixing findings touches files across every package.
+
+**Gate:** `make lint` green on a pinned ruff with an explicit selection; a CI job enforcing it on every push; the README's claims matching what CI does.
 
 ## Quality bar for “solid core”
 

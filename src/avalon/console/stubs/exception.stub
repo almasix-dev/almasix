@@ -1,0 +1,7 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+
+class {{ class }}(Exception):
+    """{{ class }}."""

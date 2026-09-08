@@ -194,6 +194,25 @@ def test_configure_ptpython_wraps_eval() -> None:
     assert repl.eval("plain") == "plain"
 
 
+def test_configure_ptpython_leaves_a_private_eval_where_it_found_it() -> None:
+    """Older ptpython spells it ``_eval``; wrapping it is not ours to do."""
+    private = SimpleNamespace(
+        show_signature=False,
+        show_docstring=False,
+        highlight_matching_parenthesis=False,
+        color_depth="",
+        enable_syntax_highlighting=False,
+        prompt_style="",
+        show_line_numbers=True,
+        use_code_colorscheme=lambda _n: None,
+        _eval=lambda expr: expr,
+    )
+
+    _configure_ptpython(private)
+
+    assert not hasattr(private, "eval")
+
+
 def test_rich_console_runcode_paths(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -306,15 +325,13 @@ def test_render_value_json_fallback_and_headers(
 # ---------------------------------------------------------------------------
 
 
-def test_list_skips_hidden_and_discovery_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_list_skips_hidden_and_names_broken_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "bootstrap").mkdir()
-    (tmp_path / "bootstrap" / "app.py").write_text("asgi = None\n", encoding="utf-8")
 
-    for cmd in grail_cli.app.registered_commands:
-        if cmd.name == "version":
-            cmd.hidden = True
-            break
+    from avalon.console.commands.listing import ListCommand
+    from avalon.console.kernel import ConsoleKernel
 
     class HiddenCmd(Command):
         signature = "demo:hidden"
@@ -327,31 +344,30 @@ def test_list_skips_hidden_and_discovery_errors(tmp_path: Path, monkeypatch: pyt
     class VisCmd(Command):
         signature = "demo:vis"
         description = "visible"
+        aliases = ("demo:seen",)
 
         def handle(self) -> int:
             return 0
 
-    with patch("avalon.console.kernel.ConsoleKernel.from_cwd") as from_cwd:
-        kernel = MagicMock()
-        kernel.commands = {"demo:hidden": HiddenCmd, "demo:vis": VisCmd}
-        from_cwd.return_value = kernel
-        result = runner.invoke(grail_cli.app, ["list"])
-    assert result.exit_code == 0
-    assert "demo:vis" in result.stdout
-    assert "demo:hidden" not in result.stdout
+    from avalon.console.kernel import DiscoveryFailure
 
-    with patch("avalon.console.kernel.ConsoleKernel.from_cwd", side_effect=RuntimeError("boom")):
-        result = runner.invoke(grail_cli.app, ["list"])
-    assert result.exit_code == 0
-    assert "skipped" in result.stdout.lower()
+    kernel = ConsoleKernel.for_cwd(tmp_path)
+    kernel.discover_framework_commands()
+    kernel.register(HiddenCmd)
+    kernel.register(VisCmd)
+    kernel.failures.append(DiscoveryFailure("app.console.commands.broken", ImportError("boom")))
 
-    # empty commands → skip discovered section
-    with patch("avalon.console.kernel.ConsoleKernel.from_cwd") as from_cwd:
-        kernel = MagicMock()
-        kernel.commands = {}
-        from_cwd.return_value = kernel
-        result = runner.invoke(grail_cli.app, ["list"])
-    assert result.exit_code == 0
+    assert kernel.run_argv("list", []) == 0
+    listed = capsys.readouterr().out
+    assert "demo:vis" in listed
+    assert "demo:hidden" not in listed
+    # An alias is named beside its command, not listed as a command of its own.
+    assert listed.count("demo:seen") == 1
+    assert "Command not loaded — app.console.commands.broken" in listed
+
+    empty = ConsoleKernel.for_cwd(tmp_path)
+    empty.register(ListCommand)
+    assert empty.run_argv("list", []) == 0
 
 
 def test_schedule_run_work_and_fiddle(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -360,20 +376,13 @@ def test_schedule_run_work_and_fiddle(tmp_path: Path, monkeypatch: pytest.Monkey
     (tmp_path / "bootstrap").mkdir(exist_ok=True)
     (tmp_path / "bootstrap" / "app.py").write_text("x=1\n", encoding="utf-8")
 
-    with patch("avalon.console.kernel.ConsoleKernel.from_cwd") as from_cwd:
-        kernel = MagicMock()
-        kernel.app.base_path = tmp_path
-        kernel.load_console_routes = MagicMock()
-        kernel.run_argv = MagicMock(return_value=0)
-        from_cwd.return_value = kernel
-        empty = runner.invoke(grail_cli.app, ["schedule:run"])
-        assert "No scheduled" in empty.stdout
-        schedule.events.append(
-            Event(description="inspire", command="inspire --yell").every_minute()
-        )
-        ran = runner.invoke(grail_cli.app, ["schedule:run"])
-        assert kernel.run_argv.called
-        assert ran.exit_code == 0
+    empty = runner.invoke(grail_cli.app, ["schedule:run"])
+    assert "No scheduled" in empty.stdout
+
+    schedule.events.append(Event(description="inspire", command="inspire").every_minute())
+    ran = runner.invoke(grail_cli.app, ["schedule:run"])
+    assert ran.exit_code == 0
+    assert "Running: inspire" in ran.stdout
     schedule.events.clear()
 
     sleeps = {"n": 0}
@@ -386,27 +395,14 @@ def test_schedule_run_work_and_fiddle(tmp_path: Path, monkeypatch: pytest.Monkey
     monkeypatch.setattr("time.sleep", fake_sleep)
     schedule.events.clear()
     schedule.events.append(Event(description="tick", command="inspire").every_minute())
-    with patch("avalon.console.kernel.ConsoleKernel.from_cwd") as from_cwd:
-        kernel = MagicMock()
-        kernel.app.base_path = tmp_path
-        kernel.load_console_routes = MagicMock()
-        kernel.run_argv = MagicMock(return_value=0)
-        from_cwd.return_value = kernel
-        result = runner.invoke(grail_cli.app, ["schedule:work", "--sleep", "1"])
+    result = runner.invoke(grail_cli.app, ["schedule:work", "--sleep", "1"])
     assert "stopped" in result.stdout.lower()
     schedule.events.clear()
 
-    with (
-        patch("avalon.console.kernel.ConsoleKernel.from_cwd") as from_cwd,
-        patch("avalon.console.repl.start_fiddle", return_value=0),
-    ):
-        from_cwd.return_value = MagicMock(app=object())
+    with patch("avalon.console.repl.start_fiddle", return_value=0):
         for alias in ("fiddle", "tinker", "repl"):
             result = runner.invoke(grail_cli.app, [alias])
             assert result.exit_code == 0, alias
-
-    with patch("avalon.console.kernel.ConsoleKernel.from_cwd", side_effect=RuntimeError("x")):
-        grail_cli._register_discovered_commands()
 
 
 # ---------------------------------------------------------------------------

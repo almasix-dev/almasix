@@ -1,0 +1,15 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from avalon.providers import ServiceProvider
+
+
+class {{ class }}(ServiceProvider):
+    """{{ class }}."""
+
+    def register(self) -> None:
+        """Bind services into the container."""
+
+    def boot(self) -> None:
+        """Bootstrap services after all providers are registered."""

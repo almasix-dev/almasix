@@ -292,10 +292,24 @@ def test_make_event_listener_and_list(tmp_path: Path, monkeypatch: pytest.Monkey
     assert "ShouldQueue" in text
     assert "OrderShipped" in text
 
-    # duplicate fails
+    # duplicate fails — for the listener too, and neither loses what is there
     assert runner.invoke(grail_app, ["make:event", "OrderShipped"]).exit_code == 1
+    again = runner.invoke(grail_app, ["make:listener", "SendNote", "--event=OrderShipped"])
+    assert again.exit_code == 1
+    assert "already exists" in again.stdout + again.stderr
+    assert (tmp_path / "app" / "listeners" / "send_note.py").read_text(encoding="utf-8") == text
+
+    # A second generator into a package that exists leaves its __init__ alone.
+    (tmp_path / "app" / "events" / "__init__.py").write_text("# mine\n", encoding="utf-8")
+    assert runner.invoke(grail_app, ["make:event", "OrderRefunded"]).exit_code == 0
+    assert runner.invoke(grail_app, ["make:listener", "LogRefund"]).exit_code == 0
+    assert (tmp_path / "app" / "events" / "__init__.py").read_text(encoding="utf-8") == "# mine\n"
 
     set_dispatcher(Dispatcher())
+    empty = runner.invoke(grail_app, ["event:list"])
+    assert empty.exit_code == 0
+    assert "No event listeners registered." in empty.stdout + empty.stderr
+
     Event.listen(Ping, lambda e: None)
     r3 = runner.invoke(grail_app, ["event:list"])
     assert r3.exit_code == 0

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from avalon.queue.failed import FailedJobRepository, report_failure
 from avalon.queue.job import Job, call_handle, run_through_middleware
+from avalon.queue.restart import last_restart
 
 if TYPE_CHECKING:
     from avalon.queue.manager import QueueManager
@@ -19,6 +20,10 @@ class Worker:
     def __init__(self, manager: QueueManager) -> None:
         self.manager = manager
         self.app = manager.app
+        #: True when ``run()`` returned because ``queue:restart`` was broadcast.
+        self.stopped_for_restart = False
+        #: The restart timestamp this worker booted with, set by ``run()``.
+        self.booted_at: float | None = None
 
     async def run(
         self,
@@ -30,17 +35,29 @@ class Worker:
         max_jobs: int | None = None,
     ) -> int:
         processed = 0
+        self.stopped_for_restart = False
+        self.booted_at = last_restart()
         name = connection_name or self.manager.get_default_connection()
         while True:
             did_work = await self.run_once(name, queue=queue)
             if did_work:
                 processed += 1
-                if once or (max_jobs is not None and processed >= max_jobs):
-                    return processed
-                continue
             if once or (max_jobs is not None and processed >= max_jobs):
                 return processed
-            await asyncio.sleep(sleep)
+            # Between jobs only: ``run_once`` has finished whatever it popped, so
+            # a restart never abandons a job mid-flight.
+            if self.should_restart():
+                self.stopped_for_restart = True
+                return processed
+            if not did_work:
+                await asyncio.sleep(sleep)
+
+    def should_restart(self) -> bool:
+        """Was a restart broadcast after this worker booted?"""
+        latest = last_restart()
+        if latest is None:
+            return False
+        return self.booted_at is None or latest > self.booted_at
 
     async def run_once(self, connection_name: str, *, queue: str = "default") -> bool:
         connection = self.manager.connection(connection_name)

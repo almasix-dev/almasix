@@ -1,0 +1,10 @@
+"""{{ class }} contract."""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class {{ class }}(Protocol):
+    """{{ class }} — implemented by anything with these methods."""

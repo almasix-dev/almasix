@@ -86,13 +86,15 @@ class Artisan:
         *,
         app: Application | None = None,
         silent: bool = False,
+        kernel: ConsoleKernel | None = None,
     ) -> int:
         """Laravel ``Artisan::call()`` — run a command programmatically.
 
         ``command`` may carry its own argv (``"mail:send 1 --queue=bulk"``) or
-        the values may be passed as ``parameters``.
+        the values may be passed as ``parameters``. A command calling another
+        passes the kernel running it, so the call stays inside its application.
         """
-        kernel = cls.kernel(app)
+        kernel = kernel or cls.kernel(app)
         name, argv = _split_command(command)
         buffer = io.StringIO()
         try:

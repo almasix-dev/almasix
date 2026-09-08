@@ -21,4 +21,6 @@ class ConsoleServiceProvider(ServiceProvider):
         app.container.alias(ConsoleKernel, "console")
 
     def boot(self) -> None:
-        return
+        from avalon.console.stub import FRAMEWORK_STUBS
+
+        self.publishes({FRAMEWORK_STUBS: self.app.path("stubs")}, "avalon-stubs")
