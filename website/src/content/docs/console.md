@@ -322,7 +322,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 84 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 85 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -422,6 +422,7 @@ What the framework ships, 84 commands, as `smith list` groups them. An applicati
 | `make:policy` | Create a new policy class |
 | `make:provider` | Create a service provider in app/providers |
 | `make:request` | Create a FormRequest in app/http/requests |
+| `make:resource` | Create an API resource in app/http/resources |
 | `make:rule` | Create a validation rule in app/rules |
 | `make:seeder` | Create a seeder in database/seeders |
 | `make:view` | Create a Prism view in resources/views |

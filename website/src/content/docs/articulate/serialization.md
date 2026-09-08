@@ -149,8 +149,16 @@ class User(Model):
 Formats use Python `strftime` codes, not PHP's date characters.
 :::
 
+## When to reach for a resource instead
+
+`hidden` / `visible` / `appends` shape a model everywhere it is serialized —
+in an API response, a queue payload, a log line. When only the API should look
+different, or the shape depends on who is asking, that belongs in an
+[API Resource](/api-resources/) rather than on the model.
+
 ## Related
 
+- [API Resources](/api-resources/) — the transformation layer for API output
 - [Mutators & Casts](/articulate/casts/) — accessors and the cast that shapes a value
 - [Collections](/articulate/collections/) — the collection methods behind `to_dict()`
 - [Articulate: Getting Started](/articulate/) — models and retrieval

@@ -100,6 +100,7 @@ export default defineConfig({
 						{ label: 'Controllers', slug: 'controllers' },
 						{ label: 'Requests', slug: 'requests' },
 						{ label: 'Responses', slug: 'responses' },
+						{ label: 'API Resources', slug: 'api-resources' },
 						{ label: 'Views (Prism)', slug: 'views' },
 						{ label: 'Asset Bundling', slug: 'asset-bundling' },
 						{ label: 'URL Generation', slug: 'urls' },

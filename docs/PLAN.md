@@ -334,8 +334,8 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Processes | `processes` | **M21** | Write when Processes ship |
 | Concurrency | `concurrency` | **M22** | Write when Concurrency ships |
 | Eloquent: Mutators & Casting | `articulate/casts` | **Done (M40)** | Page published |
-| Eloquent: Serialization | `articulate/serialization` | **Done (M40)** | Page published; API Resources stay M23 |
-| Eloquent: API Resources | `eloquent-resources` / `api-resources` | **M23** | Write when Resources ship |
+| Eloquent: Serialization | `articulate/serialization` | **Done (M40)** | Page published; links out to API Resources |
+| Eloquent: API Resources | `api-resources` | **Done (M23)** | Page published |
 | Eloquent: Factories | `database/factories` | **M24** | Write when factories ship |
 | MongoDB / NoSQL | `database/nosql` (+ Articulate pages) | **M25** | Write when document-store driver ships — core Articulate multi-store, not a satellite ORM |
 | Scout / Search | `scout` / `search` | **M27** | Write when search ships |
@@ -1095,7 +1095,11 @@ Laravel [Eloquent API Resources](https://laravel.com/docs/eloquent-resources) + 
 
 **Depends on:** M5 ORM (done); API route polarity (done).
 
-**Gate:** Resources usable on `routes/api.py`, docs published, coverage ≥ 98%.
+**Gate:** Resources usable on `routes/api.py`, docs published, coverage ≥ 98%. **Met.**
+
+**Status (M23):** `JsonResource` proxying the wrapped model, `to_dict(request)` with `make` / `collection` / `with_` / `additional` / `response`; the whole conditional family (`when`, `unless`, `merge_when`, `merge_unless`, `when_has`, `when_not_null`, `when_loaded`, `when_counted`, `when_aggregated`, `when_appended`, `when_pivot_loaded[_as]`) with callable values and defaults; recursive filtering that also resolves nested resources against the same request; `ResourceCollection` with `collects`, the `<Name>Resource` guess, and `AnonymousResourceCollection`; wrapping via `wrap` / `without_wrapping` / `wrap_with` with no double wrap; Laravel's `meta` + `links` for `Paginator` and an honest subset for `SimplePaginator`; `make_response` honoring a `to_response()` protocol so a controller can return a resource; `smith make:resource --collection`; Starlight **API Resources**; progress `progress:resources` and `GET /api/resources`.
+
+**Deliberate deviations (M23):** the response hook is duck-typed (`to_response()`) rather than a `Responsable` interface, so anything can opt in without importing a base class; `to_dict()` replaces Laravel's `toArray()` to match the ORM's own serialization name; the `pivot` lookup compares against the ORM's `get_pivot_table()` because Almasix's `Pivot` reports a generic `table`; there is no `preserveKeys`, since paginated and list payloads are lists in both frameworks and keyed output is available by returning a dict.
 
 ### M24 — Model factories
 
@@ -1601,7 +1605,9 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **M22 Concurrency gate met** — `run` / `defer` / `arun` over four drivers, with the task shape (single, list, keyed map) preserved into the results.
 
-**Milestones M23–M29** (API Resources → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M23 API Resources gate met** — `JsonResource` and `ResourceCollection` with the whole conditional family, wrapping, pagination `meta` / `links`, `make:resource`, and controllers that return a resource straight from a route.
+
+**Milestones M24–M29** (Model factories → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

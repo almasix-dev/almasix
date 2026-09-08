@@ -138,6 +138,20 @@ class MakeModelCommand(Generator):
         return self.SUCCESS
 
 
+class MakeResourceCommand(Generator):
+    signature = (
+        "make:resource {name : Class name, e.g. UserResource or Api/UserResource} "
+        "{--collection : A resource collection rather than a single resource} "
+        "{--force : Overwrite an existing file}"
+    )
+    description = "Create an API resource in app/http/resources"
+    kind = "resource"
+
+    def stub(self) -> str:
+        collection = bool(self.option("collection")) or self.class_name().endswith("Collection")
+        return "resource.collection.stub" if collection else "resource.stub"
+
+
 class MakeJobCommand(Generator):
     signature = (
         "make:job {name : Class name, e.g. SendDigest or Mail/SendDigest} "

@@ -545,6 +545,26 @@ pytest -q tests/test_m22_*.py tests/smoke/test_m22_smoke.py
 
 ---
 
+## M23 — API Resources + Serialization
+
+```bash
+pytest -q tests/test_m23_*.py tests/smoke/test_m23_smoke.py
+```
+
+### M23 exit criteria
+
+- [x] `JsonResource` proxying attributes to the wrapped model, `to_dict(request)`, `make`, `collection`, `with_`, `additional`, `response`
+- [x] The conditional family — `when` / `unless` (callable values and defaults), `merge_when` / `merge_unless`, `when_has`, `when_not_null`, `when_loaded`, `when_counted`, `when_aggregated`, `when_appended`, `when_pivot_loaded` / `when_pivot_loaded_as`
+- [x] Missing values disappear and merges splice at every level, including inside nested resources, which resolve with the same request
+- [x] `ResourceCollection` with `collects`, the `<Name>Resource` guess, `AnonymousResourceCollection` from `Resource.collection(...)`, `Collection` and paginator inputs
+- [x] Wrapping: the `wrap` key, `without_wrapping`, `wrap_with`, no double wrapping when the payload already owns the key
+- [x] Paginated collections add Laravel's `meta` (`current_page`, `per_page`, `from`, `to`, `last_page`, `total`) and `links`, with `SimplePaginator` degrading honestly
+- [x] Controllers may return a resource directly — `make_response` honors the `to_response()` protocol; dates, decimals, and UUIDs render
+- [x] `smith make:resource` with `--collection`; living example `smith progress:resources` and `GET /api/resources`; the board marks M23 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.http.resources`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash

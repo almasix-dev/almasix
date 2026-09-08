@@ -239,8 +239,13 @@ def _milestones() -> list[dict]:
         {
             "id": "M23",
             "name": "API Resources",
-            "status": "planned",
-            "proof": ["JsonResource / ResourceCollection", "make:resource"],
+            "status": "complete",
+            "proof": [
+                "JsonResource / ResourceCollection",
+                "conditionals, wrapping, pagination meta",
+                "GET /api/resources",
+                "progress:resources",
+            ],
         },
         {
             "id": "M24",

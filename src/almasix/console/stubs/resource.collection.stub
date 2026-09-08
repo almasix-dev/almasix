@@ -1,0 +1,21 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.http.resources import ResourceCollection
+
+
+class {{ class }}(ResourceCollection):
+    """Shape many records for the API.
+
+    Set ``collects`` to the resource each item becomes; without it, a
+    ``{{ class }}`` looks for a matching ``*Resource`` in this module.
+    """
+
+    def to_dict(self, request: Any = None) -> Any:
+        return super().to_dict(request)
+
+    def with_(self, request: Any = None) -> dict[str, Any]:
+        return {}

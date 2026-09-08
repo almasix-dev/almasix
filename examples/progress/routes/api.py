@@ -13,6 +13,7 @@ from app.http.controllers.locale_controller import LocaleController
 from app.http.controllers.orm_tour_controller import OrmTourController
 from app.http.controllers.post_controller import PostController
 from app.http.controllers.progress_controller import ProgressController
+from app.http.controllers.resource_controller import ResourceController
 from app.http.controllers.user_controller import UserController
 
 from almasix.routing import Route
@@ -32,6 +33,10 @@ with Route.group(prefix="/api", middleware=["api"]):
     Route.post("/posts/{post}/restore", [PostController, "restore"])
     Route.get("/posts/{post}/comments", [PostController, "comments"])
     Route.post("/posts/{post}/comments", [PostController, "add_comment"])
+
+    # M23 — API resources: the controller returns a resource, not a dict.
+    Route.get("/resources", [ResourceController, "index"])
+    Route.get("/resources/{post}", [ResourceController, "show"])
 
     Route.get("/users", [UserController, "index"])
     Route.get("/users/authors", [UserController, "authors"])

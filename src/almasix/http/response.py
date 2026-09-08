@@ -45,6 +45,13 @@ def make_response(
     if content is None:
         return Response(status_code=status if status != 200 else 204, headers=headers)
 
+    responder = getattr(content, "to_response", None)
+    if callable(responder):
+        # Laravel's Responsable: anything that can turn itself into a
+        # response gets to, which is how API Resources come back from a
+        # controller without the caller building the JSON.
+        return make_response(responder(), status=status, headers=headers)
+
     if isinstance(content, (dict, list)):
         return JSONResponse(content, status_code=status, headers=headers)
 
