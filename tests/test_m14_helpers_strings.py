@@ -209,3 +209,50 @@ def test_number_helpers() -> None:
 
 def test_collect_still_exported() -> None:
     assert collect([1, 2]).sum() == 3
+
+
+def test_excerpt_marks_the_ends_it_trims() -> None:
+    text = "This is a very long sentence about Ada and her engine designs"
+
+    assert Str.excerpt(text, "Ada", options={"radius": 5}) == "...bout Ada and ..."
+    assert Str.excerpt("Ada wrote", "Ada", options={"radius": 5}) == "Ada wrot..."
+    assert Str.excerpt("written by Ada", "Ada", options={"radius": 5}) == "...n by Ada"
+    assert Str.excerpt("nothing here", "missing") is None
+
+
+def test_is_matches_wildcard_patterns() -> None:
+    assert Str.is_("*.txt", "notes.txt") is True
+    assert Str.is_("*.txt", "notes.md") is False
+    assert Str.is_("notes.txt", "notes.txt") is True
+    assert Str.is_(["*.md", "*.txt"], "notes.txt") is True
+
+
+def test_inflecting_a_word_already_in_the_target_form_leaves_it_alone() -> None:
+    assert Str.plural("person") == "people"
+    assert Str.plural("people") == "people"
+    assert Str.plural("person", 1) == "person"
+    assert Str.singular("people") == "person"
+    assert Str.singular("person") == "person"
+    assert Str.singular("book") == "book"
+
+
+def test_take_counts_from_the_end_when_negative() -> None:
+    assert Str.take("abcdef", 2) == "ab"
+    assert Str.take("abcdef", -2) == "ef"
+
+
+def test_map_with_keys_accepts_a_mapping() -> None:
+    users = {"a": {"email": "ada@example.com"}, "b": {"email": "bob@example.com"}}
+
+    assert Arr.map_with_keys(users, lambda user, key: {user["email"]: key}) == {
+        "ada@example.com": "a",
+        "bob@example.com": "b",
+    }
+
+
+def test_forget_stops_at_a_segment_that_is_not_a_mapping() -> None:
+    array = {"products": {"name": "Desk"}}
+
+    Arr.forget(array, "products.name.deeper")
+
+    assert array == {"products": {"name": "Desk"}}

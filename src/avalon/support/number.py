@@ -4,6 +4,17 @@ from __future__ import annotations
 
 from typing import Any
 
+# Irregular ordinal words; the rest are formed by suffix rules.
+_ORDINAL_WORDS = {
+    "one": "first",
+    "two": "second",
+    "three": "third",
+    "five": "fifth",
+    "eight": "eighth",
+    "nine": "ninth",
+    "twelve": "twelfth",
+}
+
 _default_locale = "en"
 _default_currency = "USD"
 
@@ -176,6 +187,34 @@ class Number:
         return str(n)
 
     @staticmethod
+    def spell_ordinal(number: int, *, locale: str | None = None) -> str:
+        """Spell a number as an ordinal word: ``1`` becomes ``first``."""
+        del locale
+        spelled = Number.spell(int(number))
+        head, _, last = spelled.rpartition("-")
+        word = _ORDINAL_WORDS.get(last)
+        if word is None:
+            word = f"{last[:-1]}ieth" if last.endswith("y") else f"{last}th"
+        return f"{head}-{word}" if head else word
+
+    @staticmethod
+    def parse_int(value: str, *, locale: str | None = None) -> int:
+        """Read an integer out of a formatted string, discarding any fraction."""
+        return int(Number.parse_float(value, locale=locale))
+
+    @staticmethod
+    def parse_float(value: str, *, locale: str | None = None) -> float:
+        """Read a float out of a formatted string, ignoring grouping separators."""
+        text = str(value).strip()
+        if locale and locale.split("_")[0] in {"fr", "de", "es", "it", "pt", "nl", "tr", "ru"}:
+            # These locales group with dots or spaces and use a comma decimal.
+            text = text.replace(".", "").replace(" ", "").replace("\u00a0", "")
+            text = text.replace(",", ".")
+        else:
+            text = text.replace(",", "").replace(" ", "")
+        return float(text)
+
+    @staticmethod
     def for_humans(number: float | int, *, precision: int = 0, abbreviate: bool = True) -> str:
         if abbreviate:
             return Number.abbreviate(number, precision=precision)
@@ -198,3 +237,8 @@ Number.useCurrency = Number.use_currency  # type: ignore[attr-defined]
 Number.defaultCurrency = Number.default_currency  # type: ignore[attr-defined]
 Number.withLocale = Number.with_locale  # type: ignore[attr-defined]
 Number.withCurrency = Number.with_currency  # type: ignore[attr-defined]
+
+
+Number.spellOrdinal = Number.spell_ordinal  # type: ignore[attr-defined]
+Number.parseInt = Number.parse_int  # type: ignore[attr-defined]
+Number.parseFloat = Number.parse_float  # type: ignore[attr-defined]

@@ -435,6 +435,140 @@ Arr.isList = Arr.is_list  # type: ignore[attr-defined]
 Arr.keyBy = Arr.key_by  # type: ignore[attr-defined]
 Arr.mapSpread = Arr.map_spread  # type: ignore[attr-defined]
 Arr.mapWithKeys = Arr.map_with_keys  # type: ignore[attr-defined]
+def _typed(array: Any, key: str | None, expected: type | tuple[type, ...], label: str) -> Any:
+    """``Arr.get`` with a type assertion, for reading configuration safely."""
+    value = data_get(array, key)
+    if not isinstance(value, expected) or isinstance(value, bool) is not (expected is bool):
+        raise TypeError(f"Value for {key!r} is not {label}: {value!r}")
+    return value
+
+
+class _ArrExtras:
+    """Methods installed onto :class:`Arr`; grouped here only for readability."""
+
+    @staticmethod
+    def array(array: Any, key: str | None = None) -> list[Any]:
+        """Read a value, insisting it is a list."""
+        return _typed(array, key, list, "a list")
+
+    @staticmethod
+    def boolean(array: Any, key: str | None = None) -> bool:
+        """Read a value, insisting it is a boolean."""
+        return _typed(array, key, bool, "a boolean")
+
+    @staticmethod
+    def integer(array: Any, key: str | None = None) -> int:
+        """Read a value, insisting it is an integer."""
+        return _typed(array, key, int, "an integer")
+
+    @staticmethod
+    def float(array: Any, key: str | None = None) -> float:
+        """Read a value, insisting it is a float."""
+        return _typed(array, key, float, "a float")
+
+    @staticmethod
+    def string(array: Any, key: str | None = None) -> str:
+        """Read a value, insisting it is a string."""
+        return _typed(array, key, str, "a string")
+
+    @staticmethod
+    def from_(value: Any) -> Any:
+        """Convert whatever it is given into a plain list or dict.
+
+        Laravel spells this ``Arr::from``; ``from`` is a keyword in Python.
+        """
+        if value is None:
+            return []
+        if isinstance(value, Mapping):
+            return dict(value)
+        for method in ("to_dict", "to_array", "all"):
+            converter = getattr(value, method, None)
+            if callable(converter):
+                return Arr.from_(converter())
+        if isinstance(value, (str, bytes)):
+            return [value]
+        if hasattr(value, "__dict__") and not isinstance(value, Iterable):
+            return dict(vars(value))
+        if isinstance(value, Iterable):
+            return list(value)
+        return [value]  # pragma: no cover - non-iterable scalars
+
+    @staticmethod
+    def has_all(array: Any, keys: str | Iterable[str]) -> bool:
+        """Whether every one of the keys exists, in dot notation."""
+        key_list = [keys] if isinstance(keys, str) else list(keys)
+        return bool(key_list) and all(Arr.has(array, key) for key in key_list)
+
+    @staticmethod
+    def every(array: Iterable[Any], callback: Callable[[Any], bool]) -> bool:
+        """Whether the callback holds for every item."""
+        return all(callback(item) for item in array)
+
+    @staticmethod
+    def some(array: Iterable[Any], callback: Callable[[Any], bool]) -> bool:
+        """Whether the callback holds for at least one item."""
+        return any(callback(item) for item in array)
+
+    @staticmethod
+    def sole(array: Iterable[Any], callback: Callable[[Any], bool] | None = None) -> Any:
+        """The one matching item, raising if there are none or several."""
+        from avalon.support.collection import ItemNotFoundError, MultipleItemsFoundError
+
+        matches = [item for item in array if callback is None or callback(item)]
+        if not matches:
+            raise ItemNotFoundError("No matching item found.")
+        if len(matches) > 1:
+            raise MultipleItemsFoundError(f"{len(matches)} items were found.")
+        return matches[0]
+
+    @staticmethod
+    def partition(
+        array: Iterable[Any], callback: Callable[[Any], bool]
+    ) -> tuple[list[Any], list[Any]]:
+        """Split into the items that pass and the items that do not."""
+        passed: list[Any] = []
+        failed: list[Any] = []
+        for item in array:
+            (passed if callback(item) else failed).append(item)
+        return passed, failed
+
+    @staticmethod
+    def push(array: MutableMapping[Any, Any], key: str, *values: Any) -> MutableMapping[Any, Any]:
+        """Append to the list at a dot-notation key, creating it if needed."""
+        current = data_get(array, key)
+        if current is None:
+            current = []
+            Arr.set(array, key, current)
+        current.extend(values)
+        return array
+
+    @staticmethod
+    def select(array: Iterable[Any], keys: str | Iterable[str]) -> list[dict[Any, Any]]:
+        """Keep only the given keys from each row."""
+        key_list = [keys] if isinstance(keys, str) else list(keys)
+        return [Arr.only(item, key_list) for item in array]
+
+    @staticmethod
+    def only_values(array: Iterable[Any], values: Iterable[Any]) -> list[Any]:
+        """Keep only the given values."""
+        wanted = list(values)
+        return [item for item in array if item in wanted]
+
+    @staticmethod
+    def except_values(array: Iterable[Any], values: Iterable[Any]) -> list[Any]:
+        """Remove the given values."""
+        unwanted = list(values)
+        return [item for item in array if item not in unwanted]
+
+
+for _name, _member in vars(_ArrExtras).items():
+    if isinstance(_member, staticmethod):
+        setattr(Arr, _name, _member)
+Arr.hasAll = Arr.has_all  # type: ignore[attr-defined]
+Arr.onlyValues = Arr.only_values  # type: ignore[attr-defined]
+Arr.exceptValues = Arr.except_values  # type: ignore[attr-defined]
+setattr(Arr, "from", Arr.from_)
+
 Arr.prependKeysWith = Arr.prepend_keys_with  # type: ignore[attr-defined]
 Arr.sortDesc = Arr.sort_desc  # type: ignore[attr-defined]
 Arr.sortRecursive = Arr.sort_recursive  # type: ignore[attr-defined]
