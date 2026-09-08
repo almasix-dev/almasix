@@ -58,11 +58,20 @@ def test_m40_s3_model_prune_is_registered(progress: ConsoleKernel) -> None:
     assert "model:prune" in result.stdout
 
 
-def test_m40_s4_model_prune_pretends_against_the_example(progress: ConsoleKernel) -> None:
+def test_m40_s4_model_prune_pretends_against_the_example(
+    progress: ConsoleKernel, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`model:prune --pretend` against a freshly migrated example database."""
+    monkeypatch.setenv("DB_CONNECTION", "sqlite")
+    monkeypatch.setenv("DB_DATABASE", str(tmp_path / "prune_smoke.sqlite"))
+
+    migrated = runner.invoke(grail_app, ["migrate"])
+    assert migrated.exit_code == 0, migrated.stdout
+
     result = runner.invoke(grail_app, ["model:prune", "--pretend"])
 
     assert result.exit_code == 0, result.stdout
-    assert "Post" in result.stdout
+    assert "Post: 0 model(s) would be pruned." in result.stdout
 
 
 def test_m40_s5_uuid_keys_round_trip(progress: ConsoleKernel) -> None:
