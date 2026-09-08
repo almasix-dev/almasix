@@ -47,7 +47,7 @@ from almasix.orm.morph import (
     morph_alias,
     morph_map,
 )
-from almasix.orm.pagination import Paginator, SimplePaginator
+from almasix.orm.pagination import Cursor, CursorPaginator, Paginator, SimplePaginator
 from almasix.orm.pivot import MorphPivot, Pivot
 from almasix.orm.provider import DatabaseServiceProvider
 from almasix.orm.pruning import MassPrunable, Prunable
@@ -128,6 +128,8 @@ __all__ = [
     "MorphPivot",
     "MorphTo",
     "MorphToMany",
+    "Cursor",
+    "CursorPaginator",
     "Paginator",
     "Pivot",
     "Prunable",

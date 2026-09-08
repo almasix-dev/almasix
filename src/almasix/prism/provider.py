@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from almasix.prism.engine import Engine
 from almasix.prism.helpers import ViewFactory, set_engine
 from almasix.providers.provider import ServiceProvider
@@ -17,6 +19,9 @@ class PrismServiceProvider(ServiceProvider):
             engine = Engine(paths=[], cache_enabled=True)
             # Conventional Laravel-shaped path; create-on-write is the app's job.
             engine.add_path(app.path("resources", "views"))
+            # The views the framework itself ships — pagination links, so far.
+            # It comes second, so an application's own copy wins.
+            engine.add_path(Path(__file__).parent / "views")
             return engine
 
         app.container.singleton(Engine, factory)

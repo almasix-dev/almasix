@@ -31,7 +31,13 @@ from almasix.orm.grammar import (
     json_value,
     split_json_path,
 )
-from almasix.orm.pagination import Paginator, SimplePaginator
+from almasix.orm.pagination import (
+    Cursor,
+    CursorPaginator,
+    Paginator,
+    SimplePaginator,
+    resolve_page,
+)
 from almasix.support.lazy import AsyncLazyCollection
 
 if TYPE_CHECKING:
@@ -2049,17 +2055,117 @@ class QueryBuilder:
 
     # --- pagination ---------------------------------------------------------
 
-    async def paginate(self, per_page: int | None = None, page: int = 1) -> Paginator:
-        size = per_page or (self.model.per_page if self.model else 15)
-        total = await self.count()
-        items = await self.clone().for_page(page, size).get()
-        return Paginator(items, total, size, page)
+    async def paginate(
+        self,
+        per_page: int | None = None,
+        page: int | None = None,
+        *,
+        page_name: str = "page",
+        total: int | None = None,
+    ) -> Paginator:
+        """One page of results, and how many there are in all.
 
-    async def simple_paginate(self, per_page: int | None = None, page: int = 1) -> SimplePaginator:
+        ``page`` defaults to what the request asked for, so a controller that
+        wants Laravel's behaviour needs to say nothing at all.
+        """
         size = per_page or (self.model.per_page if self.model else 15)
-        results = await self.clone().for_page(page, size + 1).get()
+        current = resolve_page(page_name, page)
+        counted = await self.count() if total is None else int(total)
+        items = await self.clone().for_page(current, size).get()
+        return Paginator(items, counted, size, current, page_name=page_name)
+
+    async def simple_paginate(
+        self,
+        per_page: int | None = None,
+        page: int | None = None,
+        *,
+        page_name: str = "page",
+    ) -> SimplePaginator:
+        """One page, and whether there is another — no counting."""
+        size = per_page or (self.model.per_page if self.model else 15)
+        current = resolve_page(page_name, page)
+        results = await self.clone().for_page(current, size + 1).get()
         has_more = len(results) > size
-        return SimplePaginator(results.take(size), size, page, has_more)
+        return SimplePaginator(results.take(size), size, current, has_more, page_name=page_name)
+
+    async def cursor_paginate(
+        self,
+        per_page: int | None = None,
+        cursor: Cursor | str | None = None,
+        *,
+        cursor_name: str = "cursor",
+    ) -> CursorPaginator:
+        """One page defined by where the last one ended.
+
+        The query's ordering is what a cursor is made of, so an unordered
+        query says so rather than paging arbitrarily; Laravel raises there
+        too. Rows inserted while a reader pages through do not shift the
+        window, which an offset cannot promise.
+        """
+        size = per_page or (self.model.per_page if self.model else 15)
+        orders = self._cursor_orders()
+        active = _read_cursor(cursor, cursor_name)
+
+        builder = self.clone()
+        if active is not None:
+            builder._apply_cursor(active, orders)
+        if active is not None and not active.points_to_next_items:
+            builder = builder._reverse_orders(orders)
+
+        results = await builder.for_page(1, size + 1).get()
+        has_more = len(results) > size
+        items = results.take(size)
+        if active is not None and not active.points_to_next_items:
+            items = Collection(list(reversed(list(items))))
+        return CursorPaginator(
+            items,
+            size,
+            active,
+            has_more,
+            parameters=[column for column, _ in orders],
+            cursor_name=cursor_name,
+        )
+
+    def _cursor_orders(self) -> list[tuple[str, bool]]:
+        """The ordering a cursor is built from, as ``(column, descending)``."""
+        orders: list[tuple[str, bool]] = []
+        for order in self._orders:
+            element = getattr(order, "element", order)
+            column = getattr(element, "name", None) or str(element)
+            orders.append((str(column), str(order).upper().endswith(" DESC")))
+        if not orders:
+            raise ValueError(
+                "cursor_paginate() needs an order_by: a cursor is a position "
+                "in an ordering, and an unordered query has none."
+            )
+        return orders
+
+    def _apply_cursor(self, cursor: Cursor, orders: Sequence[tuple[str, bool]]) -> None:
+        """Where the next page starts — a lexicographic comparison, column by column."""
+        forwards = cursor.points_to_next_items
+        previous: list[tuple[str, Any]] = []
+        clauses: list[Any] = []
+        for column, descending in orders:
+            value = cursor.parameter(column)
+            # Reading forwards through a descending column means smaller
+            # values, and reading backwards flips it again.
+            backwards_of_here = descending == forwards
+            comparison = (
+                self.column(column) < value
+                if backwards_of_here
+                else self.column(column) > value
+            )
+            equals = [self.column(name) == held for name, held in previous]
+            clauses.append(sa.and_(*equals, comparison) if equals else comparison)
+            previous.append((column, value))
+        self._push_where("and", sa.or_(*clauses))
+
+    def _reverse_orders(self, orders: Sequence[tuple[str, bool]]) -> QueryBuilder:
+        """Read backwards from the cursor, for a page before this one."""
+        self._orders = []
+        for column, descending in orders:
+            self.order_by(column, "asc" if descending else "desc")
+        return self
 
     # --- writes -------------------------------------------------------------
 
@@ -2363,6 +2469,20 @@ class JoinClause(QueryBuilder):
         nested._local_tables = self._local_tables
         callback(nested)
         return nested._compile_wheres()
+
+
+def _read_cursor(cursor: Cursor | str | None, cursor_name: str) -> Cursor | None:
+    """The cursor given, the one in the query string, or none at all."""
+    if isinstance(cursor, Cursor):
+        return cursor
+    if isinstance(cursor, str):
+        return Cursor.from_encoded(cursor)
+    from almasix.http.request import get_request
+
+    request = get_request()
+    if request is None:
+        return None
+    return Cursor.from_encoded(request.query(cursor_name))
 
 
 def _writable_rows(
