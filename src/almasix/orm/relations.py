@@ -179,8 +179,11 @@ class HasOneOrMany(Relation):
         probe = sa.table(table)
         extra = None
         if spec.callback is not None:
-            scoped = QueryBuilder.for_table(table, connection=self.related.connection)
-            scoped._tables[table] = probe
+            scoped = QueryBuilder(
+                table=table,
+                connection=self.related.connection,
+                tables={table: probe},
+            )
             spec.callback(scoped)
             extra = scoped._compile_wheres()
         for name in (key, self.foreign_key, *spec.columns):

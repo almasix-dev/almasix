@@ -50,7 +50,7 @@ async def test_two_arg_never_guesses_operator(memory_db) -> None:
     await _items(memory_db)
     found = await Item.query().where("op", ">").first()
     assert found is not None and found.name == "beta"
-    sql = Item.query().where("op", ">").to_sql().lower()
+    sql = Item.query().where("op", ">").to_raw_sql().lower()
     assert ">" in sql
     # The value is bound/literal '>', not a comparison against another column.
     assert "op" in sql
