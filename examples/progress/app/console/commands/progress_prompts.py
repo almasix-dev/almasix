@@ -27,7 +27,7 @@ class ProgressPromptsCommand(Command):
 
         name = text(
             "What should we call this demo?",
-            placeholder="e.g. Excalibur",
+            placeholder="e.g. Koh-i-Noor",
             default="Almasix",
             hint="Shown in the outro.",
         )

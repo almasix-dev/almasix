@@ -15,7 +15,7 @@
 - **HTTP engine:** FastAPI on Starlette (ASGI) — hidden behind Almasix’s programming model, with an escape hatch to the underlying FastAPI app for advanced cases
 - **Validation / OpenAPI:** Pydantic v2 via Form Request–style classes
 - **Views:** **Prism** (`almasix.prism`) — Blade-familiar syntax, featherweight render path, templates as **`.prism.html`**
-- **Theme:** Arthurian naming for products/tools (`smith`, `Prism`); keep public APIs Laravel-familiar (`Route`, `Controller`, `Middleware`, `config()`, `@extends`)
+- **Theme:** Lapidary naming for products/tools — the project is *almasi* (Swahili, “diamond”), cut by `smith`, viewed through `Prism`, inspected with `loupe`; keep public APIs Laravel-familiar (`Route`, `Controller`, `Middleware`, `config()`, `@extends`)
 - **App layout naming:** Python snake_case packages/modules (`app/models/post.py`); PascalCase **classes** and Laravel-shaped directory *roles* (`models`, `http/controllers`). See [Directory Structure](../website/src/content/docs/structure.md).
 
 ## Design picture (target DX)
