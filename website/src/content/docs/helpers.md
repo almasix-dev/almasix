@@ -1506,7 +1506,7 @@ from almasix.support import app_path
 
 result = app_path("Models")
 
-# '/home/smaosa/Projects/almasix/app/Models'
+# '/path/to/your-app/app/Models'
 ```
 
 ### base_path
@@ -1524,8 +1524,8 @@ from almasix.support import base_path
 root = base_path()
 logs = base_path("storage/logs")
 
-# '/home/smaosa/Projects/almasix'
-# '/home/smaosa/Projects/almasix/storage/logs'
+# '/path/to/your-app'
+# '/path/to/your-app/storage/logs'
 ```
 
 ### config_path
@@ -1538,7 +1538,7 @@ from almasix.support import config_path
 
 result = config_path("app.py")
 
-# '/home/smaosa/Projects/almasix/config/app.py'
+# '/path/to/your-app/config/app.py'
 ```
 
 ### database_path
@@ -1551,7 +1551,7 @@ from almasix.support import database_path
 
 result = database_path("migrations")
 
-# '/home/smaosa/Projects/almasix/database/migrations'
+# '/path/to/your-app/database/migrations'
 ```
 
 ### lang_path
@@ -1563,7 +1563,7 @@ from almasix.support import lang_path
 
 result = lang_path("en/validation.py")
 
-# '/home/smaosa/Projects/almasix/lang/en/validation.py'
+# '/path/to/your-app/lang/en/validation.py'
 ```
 
 ### public_path
@@ -1576,7 +1576,7 @@ from almasix.support import public_path
 
 result = public_path("build/app.css")
 
-# '/home/smaosa/Projects/almasix/public/build/app.css'
+# '/path/to/your-app/public/build/app.css'
 ```
 
 ### resource_path
@@ -1590,7 +1590,7 @@ from almasix.support import resource_path
 
 result = resource_path("views")
 
-# '/home/smaosa/Projects/almasix/resources/views'
+# '/path/to/your-app/resources/views'
 ```
 
 ### storage_path
@@ -1603,7 +1603,7 @@ from almasix.support import storage_path
 
 result = storage_path("logs/almasix.log")
 
-# '/home/smaosa/Projects/almasix/storage/logs/almasix.log'
+# '/path/to/your-app/storage/logs/almasix.log'
 ```
 
 ## URLs

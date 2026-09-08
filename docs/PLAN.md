@@ -2,7 +2,9 @@
 
 > **Status:** Binding. This document is the source of truth for architecture and milestones.
 > Change it deliberately (PR / explicit decision), not casually mid-implementation.
-> Last aligned: 2026-09-05 (M9 complete; post-M13 Digging Deeper + Articulate NoSQL queued).
+> Last aligned: 2026-09-08 (M0–M20 complete except **M5 Articulate ORM**, still partial;
+> exhaust milestones M30/M31, M40/M41 and M49/M50 landed; **M42 — Query builder + database
+> exhaust** is next).
 
 ## Working identity
 
