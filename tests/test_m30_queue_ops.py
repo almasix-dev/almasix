@@ -500,6 +500,36 @@ def test_queue_monitor_reports_a_driver_that_cannot_be_sized(
     assert "vague default 0 OK" in rows(captured.out)
 
 
+def test_queue_monitor_reports_a_store_it_cannot_read(
+    build: Build, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """No jobs table is a message, not a traceback."""
+    kernel = build()
+    asyncio.run(_drop_jobs_table())
+
+    assert kernel.run_argv("queue:monitor", ["database:default"]) == 1
+
+    captured = capsys.readouterr()
+    assert "Could not size [database] queue [default]: " in captured.err
+    assert "database default - unreadable" in rows(captured.out)
+
+
+def test_queue_clear_reports_a_store_it_cannot_empty(
+    build: Build, capsys: pytest.CaptureFixture[str]
+) -> None:
+    kernel = build()
+    asyncio.run(_drop_jobs_table())
+
+    assert kernel.run_argv("queue:clear", ["database", "--force"]) == 1
+    assert "Could not clear [database] queue [default]: " in capsys.readouterr().err
+
+
+async def _drop_jobs_table() -> None:
+    from avalon.orm.schema import Schema
+
+    await Schema.drop_if_exists("jobs")
+
+
 def test_queue_monitor_reports_a_connection_that_is_not_configured(
     build: Build, capsys: pytest.CaptureFixture[str]
 ) -> None:

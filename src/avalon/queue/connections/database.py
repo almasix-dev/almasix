@@ -33,7 +33,10 @@ class DatabaseQueue:
         self.manager = manager
         self.connection_name = connection_name
         self.table = str(config.get("table") or "jobs")
-        self.db_connection = str(config.get("connection") or "default")
+        # ``None`` is DB's word for the configured default connection, where
+        # "default" is a connection name that almost no application defines.
+        configured = config.get("connection")
+        self.db_connection: str | None = str(configured) if configured else None
 
     async def push(self, job: Job) -> bool:
         from avalon.orm.facade import DB

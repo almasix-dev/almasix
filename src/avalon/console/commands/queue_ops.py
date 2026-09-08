@@ -195,7 +195,14 @@ class QueueMonitorCommand(QueueOperation):
                     )
                 rows.append([entry["connection"], entry["queue"], "-", "unreadable"])
                 continue
-            size = int(await size_of(entry["queue"]) or 0)
+            try:
+                size = int(await size_of(entry["queue"]) or 0)
+            except Exception as exc:  # noqa: BLE001 - an unreachable store is not a crash
+                self.error(
+                    f"Could not size [{entry['connection']}] queue [{entry['queue']}]: {exc}"
+                )
+                rows.append([entry["connection"], entry["queue"], "-", "unreadable"])
+                continue
             busy = size >= maximum
             rows.append([entry["connection"], entry["queue"], size, "BUSY" if busy else "OK"])
             if busy:
