@@ -300,6 +300,17 @@ class Blueprint:
         return table
 
 
+def _schema_connection(connection: str | None = None) -> Any:
+    """The connection schema work runs on.
+
+    A pooled PostgreSQL connection cannot hold the session state DDL needs,
+    so when one declares a `direct` twin, schema work goes there instead —
+    the same routing Laravel applies to migrations and the `db:*` commands.
+    """
+    manager = get_manager()
+    return manager.connection(manager.direct_name(connection))
+
+
 class Schema:
     """Static schema façade."""
 
@@ -308,7 +319,7 @@ class Schema:
         blueprint = Blueprint(table)
         callback(blueprint)
         metadata = sa.MetaData()
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
 
         def reflect_and_create(sync_conn: Any) -> None:
             # Load existing tables so ForeignKey("users.id") can resolve during CREATE.
@@ -325,7 +336,7 @@ class Schema:
         """Alter an existing table (Laravel ``Schema::table``)."""
         blueprint = Blueprint(table)
         callback(blueprint)
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
         dialect_name = engine.dialect.name
         statements = compile_table_statements(blueprint, engine.dialect)
         if not statements:
@@ -337,21 +348,21 @@ class Schema:
 
     @staticmethod
     async def drop(table: str, connection: str | None = None) -> None:
-        engine = get_manager().connection(connection).engine
-        await get_manager().connection(connection).execute(
+        engine = _schema_connection(connection).engine
+        await _schema_connection(connection).execute(
             drop_table_sql(table, engine.dialect, if_exists=False)
         )
 
     @staticmethod
     async def drop_if_exists(table: str, connection: str | None = None) -> None:
-        engine = get_manager().connection(connection).engine
-        await get_manager().connection(connection).execute(
+        engine = _schema_connection(connection).engine
+        await _schema_connection(connection).execute(
             drop_table_sql(table, engine.dialect, if_exists=True)
         )
 
     @staticmethod
     async def has_table(table: str, connection: str | None = None) -> bool:
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
 
         def inspect(sync_conn: Any) -> bool:
             return sa.inspect(sync_conn).has_table(table)
@@ -361,7 +372,7 @@ class Schema:
 
     @staticmethod
     async def has_column(table: str, column: str, connection: str | None = None) -> bool:
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
 
         def inspect(sync_conn: Any) -> bool:
             return column in {col["name"] for col in sa.inspect(sync_conn).get_columns(table)}
@@ -371,7 +382,7 @@ class Schema:
 
     @staticmethod
     async def has_index(table: str, name: str, connection: str | None = None) -> bool:
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
 
         def inspect(sync_conn: Any) -> bool:
             return any(index["name"] == name for index in sa.inspect(sync_conn).get_indexes(table))
@@ -401,13 +412,13 @@ class Schema:
                 for column in inspector.get_columns(table)
             ]
 
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
         async with engine.connect() as conn:
             return await conn.run_sync(read)
 
     @staticmethod
     async def table_names(connection: str | None = None) -> list[str]:
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
 
         def names(sync_conn: Any) -> list[str]:
             return list(sa.inspect(sync_conn).get_table_names())

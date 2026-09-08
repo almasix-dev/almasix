@@ -325,7 +325,7 @@ def _milestones() -> list[dict]:
             "name": "Smith Console exhaust",
             "status": "complete",
             "proof": [
-                "101 commands, every one a Command class",
+                "102 commands, every one a Command class",
                 "full signature parser + option shortcuts",
                 "Artisan.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",
