@@ -1,17 +1,18 @@
 name: Docs
 
 # Builds the Starlight site in website/ and deploys it to GitHub Pages at
-# https://almasix-dev.github.io/almasix/. Pull requests build only, so broken
-# docs are caught before they reach the published site.
+# https://almasix-dev.github.io/almasix/.
+#
+# The published site tracks releases, not main: it deploys when a release is
+# published, so the documentation on the site always describes a version people
+# can actually install. Pull requests build without deploying, so broken docs
+# are still caught early, and workflow_dispatch allows an out-of-band refresh.
 #
 # Requires the repository's Pages source to be set to "GitHub Actions".
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'website/**'
-      - '.github/workflows/docs.yml'
+  release:
+    types: [published]
   pull_request:
     paths:
       - 'website/**'
