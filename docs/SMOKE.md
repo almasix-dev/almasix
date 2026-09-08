@@ -527,6 +527,24 @@ pytest -q tests/test_m21_*.py tests/smoke/test_m21_smoke.py
 
 ---
 
+## M22 — Concurrency
+
+```bash
+pytest -q tests/test_m22_*.py tests/smoke/test_m22_smoke.py
+```
+
+### M22 exit criteria
+
+- [x] `Concurrency.run` accepting one callable, a list, or a keyed map, returning results in the same shape and the task order
+- [x] Four drivers — `thread` (default), `fork`, `process`, `sync` — each resolved from `config/concurrency.py`, with `driver()`, `set_default_driver()`, `extend()`, and named entries that alias another driver
+- [x] A failing task raises only once every other task has settled; a child that dies without answering is reported rather than hanging
+- [x] The `process` driver rejects unpicklable tasks with an error that names the alternatives
+- [x] `Concurrency.defer` returning a waitable `DeferredTasks`; `Concurrency.arun` for coroutines under ASGI
+- [x] `config/concurrency.py` in the scaffold; living example `smith progress:concurrency`; the board marks M22 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.concurrency`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash

@@ -128,6 +128,7 @@ export default defineConfig({
 						{ label: 'Events', slug: 'events' },
 						{ label: 'HTTP Client', slug: 'http-client' },
 						{ label: 'Processes', slug: 'processes' },
+						{ label: 'Concurrency', slug: 'concurrency' },
 					],
 				},
 				{

@@ -229,8 +229,12 @@ def _milestones() -> list[dict]:
         {
             "id": "M22",
             "name": "Concurrency",
-            "status": "planned",
-            "proof": ["Concurrency::run", "async / process drivers"],
+            "status": "complete",
+            "proof": [
+                "Concurrency.run / defer / arun",
+                "thread / fork / process / sync drivers",
+                "progress:concurrency",
+            ],
         },
         {
             "id": "M23",

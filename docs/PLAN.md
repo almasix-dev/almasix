@@ -1080,6 +1080,10 @@ Laravel [Concurrency](https://laravel.com/docs/concurrency) — run closures con
 
 **Gate:** documented drivers work; docs published.
 
+**Status (M22):** `Concurrency.run` taking one callable, a list, or a keyed map and returning results in the same shape and order; four drivers — `thread` (default, any callable, `max_workers`), `fork` (true parallelism, closures included, Unix), `process` (spawned interpreter, picklable tasks, honest error otherwise), `sync` (Laravel's debugging driver); a failing task raising only once the others have settled; `Concurrency.defer` returning a waitable `DeferredTasks`; `Concurrency.arun` for the ASGI path; `driver()` / `set_default_driver()` / `extend()` and named config entries that alias another driver; `config/concurrency.py` in the scaffold; `ConcurrencyServiceProvider`; Starlight Concurrency; progress `progress:concurrency`.
+
+**Deliberate deviations (M22):** the default driver is `thread`, not Laravel's `process` — Python has real threads, they accept any closure, and the work this page is for (queries, HTTP calls, file reads) releases the GIL; `arun()` is an addition with no Laravel counterpart, for async controllers; `defer()` runs on a background thread and returns a handle, the same deviation as `Batch.defer()` in M20, because Almasix has no post-response hook yet; the `process` driver rejects unpicklable tasks with a clear error rather than serializing closures, since `SerializableClosure` has no dependency-free Python equivalent.
+
 ### M23 — API Resources + Serialization
 
 Laravel [Eloquent API Resources](https://laravel.com/docs/eloquent-resources) + deeper [serialization](https://laravel.com/docs/eloquent-serialization) docs/DX.
@@ -1595,7 +1599,9 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **M21 Processes gate met** — `Process.run` / `start` / `pool` / `concurrently` / `pipe`, both timeout flavours, real-time output callbacks, signals and stops, and the whole fake and assertion surface, exhausted against the Laravel page.
 
-**Milestones M22–M29** (Concurrency → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M22 Concurrency gate met** — `run` / `defer` / `arun` over four drivers, with the task shape (single, list, keyed map) preserved into the results.
+
+**Milestones M23–M29** (API Resources → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

@@ -65,6 +65,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "config/mail.py": _config_mail(),
         "config/notifications.py": _config_notifications(),
         "config/cache.py": _config_cache(),
+        "config/concurrency.py": _config_concurrency(),
         "config/redis.py": _config_redis(),
         "config/loupe.py": _config_loupe(),
         "app/models/__init__.py": "",
@@ -709,6 +710,28 @@ config = {
             "connection": env("REDIS_CACHE_CONNECTION", "default"),
         },
         "null": {"driver": "null"},
+    },
+}
+'''
+
+
+def _config_concurrency() -> str:
+    return '''"""Concurrency drivers."""
+
+from almasix.config import env
+
+config = {
+    # "thread" runs any callable and suits I/O-bound work; "fork" gives real
+    # parallelism on Unix; "process" needs picklable tasks; "sync" is serial.
+    "default": env("CONCURRENCY_DRIVER", "thread"),
+    "drivers": {
+        "thread": {
+            "driver": "thread",
+            "max_workers": int(env("CONCURRENCY_MAX_WORKERS", 16) or 16),
+        },
+        "fork": {"driver": "fork"},
+        "process": {"driver": "process"},
+        "sync": {"driver": "sync"},
     },
 }
 '''

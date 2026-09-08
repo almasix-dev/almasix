@@ -60,17 +60,20 @@ class FoundationServiceProvider(ServiceProvider):
         CacheServiceProvider(app).register()
         EncryptionServiceProvider(app).register()
         from almasix.client.provider import ClientServiceProvider
+        from almasix.concurrency.provider import ConcurrencyServiceProvider
         from almasix.events.provider import EventServiceProvider
         from almasix.process.provider import ProcessServiceProvider
 
         EventServiceProvider(app).register()
         ClientServiceProvider(app).register()
         ProcessServiceProvider(app).register()
+        ConcurrencyServiceProvider(app).register()
 
     def boot(self) -> None:
         from almasix.auth.provider import AuthServiceProvider
         from almasix.cache.provider import CacheServiceProvider
         from almasix.client.provider import ClientServiceProvider
+        from almasix.concurrency.provider import ConcurrencyServiceProvider
         from almasix.console.provider import ConsoleServiceProvider
         from almasix.encryption.provider import EncryptionServiceProvider
         from almasix.events.provider import EventServiceProvider
@@ -104,3 +107,4 @@ class FoundationServiceProvider(ServiceProvider):
         EventServiceProvider(self.app).boot()
         ClientServiceProvider(self.app).boot()
         ProcessServiceProvider(self.app).boot()
+        ConcurrencyServiceProvider(self.app).boot()
