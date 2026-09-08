@@ -3,13 +3,25 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable, Iterable, Mapping, Sequence
-from datetime import datetime, timezone
+import re
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
+from datetime import date, datetime, timezone
 from typing import Any, ClassVar
 
+from avalon.orm.attributes import Attribute
 from avalon.orm.builder import ModelNotFoundError, QueryBuilder
-from avalon.orm.casts import cast_value, serialize_value, uncast_value
+from avalon.orm.casts import (
+    CastsAttributes,
+    cast_format,
+    cast_value,
+    prepare_for_storage,
+    resolve_cast,
+    serialize_value,
+)
 from avalon.orm.collection import Collection
+from avalon.orm.ids import fill_unique_ids
 from avalon.orm.inflector import foreign_key, snake, table_name
 
 EVENTS = (
@@ -30,9 +42,29 @@ EVENTS = (
 # Set by ``avalon.orm.seeder.without_model_events`` / ``WithoutModelEvents``.
 _EVENTS_DISABLED = False
 
+# Strictness, configured once at boot (Laravel does this in a provider).
+_STRICT_DISCARDING = False
+_STRICT_MISSING = False
+
+# Classes whose timestamps are suspended, plus a global unguard switch.
+_TIMESTAMPS_OFF: ContextVar[frozenset[type]] = ContextVar("_TIMESTAMPS_OFF", default=frozenset())
+_UNGUARDED = False
+
+_UNSET = object()
+
+_ACCESSOR_HOOK = re.compile(r"^(get|set)_.+_attribute$")
+
 
 class MassAssignmentError(RuntimeError):
     """Raised when a guarded attribute is mass-assigned."""
+
+
+class DiscardedAttributeError(RuntimeError):
+    """Raised when a non-fillable attribute would be silently discarded."""
+
+
+class MissingAttributeError(AttributeError):
+    """Raised when reading an attribute the model never loaded."""
 
 
 class RelationNotLoadedError(AttributeError):
@@ -58,6 +90,15 @@ class ModelMeta(type):
         # Each subclass owns its listeners and scopes; never share the parent's.
         cls._events = {event: [] for event in EVENTS}
         cls._global_scopes = {}
+        cls._attribute_casters = {}
+
+        for base in reversed(bases):
+            inherited_casters = getattr(base, "_attribute_casters", None)
+            if inherited_casters:
+                cls._attribute_casters.update(inherited_casters)
+        for key, value in namespace.items():
+            if isinstance(value, Attribute):
+                cls._attribute_casters[key] = value
 
         for base in reversed(bases):
             inherited_scopes = getattr(base, "_global_scopes", None)
@@ -96,9 +137,14 @@ class Model(metaclass=ModelMeta):
     hidden: ClassVar[tuple[str, ...]] = ()
     visible: ClassVar[tuple[str, ...]] = ()
     appends: ClassVar[tuple[str, ...]] = ()
-    casts: ClassVar[dict[str, Any]] = {}
+    # A dict, or a classmethod returning one (Laravel's `casts()`).
+    casts: ClassVar[Any] = {}
+    # strftime format for serialized dates; None means ISO-8601.
+    date_format: ClassVar[str | None] = None
     attributes: ClassVar[dict[str, Any]] = {}
     with_: ClassVar[tuple[str, ...]] = ()
+    # Override to return a custom collection from multi-row reads.
+    collection_class: ClassVar[type[Collection[Any]]] = Collection
     # When True, `await model.rel` lazy-loads that relation. Attribute use
     # without await still raises — async cannot hide IO in `__getattr__`.
     lazy_relations: ClassVar[bool] = False
@@ -115,6 +161,11 @@ class Model(metaclass=ModelMeta):
         # None means "use the class attribute" — overrides stay per instance.
         self._hidden: tuple[str, ...] | None = None
         self._visible: tuple[str, ...] | None = None
+        self._appends: tuple[str, ...] | None = None
+        self._cast_overrides: dict[str, Any] = {}
+        self._attribute_cache: dict[str, Any] = {}
+        # Muted for the duration of one quiet write; never process-wide.
+        self._muted = False
 
         defaults = dict(type(self).attributes)
         if defaults:
@@ -240,15 +291,25 @@ class Model(metaclass=ModelMeta):
     # --- attributes ---------------------------------------------------------
 
     def fill(self, attributes: Mapping[str, Any]) -> Model:
+        if _UNGUARDED:
+            return self.force_fill(attributes)
         if self._totally_guarded() and attributes:
             offending = ", ".join(sorted(attributes))
             raise MassAssignmentError(
                 f"Add [{offending}] to fillable to allow mass assignment on "
                 f"{type(self).__name__}."
             )
+        discarded = []
         for key, value in attributes.items():
             if self.is_fillable(key):
                 self.set_attribute(key, value)
+            else:
+                discarded.append(key)
+        if discarded and _STRICT_DISCARDING:
+            raise DiscardedAttributeError(
+                f"Add [{', '.join(sorted(discarded))}] to fillable to allow mass "
+                f"assignment on {type(self).__name__}."
+            )
         return self
 
     def force_fill(self, attributes: Mapping[str, Any]) -> Model:
@@ -258,6 +319,8 @@ class Model(metaclass=ModelMeta):
 
     @classmethod
     def is_fillable(cls, key: str) -> bool:
+        if _UNGUARDED:
+            return True
         if key in cls.fillable:
             return True
         if cls.is_guarded(key):
@@ -272,7 +335,116 @@ class Model(metaclass=ModelMeta):
     def _totally_guarded(cls) -> bool:
         return not cls.fillable and tuple(cls.guarded) == ("*",)
 
+    # --- casting ------------------------------------------------------------
+
+    # --- strictness and guarding -------------------------------------------
+
+    @staticmethod
+    def prevent_silently_discarding_attributes(value: bool = True) -> None:
+        """Raise instead of dropping non-fillable attributes during `fill`."""
+        global _STRICT_DISCARDING
+        _STRICT_DISCARDING = value
+
+    @staticmethod
+    def prevent_accessing_missing_attributes(value: bool = True) -> None:
+        """Raise when reading an attribute a persisted model never retrieved."""
+        global _STRICT_MISSING
+        _STRICT_MISSING = value
+
+    @classmethod
+    def should_be_strict(cls, value: bool = True) -> None:
+        """Turn on every strictness check at once (Laravel's ``shouldBeStrict``).
+
+        Lazy loading is already strict in Avalon — unloaded relation access
+        raises by default — so this covers the other two checks.
+        """
+        cls.prevent_silently_discarding_attributes(value)
+        cls.prevent_accessing_missing_attributes(value)
+
+    @staticmethod
+    def unguard() -> None:
+        """Stop enforcing mass-assignment rules process-wide."""
+        global _UNGUARDED
+        _UNGUARDED = True
+
+    @staticmethod
+    def reguard() -> None:
+        """Enforce mass-assignment rules again."""
+        global _UNGUARDED
+        _UNGUARDED = False
+
+    @classmethod
+    @contextmanager
+    def unguarded(cls) -> Iterator[None]:
+        """Run a block with mass assignment unguarded, then restore it."""
+        global _UNGUARDED
+        previous = _UNGUARDED
+        _UNGUARDED = True
+        try:
+            yield
+        finally:
+            _UNGUARDED = previous
+
+    @classmethod
+    @contextmanager
+    def without_timestamps(cls) -> Iterator[None]:
+        """Run a block without touching this model's timestamps."""
+        token = _TIMESTAMPS_OFF.set(_TIMESTAMPS_OFF.get() | {cls})
+        try:
+            yield
+        finally:
+            _TIMESTAMPS_OFF.reset(token)
+
+    @classmethod
+    @contextmanager
+    def without_events(cls) -> Iterator[None]:
+        """Run a block with model events muted (``Model::withoutEvents``)."""
+        from avalon.orm import model as model_mod
+
+        previous = model_mod._EVENTS_DISABLED
+        model_mod._EVENTS_DISABLED = True
+        try:
+            yield
+        finally:
+            model_mod._EVENTS_DISABLED = previous
+
+    @classmethod
+    def new_collection(cls, items: Any = None) -> Collection[Any]:
+        """Build the collection type this model returns (``newCollection``)."""
+        return cls.collection_class(items)
+
+    @classmethod
+    def class_casts(cls) -> dict[str, Any]:
+        """Declared casts, whether `casts` is a dict or a `casts()` method."""
+        declared = cls.casts
+        if callable(declared):
+            declared = declared(cls) if _accepts_argument(declared) else declared()
+        return dict(declared or {})
+
+    def get_casts(self) -> dict[str, Any]:
+        """Effective casts — declared casts plus any query-time overrides."""
+        return {**type(self).class_casts(), **self._cast_overrides}
+
+    def merge_casts(self, casts: Mapping[str, Any]) -> Model:
+        """Add casts to this instance only (Laravel's ``mergeCasts``)."""
+        self._cast_overrides.update(casts)
+        return self
+
+    def has_cast(self, key: str) -> bool:
+        return key in self.get_casts()
+
+    def _caster(self, key: str) -> Attribute | None:
+        return type(self)._attribute_casters.get(key)
+
+    # --- attribute access ---------------------------------------------------
+
     def set_attribute(self, key: str, value: Any) -> None:
+        caster = self._caster(key)
+        if caster is not None:
+            for name, written in caster.set_value(self, key, value).items():
+                self._write_attribute(name, written)
+            return
+
         mutator = getattr(self, f"set_{key}_attribute", None)
         if callable(mutator):
             mutated = mutator(value)
@@ -280,21 +452,44 @@ class Model(metaclass=ModelMeta):
                 value = mutated
             else:
                 return
-        casts = type(self).casts
-        if key in casts:
-            value = uncast_value(cast_value(value, casts[key]), casts[key])
+        self._write_attribute(key, value)
+
+    def _write_attribute(self, key: str, value: Any) -> None:
+        """Store a value, applying whichever cast is declared for the key."""
+        self._attribute_cache.pop(key, None)
+        cast = self.get_casts().get(key)
+        if cast is not None:
+            resolved = resolve_cast(cast)
+            if isinstance(resolved, CastsAttributes):
+                result = resolved.set(self, key, value, self.get_attributes())
+                if isinstance(result, Mapping):
+                    self._attributes.update(result)
+                    return
+                self._attributes[key] = result
+                return
+            value = prepare_for_storage(value, resolved)
         self._attributes[key] = value
 
-    def get_attribute(self, key: str, default: Any = None) -> Any:
+    def get_attribute(self, key: str, default: Any = _UNSET) -> Any:
+        caster = self._caster(key)
         if key in self._attributes:
-            value = self._attributes[key]
-            casts = type(self).casts
-            if key in casts:
-                value = cast_value(value, casts[key])
+            value = self._cast_for_read(key, self._attributes[key])
+            if caster is not None:
+                return caster.get_value(self, key, value)
             accessor = getattr(self, f"get_{key}_attribute", None)
             if callable(accessor):
                 return accessor(value)
             return value
+
+        if caster is not None and caster.has_getter():
+            return caster.get_value(self, key, None)
+
+        # A class cast may compose other columns, so it has no column itself.
+        cast = self.get_casts().get(key)
+        if cast is not None:
+            resolved = resolve_cast(cast)
+            if isinstance(resolved, CastsAttributes):
+                return resolved.get(self, key, None, self.get_attributes())
 
         accessor = getattr(self, f"get_{key}_attribute", None)
         if callable(accessor):
@@ -302,7 +497,25 @@ class Model(metaclass=ModelMeta):
 
         if key in self._relations:
             return self._relations[key]
-        return self._extra.get(key, default)
+        if key in self._extra:
+            return self._extra[key]
+        if default is not _UNSET:
+            return default
+        if _STRICT_MISSING and self._exists:
+            raise MissingAttributeError(
+                f"{type(self).__name__}.{key} was not retrieved — add it to the "
+                f"select, or read it with get_attribute({key!r}, default)."
+            )
+        return None
+
+    def _cast_for_read(self, key: str, value: Any) -> Any:
+        cast = self.get_casts().get(key)
+        if cast is None:
+            return value
+        resolved = resolve_cast(cast)
+        if isinstance(resolved, CastsAttributes):
+            return resolved.get(self, key, value, self.get_attributes())
+        return cast_value(value, resolved)
 
     def get_raw_attribute(self, key: str, default: Any = None) -> Any:
         return self._attributes.get(key, default)
@@ -317,7 +530,7 @@ class Model(metaclass=ModelMeta):
         relations = self.__dict__.get("_relations", {})
         extra = self.__dict__.get("_extra", {})
 
-        if name in attributes or name in type(self).casts:
+        if name in attributes or name in self.get_casts():
             return self.get_attribute(name)
         if name in relations:
             return relations[name]
@@ -345,6 +558,13 @@ class Model(metaclass=ModelMeta):
                 )
             raise RelationNotLoadedError(
                 f"Relation {name!r} is not loaded on {type(self).__name__}. {hint}"
+            )
+        # Strict mode turns "you never selected this column" into a real error,
+        # but accessor-hook probes (`set_x_attribute`) must still miss quietly.
+        if _STRICT_MISSING and self._exists and not _ACCESSOR_HOOK.match(name):
+            raise MissingAttributeError(
+                f"{type(self).__name__}.{name} was not retrieved — add it to the "
+                f"select, or read it with get_attribute({name!r}, default)."
             )
         raise AttributeError(f"{type(self).__name__!r} has no attribute {name!r}")
 
@@ -403,8 +623,10 @@ class Model(metaclass=ModelMeta):
     # --- hydration ----------------------------------------------------------
 
     @classmethod
-    def _hydrate(cls, row: Mapping[str, Any]) -> Model:
+    def _hydrate(cls, row: Mapping[str, Any], casts: Mapping[str, Any] | None = None) -> Model:
         instance = cls()
+        if casts:
+            instance._cast_overrides.update(casts)
         instance._attributes = dict(row)
         instance._exists = True
         instance.sync_original()
@@ -425,8 +647,14 @@ class Model(metaclass=ModelMeta):
     def _fresh_timestamp(self) -> datetime:
         return datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
 
-    def _touch_timestamps(self, *, creating: bool) -> None:
+    def _timestamps_enabled(self) -> bool:
         if not type(self).timestamps:
+            return False
+        suspended = _TIMESTAMPS_OFF.get()
+        return not any(issubclass(type(self), owner) for owner in suspended)
+
+    def _touch_timestamps(self, *, creating: bool) -> None:
+        if not self._timestamps_enabled():
             return
         now = self._fresh_timestamp()
         cls = type(self)
@@ -448,9 +676,31 @@ class Model(metaclass=ModelMeta):
             await self._fire_event("saved")
         return saved
 
+    async def _quietly(self, operation: Callable[[], Any]) -> Any:
+        """Run one write with this instance's events muted."""
+        previous = self._muted
+        self._muted = True
+        try:
+            return await operation()
+        finally:
+            self._muted = previous
+
+    async def save_quietly(self) -> bool:
+        """Save without firing model events (``saveQuietly``)."""
+        return await self._quietly(self.save)
+
+    async def delete_quietly(self) -> bool:
+        """Delete without firing model events (``deleteQuietly``)."""
+        return await self._quietly(self.delete)
+
+    async def force_delete_quietly(self) -> bool:
+        """Force delete without firing model events (``forceDeleteQuietly``)."""
+        return await self._quietly(self.force_delete)
+
     async def _perform_insert(self) -> bool:
         if await self._fire_event("creating") is False:
             return False
+        fill_unique_ids(self)
         self._touch_timestamps(creating=True)
 
         cls = type(self)
@@ -539,7 +789,7 @@ class Model(metaclass=ModelMeta):
         return clone
 
     async def touch(self) -> bool:
-        if not type(self).timestamps:
+        if not self._timestamps_enabled():
             return False
         self._touch_timestamps(creating=False)
         return await self.save()
@@ -701,7 +951,7 @@ class Model(metaclass=ModelMeta):
     async def _fire_event(self, event: str) -> Any:
         from avalon.orm import model as model_mod
 
-        if getattr(model_mod, "_EVENTS_DISABLED", False):
+        if self._muted or getattr(model_mod, "_EVENTS_DISABLED", False):
             return True
         for listener in type(self)._events.get(event, []):
             outcome = listener(self)
@@ -732,31 +982,52 @@ class Model(metaclass=ModelMeta):
         """Effective visible allowlist — instance override, else the class."""
         return self._visible if self._visible is not None else tuple(type(self).visible)
 
+    def get_appends(self) -> tuple[str, ...]:
+        """Effective appended keys — instance override, else the class."""
+        return self._appends if self._appends is not None else tuple(type(self).appends)
+
+    def _is_arrayable(self, key: str, hidden: Sequence[str], visible: Sequence[str]) -> bool:
+        """Laravel's visible / hidden rules, applied to attributes and relations."""
+        if visible and key not in visible:
+            return False
+        return key not in hidden
+
+    def serialize_date(self, value: date) -> str:
+        """Format a date for `to_dict()` — override to change the default."""
+        fmt = type(self).date_format
+        return value.strftime(fmt) if fmt else value.isoformat()
+
+    def _serialize(self, key: str, value: Any) -> Any:
+        """Serialize one attribute — a cast format wins, else `serialize_date`."""
+        cast = self.get_casts().get(key)
+        if isinstance(value, (datetime, date)) and cast_format(cast) is None:
+            return self.serialize_date(value)
+        return serialize_value(value, cast)
+
     def attributes_to_dict(self) -> dict[str, Any]:
-        cls = type(self)
         hidden = self.get_hidden()
         visible = self.get_visible()
         data: dict[str, Any] = {}
         for key in self._attributes:
-            if visible and key not in visible:
+            if not self._is_arrayable(key, hidden, visible):
                 continue
-            if key in hidden:
+            data[key] = self._serialize(key, self.get_attribute(key))
+        # Appended accessors respect visible / hidden too, as in Laravel.
+        for key in self.get_appends():
+            if not self._is_arrayable(key, hidden, visible):
                 continue
-            data[key] = serialize_value(self.get_attribute(key))
-        for key in cls.appends:
-            if key in hidden:
-                continue
-            data[key] = serialize_value(self.get_attribute(key))
+            data[key] = self._serialize(key, self.get_attribute(key))
         for key, value in self._extra.items():
-            if key not in hidden:
-                data[key] = serialize_value(value)
+            if self._is_arrayable(key, hidden, visible):
+                data[key] = self._serialize(key, value)
         return data
 
     def relations_to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
         hidden = self.get_hidden()
+        visible = self.get_visible()
         for name, value in self._relations.items():
-            if name in hidden:
+            if not self._is_arrayable(name, hidden, visible):
                 continue
             if isinstance(value, Collection):
                 data[name] = value.to_dict()
@@ -769,10 +1040,11 @@ class Model(metaclass=ModelMeta):
     def to_dict(self) -> dict[str, Any]:
         return {**self.attributes_to_dict(), **self.relations_to_dict()}
 
-    def to_json(self) -> str:
+    def to_json(self, **options: Any) -> str:
+        """JSON for this model — extra keyword arguments go to `json.dumps`."""
         import json
 
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), **options)
 
     def make_hidden(self, *keys: str) -> Model:
         """Hide extra attributes on **this** model only (Laravel ``makeHidden``)."""
@@ -794,6 +1066,34 @@ class Model(metaclass=ModelMeta):
     def set_visible(self, keys: Sequence[str]) -> Model:
         """Replace this model's visible allowlist outright (``setVisible``)."""
         self._visible = tuple(keys)
+        return self
+
+    def merge_hidden(self, keys: Sequence[str]) -> Model:
+        """Merge more keys into this model's hidden list (``mergeHidden``)."""
+        return self.make_hidden(*keys)
+
+    def merge_visible(self, keys: Sequence[str]) -> Model:
+        """Merge more keys into this model's visible allowlist (``mergeVisible``)."""
+        self._visible = tuple({*self.get_visible(), *keys})
+        return self
+
+    def append(self, *keys: str) -> Model:
+        """Append accessors to this model's serialized form (``append``)."""
+        self._appends = tuple({*self.get_appends(), *keys})
+        return self
+
+    def merge_appends(self, keys: Sequence[str]) -> Model:
+        """Merge a list of accessors into the appended keys (``mergeAppends``)."""
+        return self.append(*keys)
+
+    def set_appends(self, keys: Sequence[str]) -> Model:
+        """Replace this model's appended keys outright (``setAppends``)."""
+        self._appends = tuple(keys)
+        return self
+
+    def without_appends(self) -> Model:
+        """Drop every appended key from this model (``withoutAppends``)."""
+        self._appends = ()
         return self
 
 

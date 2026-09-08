@@ -505,6 +505,40 @@ pytest -q tests/test_m20_*.py tests/smoke/test_m20_smoke.py
 
 ---
 
+## M30 — Grail Console exhaust
+
+```bash
+pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
+```
+
+### M30 exit criteria
+
+- [x] Laravel signature grammar (optional / default / array arguments, option shortcuts, arrays, descriptions)
+- [x] `Command` I/O surface, `fail`, `trap`, `with_progress_bar`, `Isolatable`, `PromptsForMissingInput`
+- [x] `Artisan` façade — `call`, `output`, `queue`, closure commands with container injection
+- [x] Console events (`ConsoleStarting`, `CommandStarting`, `CommandFinished`) + `--isolated` locking
+- [ ] Typer callbacks migrated to `Command` classes, stub tree (`stub:publish`), remaining built-ins — **parts 2–3 still open**
+
+---
+
+## M40 — Articulate model exhaust
+
+```bash
+pytest -q tests/test_m40_*.py tests/smoke/test_m40_smoke.py
+```
+
+### M40 exit criteria
+
+- [x] Casting: `Attribute` objects, custom / inbound casts, castables, `encrypted*`, `hashed`, enum collections, date formats, `with_casts` / `merge_casts`
+- [x] Serialization: `append` family, `merge_hidden` / `merge_visible`, `to_json(**options)`, `visible` honored by appends and relations
+- [x] Collections: `find` / `fresh` / `to_query`, model-keyed `only` / `except_` / `diff` / `intersect` / `unique` / `contains`, custom `collection_class`
+- [x] Model surface: `HasUuids` / `HasUlids`, strictness switches, `unguarded`, `without_timestamps`, quiet writes, `without_events`
+- [x] Pruning: `Prunable` / `MassPrunable` + `grail model:prune` (`--model`, `--except`, `--chunk`, `--pretend`)
+- [x] Walking large sets: streaming `cursor()`, `lazy` / `lazy_by_id`, `chunk_by_id` / `each_by_id`
+- [x] Living example demonstrates appends + pruning; docs published; `avalon.orm` at 100%
+
+---
+
 ## Out of scope until later milestones
 
 - Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)
