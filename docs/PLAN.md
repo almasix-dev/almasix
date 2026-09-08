@@ -88,7 +88,7 @@ avalon/
     grail/                     # in-app CLI entry (python grail …)
     exceptions/                # M8 — handler, debug page, error rendering
     log/                       # M8 — channels, log()
-    console/                   # M9 — commands, scheduling
+    console/                   # M9 — commands; M31 — scheduling
     filesystem/                # M10 — disks / FlySystem-shaped Storage
     queue/                     # M11 — jobs, workers, failed jobs
     mail/                      # M12 — Mailable, Mailer, transports
@@ -1196,22 +1196,28 @@ Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the l
 
 ### M31 — Task Scheduling exhaust
 
-Laravel [Task Scheduling](https://laravel.com/docs/scheduling) — M9 shipped a 5-frequency DSL. The 2026-09-08 audit put it at **8 of the 82 methods** the Laravel page documents: `call`, `command`, `cron`, `every_minute`, `every_five_minutes`, `hourly`, `daily`, `weekdays`, `weekends`, and `without_overlapping`. This is the thinnest surface in the framework relative to its page.
+Laravel [Task Scheduling](https://laravel.com/docs/scheduling) — M9 shipped a 5-frequency DSL. The 2026-09-08 audit put it at **8 of the 82 methods** the Laravel page documents. It is now at **85 of the 86** methods that page names, the exception being `DB::table()->delete()`, which is not a scheduler method at all.
 
-- **Frequency vocabulary:** `every_two_minutes` … `every_thirty_minutes` and `every_four_minutes`; `hourly_at`, `every_two_hours` / `every_three_hours` / `every_four_hours` / `every_six_hours` / `every_odd_hour`; `daily_at`, `twice_daily`, `twice_daily_at`; `weekly` / `weekly_on`; `monthly` / `monthly_on` / `twice_monthly` / `last_day_of_month`; `quarterly` / `quarterly_on`; `yearly` / `yearly_on`; `days`, `days_of_month`, `at`
-- **Sub-minute:** `every_second` / `every_two_seconds` / `every_five_seconds` / `every_ten_seconds` / `every_fifteen_seconds` / `every_twenty_seconds` / `every_thirty_seconds`, the long-running `schedule:run` loop they require, and `schedule:interrupt`
-- **Day constraints:** `mondays` … `sundays` as named methods alongside the existing `weekdays` / `weekends`
-- **Constraints:** `between` / `unless_between`, `when` / `skip`, `environments`, `even_in_maintenance_mode`, `timezone`
-- **Hooks:** `before` / `after` / `on_success` / `on_failure`, and the ping family `ping_before` / `ping_before_if` / `then_ping` / `then_ping_if` / `ping_on_success` / `ping_on_success_if` / `ping_on_failure` / `ping_on_failure_if`
-- **Execution modes:** `run_in_background`, `on_one_server` (cache lock) with `name` / `purpose` for lock identity, `without_overlapping` expiry, `group` for shared attributes, job scheduling (`schedule.job(...)` → M11) and shell tasks (`schedule.exec(...)` → M21)
-- **Output handling:** `send_output_to` / `append_output_to`, `email_output_to` / `email_output_on_failure` (→ M12)
-- **Events:** the scheduled-task lifecycle events Laravel dispatches, on Avalon's event bus
-- **Commands:** `schedule:list`, `schedule:test`, `schedule:work`, `schedule:interrupt`, `schedule:clear-cache`, and a documented `schedule:work` vs cron story
-- **Docs:** rewrite Starlight **Task Scheduling** — 55 lines today against Laravel's 635, missing sub-minute tasks, groups, output, hooks, maintenance mode, environments, and events entirely. Follow the Laravel section order.
+- ~~**Frequency vocabulary:** the whole table from `every_two_minutes` to `yearly_on`~~ **shipped (part 1)** — frequencies splice cron fields the way Laravel's do, so they combine; `last_day_of_month` asks the calendar at run time rather than writing a fixed day into the expression when the task is defined, which is right in February and right for a process that lives across a month boundary
+- ~~**Sub-minute:** `every_second` … `every_thirty_seconds`, the long-running `schedule:run` loop they require, and `schedule:interrupt`~~ **shipped (parts 1–2)** — with a sub-minute task defined, `schedule:run` stays inside the minute and wakes on the seconds each task asked for; the interrupt is scoped to the minute it was sent in
+- ~~**Day constraints:** `mondays` … `sundays`~~ **shipped (part 1)**
+- ~~**Constraints:** `between` / `unless_between`, `when` / `skip`, `environments`, `even_in_maintenance_mode`, `timezone`~~ **shipped (part 1)** — a `between` window that ends before it starts is read as crossing midnight; `when` and `skip` also take a plain boolean
+- ~~**Hooks:** `before` / `after` / `on_success` / `on_failure` and the eight-strong ping family~~ **shipped (part 1)** — a hook that declares a parameter is handed the task's output as a `Stringable`; pings go through the M20 client and never fail the task
+- ~~**Execution modes:** `run_in_background`, `on_one_server`, `without_overlapping` expiry, `group`, job and shell tasks~~ **shipped (part 1)** — groups hold attributes on the schedule and replay them onto every task defined inside; a closure or job needs `name()` before `on_one_server()`, as in Laravel, since two servers would otherwise take two different locks
+- ~~**Output handling:** `send_output_to` / `append_output_to`, `email_output_to` / `email_output_on_failure`~~ **shipped (part 1)** — output is captured around every task, so unlike Laravel a `call` or `job` task can send its output somewhere too
+- ~~**Events:** the scheduled-task lifecycle~~ **shipped (part 1)** — `ScheduledTaskStarting`, `ScheduledTaskFinished`, `ScheduledBackgroundTaskFinished`, `ScheduledTaskSkipped` (which carries why), `ScheduledTaskFailed`
+- ~~**Commands:** `schedule:list`, `schedule:test`, `schedule:work`, `schedule:interrupt`, `schedule:clear-cache`~~ **shipped (part 2)** — plus `grail down` / `grail up`, without which the maintenance-mode constraint would be unreachable
+- ~~**Docs:** rewrite Starlight **Task Scheduling**~~ **shipped (part 3)** — 640 lines against the old 55, in Laravel's section order, with a smoke contract that fails if a documented method loses its mention or a command loses its registration
 
-**Depends on:** M30 (command surface), M11 (queued jobs), M15/M16 (locks), M12 (output email), M21 (shell tasks).
+**Two more entry points came with it, both from the Laravel page:** `Artisan.command(...).schedule([...])` schedules a closure command with its arguments, and `Application.configure(...).with_schedule(callback)` defines the schedule in `bootstrap/app.py` instead of `routes/console.py`.
 
-**Gate:** frequency, constraint, hook, and output vocabulary exhausted against the Laravel page or the deviation named; `schedule:list` proves the registry; sub-minute tasks demonstrated end to end; docs published in the Laravel section order.
+**Named deviations:** background tasks run in a worker thread rather than a detached OS process, so `schedule:run` waits for them before exiting — a thread cannot outlive its interpreter, and Python has no `schedule:finish` to hand a detached process. Commands are scheduled by name, not by class. The `L` / `W` / `#` cron extensions are not implemented. In Avalon's favour: a scheduled callback may be `async` and is awaited, which Laravel has no need for but Avalon's awaitable ORM, queue, and client do.
+
+**Owed by a later milestone:** maintenance mode is only the scheduler's half — `grail down` writes `storage/framework/down` and the scheduler honours it, but HTTP requests are still served normally. The 503 response, the secret bypass, `--render`, and `--retry` need the HTTP middleware that belongs with **M34**.
+
+**Depends on:** M30 (command surface), M11 (queued jobs), M15/M16 (locks), M12 (output email), M20 (pings).
+
+**Gate met (2026-09-08):** frequency, constraint, hook, and output vocabulary exhausted against the Laravel page or the deviation named; `schedule:list` proves the registry; sub-minute tasks demonstrated end to end; docs published in the Laravel section order; 100% line and branch coverage on `avalon.console.scheduling`.
 
 ### M32 — Installer + scaffold stacks (`avalon new`)
 
@@ -1540,7 +1546,7 @@ Scheduled on 2026-09-08: the support and reference-page exhaust track (**M49–M
 
 **M41 Relationship exhaust gate met** — one-of-many, default models, chaperone, the existence-query family including morph variants, aggregates and their deferred twins, pivot models with `using` / `as_` / timestamps / filtering, morph maps, `touches`, and the relation write helpers. All five parts have shipped: one-of-many and default models, existence queries, aggregates, pivots and morph maps and `touches`, and the docs rewrite that closed the page with `push`, `where_belongs_to`, dynamic relations, and `load_morph`. The two sections Avalon does not implement are named in the docs.
 
-**Now: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
+**Now: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M32**, the interactive installer, which shares M30's stub tree.
 
 **Milestones M21–M29** (Processes → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
@@ -1552,6 +1558,6 @@ Scheduled on 2026-09-08: the support and reference-page exhaust track (**M49–M
 
 **M49 Support Collections exhaust gate met** — the Method Listing is closed, higher order messages answer both forms, lazy collections stream over sync and async sources and back the ORM's `cursor` / `lazy` reads, and the page documents all 155 methods a section at a time with a smoke contract keeping it that way.
 
-**M31 is what remains of the 2026-09-08 reference-page audit.** Task scheduling is at 8 of 82 documented methods with a 55-line page against Laravel's 635 — now the widest gap left in the framework, with M49 and M50 shipped. Sequence it after M30, which owns the command surface it registers into.
+**M31 Task Scheduling exhaust gate met** — the 2026-09-08 audit's last open item. The scheduler went from 8 documented methods to 85 of 86: the whole frequency table, sub-minute tasks with a `schedule:run` that stays inside the minute, day and time and environment constraints, hooks and pings, output to a file or an inbox, groups, one-server claims, background tasks, the five lifecycle events, and six new commands. The page is 640 lines against the old 55.
 
 **Docs (anytime):** see the Docs track above — Localization page (M4 code done); `@vite` directive (M6 partial). The Mutators & Casts how-to shipped with M40.

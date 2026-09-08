@@ -608,6 +608,33 @@ pytest -q tests/test_m50_*.py tests/smoke/test_m50_smoke.py
 
 ---
 
+## M31 — Task Scheduling exhaust
+
+```bash
+pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
+```
+
+### M31 exit criteria
+
+- [x] The frequency table closed: every method from `every_second` to `yearly_on`, in snake_case with Laravel's camelCase spelling as an alias; frequencies splice cron fields so they combine
+- [x] `last_day_of_month` reads the calendar at run time, so it is right in February and right across a month boundary
+- [x] Sub-minute tasks: `every_second` … `every_thirty_seconds`; `schedule:run` stays inside the minute and wakes on each task's seconds; `schedule:interrupt` stops it, scoped to the minute it was sent in
+- [x] Constraints: `weekdays` / `weekends` / the seven named days / `days` / `days_of_month`, `between` and `unless_between` (including windows crossing midnight), `when` / `skip` taking a callable or a boolean, `environments`, `timezone`
+- [x] Locks: `without_overlapping(minutes)` over the cache with a filesystem fallback, `on_one_server` claiming per minute, `name()` required before a closure or job may claim, `use_cache` choosing the store, `schedule:clear-cache` releasing what a stuck task left
+- [x] `run_in_background` runs tasks simultaneously in a worker thread — the deviation named, since a thread cannot outlive its interpreter
+- [x] Maintenance mode: `grail down` / `grail up` and `even_in_maintenance_mode`; the HTTP half named as owed by M34
+- [x] Groups hold attributes on the schedule and replay them onto every task defined inside, nesting included
+- [x] Hooks in Laravel's order, a hook taking a parameter handed the output as a `Stringable`, and the eight-method ping family over the M20 client
+- [x] Output to a file (replacing or appending) and to an inbox (always or only on failure), captured around every kind of task
+- [x] Tasks from a callback (sync or `async`), a Grail command, a queued job with its queue and connection, and a shell line; plus `Artisan.command(...).schedule([...])` and `Application.configure(...).with_schedule(...)`
+- [x] The five lifecycle events on the event bus, with `ScheduledTaskSkipped` carrying why
+- [x] Commands: `schedule:run` / `work` / `list` / `test` / `interrupt` / `clear-cache`, and loading `routes/console.py` twice no longer schedules everything twice
+- [x] `scheduling` rewritten to 640 lines in Laravel's section order; the smoke contract fails if a documented method loses its mention, a section disappears, or a command loses its registration
+- [x] Living example: `grail progress:schedule` (combining frequencies, a calendar-aware month end, a tick showing hooks, a skip reason, and shell output) and `grail schedule:list` over the app's own schedule; the board marks M31 complete with proof naming both
+- [x] 100% line and branch coverage on `avalon.console.scheduling`
+
+---
+
 ## Out of scope until later milestones
 
 - Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)

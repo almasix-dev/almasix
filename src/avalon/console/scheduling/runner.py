@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
+import inspect
 import io
 import subprocess
 import threading
@@ -279,7 +281,7 @@ def _execute(event: Event, *, base: Path, runner: Runner | None) -> Outcome:
     try:
         with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
             code = _invoke(event, runner)
-    except BaseException as exc:  # noqa: BLE001 - one task must not end the tick
+    except BaseException as exc:
         failure = exc
         code = 1
 
@@ -307,13 +309,18 @@ def _execute(event: Event, *, base: Path, runner: Runner | None) -> Outcome:
 def _invoke(event: Event, runner: Runner | None) -> int:
     if event.callback is not None:
         result = event.callback()
+        if inspect.isawaitable(result):
+            # Avalon's ORM and queue are awaitable, so a scheduled callback is
+            # allowed to be async; Laravel has nothing to do here.
+            result = asyncio.run(result)
         return int(result) if isinstance(result, int) else 0
     if event.job is not None:
         return _dispatch_job(event)
     if event.shell:
-        completed = subprocess.run(  # noqa: S602 - a shell task is the feature
+        completed = subprocess.run(
             event.shell,
             shell=True,
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -327,8 +334,6 @@ def _invoke(event: Event, runner: Runner | None) -> int:
 
 
 def _dispatch_job(event: Event) -> int:
-    import asyncio
-
     from avalon.queue.helpers import dispatch as dispatch_job
 
     job = event.job

@@ -383,9 +383,9 @@ def test_the_schedule_refuses_names_it_does_not_know() -> None:
     schedule = Schedule()
 
     with pytest.raises(AttributeError):
-        schedule.every_blue_moon  # noqa: B018
+        schedule.every_blue_moon
     with pytest.raises(AttributeError):
-        schedule.daily().every_blue_moon  # noqa: B018
+        schedule.daily().every_blue_moon
 
 
 def test_the_schedule_reports_sub_minute_tasks_and_the_chosen_cache() -> None:
@@ -1046,7 +1046,7 @@ def test_a_scheduled_job_is_dispatched(tmp_path: Path, no_cache: Any) -> None:
         queue: Any = False
         connection: Any = None
 
-    import avalon.queue.helpers as helpers
+    from avalon.queue import helpers
 
     original = helpers.dispatch
 
@@ -1116,7 +1116,7 @@ def test_a_job_without_a_queue_or_connection_keeps_its_own(
         queue: Any = "default"
         connection: Any = "sync"
 
-    import avalon.queue.helpers as helpers
+    from avalon.queue import helpers
 
     original = helpers.dispatch
 
@@ -1165,3 +1165,64 @@ def test_installing_the_camel_aliases_twice_changes_nothing() -> None:
     install_camel_aliases(Event)
 
     assert Event.everyFiveMinutes is before
+
+
+# --- the two ways in, besides schedule.command() -----------------------------
+
+
+def test_a_closure_command_can_schedule_itself_with_arguments() -> None:
+    from avalon.console.facade import Artisan
+    from avalon.console.scheduling import schedule as task_schedule
+
+    task_schedule.clear()
+    try:
+        event = (
+            Artisan.command("emails:send {user} {--force}", lambda user: None)
+            .purpose("Send emails to the given user")
+            .schedule(["taylor", "--force"])
+            .daily()
+        )
+
+        assert event.summary() == "emails:send taylor --force"
+        assert event.expression == "0 0 * * *"
+        assert task_schedule.events == [event]
+    finally:
+        task_schedule.clear()
+        Artisan.set_kernel(None)
+
+
+def test_the_application_builder_can_define_the_schedule(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    from avalon.console.scheduling import schedule as task_schedule
+    from avalon.framework import Application
+
+    task_schedule.clear()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("APP_BASE_PATH", raising=False)
+    try:
+        Application.configure(tmp_path).with_schedule(
+            lambda schedule: schedule.command("inspire").hourly()
+        ).create()
+
+        assert [event.summary() for event in task_schedule.events] == ["inspire"]
+        assert task_schedule.events[0].expression == "0 * * * *"
+    finally:
+        task_schedule.clear()
+
+
+def test_an_async_callback_is_awaited(tmp_path: Path, no_cache: Any) -> None:
+    seen: list[str] = []
+
+    async def clear_recent_users() -> None:
+        seen.append("cleared")
+
+    assert run_event(Event("async", callback=clear_recent_users), base_path=tmp_path) == 0
+    assert seen == ["cleared"]
+
+
+def test_an_async_callback_can_report_an_exit_code(tmp_path: Path, no_cache: Any) -> None:
+    async def unhappy() -> int:
+        return 4
+
+    assert run_event(Event("async", callback=unhappy), base_path=tmp_path) == 4
