@@ -322,7 +322,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 91 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 99 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -498,6 +498,19 @@ What the framework ships, 91 commands, as `smith list` groups them. An applicati
 | `schedule:run` | Run the tasks that are due (wire this to cron, every minute) |
 | `schedule:test` | Run one scheduled task now, whatever its frequency says |
 | `schedule:work` | Run the scheduler in the foreground, minute after minute |
+
+### `scout`
+
+| Command | Description |
+| --- | --- |
+| `scout:delete-all-indexes` | Delete all indexes from the search engine |
+| `scout:delete-index` | Delete an index from the search engine |
+| `scout:flush` | Flush all of the model's records from the index |
+| `scout:import` | Import the given model into the search index |
+| `scout:index` | Create an index on the search engine |
+| `scout:queue-import` | Import the given model into the search index using queued jobs |
+| `scout:status` | Show the search engine and the models it indexes |
+| `scout:sync-index-settings` | Sync the configured index settings with the search engine |
 
 ### `storage`
 

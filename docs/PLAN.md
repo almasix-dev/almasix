@@ -104,7 +104,7 @@ almasix/
     client/                    # M20 — outbound HTTP client (inbound HTTP stays in http/)
     process/                   # M21 — Laravel Processes parity
     concurrency/               # M22 — concurrent closures / pools
-    scout/                     # M27 — search (optional extra)
+    scout/                     # M27 — search (Scout parity)
     broadcasting/              # M26 — Echo-class fan-out
     testing/                   # M28 — TestCase helpers beyond pytest baseline
     installer/                 # almasix new …
@@ -338,7 +338,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Eloquent: API Resources | `api-resources` | **Done (M23)** | Page published |
 | Eloquent: Factories | `database/factories` | **Done (M24)** | Page published |
 | MongoDB / NoSQL | `articulate/documents` (+ Database Getting Started) | **Done (M25)** | Page published — core Articulate multi-store, not a satellite ORM |
-| Scout / Search | `scout` / `search` | **M27** | Write when search ships |
+| Scout / Search | `search` | **Done (M27)** | Page published |
 | Queues | `queues` | **M11** | Write when queues ship |
 | Mail | `mail` | **M12** | Write when mail ships |
 | Notifications | `notifications` | **M13** | Write when notifications ship |
@@ -1166,7 +1166,11 @@ Laravel Scout-class full-text search for Articulate models.
 
 **Depends on:** M5 ORM; M11 for queued syncing (optional); document models (**M25**) should be searchable under the same mixin when honest.
 
-**Gate:** one driver path + fakes; docs published. Heavy engines stay optional extras.
+**Gate:** one driver path + fakes; docs published. Heavy engines stay optional extras. **Met.**
+
+**Status (M27):** `almasix.scout` — a `Searchable` mixin that indexes on `saved`, leaves the index on `deleted`, and returns on `restored`, with `to_searchable_array` / `scout_metadata` / `should_be_searchable` / `search_index_should_be_updated` / `searchable_as` / `get_scout_key[_name]` as the whole of the model contract, plus `searchable()` / `unsearchable()` on the model, on a query, and on a `Collection`, `make_all_searchable` / `remove_all_from_search`, and `without_syncing_to_search()` as a context manager or a pair of switches; a `SearchBuilder` spelling Laravel's builder — `where`, `where_in`, `where_not_in`, `order_by` / `latest` / `oldest`, `take`, `within`, `options`, `query_using`, `when` / `unless` / `tap`, `with_trashed` / `only_trashed`, and `get` / `first` / `keys` / `raw` / `count` / `cursor` / `paginate` / `simple_paginate` and their `_raw` twins; four engines behind an `Engine` contract — `database` (SQL `LIKE`, prefix matching, and the dialect's own full text on PostgreSQL and MySQL), `collection` (filtered in Python, Laravel's driver for a laptop), `meilisearch` (its REST API over the M12 HTTP client, no SDK), and `null` — plus `Scout.extend()` for a fifth; queued indexing through `MakeSearchable` / `RemoveFromSearch` jobs carrying keys rather than models, and `after_commit` indexing on the back of `Connection.after_commit()` with `flush_search()` for tests; soft deletes indexed as `__soft_deleted` when configured; `Scout.fake()` with `assert_synced` / `assert_removed` / `assert_flushed` / `assert_nothing_synced` / `assert_searched` / `assert_search_count`; `config/scout.py` in the scaffold and a `ScoutServiceProvider`; eight commands — `scout:import`, `scout:queue-import`, `scout:flush`, `scout:index`, `scout:delete-index`, `scout:delete-all-indexes`, `scout:sync-index-settings`, and `scout:status`; Starlight **Search**; the progress app's searchable `Post`, `GET /api/search`, and `progress:search`.
+
+**Deliberate deviations (M27):** the default driver is `database`, not `algolia` — an application that has not chosen an engine should still be able to search, and Algolia has no dependency-free client; the search phrase is `.search("phrase")` while `query_using()` shapes the SQL behind the hits, because Laravel's `query()` would collide with the ORM's own; every engine method is a coroutine, so a custom engine is written `async`; `flush_search()` exists because a commit hands its index write to the loop and returns, and a test asserting on the index has to know the write landed; Meilisearch is spoken over its REST API through `almasix.client` rather than through the official SDK, which keeps search in core with no new dependency; `scout:status` is an addition — "which engine is this application actually using" is the first question every search bug asks.
 
 ### M28 — Testing toolkit
 
@@ -1627,7 +1631,9 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **M26 Broadcasting gate met** — `ShouldBroadcast` events with the whole channel family, five drivers (`log`, `null`, Almasix's own websocket server, Redis pub/sub, Pusher), `routes/channels.py` authorization with model binding and presence rosters, the signed `/broadcasting/auth` endpoints, model broadcasting on the back of `after_commit`, a `broadcast` notification channel, and `Broadcast.fake()`.
 
-**Milestones M27–M29** (Search → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M27 Search gate met** — a `Searchable` mixin that keeps the index in step with every write, the Scout builder in full, four engines (`database`, `collection`, `meilisearch`, `null`) behind a contract anyone can extend, queued and after-commit indexing, soft deletes, eight `scout:*` commands, and `Scout.fake()`.
+
+**Milestones M28–M29** (Testing toolkit → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

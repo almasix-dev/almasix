@@ -67,6 +67,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "config/cache.py": _config_cache(),
         "config/concurrency.py": _config_concurrency(),
         "config/broadcasting.py": _config_broadcasting(),
+        "config/scout.py": _config_scout(),
         "config/redis.py": _config_redis(),
         "config/loupe.py": _config_loupe(),
         "app/models/__init__.py": "",
@@ -793,6 +794,37 @@ config = {
     },
     # Middleware on /broadcasting/auth. Sessions live in the web group.
     "middleware": ["web"],
+}
+'''
+
+
+def _config_scout() -> str:
+    return '''"""Search — which engine finds your models."""
+
+from almasix.config import env
+
+config = {
+    # "database" searches the tables you already have, and needs nothing
+    # installed. "collection" filters rows in Python, "meilisearch" talks to
+    # a real index, and "null" finds nothing.
+    "driver": env("SCOUT_DRIVER", "database"),
+    # Prepended to every index name: one search service, several apps.
+    "prefix": env("SCOUT_PREFIX", ""),
+    # True, or {"connection": ..., "queue": ...}, to index on the queue.
+    "queue": bool(env("SCOUT_QUEUE", False)),
+    # Wait for the surrounding transaction before touching the index.
+    "after_commit": False,
+    "chunk": {"searchable": 500, "unsearchable": 500},
+    # Keep trashed rows in the index behind a `__soft_deleted` flag.
+    "soft_delete": False,
+    "identify": bool(env("SCOUT_IDENTIFY", False)),
+    "meilisearch": {
+        "host": env("MEILISEARCH_HOST", "http://localhost:7700"),
+        "key": env("MEILISEARCH_KEY"),
+        # Per-index settings, pushed by `smith scout:sync-index-settings`:
+        # "posts": {"filterableAttributes": ["author_id"]},
+        "index-settings": {},
+    },
 }
 '''
 

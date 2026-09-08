@@ -636,6 +636,30 @@ pytest -q tests/test_m26_*.py tests/smoke/test_m26_smoke.py
 
 ---
 
+## M27 — Search
+
+```bash
+pytest -q tests/test_m27_*.py tests/smoke/test_m27_smoke.py
+```
+
+### M27 exit criteria
+
+- [x] `Searchable` indexes on `saved`, removes on `deleted`, returns on `restored`; `should_be_searchable()` takes a row out and `search_index_should_be_updated()` skips a write that changes nothing indexed
+- [x] The model contract: `to_searchable_array`, `scout_metadata`, `searchable_as` (with the configured prefix), `get_scout_key` / `get_scout_key_name`, `searchable_using`
+- [x] `searchable()` / `unsearchable()` on a model, on a query, and on a `Collection`; `make_all_searchable` / `remove_all_from_search`; `make_all_searchable_using` to shape the import query
+- [x] `without_syncing_to_search()` as a context manager, and `disable_search_syncing()` / `enable_search_syncing()` as switches — a pause covers saves, deletes, and restores alike
+- [x] The builder: `where`, `where_in`, `where_not_in`, `order_by` / `latest` / `oldest`, `take`, `within`, `options`, `query_using`, `when` / `unless` / `tap`, `get` / `first` / `keys` / `raw` / `count` / `cursor`, `paginate` / `simple_paginate` and their `_raw` twins
+- [x] Engines: `database` (`LIKE`, prefix matching, and the dialect's own full text on PostgreSQL and MySQL), `collection` (filtered in Python), `meilisearch` (its REST API over the HTTP client), `null`; `Scout.extend()` registers a fifth and an unknown driver names the alternatives
+- [x] Queued indexing through `MakeSearchable` / `RemoveFromSearch` carrying keys, not models; without a queue configured the write still happens
+- [x] `after_commit` indexing on the back of `Connection.after_commit()`, with `flush_search()` for a test that is about to assert on the index
+- [x] Soft deletes: trashed rows leave the index by default, or stay flagged `__soft_deleted` when configured, and `with_trashed()` / `only_trashed()` find them
+- [x] `Scout.fake()` with `assert_synced`, `assert_removed`, `assert_flushed`, `assert_nothing_synced`, `assert_searched`, `assert_search_count`
+- [x] Eight commands — `scout:import`, `scout:queue-import`, `scout:flush`, `scout:index`, `scout:delete-index`, `scout:delete-all-indexes`, `scout:sync-index-settings`, `scout:status` — and `config/scout.py` in the scaffold
+- [x] Living example: a searchable `Post`, `smith progress:search`, `GET /api/search`; the board marks M27 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.scout`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash
@@ -655,7 +679,7 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 - [x] Stub tree: every generator renders a `.stub`, `smith stub:publish` copies them into `stubs/`, and a published stub wins
 - [x] `ServiceProvider.publishes()` + `smith vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `almasix-stubs` and `almasix-lang`
 - [x] Loupe allow-list: `config/loupe.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
-- [x] The built-in catalogue — 91 commands (84 at M30, plus the generators later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
+- [x] The built-in catalogue — 99 commands (84 at M30, plus what later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
 - [x] `console` rewritten in Laravel's Artisan section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
 - [x] Living example: `smith progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
 - [x] Deliberate deviations recorded in `docs/PLAN.md` with reasons — `config:cache` / `route:cache` / `event:cache` measured and declined, `view:cache` verifying rather than persisting, `db:show` without a size column, `db:wipe` refusing `--drop-views`
@@ -779,7 +803,7 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 ## Out of scope until later milestones
 
-- Digging Deeper: search, testing toolkit, package guidelines (M27–M29) — processes, concurrency, API resources, factories, Articulate NoSQL, and broadcasting have shipped (M21–M26)
+- Digging Deeper: testing toolkit, package guidelines (M28–M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, and search have shipped (M21–M27)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs versioning + Prologue (M39)
 - IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)

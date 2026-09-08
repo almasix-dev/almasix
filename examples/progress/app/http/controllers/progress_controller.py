@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from almasix import __version__
-from almasix.prism import view
 from almasix.config import config
 from almasix.http import Controller, Response
+from almasix.prism import view
 from almasix.routing import url
 
 
@@ -287,8 +287,16 @@ def _milestones() -> list[dict]:
         {
             "id": "M27",
             "name": "Search",
-            "status": "planned",
-            "proof": ["Searchable models", "Scout-class drivers"],
+            "status": "complete",
+            "proof": [
+                "Searchable models — index kept in step by model events",
+                "database / collection / meilisearch / null engines + Scout.extend()",
+                "where, order_by, pagination, keys, cursor; query_using()",
+                "queued indexing, after-commit indexing, soft-delete flags",
+                "scout:import / flush / index / sync-index-settings / status",
+                "GET /api/search",
+                "progress:search",
+            ],
         },
         {
             "id": "M28",
@@ -307,7 +315,7 @@ def _milestones() -> list[dict]:
             "name": "Smith Console exhaust",
             "status": "complete",
             "proof": [
-                "91 commands, every one a Command class",
+                "99 commands, every one a Command class",
                 "full signature parser + option shortcuts",
                 "Artisan.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",

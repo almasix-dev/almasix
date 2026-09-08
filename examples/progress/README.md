@@ -171,18 +171,19 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M24** | `smith progress:factories` — factories, states, sequences, `has` / `for_`; `DemoSeeder` seeds through them |
 | **M25** | `smith progress:documents` + `GET /api/documents` — `Document` models, embeds, references, indexes, `documents:show` |
 | **M26** | `smith progress:broadcast` + `GET /api/broadcast` — `ShouldBroadcast`, channel auth, the websocket at `/broadcasting/socket`, `channel:list` |
-| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 111 commands |
+| **M27** | `smith progress:search` + `GET /api/search` — `Searchable` posts, the `database` and `collection` engines, `Scout.fake()`, `scout:status` |
+| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 120 commands |
 | **M31** | `smith progress:schedule` — frequencies, constraints, hooks, a tick; `smith schedule:list` / `test` / `interrupt` |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
-| **M27–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M28–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M26, M30, M31, M40, M41, M49, and M50 are closed; **M5** is partly done.
-Next is **M27 — Search**. The board on `/progress`
+M0–M27, M30, M31, M40, M41, M49, and M50 are closed; **M5** is partly done.
+Next is **M28 — Testing toolkit**. The board on `/progress`
 lists the full **M0–M51** roadmap with a status and proof for each milestone.
 ## CLI
 
@@ -206,6 +207,7 @@ smith progress:resources
 smith progress:factories
 smith progress:documents
 smith progress:broadcast
+smith progress:search
 smith channel:list
 smith key:generate
 smith storage:link
