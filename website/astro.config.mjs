@@ -1,4 +1,6 @@
 // @ts-check
+import { readFileSync } from 'node:fs';
+
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
@@ -73,18 +75,10 @@ export default defineConfig({
 					},
 				},
 				{
-					// After Starlight restores session open-state, keep only the
-					// group that contains the current page expanded.
+					// Sidebar accordion: one group open at a time. Kept in its own
+					// file so it stays readable, and inlined to avoid a round trip.
 					tag: 'script',
-					content: `
-document.addEventListener('DOMContentLoaded', () => {
-  const sidebar = document.getElementById('starlight__sidebar');
-  if (!sidebar) return;
-  for (const details of sidebar.querySelectorAll('details')) {
-    details.open = Boolean(details.querySelector('[aria-current="page"]'));
-  }
-});
-`,
+					content: readFileSync('./src/scripts/sidebar-accordion.js', 'utf8'),
 				},
 			],
 			sidebar: [

@@ -74,23 +74,36 @@ body {
 }
 
 /*
- * Current nav item: orange pill + white label (both themes).
- * Do not use --sl-color-text-accent here — Starlight already paints an accent
- * background, and accent-on-accent becomes unreadable.
+ * Current nav item: square tab — soft brand wash, brand label, brand rule down
+ * the left edge. The border is drawn on every sidebar link as transparent so
+ * that becoming current does not shift the label sideways.
  */
+nav.sidebar a,
+.sidebar-content a {
+	border-left: 3px solid transparent;
+}
+
 nav.sidebar a[aria-current='page'],
 .sidebar-content a[aria-current='page'] {
-	color: #ffffff !important;
-	background-color: var(--almasix-orange) !important;
+	color: var(--almasix-orange) !important;
+	background-color: color-mix(in srgb, var(--almasix-orange) 12%, transparent) !important;
 	font-weight: 600;
-	border-radius: 0.45rem;
-	box-shadow: 0 6px 16px rgba(241, 81, 27, 0.28);
+	border-radius: 0;
+	border-left-color: var(--almasix-orange);
+	box-shadow: none;
 }
 
 /* Hero */
 .hero {
 	position: relative;
 	isolation: isolate;
+}
+
+/* The mark is authored 400×400; unconstrained it towers over the copy. */
+.hero > img {
+	max-height: 13rem;
+	width: auto;
+	margin-inline: auto;
 }
 
 .hero h1 {
