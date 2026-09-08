@@ -1,3 +1,4 @@
+import tomllib
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -23,6 +24,22 @@ def test_almasix_new_creates_app(tmp_path: Path) -> None:
     assert (root / "bootstrap" / "app.py").is_file()
     assert (root / "app" / "http" / "controllers" / "welcome_controller.py").is_file()
     assert "Created Almasix application" in result.stdout
+
+
+def test_smith_belongs_to_the_scaffolded_app_not_the_framework(tmp_path: Path) -> None:
+    """`pipx install almasix` must publish the installer and nothing else.
+
+    Smith drives one application, so the scaffold declares it and it lands in
+    that project's environment instead of on the user's PATH system-wide.
+    """
+    root = scaffold_app("demo", destination=tmp_path / "demo")
+    app_scripts = tomllib.loads((root / "pyproject.toml").read_text())["project"]["scripts"]
+    assert app_scripts["smith"] == "almasix.smith.cli:app"
+
+    framework = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    framework_scripts = tomllib.loads(framework.read_text())["project"]["scripts"]
+    assert "almasix" in framework_scripts
+    assert "smith" not in framework_scripts
 
 
 def test_almasix_new_rejects_existing(tmp_path: Path) -> None:

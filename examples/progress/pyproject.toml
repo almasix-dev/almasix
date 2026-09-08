@@ -11,6 +11,11 @@ dependencies = [
     "almasix",
 ]
 
+# Smith drives this application, so it belongs to this project's environment
+# rather than to a global Almasix install.
+[project.scripts]
+smith = "almasix.smith.cli:app"
+
 [tool.hatch.build.targets.wheel]
 packages = ["app", "bootstrap", "config", "routes"]
 

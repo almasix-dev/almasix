@@ -144,8 +144,9 @@ smith serve             # or: python smith serve
 
 `almasix new` writes a complete application: `app/`, `bootstrap/`, `config/`, `routes/`,
 `resources/views` with error pages, `database/migrations`, `storage/`, a Vite config, and a root
-`smith` script. Use `smith …` when Almasix is on your `PATH`, or `python smith …` to run the app's
-own script explicitly.
+`smith` script. Installing the application (`pip install -e .`) puts `smith` on your `PATH` inside
+that project's environment; `python smith …` runs the root script without any install step.
+Installing the framework itself only gives you the global `almasix` command.
 
 ### Work on the framework
 

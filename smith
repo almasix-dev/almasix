@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 """Smith — Almasix in-application CLI.
 
-With the virtualenv active (Almasix installed)::
+In this checkout, run Smith through this script::
 
-    smith version
-    smith serve
-    smith make:controller UserController
-    smith loupe   # aliases: tinker, repl
-
-Or via this root script::
-
+    python smith version
     python smith serve
+    python smith make:controller UserController
+    python smith loupe   # aliases: tinker, repl
+
+A scaffolded application declares ``smith`` in its own pyproject, so there the
+bare ``smith …`` form works once the project is installed into its virtualenv.
+The framework itself only installs the ``almasix`` command.
 
 Create new apps with ``almasix new``, not this script.
 """
