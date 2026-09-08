@@ -181,7 +181,7 @@ Start as **one installable `almasix`**. When Prism, kits, filesystem drivers, or
 
 Do **not** rename the project to `almasix_framework`. “Framework” is the `almasix.framework` subpackage.
 
-**Distribution name (open, scheduled with M38):** the *import* namespace is `almasix` and stays that way. The *distribution* name cannot be, because `almasix` on PyPI is already taken by an unrelated placeholder project (“Real-time web framework”, Development Status :: 1 - Planning). Python routinely separates the two (`python-dotenv` imports `dotenv`), so the release milestone picks a distribution name and `pip install <name>` continues to give app code `import almasix`. Until then the README installs from Git and carries no PyPI badges, because there is nothing honest to point at.
+**Distribution name (settled 2026-09-08):** the *import* namespace and the *distribution* name are both `almasix`, so `pip install almasix` gives app code `import almasix` with no split of the kind `python-dotenv`/`dotenv` needs. This was an open constraint only while the project was called Avalon: `avalon` on PyPI is taken by an unrelated placeholder (Development Status :: 1 - Planning). The rename dissolved it — `almasix` was unregistered — so M38 no longer has a name to choose.
 
 **Rules:**
 
@@ -1329,7 +1329,7 @@ Laravel [Deployment](https://laravel.com/docs/deployment) — how an Almasix app
 - `optimize` / cache-warm story tied to M30's commands; health check endpoint conventions
 - Env / secret handling, log shipping, migration + queue worker deployment notes, container example
 - Docs: Starlight **Deployment**
-- **Releasing Almasix itself** (scheduled 2026-09-08): settle the distribution name per the Ecosystem growth note above, tag `v0.x`, and publish from CI with PyPI trusted publishing. Then the README's install instructions drop the Git direct reference, and the version badge moves from reading `pyproject.toml` to `pypi/v` with `pypi/dm` downloads beside it — the two badges deliberately absent today.
+- **Releasing Almasix itself** (scheduled 2026-09-08): the distribution name is settled as `almasix` per the Ecosystem growth note above. Tag `v0.x` and publish from CI with PyPI trusted publishing (`.github/workflows/publish.yml`). The README now installs with `pip install almasix` and carries the `pypi/v` + `pypi/dm` badges.
 
 **Depends on:** M30 (optimize commands), M11 (workers), M34 (headers behind a proxy).
 
