@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import inspect
 from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
@@ -57,6 +58,38 @@ class ModelNotFoundError(LookupError):
         self.identifier = identifier
         suffix = f" with key {identifier!r}" if identifier is not None else ""
         super().__init__(f"No query results for model [{model}]{suffix}.")
+
+
+def _morph_targets(relation: Any, types: Any) -> list[tuple[str, Any]]:
+    """Resolve `where_has_morph` type arguments to (alias, model) pairs."""
+    if types in ("*", None):
+        return list(relation.types.items())
+    if isinstance(types, Mapping):
+        return list(types.items())
+    if isinstance(types, str) or not isinstance(types, Iterable):
+        types = [types]
+
+    by_model = {model: alias for alias, model in relation.types.items()}
+    resolved: list[tuple[str, Any]] = []
+    for entry in types:
+        if isinstance(entry, str):
+            if entry not in relation.types:
+                raise LookupError(f"Unmapped morph type {entry!r} for {relation.morph_name!r}")
+            resolved.append((entry, relation.types[entry]))
+        elif entry in by_model:
+            resolved.append((by_model[entry], entry))
+        else:
+            raise LookupError(f"Unmapped morph type {entry!r} for {relation.morph_name!r}")
+    return resolved
+
+
+def _call_morph_callback(callback: Callable[..., Any], alias: str, builder: Any) -> Any:
+    """Morph callbacks may take the type alias as a second argument."""
+    try:
+        arity = len(inspect.signature(callback).parameters)
+    except (TypeError, ValueError):  # pragma: no cover - builtins
+        arity = 1
+    return callback(builder, alias) if arity >= 2 else callback(builder)
 
 
 class QueryBuilder:
@@ -489,8 +522,14 @@ class QueryBuilder:
     def has(self, relation: str, operator: str = ">=", count: int = 1) -> QueryBuilder:
         return self._relation_existence(relation, operator, count, negate=False)
 
+    def or_has(self, relation: str, operator: str = ">=", count: int = 1) -> QueryBuilder:
+        return self._relation_existence(relation, operator, count, negate=False, boolean="or")
+
     def doesnt_have(self, relation: str) -> QueryBuilder:
         return self._relation_existence(relation, ">=", 1, negate=True)
+
+    def or_doesnt_have(self, relation: str) -> QueryBuilder:
+        return self._relation_existence(relation, ">=", 1, negate=True, boolean="or")
 
     def where_has(
         self,
@@ -501,12 +540,62 @@ class QueryBuilder:
     ) -> QueryBuilder:
         return self._relation_existence(relation, operator, count, negate=False, callback=callback)
 
+    def or_where_has(
+        self,
+        relation: str,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+        operator: str = ">=",
+        count: int = 1,
+    ) -> QueryBuilder:
+        return self._relation_existence(
+            relation, operator, count, negate=False, callback=callback, boolean="or"
+        )
+
     def where_doesnt_have(
         self,
         relation: str,
         callback: Callable[[QueryBuilder], Any] | None = None,
     ) -> QueryBuilder:
         return self._relation_existence(relation, ">=", 1, negate=True, callback=callback)
+
+    def or_where_doesnt_have(
+        self,
+        relation: str,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+    ) -> QueryBuilder:
+        return self._relation_existence(
+            relation, ">=", 1, negate=True, callback=callback, boolean="or"
+        )
+
+    def with_where_has(
+        self,
+        relation: str,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+    ) -> QueryBuilder:
+        """Filter on a relation and eager load it under the same constraint."""
+        self.where_has(relation, callback)
+        return self.with_(**{relation: callback}) if callback is not None else self.with_(relation)
+
+    def where_relation(
+        self,
+        relation: str,
+        column: str,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        """Inline existence query — ``whereRelation``."""
+        operator, value = self._operator_and_value(operator, value)
+        return self.where_has(relation, lambda query: query.where(column, operator, value))
+
+    def or_where_relation(
+        self,
+        relation: str,
+        column: str,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        return self.or_where_has(relation, lambda query: query.where(column, operator, value))
 
     def _relation_existence(
         self,
@@ -516,20 +605,138 @@ class QueryBuilder:
         *,
         negate: bool,
         callback: Callable[[QueryBuilder], Any] | None = None,
+        boolean: str = "and",
     ) -> QueryBuilder:
         if self.model is None:
             raise RuntimeError("Relation constraints require a model")
+
+        head, _, tail = relation.partition(".")
+        if tail:
+            # "posts.comments" asks for a post that has comments, so the count
+            # and the callback belong to the innermost relation.
+            def nested(builder: QueryBuilder) -> None:
+                builder._relation_existence(tail, operator, count, negate=False, callback=callback)
+
+            return self._relation_existence(
+                head, ">=", 1, negate=negate, callback=nested, boolean=boolean
+            )
+
         instance = self.model()
         relation_obj = instance.get_relation(relation)
         subquery = relation_obj.existence_query(self, callback)
         if negate:
-            return self._push_where("and", ~sa.exists(subquery))
+            return self._push_where(boolean, ~sa.exists(subquery))
         if operator == ">=" and count <= 1:
-            return self._push_where("and", sa.exists(subquery))
+            return self._push_where(boolean, sa.exists(subquery))
         counted = subquery.with_only_columns(sa.func.count(), maintain_column_froms=True).order_by(
             None
         )
-        return self._push_where("and", _OPERATORS[operator](counted.scalar_subquery(), count))
+        return self._push_where(boolean, _OPERATORS[operator](counted.scalar_subquery(), count))
+
+    # --- morph to existence -------------------------------------------------
+
+    def has_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+        *,
+        negate: bool = False,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """Existence across a `morph_to` relation's possible types."""
+        if self.model is None:
+            raise RuntimeError("Relation constraints require a model")
+        instance = self.model()
+        relation_obj = instance.get_relation(relation)
+        if not hasattr(relation_obj, "existence_query_for"):
+            raise TypeError(f"Relation {relation!r} is not a morph_to relation")
+
+        clauses = []
+        for alias, target in _morph_targets(relation_obj, types):
+            scoped = None
+            if callback is not None:
+                scoped = functools.partial(_call_morph_callback, callback, alias)
+            subquery = relation_obj.existence_query_for(target, self, scoped)
+            morph_type = self.column(f"{self.table}.{relation_obj.morph_type}")
+            clauses.append(sa.and_(morph_type == alias, sa.exists(subquery)))
+
+        if not clauses:
+            return self._push_where(boolean, sa.false())
+        clause = sa.or_(*clauses)
+        return self._push_where(boolean, ~clause if negate else clause)
+
+    def or_has_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback, boolean="or")
+
+    def doesnt_have_morph(self, relation: str, types: Any = "*") -> QueryBuilder:
+        return self.has_morph(relation, types, negate=True)
+
+    def or_doesnt_have_morph(self, relation: str, types: Any = "*") -> QueryBuilder:
+        return self.has_morph(relation, types, negate=True, boolean="or")
+
+    def where_has_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback)
+
+    def or_where_has_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback, boolean="or")
+
+    def where_doesnt_have_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback, negate=True)
+
+    def or_where_doesnt_have_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback, negate=True, boolean="or")
+
+    def where_morph_relation(
+        self,
+        relation: str,
+        types: Any,
+        column: str,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        return self.where_has_morph(
+            relation, types, lambda query, _type: query.where(column, operator, value)
+        )
+
+    def or_where_morph_relation(
+        self,
+        relation: str,
+        types: Any,
+        column: str,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        return self.or_where_has_morph(
+            relation, types, lambda query, _type: query.where(column, operator, value)
+        )
 
     # --- compilation --------------------------------------------------------
 

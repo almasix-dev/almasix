@@ -168,7 +168,7 @@ await user.load_missing("profile")
 await users.load("posts")   # Collection
 ```
 
-### Querying relationship existence
+## Querying relationship existence
 
 ```python
 # app/http/controllers/example_controller.py
@@ -179,6 +179,76 @@ await User.query().where_has(
 ).get()
 await User.query().where_doesnt_have("posts").get()
 ```
+
+Each of these has an `or_` twin — `or_has`, `or_doesnt_have`, `or_where_has`,
+`or_where_doesnt_have` — that joins the clause with `OR` instead of `AND`:
+
+```python
+await User.query().where("country", "=", "US").or_has("posts").get()
+```
+
+Dots walk nested relations. The count and the callback apply to the innermost
+relation, so this finds users with a post that has at least one comment:
+
+```python
+await User.query().has("posts.comments").get()
+await User.query().where_has(
+    "posts.comments", lambda q: q.where("approved", "=", True)
+).get()
+```
+
+### Inline existence queries
+
+When the constraint is a single simple condition, `where_relation` saves the
+closure:
+
+```python
+await User.query().where_relation("posts", "published", False).get()
+await User.query().where_relation("posts", "views", ">", 1000).get()
+```
+
+`or_where_relation` is the `OR` form.
+
+### Filtering and loading in one call
+
+`with_where_has` filters parents by a relation *and* eager-loads that relation
+under the same constraint, so the loaded children match what you filtered on:
+
+```python
+users = await User.query().with_where_has(
+    "posts", lambda q: q.where("published", "=", True)
+).get()
+
+users[0].posts   # published posts only
+```
+
+### Morph to existence
+
+`morph_to` relations query across their possible types. Pass model classes, type
+aliases, a mapping, or `"*"` for every mapped type:
+
+```python
+# Comments left on articles.
+await Comment.query().where_has_morph("commentable", [Article]).get()
+
+# Every mapped type, with the type name handed to the callback.
+await Comment.query().where_has_morph(
+    "commentable",
+    "*",
+    lambda query, morph_type: query.where("title", "like", "Laravel%")
+    if morph_type is Article
+    else query,
+).get()
+```
+
+The callback may take just the query if it does not care about the type. The
+full set is `has_morph`, `or_has_morph`, `doesnt_have_morph`,
+`or_doesnt_have_morph`, `where_has_morph`, `or_where_has_morph`,
+`where_doesnt_have_morph`, `or_where_doesnt_have_morph`, plus the inline
+`where_morph_relation` and `or_where_morph_relation`.
+
+`doesnt_have_morph` with no callback is how you find orphaned rows — comments
+whose `commentable_id` points at nothing.
 
 ## Soft deletes on related models
 

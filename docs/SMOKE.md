@@ -550,7 +550,7 @@ pytest -q tests/test_m41_*.py
 - [x] Has one of many: `of_many` / `latest_of_many` / `oldest_of_many` / `one()`, aggregate mappings, constraining callbacks, morph support, one row per parent on eager loads
 - [x] Default models: `with_default()` on `belongs_to` / `has_one` / `morph_one`, with mapping, callable, and empty forms, applied to eager loads
 - [x] Chaperone: `chaperone()` hydrates the inverse relation on `has_many` / `has_one` / `morph_many` / `morph_one` children
-- [ ] Existence querying: `or_has`, `or_where_has`, `where_relation`, `with_where_has`, morph variants
+- [x] Existence querying: `or_has` / `or_doesnt_have` / `or_where_has` / `or_where_doesnt_have`, dotted nesting, `where_relation` / `or_where_relation`, `with_where_has`, and the eight morph variants plus `where_morph_relation`
 - [ ] Aggregates: `with_sum` / `with_avg` / `with_min` / `with_max` / `with_exists`, `load_count` family
 - [ ] Pivots: `with_timestamps`, `as`, custom pivot models, `order_by_pivot`, `where_pivot_*`; morph maps; `touches`
 - [ ] `articulate/relationships` rewritten in Laravel section order

@@ -785,6 +785,23 @@ class MorphTo(Relation):
             return None
         return await self.query().first()
 
+    def existence_query_for(
+        self,
+        target: type[Model],
+        parent_builder: QueryBuilder,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+    ) -> Any:
+        """Existence subquery against one of the morph target tables."""
+        builder = target.new_query()
+        builder._apply_global_scopes(builder)
+        if callback is not None:
+            callback(builder)
+        outer = parent_builder.column(f"{type(self.parent).get_table()}.{self.morph_id}")
+        builder._push_where(
+            "and", builder.column(f"{target.get_table()}.{target.primary_key}") == outer
+        )
+        return builder._base_select([sa.literal(1)])
+
     def eager_query(self, models: Sequence[Model]) -> QueryBuilder:  # pragma: no cover
         raise NotImplementedError("morph_to eager loading uses eager_load_morph_to")
 

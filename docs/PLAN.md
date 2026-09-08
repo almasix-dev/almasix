@@ -1332,7 +1332,7 @@ Laravel [Eloquent: Relationships](https://laravel.com/docs/eloquent-relationship
 
 - ~~`latest_of_many` / `oldest_of_many` / `of_many` / `one()`; `chaperone()`; `with_default()` default models~~ **shipped (part 1)** — one-of-many picks one row per parent with a correlated subquery, so eager loads stay one query; defaults cover `belongs_to` / `has_one` / `morph_one`; chaperone covers the has-many and morph-many pairs
 - Aggregate eager loads: `with_sum` / `with_avg` / `with_min` / `with_max` / `with_exists`, and the lazy `load_count` / `load_sum` / `load_aggregate` family
-- Existence querying: `or_has`, `or_where_has`, `or_where_doesnt_have`, `where_relation` / `or_where_relation`, `with_where_has`, and the morph variants (`has_morph`, `where_has_morph`, `where_doesnt_have_morph`)
+- ~~Existence querying: `or_has`, `or_where_has`, `or_where_doesnt_have`, `where_relation` / `or_where_relation`, `with_where_has`, and the morph variants (`has_morph`, `where_has_morph`, `where_doesnt_have_morph`)~~ **shipped (part 2)** — plus dotted nesting (`has("posts.comments")`) and `MorphTo.existence_query_for`, which the morph variants needed
 - Pivots: `with_timestamps()`, `as()` accessor naming, custom `Pivot` model classes via `using()`, `where_pivot_in` / `where_pivot_null`, `order_by_pivot`, `sync_without_detaching`, and a real `updated` result from `sync`
 - Morph maps (Laravel's `enforceMorphMap`) so `morph_to` stops requiring an explicit per-relation types dict
 - `touches` — updating parent timestamps on child writes
@@ -1487,7 +1487,7 @@ Scheduled on 2026-09-08: the IDE and editor tooling track (**M45–M48**) — Ca
 
 **M40 Articulate model exhaust gate met** — casting overhaul, serialization controls, Eloquent collections, UUID/ULID keys, strictness, quiet writes, pruning, and cursor/chunk iteration.
 
-**Now: M41 Relationship exhaust**, the largest page in the Laravel docs and the biggest remaining parity gap, unblocked by M40. Part 1 (one-of-many, default models, chaperone) has shipped; parts 2–5 cover existence queries, aggregates, pivots and morph maps, and the docs rewrite.
+**Now: M41 Relationship exhaust**, the largest page in the Laravel docs and the biggest remaining parity gap, unblocked by M40. Parts 1 (one-of-many, default models, chaperone) and 2 (existence queries) have shipped; parts 3–5 cover aggregates, pivots and morph maps, and the docs rewrite.
 
 **Then: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
 
