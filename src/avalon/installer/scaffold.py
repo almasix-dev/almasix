@@ -51,7 +51,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "app/providers/__init__.py": "",
         "app/providers/app_service_provider.py": _app_service_provider(),
         "bootstrap/__init__.py": "",
-        "bootstrap/app.py": _bootstrap_app(display),
+        "bootstrap/app.py": _bootstrap_app(),
         "config/__init__.py": "",
         "config/app.py": _config_app(display),
         "config/http.py": _config_http(),
@@ -292,8 +292,8 @@ attr-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"
 """
 
 
-def _bootstrap_app(display: str) -> str:
-    return f'''"""Application entry — boots the Avalon kernel and exposes ASGI."""
+def _bootstrap_app() -> str:
+    return '''"""Application entry — boots the Avalon kernel and exposes ASGI."""
 
 from __future__ import annotations
 
@@ -322,7 +322,7 @@ def configure_middleware(middleware: Middleware) -> None:
     from avalon.session import EncryptCookies, StartSession, VerifyCsrfToken
 
     middleware.alias(
-        {{
+        {
             "locale": SetLocaleMiddleware,
             "cookies.encrypt": EncryptCookies,
             "session.start": StartSession,
@@ -334,7 +334,7 @@ def configure_middleware(middleware: Middleware) -> None:
             "auth.basic": AuthenticateWithBasicAuth,
             "verified": EnsureEmailIsVerified,
             "can": Authorize,
-        }}
+        }
     )
     middleware.web(
         prepend=["cookies.encrypt", "session.start", "csrf", "auth.start"],
