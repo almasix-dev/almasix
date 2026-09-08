@@ -186,6 +186,26 @@ class Collection(Generic[T]):
     def to_json(self, **kwargs: Any) -> str:
         return json.dumps(self.to_array(), default=str, **kwargs)
 
+    def lazy(self) -> Any:
+        """A :class:`~avalon.support.lazy.LazyCollection` over these items."""
+        from avalon.support.lazy import LazyCollection
+
+        return LazyCollection(self._values_list())
+
+    def dump(self) -> Self:
+        """Print the collection's contents and keep going (Laravel ``dump``)."""
+        from avalon.debug import dump
+
+        # Report the caller's frame, not this method's.
+        dump(self.all(), _depth=2)
+        return self
+
+    def dd(self) -> None:
+        """Print the collection's contents and halt (Laravel ``dd``)."""
+        from avalon.debug import dd
+
+        dd(self.all())
+
     def to_pretty_json(self, **kwargs: Any) -> str:
         kwargs.setdefault("indent", 4)
         return self.to_json(**kwargs)
@@ -1095,6 +1115,142 @@ class ItemNotFoundError(LookupError):
 
 class MultipleItemsFoundError(LookupError):
     """Raised by ``sole`` when more than one item matches."""
+
+
+
+_MESSAGE_SENTINEL = object()
+
+#: The collection methods Laravel exposes as higher order messages.
+HIGHER_ORDER_MESSAGES = frozenset(
+    {
+        "average", "avg", "contains", "each", "every", "filter", "first", "flat_map",
+        "group_by", "key_by", "map", "max", "min", "partition", "reject", "skip_until",
+        "skip_while", "some", "sort_by", "sort_by_desc", "sum", "take_until",
+        "take_while", "unique",
+    }
+)
+
+
+class EmptyMessage:
+    """What a higher order message returns for an empty collection.
+
+    The operation never runs its callback when there is nothing to iterate, so
+    the result is known up front. It is returned through this wrapper because
+    the caller may still be writing either form — ``collection.sum.votes``
+    reads it as a value, ``collection.each.notify()`` calls it — and an empty
+    result set should not decide which of those crashes.
+    """
+
+    __slots__ = ("_result",)
+
+    def __init__(self, result: Any) -> None:
+        self._result = result
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return self._result
+
+    def __getattr__(self, name: str) -> Any:
+        member = getattr(self._result, name, _MESSAGE_SENTINEL)
+        if member is not _MESSAGE_SENTINEL:
+            return member
+        return EmptyMessage(self._result)
+
+    def __eq__(self, other: object) -> bool:
+        return self._result == other
+
+    def __hash__(self) -> int:
+        return hash(self._result) if self._result is not None else 0
+
+    def __bool__(self) -> bool:
+        return bool(self._result)
+
+    def __int__(self) -> int:
+        return int(self._result)
+
+    def __float__(self) -> float:
+        return float(self._result)
+
+    def __len__(self) -> int:
+        return len(self._result)
+
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self._result)
+
+    def __repr__(self) -> str:
+        return repr(self._result)
+
+
+class BoundMessage:
+    """A collection method that also answers higher order messages.
+
+    ``collection.map(fn)`` calls the method. ``collection.map.name`` reads that
+    key from every item, and ``collection.each.notify()`` calls that method on
+    every item — which of the two you get is decided by looking at the items:
+    a callable member is invoked, anything else is read.
+    """
+
+    __slots__ = ("_collection", "_func")
+
+    def __init__(self, collection: Any, func: Callable[..., Any]) -> None:
+        self._collection = collection
+        self._func = func
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return self._func(self._collection, *args, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        if name.startswith("__"):
+            raise AttributeError(name)
+        probe = next(iter(self._collection), _MESSAGE_SENTINEL)
+        if probe is _MESSAGE_SENTINEL:
+            return EmptyMessage(self._func(self._collection, lambda item: None))
+
+        member = getattr(probe, name, _MESSAGE_SENTINEL)
+        if callable(member):
+
+            def invoke(*args: Any, **kwargs: Any) -> Any:
+                return self._func(
+                    self._collection, lambda item: getattr(item, name)(*args, **kwargs)
+                )
+
+            return invoke
+        return self._func(self._collection, lambda item: value_get(item, name))
+
+    def __repr__(self) -> str:
+        return f"<higher order message {self._func.__name__!r}>"
+
+
+class HigherOrder:
+    """Descriptor that hands out :class:`BoundMessage` for a method."""
+
+    __slots__ = ("_doc", "_func")
+
+    def __init__(self, func: Callable[..., Any]) -> None:
+        self._func = func
+        self._doc = func.__doc__
+
+    @property
+    def __doc__(self) -> str | None:  # type: ignore[override]
+        return self._doc
+
+    def __get__(self, obj: Any, objtype: type | None = None) -> Any:
+        if obj is None:
+            return self._func
+        return BoundMessage(obj, self._func)
+
+
+def install_higher_order(cls: type) -> None:
+    """Wrap a class's own higher-order-capable methods in the descriptor.
+
+    Called for every collection class, so a subclass that overrides ``unique``
+    or ``contains`` keeps answering higher order messages.
+    """
+    for name in list(vars(cls)):
+        if name in HIGHER_ORDER_MESSAGES and callable(vars(cls)[name]):
+            setattr(cls, name, HigherOrder(vars(cls)[name]))
+
+
+install_higher_order(Collection)
 
 
 def collect(items: Any = None) -> Collection[Any]:

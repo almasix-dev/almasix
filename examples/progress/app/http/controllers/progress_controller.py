@@ -409,8 +409,8 @@ def _milestones() -> list[dict]:
         {
             "id": "M49",
             "name": "Support Collections exhaust",
-            "status": "planned",
-            "proof": ["LazyCollection", "higher-order messages", "a section per method"],
+            "status": "complete",
+            "proof": ["LazyCollection + async twin", "higher-order messages", "155 documented methods"],
         },
         {
             "id": "M50",
