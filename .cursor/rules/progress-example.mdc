@@ -1,0 +1,30 @@
+---
+description: Every feature must land in the progress example app's milestone board
+alwaysApply: true
+---
+
+# The progress example app is part of every feature
+
+`examples/progress` is Avalon's living proof. A feature is not finished until
+the example app shows it. When you ship or extend a milestone, update all four:
+
+1. **The board** — `examples/progress/app/http/controllers/progress_controller.py`,
+   in `_milestones()`. Set the `status` (`complete` / `partial` / `planned`) and
+   write `proof` entries that name something a reader can actually run — a route
+   like `/api/orm` or a command like `grail progress:helpers`, not a claim.
+2. **The demonstration** — a `grail progress:*` command in
+   `examples/progress/app/console/commands/`, or a route, that exercises the new
+   surface. Extend the milestone's existing demo rather than adding a second one.
+3. **`examples/progress/README.md`** — the per-milestone proof table, the CLI
+   list, and the "Growing with Avalon" paragraph that says which milestones are
+   closed.
+4. **A smoke test** — in `tests/smoke/test_m<NN>_smoke.py`: run the demo command
+   and assert its output, and assert the board marks the milestone complete with
+   proof pointing at that command.
+
+Keep `_milestones()` in sync with `docs/PLAN.md` and `docs/SMOKE.md`; the board,
+the plan, and the smoke criteria should never disagree about a milestone's
+status.
+
+A command file that fails to import is skipped silently in normal runs, so run
+the demo command after writing it — a typo makes it vanish rather than fail.

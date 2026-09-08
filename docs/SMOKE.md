@@ -603,6 +603,7 @@ pytest -q tests/test_m50_*.py tests/smoke/test_m50_smoke.py
 - [x] Global helpers over surfaces that already ship: `app`, `resolve`, `request`, `response`, `back`, `session`, `old`, `cookie`, `logger`, `info`, `report`, `bcrypt`, `csrf_field`, `method_field`, `validator`, `policy` — with the request `ContextVar`, response factory, redirect flashing, and cookie jar under them
 - [x] Parity gaps the docs rewrite exposed are fixed: `data_get` wildcards, `data_set` writing into lists, `Arr.to_css_styles` reading Laravel's switched-style shape, the pad family repeating the pad string, `Str.char_at` counting back from the end
 - [x] `helpers` and `strings` documented a section per method (377), alphabetical within each group, in Laravel's grouping; the smoke contract fails if a public method loses its section or a section names a method that does not exist
+- [x] Living example: `grail progress:collections` (higher order messages, a lazy pipeline reading 12 of a million) and `grail progress:helpers` extended with the M50 surface; the board marks M49 and M50 complete with proof naming both commands
 - [x] Deviations named where Python differs: Pydantic rules for `validator`, `from_` for `from`, keyword-only flags, and the utilities Avalon has not built (Benchmarking, Dates, Deferred Functions, Lottery, Pipeline, Sleep, Timebox)
 
 ---

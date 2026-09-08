@@ -241,3 +241,67 @@ def test_the_global_helpers_that_had_no_counterpart_now_exist() -> None:
         assert callable(helper)
 
     assert request() is None  # outside a request, and honest about it
+
+
+# --- the living example ------------------------------------------------------
+
+PROGRESS = ROOT / "examples" / "progress"
+
+
+@pytest.fixture()
+def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> pathlib.Path:
+    from avalon.console.kernel import ConsoleKernel
+    from avalon.grail.cli import app as grail_app
+    from tests.support import purge_generated_app_modules, without_base_path
+
+    without_base_path(monkeypatch)
+    purge_generated_app_modules()
+    monkeypatch.chdir(PROGRESS)
+    monkeypatch.syspath_prepend(str(PROGRESS))
+    ConsoleKernel.from_cwd(PROGRESS).register_on_typer(grail_app)
+    return PROGRESS
+
+
+def test_the_helpers_demo_shows_the_surface_m50_added(progress_cwd: pathlib.Path) -> None:
+    del progress_cwd
+    from typer.testing import CliRunner
+
+    from avalon.grail.cli import app as grail_app
+
+    result = CliRunner().invoke(grail_app, ["progress:helpers"])
+    output = result.stdout + (result.stderr or "")
+
+    assert result.exit_code == 0, output
+    assert "helpers demo ok" in output.lower()
+    # The fluent chain, the wildcard, and the Arr / Number gaps all ran.
+    assert "Avalon Framework!" in output
+    assert "[30, 12]" in output
+    assert "third" in output
+
+
+def test_the_collections_demo_shows_the_surface_m49_added(progress_cwd: pathlib.Path) -> None:
+    del progress_cwd
+    from typer.testing import CliRunner
+
+    from avalon.grail.cli import app as grail_app
+
+    result = CliRunner().invoke(grail_app, ["progress:collections"])
+    output = result.stdout + (result.stderr or "")
+
+    assert result.exit_code == 0, output
+    assert "collections demo ok" in output.lower()
+    # A lazy pipeline read a handful of items, not the million behind them.
+    assert "[3, 6, 9, 12] after reading 12" in output
+
+
+def test_the_board_marks_the_support_exhaust_complete(progress_cwd: pathlib.Path) -> None:
+    del progress_cwd
+    from app.http.controllers.progress_controller import _milestones
+
+    board = {milestone["id"]: milestone for milestone in _milestones()}
+
+    for identifier in ("M49", "M50"):
+        assert board[identifier]["status"] == "complete", identifier
+    # The proof points at something a reader can run, not just a claim.
+    assert "grail progress:collections" in board["M49"]["proof"]
+    assert "grail progress:helpers" in board["M50"]["proof"]
