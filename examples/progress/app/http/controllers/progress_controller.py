@@ -406,6 +406,18 @@ def _milestones() -> list[dict]:
             "status": "planned",
             "proof": ["grail mcp server", "agent guidelines"],
         },
+        {
+            "id": "M49",
+            "name": "Support Collections exhaust",
+            "status": "planned",
+            "proof": ["LazyCollection", "higher-order messages", "a section per method"],
+        },
+        {
+            "id": "M50",
+            "name": "Helpers + Str exhaust",
+            "status": "planned",
+            "proof": ["fluent Stringable", "Arr + Number gaps", "a section per method"],
+        },
     ]
 
 
