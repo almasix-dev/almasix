@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from almasix.debug import DumpAndDie, dd, dump, serialize, to_json
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "DumpAndDie",
