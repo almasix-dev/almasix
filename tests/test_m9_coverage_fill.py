@@ -259,8 +259,8 @@ def test_schedule_filters_and_runner(tmp_path: Path) -> None:
     weekend = datetime(2026, 9, 5, 0, 0, 0)  # Saturday
     assert Event("d").daily().is_due(weekday)
     assert Event("f").every_five_minutes().is_due(datetime(2026, 9, 5, 10, 5, 0))
-    assert Event("wd").weekdays().cron("* * * * *").is_due(weekday)
-    assert not Event("wd").weekdays().cron("* * * * *").is_due(weekend)
+    assert Event("wd").cron("* * * * *").weekdays().is_due(weekday)
+    assert not Event("wd").cron("* * * * *").weekdays().is_due(weekend)
     assert Event("wo").withoutOverlapping() is not None
 
     with pytest.raises(ValueError):
