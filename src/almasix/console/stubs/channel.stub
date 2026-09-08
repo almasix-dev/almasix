@@ -1,0 +1,22 @@
+"""Broadcast channel authorization."""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+class {{ class }}:
+    """Decides who may listen on this channel.
+
+    Register the pattern it answers for in `routes/channels.py`::
+
+        Broadcast.channel("{{ channel }}.{id}", {{ class }})
+    """
+
+    def join(self, user: Any, id: Any) -> bool:
+        """Return True to allow the subscription, False to refuse it.
+
+        On a presence channel, return a dict of the information other
+        members should see instead of True.
+        """
+        return False

@@ -59,6 +59,7 @@ class FoundationServiceProvider(ServiceProvider):
 
         CacheServiceProvider(app).register()
         EncryptionServiceProvider(app).register()
+        from almasix.broadcasting.provider import BroadcastServiceProvider
         from almasix.client.provider import ClientServiceProvider
         from almasix.concurrency.provider import ConcurrencyServiceProvider
         from almasix.events.provider import EventServiceProvider
@@ -68,9 +69,11 @@ class FoundationServiceProvider(ServiceProvider):
         ClientServiceProvider(app).register()
         ProcessServiceProvider(app).register()
         ConcurrencyServiceProvider(app).register()
+        BroadcastServiceProvider(app).register()
 
     def boot(self) -> None:
         from almasix.auth.provider import AuthServiceProvider
+        from almasix.broadcasting.provider import BroadcastServiceProvider
         from almasix.cache.provider import CacheServiceProvider
         from almasix.client.provider import ClientServiceProvider
         from almasix.concurrency.provider import ConcurrencyServiceProvider
@@ -108,3 +111,5 @@ class FoundationServiceProvider(ServiceProvider):
         ClientServiceProvider(self.app).boot()
         ProcessServiceProvider(self.app).boot()
         ConcurrencyServiceProvider(self.app).boot()
+        # Last: its routes must land on a router the rest of boot has finished with.
+        BroadcastServiceProvider(self.app).boot()

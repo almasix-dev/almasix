@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from almasix.events.broadcast import ShouldBroadcast
+from almasix.events.broadcast import (
+    InteractsWithBroadcasting,
+    InteractsWithSockets,
+    ShouldBroadcast,
+    ShouldBroadcastAfterCommit,
+    ShouldBroadcastNow,
+)
 from almasix.events.dispatcher import Dispatcher
 from almasix.events.facade import Event
 from almasix.events.helpers import dispatch, event, listen, set_dispatcher
@@ -15,7 +21,11 @@ __all__ = [
     "Dispatcher",
     "Event",
     "EventServiceProvider",
+    "InteractsWithBroadcasting",
+    "InteractsWithSockets",
     "ShouldBroadcast",
+    "ShouldBroadcastAfterCommit",
+    "ShouldBroadcastNow",
     "ShouldQueue",
     "dispatch",
     "event",

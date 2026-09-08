@@ -6,6 +6,7 @@ from typing import Any
 
 from almasix.notifications.channels import (
     ArrayChannel,
+    BroadcastChannel,
     DatabaseChannel,
     LogChannel,
     MailChannel,
@@ -20,6 +21,7 @@ class NotificationSender:
             "mail": MailChannel(),
             "database": DatabaseChannel(),
             "log": LogChannel(),
+            "broadcast": BroadcastChannel(),
             "array": ArrayChannel(),
         }
 

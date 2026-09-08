@@ -273,8 +273,16 @@ def _milestones() -> list[dict]:
         {
             "id": "M26",
             "name": "Broadcasting",
-            "status": "planned",
-            "proof": ["ShouldBroadcast", "channel auth", "Redis / websocket"],
+            "status": "complete",
+            "proof": [
+                "ShouldBroadcast events, queued or now, over log/websocket/redis/pusher",
+                "routes/channels.py auth with model binding; presence rosters",
+                "/broadcasting/auth and a websocket at /broadcasting/socket",
+                "BroadcastsEvents models; broadcast notification channel",
+                "make:channel; channel:list",
+                "GET /api/broadcast",
+                "progress:broadcast",
+            ],
         },
         {
             "id": "M27",
@@ -299,7 +307,7 @@ def _milestones() -> list[dict]:
             "name": "Smith Console exhaust",
             "status": "complete",
             "proof": [
-                "84 commands, every one a Command class",
+                "91 commands, every one a Command class",
                 "full signature parser + option shortcuts",
                 "Artisan.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from typing import Any
@@ -19,6 +19,12 @@ from almasix.orm.dialects import build_async_url, ensure_async_driver
 # never share a connection.
 _active: ContextVar[dict[str, AsyncConnection] | None] = ContextVar(
     "almasix_db_transactions", default=None
+)
+
+# Work deferred until the outermost transaction commits — Laravel's
+# `DB::afterCommit`. Scoped like `_active` so one request cannot run another's.
+_deferred: ContextVar[dict[str, list[Callable[[], Any]]] | None] = ContextVar(
+    "almasix_db_after_commit", default=None
 )
 
 
@@ -137,6 +143,26 @@ class Connection:
             async for row in result.mappings():
                 yield dict(row)
 
+    def in_transaction(self) -> bool:
+        """Whether this connection is inside a transaction right now."""
+        return self.current() is not None
+
+    def after_commit(self, callback: Callable[[], Any]) -> None:
+        """Run `callback` once the outermost transaction commits.
+
+        Outside a transaction there is nothing to wait for, so it runs now.
+        A rollback throws the callback away with everything else — which is
+        the point: nobody should hear about a row that never existed.
+        """
+        if not self.in_transaction():
+            callback()
+            return
+        bag = _deferred.get()
+        if bag is None:  # pragma: no cover - set whenever a transaction starts
+            callback()
+            return
+        bag.setdefault(self.name, []).append(callback)
+
     @asynccontextmanager
     async def transaction(self) -> AsyncIterator[AsyncConnection]:
         """Run in a transaction; nested calls use SAVEPOINTs."""
@@ -152,16 +178,30 @@ class Connection:
             new_bag = dict(bag or {})
             new_bag[self.name] = connection
             token = _active.set(new_bag)
+            deferred_bag = _deferred.get()
+            deferred_token = None
+            if deferred_bag is None:
+                deferred_bag = {}
+                deferred_token = _deferred.set(deferred_bag)
             transaction = await connection.begin()
             try:
                 yield connection
             except BaseException:
                 await transaction.rollback()
+                deferred_bag.pop(self.name, None)
                 raise
             else:
                 await transaction.commit()
+                self._run_deferred(deferred_bag)
             finally:
                 _active.reset(token)
+                if deferred_token is not None:
+                    _deferred.reset(deferred_token)
+
+    def _run_deferred(self, bag: dict[str, list[Callable[[], Any]]]) -> None:
+        """Run the callbacks this connection deferred, in the order given."""
+        for callback in bag.pop(self.name, []):
+            callback()
 
     async def disconnect(self) -> None:
         await self._engine.dispose()

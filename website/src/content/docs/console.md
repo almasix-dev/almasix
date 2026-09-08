@@ -322,7 +322,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 89 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 91 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -348,6 +348,12 @@ What the framework ships, 89 commands, as `smith list` groups them. An applicati
 | --- | --- |
 | `cache:clear` | Flush the application cache |
 | `cache:forget` | Remove one item from the cache |
+
+### `channel`
+
+| Command | Description |
+| --- | --- |
+| `channel:list` | List the registered broadcast channels |
 
 ### `config`
 
@@ -409,6 +415,7 @@ What the framework ships, 89 commands, as `smith list` groups them. An applicati
 | Command | Description |
 | --- | --- |
 | `make:cast` | Create an attribute cast in app/casts |
+| `make:channel` | Create a broadcast channel class in app/broadcasting |
 | `make:class` | Create a class in app, under the path its name gives |
 | `make:command` | Create a console command in app/console/commands |
 | `make:component` | Create an anonymous Prism component in resources/views/components |

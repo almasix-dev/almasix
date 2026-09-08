@@ -127,6 +127,7 @@ export default defineConfig({
 						{ label: 'Cache', slug: 'cache' },
 						{ label: 'Redis', slug: 'redis' },
 						{ label: 'Events', slug: 'events' },
+						{ label: 'Broadcasting', slug: 'broadcasting' },
 						{ label: 'HTTP Client', slug: 'http-client' },
 						{ label: 'Processes', slug: 'processes' },
 						{ label: 'Concurrency', slug: 'concurrency' },

@@ -66,6 +66,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "config/notifications.py": _config_notifications(),
         "config/cache.py": _config_cache(),
         "config/concurrency.py": _config_concurrency(),
+        "config/broadcasting.py": _config_broadcasting(),
         "config/redis.py": _config_redis(),
         "config/loupe.py": _config_loupe(),
         "app/models/__init__.py": "",
@@ -81,6 +82,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "routes/api.py": _routes_api(),
         "routes/web.py": _routes_web(),
         "routes/console.py": _routes_console(),
+        "routes/channels.py": _routes_channels(),
         "lang/en/messages.py": _lang_messages_en(),
         "lang/en/validation.py": _lang_validation_stub(),
         "lang/en.json": '{}\n',
@@ -748,6 +750,63 @@ config = {
         "sync": {"driver": "sync"},
     },
 }
+'''
+
+
+def _config_broadcasting() -> str:
+    return '''"""Broadcasting connections."""
+
+from almasix.config import env
+
+config = {
+    # "log" writes broadcasts to the log and sends nothing, which is the
+    # right default until you have decided how they reach a browser.
+    # "websocket" runs Almasix's own socket server at the path below.
+    "default": env("BROADCAST_CONNECTION", "log"),
+    "connections": {
+        "websocket": {
+            "driver": "websocket",
+            "key": env("BROADCAST_KEY", "almasix"),
+            # Signing falls back to APP_KEY when this is unset.
+            "secret": env("BROADCAST_SECRET"),
+            "path": env("BROADCAST_PATH", "/broadcasting/socket"),
+            # Let browsers send `client-*` events to each other.
+            "client_events": bool(env("BROADCAST_CLIENT_EVENTS", False)),
+        },
+        "pusher": {
+            "driver": "pusher",
+            "key": env("PUSHER_APP_KEY"),
+            "secret": env("PUSHER_APP_SECRET"),
+            "app_id": env("PUSHER_APP_ID"),
+            "cluster": env("PUSHER_APP_CLUSTER", "mt1"),
+            "host": env("PUSHER_HOST"),
+            "port": env("PUSHER_PORT"),
+            "scheme": env("PUSHER_SCHEME", "https"),
+        },
+        "redis": {
+            "driver": "redis",
+            "connection": env("BROADCAST_REDIS_CONNECTION", "default"),
+            "prefix": env("BROADCAST_REDIS_PREFIX", ""),
+        },
+        "log": {"driver": "log"},
+        "null": {"driver": "null"},
+    },
+    # Middleware on /broadcasting/auth. Sessions live in the web group.
+    "middleware": ["web"],
+}
+'''
+
+
+def _routes_channels() -> str:
+    return '''"""Broadcast channels — who may listen to what."""
+
+from almasix.broadcasting import Broadcast
+
+
+@Broadcast.channel("users.{user_id}")
+def user_channel(user, user_id):
+    """A user may listen to their own channel, and nobody else's."""
+    return str(user.get_key()) == str(user_id)
 '''
 
 

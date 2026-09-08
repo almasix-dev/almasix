@@ -328,7 +328,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Redis | `redis` | **Done (M16)** | Redis page + Cache/Session/Queues updates |
 | Encryption | `encryption` | **M17** | `Crypt` façade, JSON-safe encrypt, `APP_PREVIOUS_KEYS`, `key:generate` |
 | Events | `events` | **M18** | Write when app event dispatcher ships (model events already in Articulate) |
-| Broadcasting | `broadcasting` | **M26** | Write when broadcasting ships |
+| Broadcasting | `broadcasting` | **M26** | Shipped |
 | Authorization | `authorization` | **M19** | Write when Gates/Policies ship |
 | HTTP Client | `http-client` | **M20** | Shipped |
 | Processes | `processes` | **M21** | Write when Processes ship |
@@ -1019,7 +1019,7 @@ Laravel [Redis](https://laravel.com/docs/redis) connection manager and first-par
 
 ### M18 — Events (`almasix.events`)
 
-**Status (M18):** Ladder exhausted — `Event` / `event()` / `listen()`; dispatcher with wildcards + subscribers; queued listeners via `ShouldQueue` + `CallQueuedListener`; `ShouldBroadcast` stub (M26); `make:event` / `make:listener` / `event:list`; fakes; Starlight Events; progress `progress:events`.
+**Status (M18):** Ladder exhausted — `Event` / `event()` / `listen()`; dispatcher with wildcards + subscribers; queued listeners via `ShouldQueue` + `CallQueuedListener`; `ShouldBroadcast` (whole feature in M26); `make:event` / `make:listener` / `event:list`; fakes; Starlight Events; progress `progress:events`.
 
 ### M19 — Authorization (`almasix.auth` Gates / Policies)
 
@@ -1150,7 +1150,11 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 **Depends on:** M18 Events; M16 Redis nice-to-have for Redis broadcaster.
 
-**Gate:** at least null/log + one real path; docs published. Horizon-class UI out of scope.
+**Gate:** at least null/log + one real path; docs published. Horizon-class UI out of scope. **Met.**
+
+**Status (M26):** `almasix.broadcasting` — `ShouldBroadcast` (plus `ShouldBroadcastNow` and `ShouldBroadcastAfterCommit`) with `broadcast_on` / `broadcast_as` / `broadcast_with` / `broadcast_when`, payloads reflected off the event's public attributes when it says nothing, and the `InteractsWithSockets` / `InteractsWithBroadcasting` mixins behind `to_others()` and `via()`; the `broadcast()` helper returning a `PendingBroadcast` that dispatches through the event bus on `send()`, on `await`, or when it falls out of scope; a `BroadcastManager` with five drivers — `log` and `null`, Almasix's own in-process `websocket` server, `redis` pub/sub, and `pusher` over its REST API — plus `Broadcast.extend()` for a sixth; `Channel` / `PrivateChannel` / `PresenceChannel` / `EncryptedPrivateChannel`, model channels, and payloads sealed with the application key on encrypted channels; `routes/channels.py` loaded by the provider (so console sees it too) with wildcard patterns, route-model binding from type hints, channel classes resolved from the container, per-channel guards, and presence rosters; `POST /broadcasting/auth` and `/broadcasting/user-auth` answering in Pusher's signed format; a websocket at `/broadcasting/socket` speaking a Pusher-shaped protocol (`subscribe`, `unsubscribe`, `ping`, `client-*`, member added/removed), reached through a new `Route.websocket()` and kernel support; queued broadcasts as a `BroadcastEvent` job whose payload is plain JSON; `BroadcastsEvents` / `BroadcastsEventsAfterCommit` for model writes, on the back of a new `Connection.after_commit()`; a `broadcast` notification channel; `Broadcast.fake()` with the assertion set; `smith make:channel` and `channel:list`; Starlight **Broadcasting**; the progress app's `PostPublished`, broadcasting `Comment`, `GET /api/broadcast`, and `progress:broadcast`.
+
+**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver where Laravel points at Reverb, Pusher, or Ably, and speaks Pusher's protocol so those stay available; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes.
 
 ### M27 — Search
 
@@ -1205,7 +1209,7 @@ Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the l
 - **Signal handling:** `trap(SIGTERM, …)` (single + multiple signals), honored by long-running commands (`queue:work`, `schedule:work`, `serve`)
 - **Events:** `CommandStarting` / `CommandFinished` (+ a startup event) through the M18 dispatcher
 - **Stub customization:** move generator stubs out of inline f-strings into a real stub set + `smith stub:publish`; app stubs override framework stubs
-- **Missing built-ins** (only where the underlying feature exists): `about`, `help`, `route:list`, `config:show`, `db:wipe`, `db:show`/`db:table`, `queue:restart` / `queue:clear` / `queue:monitor`, `env:encrypt` / `env:decrypt`, `optimize` / `optimize:clear` + `config:cache` / `view:cache` and their `:clear` pairs (cache targets may land with M31/M15 work), `vendor:publish`, and the `make:*` set for shipped features (`make:job`, `make:mail`, `make:notification`, `make:rule`, `make:cast`, `make:exception`, `make:view`, `make:class`, `make:enum`, `make:interface`, `make:observer`). Generators for unshipped features stay with their milestone (`make:factory` → M24, `make:test` → M28, `make:resource` → M23, `make:channel` → M26).
+- **Missing built-ins** (only where the underlying feature exists): `about`, `help`, `route:list`, `config:show`, `db:wipe`, `db:show`/`db:table`, `queue:restart` / `queue:clear` / `queue:monitor`, `env:encrypt` / `env:decrypt`, `optimize` / `optimize:clear` + `config:cache` / `view:cache` and their `:clear` pairs (cache targets may land with M31/M15 work), `vendor:publish`, and the `make:*` set for shipped features (`make:job`, `make:mail`, `make:notification`, `make:rule`, `make:cast`, `make:exception`, `make:view`, `make:class`, `make:enum`, `make:interface`, `make:observer`). Generators for unshipped features stay with their milestone (`make:test` → M28); `make:factory` (M24), `make:resource` (M23), `make:document` (M25), and `make:channel` (M26) shipped with theirs.
 - **Discovery is all-or-nothing:** one command file that fails to import aborts discovery for the whole directory, and the notice only prints on `smith list` — invoking a command shows "No such command" with no hint why. Report the failing module, keep the rest, and say so on every run
 - **Loupe allow-list:** Tinker-class `commands` / `dont_alias` configuration for the REPL
 - Docs: rewrite Starlight **Smith Console** to the Artisan section order; document every built-in command
@@ -1621,7 +1625,9 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **M25 Articulate NoSQL gate met** — a store abstraction with two drivers (MongoDB through Motor, and an in-process store with the same semantics), `Document` models that keep every Model behaviour, embedded documents, references that cross into SQL, declared indexes with `documents:index` / `documents:show`, and a builder that refuses SQL-only calls by name instead of pretending.
 
-**Milestones M26–M29** (Broadcasting → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M26 Broadcasting gate met** — `ShouldBroadcast` events with the whole channel family, five drivers (`log`, `null`, Almasix's own websocket server, Redis pub/sub, Pusher), `routes/channels.py` authorization with model binding and presence rosters, the signed `/broadcasting/auth` endpoints, model broadcasting on the back of `after_commit`, a `broadcast` notification channel, and `Broadcast.fake()`.
+
+**Milestones M27–M29** (Search → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

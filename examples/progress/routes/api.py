@@ -5,9 +5,11 @@ and HttpException shapes. The `api` middleware group carries `demo.tag`, so the
 `X-Almasix-Demo` header proves group expansion end to end.
 
 M5 ORM demos live under `/api/posts`, `/api/users`, and `/api/orm`; the M25
-document-store demo lives under `/api/documents`.
+document-store demo lives under `/api/documents`, and the M26 broadcasting
+demo under `/api/broadcast`.
 """
 
+from app.http.controllers.broadcast_controller import BroadcastController
 from app.http.controllers.demo_controller import DemoController
 from app.http.controllers.document_controller import DocumentController
 from app.http.controllers.health_controller import HealthController
@@ -30,6 +32,9 @@ with Route.group(prefix="/api", middleware=["api"]):
 
     # M25 — Articulate over a document store, alongside the SQL demos above.
     Route.get("/documents", [DocumentController, "index"])
+
+    # M26 — channels, authorization, and a socket, without a browser.
+    Route.get("/broadcast", [BroadcastController, "index"])
 
     Route.get("/posts", [PostController, "index"])
     Route.get("/posts/pages", [PostController, "pages"])

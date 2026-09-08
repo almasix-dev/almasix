@@ -1,17 +1,23 @@
-"""Broadcasting hook — full implementation lands in M26."""
+"""Where `ShouldBroadcast` used to live.
+
+The marker moved to `almasix.broadcasting` when broadcasting shipped; events
+that imported it from here keep working.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from almasix.broadcasting.events import (
+    InteractsWithBroadcasting,
+    InteractsWithSockets,
+    ShouldBroadcast,
+    ShouldBroadcastAfterCommit,
+    ShouldBroadcastNow,
+)
 
-
-class ShouldBroadcast(Protocol):
-    """Marker protocol for events that should broadcast (M26).
-
-    Almasix recognizes the marker today so apps can annotate events early.
-    Dispatch still runs local listeners only until Broadcasting ships.
-    """
-
-    def broadcast_on(self) -> list[Any]:  # pragma: no cover - protocol stub
-        """Return the channels the event should broadcast on."""
-        ...
+__all__ = [
+    "InteractsWithBroadcasting",
+    "InteractsWithSockets",
+    "ShouldBroadcast",
+    "ShouldBroadcastAfterCommit",
+    "ShouldBroadcastNow",
+]

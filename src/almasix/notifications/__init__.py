@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from almasix.notifications.channels import (
     ArrayChannel,
+    BroadcastChannel,
     DatabaseChannel,
     LogChannel,
     MailChannel,
@@ -22,6 +23,7 @@ from almasix.notifications.verification import (
 
 __all__ = [
     "ArrayChannel",
+    "BroadcastChannel",
     "DatabaseChannel",
     "LogChannel",
     "MailChannel",

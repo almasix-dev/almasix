@@ -31,6 +31,21 @@ class RouteDefinition:
 
 
 @dataclass
+class WebSocketRouteDefinition:
+    """A websocket endpoint.
+
+    Kept apart from HTTP routes because almost nothing about them is shared:
+    no methods, no response, and a handler that lives for as long as the
+    connection does.
+    """
+
+    uri: str
+    action: Action
+    name: str | None = None
+    middleware: list[str] = field(default_factory=list)
+
+
+@dataclass
 class _GroupOptions:
     prefix: str = ""
     middleware: list[str] = field(default_factory=list)
@@ -41,11 +56,16 @@ class Router:
 
     def __init__(self) -> None:
         self._routes: list[RouteDefinition] = []
+        self._websockets: list[WebSocketRouteDefinition] = []
         self._group_stack: list[_GroupOptions] = []
 
     @property
     def routes(self) -> list[RouteDefinition]:
         return list(self._routes)
+
+    @property
+    def websocket_routes(self) -> list[WebSocketRouteDefinition]:
+        return list(self._websockets)
 
     def add(
         self,
@@ -56,27 +76,49 @@ class Router:
         name: str | None = None,
         middleware: Sequence[str] | None = None,
     ) -> RouteDefinition:
-        prefix = "".join(group.prefix for group in self._group_stack)
-        group_middleware: list[str] = []
-        for group in self._group_stack:
-            group_middleware.extend(group.middleware)
+        route = RouteDefinition(
+            methods=tuple(method.upper() for method in methods),
+            uri=self._full_uri(uri),
+            action=action,
+            name=name,
+            middleware=[*self._group_middleware(), *(middleware or [])],
+        )
+        self._routes.append(route)
+        return route
 
+    def websocket(
+        self,
+        uri: str,
+        action: Action,
+        *,
+        name: str | None = None,
+        middleware: Sequence[str] | None = None,
+    ) -> WebSocketRouteDefinition:
+        """Register a websocket endpoint (Laravel has none; ASGI gives us one)."""
+        route = WebSocketRouteDefinition(
+            uri=self._full_uri(uri),
+            action=action,
+            name=name,
+            middleware=[*self._group_middleware(), *(middleware or [])],
+        )
+        self._websockets.append(route)
+        return route
+
+    def _full_uri(self, uri: str) -> str:
+        prefix = "".join(group.prefix for group in self._group_stack)
         normalized = uri if uri.startswith("/") else f"/{uri}"
         full_uri = f"{prefix.rstrip('/')}/{normalized.lstrip('/')}" if prefix else normalized
         if not full_uri.startswith("/"):
             full_uri = f"/{full_uri}"
         if full_uri != "/" and full_uri.endswith("/"):
             full_uri = full_uri.rstrip("/")
+        return full_uri or "/"
 
-        route = RouteDefinition(
-            methods=tuple(method.upper() for method in methods),
-            uri=full_uri or "/",
-            action=action,
-            name=name,
-            middleware=[*group_middleware, *(middleware or [])],
-        )
-        self._routes.append(route)
-        return route
+    def _group_middleware(self) -> list[str]:
+        middleware: list[str] = []
+        for group in self._group_stack:
+            middleware.extend(group.middleware)
+        return middleware
 
     def get(self, uri: str, action: Action, **kwargs: Any) -> RouteDefinition:
         return self.add(["GET"], uri, action, **kwargs)
@@ -183,6 +225,10 @@ class Route:
     @staticmethod
     def match(methods: Sequence[str], uri: str, action: Action, **kwargs: Any) -> RouteDefinition:
         return get_router().match(methods, uri, action, **kwargs)
+
+    @staticmethod
+    def websocket(uri: str, action: Action, **kwargs: Any) -> WebSocketRouteDefinition:
+        return get_router().websocket(uri, action, **kwargs)
 
     @staticmethod
     @contextmanager

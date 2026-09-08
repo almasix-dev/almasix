@@ -611,6 +611,31 @@ pytest -q tests/test_m25_*.py tests/smoke/test_m25_smoke.py
 
 ---
 
+## M26 — Broadcasting
+
+```bash
+pytest -q tests/test_m26_*.py tests/smoke/test_m26_smoke.py
+```
+
+### M26 exit criteria
+
+- [x] `ShouldBroadcast`, `ShouldBroadcastNow`, `ShouldBroadcastAfterCommit`; `broadcast_on`, `broadcast_as`, `broadcast_with`, `broadcast_when`, and a payload reflected off the event when it declares none
+- [x] `Channel`, `PrivateChannel`, `PresenceChannel`, `EncryptedPrivateChannel` — names from strings, models, and channel objects, prefixed once
+- [x] `broadcast()` returning a `PendingBroadcast` that sends on `send()`, on `await`, or when it falls out of scope; `to_others()` excludes the caller's socket; `via()` picks the connection
+- [x] Drivers: `log` and `null`, an in-process `websocket` server, `redis` pub/sub, `pusher` over its signed REST API (chunking long channel lists), and `Broadcast.extend()` for a sixth
+- [x] `routes/channels.py` loaded by the provider so console and HTTP see the same channels; wildcard patterns, route-model binding from type hints, channel classes from the container, per-channel guards
+- [x] Presence channels return a member array; a refusal is a refusal (`False` / `None`) and answers 403
+- [x] `POST /broadcasting/auth` and `/broadcasting/user-auth` reply in Pusher's signed format; encrypted channels seal the payload with the application key
+- [x] `Route.websocket()` and kernel support; `/broadcasting/socket` speaks `subscribe`, `unsubscribe`, `ping`, `client-*`, and member added / removed
+- [x] Queued broadcasts travel as a `BroadcastEvent` job with a JSON payload; `ShouldBroadcastNow` skips the queue; `ShouldBroadcastAfterCommit` waits for `Connection.after_commit()`
+- [x] `BroadcastsEvents` / `BroadcastsEventsAfterCommit` on models — created, updated, trashed, restored, deleted — and the `broadcast` notification channel
+- [x] `Broadcast.fake()` with `assert_broadcast`, `assert_broadcast_on`, `assert_nothing_broadcast`, and the recorded frames
+- [x] `smith make:channel`, `channel:list`, and `config/broadcasting.py` + `routes/channels.py` in the scaffold
+- [x] Living example: `PostPublished`, a broadcasting `Comment`, `smith progress:broadcast`, `GET /api/broadcast`; the board marks M26 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.broadcasting`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash
@@ -630,7 +655,7 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 - [x] Stub tree: every generator renders a `.stub`, `smith stub:publish` copies them into `stubs/`, and a published stub wins
 - [x] `ServiceProvider.publishes()` + `smith vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `almasix-stubs` and `almasix-lang`
 - [x] Loupe allow-list: `config/loupe.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
-- [x] The built-in catalogue — 84 commands, including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
+- [x] The built-in catalogue — 91 commands (84 at M30, plus the generators later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
 - [x] `console` rewritten in Laravel's Artisan section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
 - [x] Living example: `smith progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
 - [x] Deliberate deviations recorded in `docs/PLAN.md` with reasons — `config:cache` / `route:cache` / `event:cache` measured and declined, `view:cache` verifying rather than persisting, `db:show` without a size column, `db:wipe` refusing `--drop-views`
@@ -754,7 +779,7 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 ## Out of scope until later milestones
 
-- Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)
+- Digging Deeper: search, testing toolkit, package guidelines (M27–M29) — processes, concurrency, API resources, factories, Articulate NoSQL, and broadcasting have shipped (M21–M26)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs versioning + Prologue (M39)
 - IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)

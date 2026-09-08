@@ -10,13 +10,19 @@ from typing import TYPE_CHECKING, Any, get_type_hints
 
 from fastapi import FastAPI
 from fastapi import Request as FastAPIRequest
+from fastapi import WebSocket
 from starlette.responses import Response as StarletteResponse
 
 from almasix.http.exceptions import HttpException, NotFoundHttpException
 from almasix.http.middleware import Middleware
 from almasix.http.request import Request, reset_request, set_request
 from almasix.http.response import make_response
-from almasix.routing.router import Action, RouteDefinition, Router
+from almasix.routing.router import (
+    Action,
+    RouteDefinition,
+    Router,
+    WebSocketRouteDefinition,
+)
 
 if TYPE_CHECKING:
     from almasix.framework.application import Application
@@ -117,6 +123,9 @@ class HttpKernel:
         for route in self.router.routes:
             self._register_route(asgi, route)
 
+        for socket_route in self.router.websocket_routes:
+            self._register_websocket(asgi, socket_route)
+
         # Dev/DX: files under public/{css,js,images,fonts,build}/ map to /{dir}/…
         # Production may still front this with a CDN/proxy; Vite emits into public/build.
         public_dir = Path(self.app.base_path) / "public"
@@ -183,6 +192,21 @@ class HttpKernel:
             methods=list(route.methods),
             name=route.name,
         )
+
+    def _register_websocket(self, asgi: FastAPI, route: WebSocketRouteDefinition) -> None:
+        """Mount a websocket handler.
+
+        Middleware does not run here: Almasix's middleware contract is
+        request-in / response-out, and a socket has neither. A socket handler
+        authorizes each frame itself, which is what the broadcasting endpoint
+        does with its signed subscriptions.
+        """
+        action = self._resolve_action(route.action)
+
+        async def endpoint(websocket: WebSocket) -> None:
+            await action(websocket)
+
+        asgi.add_api_websocket_route(route.uri, endpoint, name=route.name)
 
     def _build_endpoint(
         self,
