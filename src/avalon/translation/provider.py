@@ -40,4 +40,5 @@ class TranslationServiceProvider(ServiceProvider):
         translator = self.app.make(Translator)
         set_translator(translator)
         set_fallback_locale(translator.get_fallback())
+        self.publishes({framework_lang_path(): self.app.path("lang")}, "avalon-lang")
         # Context locale stays unset until a request (or set_locale) pins it.
