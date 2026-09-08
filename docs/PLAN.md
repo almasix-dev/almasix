@@ -1178,6 +1178,11 @@ Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the l
 
 **Gate:** every section of Laravel's Artisan page either implemented or listed as a deliberate deviation with a reason; one command surface (no command reachable only through Typer); `avalon.console` + `avalon.grail` at 100% coverage; docs published.
 
+**Status (M30):** *In progress — the command layer has landed; the surface merge and command catalogue have not.*
+
+- **Shipped:** signature parser (option shortcuts `{--Q|queue=}`, argument/option arrays, `:` descriptions, argv terminator `--`); exit-code constants + `fail()`; `arguments()` / `options()` / `has_option()`; `question` / `alert` / `new_line` / `with_progress_bar` / `choice(multiple=…)`; `PromptsForMissingInput`; closure commands via `Artisan.command(...).purpose(...)` in `routes/console.py` with container-resolved parameters; `Artisan.call` / `call_silently` / `output` / `queue` / `has` / `all` and `self.call` / `self.call_silently`; `Isolatable` + `--isolated[=CODE]` on cache lock with mutex fallback; `trap()` signal handling; `ConsoleStarting` / `CommandStarting` / `CommandFinished`; `CommandNotFound` / `CommandFailed`. Progress gains `progress:console`, `progress:import`, and a `progress:greet` closure command.
+- **Remaining:** migrate the Typer callbacks in `avalon/grail/cli.py` to `Command` classes (one surface); stub tree + `grail stub:publish`; the missing built-in commands; Fiddle allow-list; the full docs rewrite in Artisan section order.
+
 ### M31 — Task Scheduling exhaust
 
 Laravel [Task Scheduling](https://laravel.com/docs/scheduling) — M9 shipped a 5-frequency DSL; the page is far from exhausted.

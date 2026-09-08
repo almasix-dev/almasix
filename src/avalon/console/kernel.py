@@ -12,10 +12,33 @@ from typing import TYPE_CHECKING, Any
 
 import typer
 
+from avalon.console import isolation
 from avalon.console.command import Command, parse_signature
+from avalon.console.events import CommandFinished, CommandStarting, ConsoleStarting
+from avalon.console.exceptions import CommandNotFound
 
 if TYPE_CHECKING:
     from avalon.framework.application import Application
+
+#: Injected into isolatable commands so ``--isolated[=CODE]`` always parses.
+_ISOLATED_OPTION: dict[str, Any] = {
+    "name": "isolated",
+    "shortcut": "",
+    "description": "Do not run if another instance of the command is already running",
+    "default": None,
+    "is_flag": False,
+    "array": False,
+}
+
+
+def _isolated_exit_code(isolated: Any) -> int:
+    """``--isolated`` exits successfully unless given an explicit code."""
+    if isinstance(isolated, bool):
+        return Command.SUCCESS
+    try:
+        return int(isolated)
+    except (TypeError, ValueError):
+        return Command.SUCCESS
 
 
 class ConsoleKernel:
@@ -42,9 +65,14 @@ class ConsoleKernel:
         return kernel
 
     def discover(self) -> None:
+        from avalon.console.facade import Artisan, drain_pending
+
         self._load_package("avalon.console.commands")
         self._load_package("app.console.commands")
         self._load_path(self.app.path("app", "console", "commands"))
+        Artisan.set_kernel(self)
+        drain_pending(self)
+        self._dispatch(ConsoleStarting(sorted(self.commands)))
 
     def register(self, command_cls: type[Command]) -> None:
         if not command_cls.signature:
@@ -82,6 +110,10 @@ class ConsoleKernel:
                 self.register(obj)
 
     def load_console_routes(self) -> None:
+        """Load ``routes/console.py`` (schedule DSL + ``Artisan.command`` closures)."""
+        from avalon.console.facade import Artisan, drain_pending
+
+        Artisan.set_kernel(self)
         path = self.app.path("routes", "console.py")
         if not path.is_file():
             return
@@ -92,6 +124,7 @@ class ConsoleKernel:
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
         spec.loader.exec_module(module)
+        drain_pending(self)
 
     def run_command(
         self,
@@ -99,28 +132,97 @@ class ConsoleKernel:
         arguments: dict[str, Any] | None = None,
         options: dict[str, Any] | None = None,
     ) -> int:
-        command_cls = self.commands.get(name)
-        if command_cls is None:
-            raise KeyError(f"Command not found: {name}")
+        command_cls = self._resolve(name)
         instance = command_cls(self.app)
+        arguments = dict(arguments or {})
+        options = dict(options or {})
+        self._dispatch(CommandStarting(name, arguments, options))
         try:
-            return instance.run(arguments=arguments, options=options)
+            code = self._run_instance(instance, arguments, options)
         except Exception as exc:
             from avalon.debug import DumpAndDie
 
             if isinstance(exc, DumpAndDie):
                 # dd() already pretty-printed; exit cleanly (not an app error).
+                self._dispatch(CommandFinished(name, arguments, options, 0))
                 return 0
             self._report_exception(exc)
             raise
+        self._dispatch(CommandFinished(name, arguments, options, code))
+        return code
+
+    def _run_instance(
+        self,
+        instance: Command,
+        arguments: dict[str, Any],
+        options: dict[str, Any],
+    ) -> int:
+        isolated = options.get("isolated") if instance.isolatable else None
+        if not isolated:
+            return instance.run(arguments=arguments, options=options)
+
+        instance._arguments = arguments  # noqa: SLF001 - isolatable_id() may read input
+        instance._options = options  # noqa: SLF001
+        lock = isolation.acquire(
+            instance.isolatable_id(),
+            instance.isolation_lock_seconds(),
+            self.app.base_path,
+        )
+        if lock is None:
+            return _isolated_exit_code(isolated)
+        try:
+            return instance.run(arguments=arguments, options=options)
+        finally:
+            lock.release()
 
     def run_argv(self, name: str, argv: list[str]) -> int:
+        command_cls = self._resolve(name)
+        _, arguments_meta, options_meta = parse_signature(command_cls.signature)
+        if command_cls.isolatable:
+            options_meta = [*options_meta, _ISOLATED_OPTION]
+        arguments, options = _parse_argv(
+            argv,
+            arguments_meta,
+            options_meta,
+            prompt_for_missing=command_cls.prompts_for_missing_input,
+        )
+        if command_cls.prompts_for_missing_input:
+            arguments = self._prompt_for_missing(command_cls, arguments, arguments_meta)
+        return self.run_command(name, arguments=arguments, options=options)
+
+    def _prompt_for_missing(
+        self,
+        command_cls: type[Command],
+        arguments: dict[str, Any],
+        arguments_meta: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        missing = [
+            meta["name"]
+            for meta in arguments_meta
+            if not meta["optional"] and meta["name"].replace("-", "_") not in arguments
+        ]
+        if not missing:
+            return arguments
+        prompter = command_cls(self.app)
+        for argument_name in missing:
+            arguments[argument_name.replace("-", "_")] = prompter.prompt_for_missing_argument(
+                argument_name
+            )
+        return arguments
+
+    def _resolve(self, name: str) -> type[Command]:
         command_cls = self.commands.get(name)
         if command_cls is None:
-            raise KeyError(f"Command not found: {name}")
-        _, arguments_meta, options_meta = parse_signature(command_cls.signature)
-        arguments, options = _parse_argv(argv, arguments_meta, options_meta)
-        return self.run_command(name, arguments=arguments, options=options)
+            raise CommandNotFound(name)
+        return command_cls
+
+    def _dispatch(self, event: Any) -> None:
+        try:
+            from avalon.events.facade import Event
+
+            Event.dispatch(event)
+        except Exception:  # pragma: no cover - events are best effort in the console
+            pass
 
     def _report_exception(self, exc: BaseException) -> None:
         try:
@@ -162,41 +264,96 @@ def _parse_argv(
     argv: list[str],
     arguments_meta: list[dict[str, Any]],
     options_meta: list[dict[str, Any]],
+    *,
+    prompt_for_missing: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    options: dict[str, Any] = {
-        opt["name"].replace("-", "_"): (False if opt["is_flag"] else opt["default"])
-        for opt in options_meta
-    }
+    by_name = {meta["name"]: meta for meta in options_meta}
+    by_shortcut = {meta["shortcut"]: meta for meta in options_meta if meta.get("shortcut")}
+    options = _option_defaults(options_meta)
+
     positional: list[str] = []
     index = 0
     while index < len(argv):
         token = argv[index]
+        if token == "--":
+            positional.extend(argv[index + 1 :])
+            break
         if token.startswith("--"):
-            key = token[2:]
-            if "=" in key:
-                key, value = key.split("=", 1)
-                options[key.replace("-", "_")] = value
-            else:
-                meta = next((o for o in options_meta if o["name"] == key), None)
-                if meta and meta["is_flag"]:
-                    options[key.replace("-", "_")] = True
-                elif index + 1 < len(argv) and not argv[index + 1].startswith("-"):
-                    options[key.replace("-", "_")] = argv[index + 1]
-                    index += 1
-                else:
-                    options[key.replace("-", "_")] = True
+            index = _consume_option(argv, index, token[2:], by_name, options)
+        elif len(token) > 1 and token.startswith("-") and token[1] in by_shortcut:
+            meta = by_shortcut[token[1]]
+            inline = token[2:].lstrip("=")
+            index = _consume_option(
+                argv, index, f"{meta['name']}={inline}" if inline else meta["name"], by_name, options
+            )
         else:
             positional.append(token)
         index += 1
 
+    return (
+        _collect_arguments(positional, arguments_meta, prompt_for_missing=prompt_for_missing),
+        options,
+    )
+
+
+def _option_defaults(options_meta: list[dict[str, Any]]) -> dict[str, Any]:
+    defaults: dict[str, Any] = {}
+    for meta in options_meta:
+        key = meta["name"].replace("-", "_")
+        if meta["array"]:
+            defaults[key] = list(meta["default"] or [])
+        elif meta["is_flag"]:
+            defaults[key] = False
+        else:
+            defaults[key] = meta["default"]
+    return defaults
+
+
+def _consume_option(
+    argv: list[str],
+    index: int,
+    raw: str,
+    by_name: dict[str, dict[str, Any]],
+    options: dict[str, Any],
+) -> int:
+    """Store one option, returning the argv index that was consumed last."""
+    name, separator, inline = raw.partition("=")
+    meta = by_name.get(name)
+    key = name.replace("-", "_")
+
+    if separator:
+        value: Any = inline
+    elif meta is not None and meta["is_flag"]:
+        value = True
+    elif index + 1 < len(argv) and not argv[index + 1].startswith("-"):
+        index += 1
+        value = argv[index]
+    else:
+        value = True
+
+    if meta is not None and meta["array"]:
+        options.setdefault(key, [])
+        options[key] = [*options[key], value]
+    else:
+        options[key] = value
+    return index
+
+
+def _collect_arguments(
+    positional: list[str],
+    arguments_meta: list[dict[str, Any]],
+    *,
+    prompt_for_missing: bool,
+) -> dict[str, Any]:
     arguments: dict[str, Any] = {}
     pos_index = 0
     for meta in arguments_meta:
         key = meta["name"].replace("-", "_")
-        if meta["variadic"]:
-            arguments[key] = positional[pos_index:]
+        if meta["array"]:
+            remaining = positional[pos_index:]
+            arguments[key] = remaining or list(meta["default"] or [])
             pos_index = len(positional)
-            break
+            continue
         if pos_index < len(positional):
             arguments[key] = positional[pos_index]
             pos_index += 1
@@ -204,6 +361,8 @@ def _parse_argv(
             arguments[key] = meta["default"]
         elif meta["optional"]:
             arguments[key] = None
+        elif prompt_for_missing:
+            continue  # the kernel prompts for it
         else:
             raise typer.BadParameter(f"Missing required argument: {meta['name']}")
-    return arguments, options
+    return arguments

@@ -492,7 +492,10 @@ def _register_discovered_commands() -> None:
     try:
         from avalon.console.kernel import ConsoleKernel
 
-        ConsoleKernel.from_cwd().register_on_typer(app)
+        kernel = ConsoleKernel.from_cwd()
+        # routes/console.py may define closure commands (Artisan.command).
+        kernel.load_console_routes()
+        kernel.register_on_typer(app)
     except Exception:
         return
 
