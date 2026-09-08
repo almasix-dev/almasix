@@ -811,9 +811,10 @@ result = Arr.select(rows, ["name"])
 
 Writes `value` at a dot-notation `key`, creating the intermediate mappings as
 it goes. It **mutates the mapping it is given** and returns that same object
-rather than a copy, so the return value is only a convenience for chaining. An
-intermediate segment that currently holds a non-mapping value is replaced by a
-new mapping, discarding what was there.
+rather than a copy, so the return value is only a convenience for chaining. A
+list along the way is written through by index, growing with `None` to reach an
+index past its end; an intermediate segment holding any other non-mapping value
+is replaced by a new mapping, discarding what was there.
 
 ```python
 prices = {"products": {"desk": {"price": 100}}}
@@ -973,20 +974,24 @@ from_list = Arr.to_css_classes(["p-4", "", "font-bold", None])
 
 ### to_css_styles
 
-Builds a `style` attribute value from a mapping of CSS property to value,
-joined with `;` and with no trailing semicolon. An entry whose value is exactly
-`False` or `None` is skipped, which is how a style is made conditional; note
-that this differs from Laravel, where the keys are whole style strings and the
-values are the booleans that switch them on.
+Builds a `style` attribute value, joined with `;` and with no trailing
+semicolon. It reads two shapes: property to value, and Laravel's, where the key
+is a whole style string and the value is the flag that switches it on. An entry
+whose value is exactly `False` or `None` is skipped either way, which is how a
+style is made conditional. A plain list of style strings works too.
 
 ```python
 result = Arr.to_css_styles({"background-color": "blue", "color": "red"})
 
 # 'background-color:blue;color:red'
 
-conditional = Arr.to_css_styles({"display": "none", "color": False})
+switched = Arr.to_css_styles({"display: none": True, "color: red": False})
 
-# 'display:none'
+# 'display: none'
+
+listed = Arr.to_css_styles(["display: none;", "color: red"])
+
+# 'display: none;color: red'
 ```
 
 ### undot
@@ -1095,10 +1100,10 @@ data_forget(data, ["products.desk.sku"])
 Reads a value out of nested data using a dotted path, returning `default` when
 any segment is missing. Segments resolve against mappings by key, against lists
 and tuples by integer index, and against other objects by `get_attribute()` or
-plain attribute lookup. Passing `key=None` returns `target` unchanged. Laravel
-supports `*` wildcards that collect every match; Avalon does not implement
-them, so a `*` segment is treated as a literal key and falls through to the
-default.
+plain attribute lookup. Passing `key=None` returns `target` unchanged. A `*`
+segment fans out over every entry at that level and collects the matches,
+dropping the branches that came up empty; a second `*` collapses one level, so
+the result stays flat.
 
 ```python
 from avalon.support import data_get
@@ -1110,7 +1115,17 @@ wildcard = data_get(data, "users.*.name")
 
 # 'Ada'
 # 'unknown'
-# None
+# ['Ada', 'Linus']
+```
+
+A path that never reaches a list or mapping returns the default rather than an
+empty list, so a wildcard over missing data is still distinguishable from a
+wildcard over data with nothing in it.
+
+```python
+nowhere = data_get({"users": []}, "orders.*.total", "no orders")
+
+# 'no orders'
 ```
 
 ### data_set
@@ -1118,10 +1133,10 @@ wildcard = data_get(data, "users.*.name")
 Writes `value` at the dotted `key`, creating intermediate dictionaries as
 needed, and mutates `target` in place rather than returning a copy. The fourth
 argument `overwrite` defaults to `True`; pass `False` to leave an existing
-value alone, which is what `data_fill` does. Intermediate segments are always
-created as dictionaries, so writing through a list index replaces the list with
-a dict keyed by the index as a string — unlike Laravel, which writes into the
-list.
+value alone, which is what `data_fill` does. A numeric segment against a list
+writes into that list rather than replacing it, growing it with `None` when the
+index is past the end; a non-numeric segment against a list raises `TypeError`
+rather than quietly discarding the list.
 
 ```python
 from avalon.support import data_set
@@ -1132,6 +1147,12 @@ data_set(data, "products.chair.price", 50)
 data_set(data, "products.desk.price", 999, False)
 
 # {'products': {'desk': {'price': 200}, 'chair': {'price': 50}}}
+
+users = {"users": [{"name": "Ada"}]}
+data_set(users, "users.0.name", "Grace")
+data_set(users, "users.2.name", "Alan")
+
+# {'users': [{'name': 'Grace'}, None, {'name': 'Alan'}]}
 ```
 
 ### head

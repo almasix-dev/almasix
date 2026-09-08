@@ -207,9 +207,10 @@ class Str:
 
     @staticmethod
     def char_at(subject: str, index: int) -> str | bool:
-        if index < 0 or index >= len(subject):
+        position = index if index >= 0 else len(subject) + index
+        if position < 0 or position >= len(subject):
             return False
-        return subject[index]
+        return subject[position]
 
     @staticmethod
     def chop_start(subject: str, needle: str | Iterable[str]) -> str:
@@ -386,15 +387,17 @@ class Str:
 
     @staticmethod
     def pad_both(value: str, length: int, pad: str = " ") -> str:
-        return value.center(length, pad[:1] if pad else " ")
+        short = max(0, length - len(value))
+        left = short // 2
+        return _fill(pad, left) + value + _fill(pad, short - left)
 
     @staticmethod
     def pad_left(value: str, length: int, pad: str = " ") -> str:
-        return value.rjust(length, pad[:1] if pad else " ")
+        return _fill(pad, max(0, length - len(value))) + value
 
     @staticmethod
     def pad_right(value: str, length: int, pad: str = " ") -> str:
-        return value.ljust(length, pad[:1] if pad else " ")
+        return value + _fill(pad, max(0, length - len(value)))
 
     @staticmethod
     def password(length: int = 32, letters: bool = True, numbers: bool = True, symbols: bool = True, spaces: bool = False) -> str:
@@ -1035,6 +1038,13 @@ def _install_when_tests() -> None:
 def str_(value: Any = "") -> Stringable:
     """Laravel ``str()`` helper."""
     return Str.of(value)
+
+
+def _fill(pad: str, width: int) -> str:
+    """``width`` characters of ``pad``, repeating and then cutting it short."""
+    if width <= 0 or not pad:
+        return ""
+    return (pad * (width // len(pad) + 1))[:width]
 
 
 def _match_case(source: str, target: str) -> str:

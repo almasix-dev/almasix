@@ -215,8 +215,14 @@ out_of_range = Str.char_at("Ada", 9)
 # False
 ```
 
-Negative indices are not supported and return `False` as well, unlike Python
-slicing and unlike Laravel, which counts back from the end.
+A negative index counts back from the end, as Python slicing and Laravel both
+do, and still returns `False` when it reaches past the start.
+
+```python
+last = Str.char_at("Ada", -1)
+
+# 'a'
+```
 
 ### chop_end
 
@@ -817,35 +823,48 @@ result = Str.ordered_uuid()
 ### pad_both
 
 Pads the string on both sides until it is `length` characters long, centring
-it. Only the first character of `pad` is used, unlike Laravel, which repeats
-the whole pad string.
+it. A `pad` longer than one character repeats and is cut short to fit, and the
+odd character out goes on the right. A string already at `length` is returned
+untouched.
 
 ```python
 result = Str.pad_both("Avalon", 12, "_")
 
 # '___Avalon___'
+
+repeated = Str.pad_both("x", 7, "-=")
+
+# '-=-x-=-'
 ```
 
 ### pad_left
 
-Pads the start of the string until it is `length` characters long. As with
-`pad_both`, only the first character of `pad` is used.
+Pads the start of the string until it is `length` characters long, repeating
+`pad` and cutting it short to fit.
 
 ```python
 result = Str.pad_left("7", 3, "0")
 
 # '007'
+
+repeated = Str.pad_left("7", 5, "ab")
+
+# 'abab7'
 ```
 
 ### pad_right
 
-Pads the end of the string until it is `length` characters long, again using
-only the first character of `pad`.
+Pads the end of the string until it is `length` characters long, again
+repeating `pad` to fit.
 
 ```python
 result = Str.pad_right("Avalon", 10, "-")
 
 # 'Avalon----'
+
+repeated = Str.pad_right("7", 5, "ab")
+
+# '7abab'
 ```
 
 ### password
@@ -2286,7 +2305,7 @@ result = str_("").ordered_uuid().value()
 
 ### pad_both
 
-Pads both sides of the value up to `length` using the first character of `pad`.
+Pads both sides of the value up to `length`, repeating `pad` to fit.
 
 ```python
 result = str_("avalon").pad_both(12, "_").value()

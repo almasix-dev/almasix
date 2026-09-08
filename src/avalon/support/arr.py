@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 import random
-from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Callable,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Sequence,
+)
 from typing import Any
 from urllib.parse import urlencode
 
@@ -307,14 +314,14 @@ class Arr:
     @staticmethod
     def set(array: MutableMapping[Any, Any], key: str, value: Any) -> MutableMapping[Any, Any]:
         segments = str(key).split(".")
-        current: MutableMapping[Any, Any] = array
+        current: Any = array
         for segment in segments[:-1]:
-            existing = current.get(segment)
-            if not isinstance(existing, MutableMapping):
+            existing = _child(current, segment)
+            if not isinstance(existing, (MutableMapping, MutableSequence)):
                 existing = {}
-                current[segment] = existing
+                _put(current, segment, existing)
             current = existing
-        current[segments[-1]] = value
+        _put(current, segments[-1], value)
         return array
 
     @staticmethod
@@ -380,13 +387,17 @@ class Arr:
         return " ".join(str(item) for item in array if item)
 
     @staticmethod
-    def to_css_styles(array: Mapping[str, Any]) -> str:
+    def to_css_styles(array: Mapping[str, Any] | Sequence[Any]) -> str:
+        """Build a ``style`` attribute from properties, or from switched styles."""
         parts = []
-        for key, value in array.items():
+        pairs = array.items() if isinstance(array, Mapping) else [(item, True) for item in array]
+        for key, value in pairs:
             if value is False or value is None:
                 continue
-            parts.append(f"{key}:{value}")
-        return ";".join(parts)
+            # ``{"color": "red"}`` is a property and its value; ``{"color: red": True}``
+            # is a whole style switched on by a flag, which is Laravel's shape.
+            parts.append(str(key) if value is True else f"{key}:{value}")
+        return ";".join(part.rstrip(";") for part in parts)
 
     @staticmethod
     def where(array: Iterable[Any], callback: Callable[[Any], bool]) -> list[Any]:
@@ -405,6 +416,32 @@ class Arr:
         if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
             return list(value)
         return [value]
+
+
+def _child(container: Any, segment: str) -> Any:
+    """Read one segment, whether the container is keyed or indexed."""
+    if isinstance(container, MutableMapping):
+        return container.get(segment)
+    if isinstance(container, MutableSequence):
+        try:
+            return container[int(segment)]
+        except (ValueError, IndexError):
+            return None
+    return None
+
+
+def _put(container: Any, segment: str, value: Any) -> None:
+    """Write one segment, growing a list when the segment is its next index."""
+    if isinstance(container, MutableSequence):
+        try:
+            index = int(segment)
+        except ValueError:
+            raise TypeError(f"Cannot use {segment!r} as an index into a list.") from None
+        while len(container) <= index:
+            container.append(None)
+        container[index] = value
+        return
+    container[segment] = value
 
 
 def _has_path(target: Any, key: str) -> bool:

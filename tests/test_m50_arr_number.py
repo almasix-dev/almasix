@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.support import Arr, Number
+from avalon.support import Arr, Number, data_get, data_set
 from avalon.support.collection import ItemNotFoundError, MultipleItemsFoundError
 
 
@@ -209,3 +209,49 @@ def test_parsing_follows_the_locale_for_the_decimal_separator() -> None:
     assert Number.parse_float("10,5", locale="fr") == 10.5
     assert Number.parse_int("10,123", locale="fr") == 10
     assert Number.parse_float("1.234,5", locale="de") == 1234.5
+
+
+# --- parity gaps the docs rewrite turned up ----------------------------------
+
+
+def test_data_set_writes_into_a_list_rather_than_replacing_it() -> None:
+    users = {"users": [{"name": "Ada"}, {"name": "Linus"}]}
+
+    data_set(users, "users.0.name", "Grace")
+
+    assert users == {"users": [{"name": "Grace"}, {"name": "Linus"}]}
+
+
+def test_data_set_grows_a_list_to_reach_the_index_it_was_given() -> None:
+    users = {"users": [{"name": "Ada"}]}
+
+    data_set(users, "users.2.name", "Alan")
+
+    assert users == {"users": [{"name": "Ada"}, None, {"name": "Alan"}]}
+
+
+def test_data_set_refuses_a_name_where_a_list_wants_an_index() -> None:
+    with pytest.raises(TypeError, match="Cannot use 'name' as an index into a list"):
+        data_set({"tags": ["x"]}, "tags.name", "y")
+
+
+def test_data_get_fans_out_over_a_wildcard() -> None:
+    data = {"users": [{"name": "Ada", "roles": [{"id": 1}]}, {"name": "Linus"}]}
+
+    assert data_get(data, "users.*.name") == ["Ada", "Linus"]
+    assert data_get(data, "users.*") == data["users"]
+    assert data_get({"a": {"x": 1, "y": 2}}, "a.*") == [1, 2]
+    assert data_get(data, "missing.*.name", "fallback") == "fallback"
+
+
+def test_a_second_wildcard_collapses_one_level() -> None:
+    data = {"users": [{"roles": [{"id": 1}, {"id": 2}]}, {"roles": [{"id": 3}]}]}
+
+    assert data_get(data, "users.*.roles.*.id") == [1, 2, 3]
+
+
+def test_to_css_styles_takes_properties_or_switched_styles() -> None:
+    assert Arr.to_css_styles({"background-color": "blue"}) == "background-color:blue"
+    assert Arr.to_css_styles({"display: none": True, "color: red": False}) == "display: none"
+    assert Arr.to_css_styles(["display: none;", "color: red"]) == "display: none;color: red"
+    assert Arr.to_css_styles({"color": None, "margin": 0}) == "margin:0"

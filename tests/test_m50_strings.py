@@ -274,3 +274,20 @@ def test_a_stringable_hashes_and_compares_as_its_string() -> None:
     assert {wrapped: 1}["ada"] == 1
     assert {"ada": 1}[wrapped] == 1
     assert len({wrapped, "ada"}) == 1
+
+
+def test_the_pad_family_repeats_the_whole_pad_string() -> None:
+    assert Str.pad_left("7", 5, "ab") == "abab7"
+    assert Str.pad_right("7", 5, "ab") == "7abab"
+    assert Str.pad_both("x", 7, "-=") == "-=-x-=-"
+    assert Str.pad_left("7", 5) == "    7"
+    assert Str.pad_both("Avalon", 12, "_") == "___Avalon___"
+    assert Str.pad_right("already long", 4, "-") == "already long"
+
+
+def test_char_at_counts_back_from_the_end_for_a_negative_index() -> None:
+    assert Str.char_at("Ada", 1) == "d"
+    assert Str.char_at("Ada", -1) == "a"
+    assert Str.char_at("Ada", -3) == "A"
+    assert Str.char_at("Ada", -4) is False
+    assert Str.char_at("Ada", 9) is False
