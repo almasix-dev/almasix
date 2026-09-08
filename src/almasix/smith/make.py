@@ -46,6 +46,8 @@ BLUEPRINTS: dict[str, Blueprint] = {
     "observer": Blueprint(("app", "observers"), "observer.plain.stub"),
     # A plain class lands wherever its name says: ``Services/Ledger`` →
     # ``app/services/ledger.py``.
+    "test": Blueprint(("tests", "feature"), "test.stub"),
+    "unit-test": Blueprint(("tests", "unit"), "test.unit.stub"),
     "class": Blueprint(("app",), "class.stub"),
 }
 

@@ -183,6 +183,17 @@ export default defineConfig({
 						{ label: 'Stacks & Directives', slug: 'prism/stacks' },
 					],
 				},
+				{
+					label: 'Testing',
+					collapsed: true,
+					items: [
+						{ label: 'Testing: Getting Started', slug: 'testing' },
+						{ label: 'HTTP Tests', slug: 'testing/http-tests' },
+						{ label: 'Console Tests', slug: 'testing/console-tests' },
+						{ label: 'Database Testing', slug: 'testing/database' },
+						{ label: 'Mocking', slug: 'testing/mocking' },
+					],
+				},
 			],
 		}),
 	],

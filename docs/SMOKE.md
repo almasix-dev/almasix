@@ -660,6 +660,33 @@ pytest -q tests/test_m27_*.py tests/smoke/test_m27_smoke.py
 
 ---
 
+## M28 — Testing toolkit
+
+```bash
+pytest -q tests/test_m28_testing.py tests/smoke/test_m28_smoke.py
+```
+
+### M28 exit criteria
+
+- [x] `TestCase` is a class pytest collects: an autouse lifecycle runs `setup()` / `teardown()` coroutines, `create_application()` runs the app's own `bootstrap/app.py` when there is one, and an `almasix_base_path` fixture decides the path when a fixture must
+- [x] `use_refresh_database` migrates a fresh database per test; `use_database_transactions` rolls each test back; both also exist as plain functions
+- [x] `TestClient` drives the ASGI app in-process over the real middleware stack — every verb and its `*_json` twin, form bodies, raw bodies, uploads, query params
+- [x] Headers, bearer and basic tokens, cookies that persist between requests, `with_session`, `acting_as` on any guard, `following_redirects`, `from_`
+- [x] Status assertions: `assert_ok` through `assert_server_error`, `assert_no_content` (status *and* an empty body), `assert_redirect` / `assert_location` / `assert_redirect_contains`; a failure quotes the body
+- [x] Headers, cookies, content type, and downloads; `assert_see` / `assert_see_text` / `assert_see_in_order` with HTML escaping, `assert_content`, `assert_streamed_content`
+- [x] JSON: `assert_json` (loose and strict), `assert_exact_json`, dotted `assert_json_path` with a value or a callback, `assert_json_missing_path`, fragments, counts, `*`-wildcard `assert_json_structure`, array / object shape
+- [x] Validation (`assert_valid` / `assert_invalid` by key, keys, or key → message), session assertions, and view assertions reading what Prism was given
+- [x] `artisan()` — `expects_question` / `expects_confirmation` / `expects_choice` / `expects_output` / `doesnt_expect_output` / `expects_table`, `assert_exit_code` / `assert_successful` / `assert_failed` / `assert_output_contains` / `assert_asked` / `assert_nothing_asked`; an unanswered question takes the command's default
+- [x] Database: `assert_database_has` / `missing` / `count` / `empty` (by table or model), `assert_model_exists` / `missing`, `assert_soft_deleted` / `not_soft_deleted`; a failure prints the rows the table holds
+- [x] `fake()` / `fakeable()` / `restore_fakes()` reach mail, queue, notification, storage, event, http, process, broadcast, and scout; `FakeQueue`, `FakeNotifications`, and `FakeDisk` are new here
+- [x] `without_middleware()` / `with_middleware()` by alias, by class, or all of it, on the back of `HttpKernel.skip_middleware()`
+- [x] `travel` / `travel_to` / `freeze_time` / `frozen_time` / `travel_back` move the clock `now()` and model timestamps read, and put it back
+- [x] `tests/` with a `conftest.py` and two example tests in the scaffold, `pytest` configured in its `pyproject.toml`, `smith make:test [--unit]`, and `smith test`
+- [x] Living example: the progress app's own suite runs green under `smith test`, `smith progress:testing` demonstrates the toolkit; the board marks M28 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.testing`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash
@@ -679,7 +706,7 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 - [x] Stub tree: every generator renders a `.stub`, `smith stub:publish` copies them into `stubs/`, and a published stub wins
 - [x] `ServiceProvider.publishes()` + `smith vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `almasix-stubs` and `almasix-lang`
 - [x] Loupe allow-list: `config/loupe.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
-- [x] The built-in catalogue — 99 commands (84 at M30, plus what later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
+- [x] The built-in catalogue — 101 commands (84 at M30, plus what later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
 - [x] `console` rewritten in Laravel's Artisan section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
 - [x] Living example: `smith progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
 - [x] Deliberate deviations recorded in `docs/PLAN.md` with reasons — `config:cache` / `route:cache` / `event:cache` measured and declined, `view:cache` verifying rather than persisting, `db:show` without a size column, `db:wipe` refusing `--drop-views`
@@ -803,7 +830,7 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 ## Out of scope until later milestones
 
-- Digging Deeper: testing toolkit, package guidelines (M28–M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, and search have shipped (M21–M27)
+- Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs versioning + Prologue (M39)
 - IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)

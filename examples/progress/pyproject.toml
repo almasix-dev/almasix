@@ -16,8 +16,24 @@ dependencies = [
 [project.scripts]
 smith = "almasix.smith.cli:app"
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["app", "bootstrap", "config", "routes"]
+
+[tool.pytest.ini_options]
+# ``smith test`` runs this. Async tests need no decorator, and a test class may
+# be named either ``TestPost`` or ``PostTest`` — ``smith make:test`` writes the
+# second, the way Laravel does.
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Test"]
 
 [tool.pylint.basic]
 # Model meta (`fillable`, `casts`) is snake_case by design, not UPPER_CASE.

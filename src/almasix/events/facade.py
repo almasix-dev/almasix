@@ -54,8 +54,11 @@ class Event:
         return cls.get_dispatcher().has_listeners(event)
 
     @classmethod
-    def fake(cls, events: list[str | type] | None = None) -> None:
-        cls.get_dispatcher().fake(events)
+    def fake(cls, events: list[str | type] | None = None) -> Dispatcher:
+        """Record dispatches instead of running listeners; hand back the recorder."""
+        dispatcher = cls.get_dispatcher()
+        dispatcher.fake(events)
+        return dispatcher
 
     @classmethod
     def assert_dispatched(

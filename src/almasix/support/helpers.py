@@ -318,7 +318,24 @@ def object_get(obj: Any, key: str, default: Any = None) -> Any:
     return data_get(obj, key, default)
 
 
+#: What a test froze the clock at, if one did (`almasix.testing.travel_to`).
+_test_now: datetime | None = None
+
+
+def set_test_now(moment: datetime | None) -> None:
+    """Freeze what ``now()`` answers, or thaw it again with ``None``."""
+    global _test_now  # noqa: PLW0603 — one clock, and only a test moves it
+    _test_now = moment
+
+
+def get_test_now() -> datetime | None:
+    return _test_now
+
+
 def now(tz: timezone | None = None) -> datetime:
+    if _test_now is not None:
+        frozen = _test_now if _test_now.tzinfo else _test_now.replace(tzinfo=timezone.utc)
+        return frozen.astimezone(tz or timezone.utc)
     return datetime.now(tz or timezone.utc)
 
 

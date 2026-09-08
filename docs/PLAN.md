@@ -106,7 +106,7 @@ almasix/
     concurrency/               # M22 — concurrent closures / pools
     scout/                     # M27 — search (Scout parity)
     broadcasting/              # M26 — Echo-class fan-out
-    testing/                   # M28 — TestCase helpers beyond pytest baseline
+    testing/                   # M28 — TestCase, client, assertions, fakes, time
     installer/                 # almasix new …
     orm/                       # M5 (+ M24 factories, M25 NoSQL/document stores)
     prism/                  # M6 — optional for API apps
@@ -342,7 +342,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Queues | `queues` | **M11** | Write when queues ship |
 | Mail | `mail` | **M12** | Write when mail ships |
 | Notifications | `notifications` | **M13** | Write when notifications ship |
-| Testing | `testing` (+ subpages) | **M28** | Write when testing toolkit expands |
+| Testing | `testing` (+ HTTP / Console / Database / Mocking subpages) | **Done (M28)** | Pages published |
 | Packages | `packages` | **M29** | Write package-dev guidelines when that milestone lands |
 
 Starlight **Digging Deeper** / **Security** / **Database** / **Packages** sidebars grow with those pages.
@@ -1184,7 +1184,11 @@ Expand beyond the current pytest + smoke/regression baseline toward Laravel’s 
 
 **Depends on:** surfaces being faked (M11–M13, M18, M20, M21). Can grow incrementally; this milestone exhausts the documented toolkit.
 
-**Gate:** HTTP + console helpers used by framework tests themselves; docs published.
+**Gate:** HTTP + console helpers used by framework tests themselves; docs published. **Met.**
+
+**Status (M28):** `almasix.testing` — a `TestCase` written for pytest, whose autouse lifecycle boots the application (through the app's own `bootstrap/app.py`, so a test drives the middleware a server would), migrates with `use_refresh_database`, wraps a test in `use_database_transactions`, and takes an `almasix_base_path` fixture when the path is a fixture's to decide, with `boot_application()` for the same outside a case; a `TestClient` driving the ASGI app in-process over `httpx.ASGITransport` — every verb and its `*_json` twin, headers, bearer and basic tokens, cookies that persist between requests, `with_session`, `acting_as`, `following_redirects`, and `from_`; a `TestResponse` with the Laravel assertion set in full — nineteen status assertions, headers, cookies, content type, downloads, `assert_see` / `assert_see_text` / `assert_see_in_order` with HTML escaping, ten JSON assertions including dotted `assert_json_path` and `*`-wildcard `assert_json_structure`, validation (`assert_valid` / `assert_invalid`), session, and view assertions reading what Prism was actually given; `artisan()` returning a `PendingCommand` with `expects_question` / `expects_confirmation` / `expects_choice` / `expects_output` / `doesnt_expect_output` / `expects_table` and `assert_exit_code` / `assert_successful` / `assert_failed` / `assert_output_contains` / `assert_asked`, answered through an `AnswerSink` the console's own prompts consult; database helpers — `assert_database_has` / `missing` / `count` / `empty`, `assert_model_exists` / `missing`, `assert_soft_deleted` / `not_soft_deleted`, `refresh_database()`, and `database_transactions()`; `fake()` / `fakeable()` / `restore_fakes()` as one door to nine fakes, three of them new (`FakeQueue`, `FakeNotifications`, `FakeDisk`); `without_middleware()` / `with_middleware()` on the back of `HttpKernel.skip_middleware()`; `travel` / `travel_to` / `freeze_time` / `frozen_time` moving the clock that `now()` and model timestamps read; `tests/` with a `conftest.py` and two example tests in the scaffold, `pytest` configured in its `pyproject.toml`, `smith make:test [--unit]`, and `smith test`; Starlight **Testing** with HTTP / Console / Database / Mocking subpages; the progress app's own suite and `progress:testing`.
+
+**Deliberate deviations (M28):** the toolkit is pytest's, not xUnit's — a `TestCase` is a class pytest collects, `setup()` / `teardown()` are coroutines run by an autouse fixture, and nothing here replaces `assert`, because a Python suite that fought pytest would be a worse suite; `RefreshDatabase` and `DatabaseTransactions` are class attributes rather than traits, and are also plain functions, since a test that is not a `TestCase` deserves them too; there is no browser-test surface — Playwright is a better Dusk than anything this framework should ship, and the honest answer is to point at it; `TestResponse` reads the session and the rendered views out of recorders the client installs, because a response object here is `httpx`'s and knows nothing of either; `boot_application()` is an addition, since Laravel's `createApplication` has a `bootstrap/app.php` to require and Python needs a loader for the same thing.
 
 ### M29 — Package development
 
@@ -1633,7 +1637,9 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **M27 Search gate met** — a `Searchable` mixin that keeps the index in step with every write, the Scout builder in full, four engines (`database`, `collection`, `meilisearch`, `null`) behind a contract anyone can extend, queued and after-commit indexing, soft deletes, eight `scout:*` commands, and `Scout.fake()`.
 
-**Milestones M28–M29** (Testing toolkit → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M28 Testing toolkit gate met** — a pytest-shaped `TestCase` that boots the application through its own `bootstrap/app.py`, an in-process client over the real middleware stack, the Laravel response assertion set in full, console commands that answer their own prompts, database helpers and two ways to keep a database clean, one door to nine fakes, a clock a test can move, `tests/` in the scaffold with `make:test` and `smith test`, and four Starlight pages.
+
+**Milestone M29** (Package development) keeps its place in the roadmap and is unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

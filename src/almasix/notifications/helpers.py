@@ -6,10 +6,22 @@ from typing import Any
 
 from almasix.notifications.sender import NotificationSender
 
+_sender: NotificationSender | None = None
+
+
+def set_sender(sender: NotificationSender | None) -> None:
+    """Swap the sender every notification goes through (`Notification::fake()`)."""
+    global _sender  # noqa: PLW0603 — one sender, like every other façade here
+    _sender = sender
+
+
+def get_sender() -> NotificationSender:
+    return _sender if _sender is not None else NotificationSender()
+
 
 async def notify(notifiable: Any, notification: Any) -> list[Any]:
     """Send a notification (respects ``ShouldQueue``)."""
-    return await NotificationSender().send(notifiable, notification)
+    return await get_sender().send(notifiable, notification)
 
 
 async def notify_now(
@@ -18,7 +30,7 @@ async def notify_now(
     channels: list[str] | None = None,
 ) -> list[Any]:
     """Send a notification immediately."""
-    return await NotificationSender().send_now(notifiable, notification, channels=channels)
+    return await get_sender().send_now(notifiable, notification, channels=channels)
 
 
 def default_notifications_config() -> dict[str, Any]:

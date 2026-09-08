@@ -673,7 +673,9 @@ class Model(metaclass=ModelMeta):
     # --- persistence --------------------------------------------------------
 
     def _fresh_timestamp(self) -> datetime:
-        return datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
+        from almasix.support.helpers import now
+
+        return now(timezone.utc).replace(tzinfo=None, microsecond=0)
 
     def _timestamps_enabled(self) -> bool:
         if not type(self).timestamps:

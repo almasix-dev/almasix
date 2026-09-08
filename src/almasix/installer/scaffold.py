@@ -75,6 +75,12 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "app/console/commands/__init__.py": "",
         "app/exceptions/__init__.py": "",
         "app/exceptions/handler.py": _exception_handler(),
+        "tests/__init__.py": "",
+        "tests/conftest.py": _tests_conftest(),
+        "tests/feature/__init__.py": "",
+        "tests/feature/example_test.py": _tests_feature_example(),
+        "tests/unit/__init__.py": "",
+        "tests/unit/example_test.py": _tests_unit_example(),
         "database/__init__.py": "",
         "database/migrations/.gitkeep": "",
         "database/seeders/__init__.py": "",
@@ -291,14 +297,87 @@ dependencies = [
 [project.scripts]
 smith = "almasix.smith.cli:app"
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["app", "bootstrap", "config", "routes"]
+
+[tool.pytest.ini_options]
+# ``smith test`` runs this. Async tests need no decorator, and a test class may
+# be named either ``TestPost`` or ``PostTest`` — ``smith make:test`` writes the
+# second, the way Laravel does.
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Test"]
 
 [tool.pylint.basic]
 # Model meta (`fillable`, `casts`) is snake_case by design, not UPPER_CASE.
 class-attribute-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"
 attr-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"
 """
+
+
+def _tests_conftest() -> str:
+    return '''"""Shared test setup — one application, and fakes that clean up."""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+
+import pytest
+
+from almasix.testing import restore_fakes
+
+
+@pytest.fixture(autouse=True)
+def _no_fake_outlives_its_test() -> Iterator[None]:
+    """A faked mailer or queue must not still be installed for the next test."""
+    yield
+    restore_fakes()
+'''
+
+
+def _tests_feature_example() -> str:
+    return '''"""The application answers, end to end."""
+
+from __future__ import annotations
+
+from almasix.testing import TestCase
+
+
+class ExampleTest(TestCase):
+    """A feature test drives real routes through the real middleware."""
+
+    async def test_the_home_page_answers(self) -> None:
+        response = await self.get("/")
+
+        response.assert_ok()
+
+    async def test_the_health_endpoint_reports_ok(self) -> None:
+        response = await self.get_json("/api/health")
+
+        response.assert_ok().assert_json({"status": "ok"})
+'''
+
+
+def _tests_unit_example() -> str:
+    return '''"""A unit test — no application, no database, no HTTP."""
+
+from __future__ import annotations
+
+from almasix.support import Str
+
+
+class ExampleTest:
+    def test_a_slug_is_a_slug(self) -> None:
+        assert Str.slug("Hello There") == "hello-there"
+'''
 
 
 def _bootstrap_app() -> str:

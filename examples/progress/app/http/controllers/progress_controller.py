@@ -301,8 +301,18 @@ def _milestones() -> list[dict]:
         {
             "id": "M28",
             "name": "Testing toolkit",
-            "status": "planned",
-            "proof": ["HTTP / console assertions", "façade fakes"],
+            "status": "complete",
+            "proof": [
+                "TestCase + in-process TestClient over the real middleware",
+                "TestResponse — status, headers, JSON, session, view assertions",
+                "artisan() — expects_question / expects_output / assert_exit_code",
+                "assert_database_has, refresh_database, database_transactions",
+                "fake() — mail, queue, notification, storage, event, http, "
+                "process, broadcast, scout",
+                "travel / freeze_time; without_middleware",
+                "tests/ in the scaffold; make:test; smith test",
+                "progress:testing",
+            ],
         },
         {
             "id": "M29",
@@ -315,7 +325,7 @@ def _milestones() -> list[dict]:
             "name": "Smith Console exhaust",
             "status": "complete",
             "proof": [
-                "99 commands, every one a Command class",
+                "101 commands, every one a Command class",
                 "full signature parser + option shortcuts",
                 "Artisan.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",

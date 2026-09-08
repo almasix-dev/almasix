@@ -322,7 +322,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 99 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 101 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -339,6 +339,7 @@ What the framework ships, 99 commands, as `smith list` groups them. An applicati
 | `migrate` | Run outstanding migrations |
 | `optimize` | Cache what Almasix can cache, and say what it deliberately does not |
 | `serve` | Serve the application with Uvicorn |
+| `test` | Run the application's tests through pytest |
 | `up` | Bring the application out of maintenance mode |
 | `version` | Show Almasix version |
 
@@ -441,6 +442,7 @@ What the framework ships, 99 commands, as `smith list` groups them. An applicati
 | `make:resource` | Create an API resource in app/http/resources |
 | `make:rule` | Create a validation rule in app/rules |
 | `make:seeder` | Create a seeder in database/seeders |
+| `make:test` | Create a test in tests/feature (or tests/unit) |
 | `make:view` | Create a Prism view in resources/views |
 
 ### `migrate`

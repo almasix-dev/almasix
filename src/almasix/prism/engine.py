@@ -14,6 +14,23 @@ from almasix.prism.compiler import DirectiveHandler, RenderFn, compile_template
 ComposerCallback = Callable[[dict[str, Any]], None]
 
 
+#: Views rendered while a recorder is installed. `None` — the normal case —
+#: means nothing is watching, so rendering costs what it always did.
+_renders: list[tuple[str, dict[str, Any]]] | None = None
+
+
+def record_renders() -> list[tuple[str, dict[str, Any]]]:
+    """Start recording `(view name, data)` pairs, for `almasix.testing`."""
+    global _renders  # noqa: PLW0603 — one recorder, installed by the test client
+    _renders = []
+    return _renders
+
+
+def stop_recording_renders() -> None:
+    global _renders  # noqa: PLW0603
+    _renders = None
+
+
 class ViewNotFoundError(LookupError):
     """Raised when a template name cannot be resolved on disk."""
 
@@ -116,6 +133,8 @@ class Engine:
 
     def render(self, name: str, context: dict[str, Any] | None = None) -> str:
         ctx = dict(context or {})
+        if _renders is not None:
+            _renders.append((name, dict(context or {})))
         self._inject_helpers(ctx)
         self._run_creators(name, ctx)
         self._run_composers(name, ctx)

@@ -235,6 +235,25 @@ class MakeJobCommand(Generator):
         return "job.stub" if self.option("sync") else "job.queued.stub"
 
 
+class MakeTestCommand(Generator):
+    signature = (
+        "make:test {name : Class name, e.g. PostTest} "
+        "{--unit : A unit test, with no application booted} "
+        "{--force : Overwrite an existing file}"
+    )
+    description = "Create a test in tests/feature (or tests/unit)"
+    kind = "test"
+
+    def write(self) -> Path:
+        return make(
+            "unit-test" if self.option("unit") else "test",
+            self.argument("name"),
+            base_path=self.root(),
+            force=bool(self.option("force")),
+            replacements=self.replacements(),
+        )
+
+
 class MarkdownGenerator(Generator):
     """Shared body for the generators whose ``--markdown`` writes a view too."""
 
