@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+import functools
 import inspect
 from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
@@ -59,6 +61,55 @@ class ModelNotFoundError(LookupError):
         super().__init__(f"No query results for model [{model}]{suffix}.")
 
 
+@dataclasses.dataclass(frozen=True)
+class _Aggregate:
+    """One pending `with_count` / `with_sum` / ... on a builder."""
+
+    relation: str
+    function: str
+    column: str | None
+    alias: str
+    callback: Callable[[Any], Any] | None = None
+
+
+def _split_alias(relation: str) -> tuple[str, str, str | None]:
+    """Split Laravel's `"posts as published_count"` relation syntax."""
+    name, separator, alias = str(relation).partition(" as ")
+    return name.strip(), separator, alias.strip() or None
+
+
+def _morph_targets(relation: Any, types: Any) -> list[tuple[str, Any]]:
+    """Resolve `where_has_morph` type arguments to (alias, model) pairs."""
+    if types in ("*", None):
+        return list(relation.types.items())
+    if isinstance(types, Mapping):
+        return list(types.items())
+    if isinstance(types, str) or not isinstance(types, Iterable):
+        types = [types]
+
+    by_model = {model: alias for alias, model in relation.types.items()}
+    resolved: list[tuple[str, Any]] = []
+    for entry in types:
+        if isinstance(entry, str):
+            if entry not in relation.types:
+                raise LookupError(f"Unmapped morph type {entry!r} for {relation.morph_name!r}")
+            resolved.append((entry, relation.types[entry]))
+        elif entry in by_model:
+            resolved.append((by_model[entry], entry))
+        else:
+            raise LookupError(f"Unmapped morph type {entry!r} for {relation.morph_name!r}")
+    return resolved
+
+
+def _call_morph_callback(callback: Callable[..., Any], alias: str, builder: Any) -> Any:
+    """Morph callbacks may take the type alias as a second argument."""
+    try:
+        arity = len(inspect.signature(callback).parameters)
+    except (TypeError, ValueError):  # pragma: no cover - builtins
+        arity = 1
+    return callback(builder, alias) if arity >= 2 else callback(builder)
+
+
 class QueryBuilder:
     """Fluent builder producing models (or dicts for table queries)."""
 
@@ -87,7 +138,7 @@ class QueryBuilder:
         self._offset: int | None = None
         self._distinct = False
         self._eager: dict[str, Callable[[QueryBuilder], Any] | None] = {}
-        self._eager_counts: list[tuple[str, str]] = []
+        self._eager_counts: list[_Aggregate] = []
         self._without_scopes: set[str] = set()
         self._all_scopes_disabled = False
         self._casts: dict[str, Any] = {}
@@ -480,17 +531,79 @@ class QueryBuilder:
         clone._casts.update(casts)
         return clone
 
-    def with_count(self, *relations: str) -> QueryBuilder:
+    def with_count(self, *relations: Any, **constrained: Callable[[QueryBuilder], Any]) -> Any:
+        """Count related rows without loading them — ``withCount``.
+
+        Accepts names, `{"posts as published_count": callback}` mappings, and
+        `posts=callback` keywords.
+        """
+        return self._with_aggregate_group("count", None, relations, constrained)
+
+    def with_exists(self, *relations: Any, **constrained: Callable[[QueryBuilder], Any]) -> Any:
+        return self._with_aggregate_group("exists", None, relations, constrained)
+
+    def with_sum(self, relation: Any, column: str, **constrained: Any) -> Any:
+        return self._with_aggregate_group("sum", column, (relation,), constrained)
+
+    def with_avg(self, relation: Any, column: str, **constrained: Any) -> Any:
+        return self._with_aggregate_group("avg", column, (relation,), constrained)
+
+    def with_min(self, relation: Any, column: str, **constrained: Any) -> Any:
+        return self._with_aggregate_group("min", column, (relation,), constrained)
+
+    def with_max(self, relation: Any, column: str, **constrained: Any) -> Any:
+        return self._with_aggregate_group("max", column, (relation,), constrained)
+
+    def with_aggregate(
+        self,
+        relation: str,
+        function: str,
+        column: str | None = None,
+        alias: str | None = None,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+    ) -> QueryBuilder:
+        from avalon.orm.eager import aggregate_alias
+
+        name, _, explicit = _split_alias(relation)
+        self._eager_counts.append(
+            _Aggregate(
+                relation=name,
+                function=function,
+                column=column,
+                alias=alias or explicit or aggregate_alias(name, function, column),
+                callback=callback,
+            )
+        )
+        return self
+
+    def _with_aggregate_group(
+        self,
+        function: str,
+        column: str | None,
+        relations: Sequence[Any],
+        constrained: Mapping[str, Any],
+    ) -> QueryBuilder:
         for relation in relations:
-            alias = f"{relation}_count"
-            self._eager_counts.append((relation, alias))
+            if isinstance(relation, Mapping):
+                for name, callback in relation.items():
+                    self.with_aggregate(str(name), function, column, callback=callback)
+            else:
+                self.with_aggregate(str(relation), function, column)
+        for name, callback in constrained.items():
+            self.with_aggregate(name, function, column, callback=callback)
         return self
 
     def has(self, relation: str, operator: str = ">=", count: int = 1) -> QueryBuilder:
         return self._relation_existence(relation, operator, count, negate=False)
 
+    def or_has(self, relation: str, operator: str = ">=", count: int = 1) -> QueryBuilder:
+        return self._relation_existence(relation, operator, count, negate=False, boolean="or")
+
     def doesnt_have(self, relation: str) -> QueryBuilder:
         return self._relation_existence(relation, ">=", 1, negate=True)
+
+    def or_doesnt_have(self, relation: str) -> QueryBuilder:
+        return self._relation_existence(relation, ">=", 1, negate=True, boolean="or")
 
     def where_has(
         self,
@@ -501,12 +614,62 @@ class QueryBuilder:
     ) -> QueryBuilder:
         return self._relation_existence(relation, operator, count, negate=False, callback=callback)
 
+    def or_where_has(
+        self,
+        relation: str,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+        operator: str = ">=",
+        count: int = 1,
+    ) -> QueryBuilder:
+        return self._relation_existence(
+            relation, operator, count, negate=False, callback=callback, boolean="or"
+        )
+
     def where_doesnt_have(
         self,
         relation: str,
         callback: Callable[[QueryBuilder], Any] | None = None,
     ) -> QueryBuilder:
         return self._relation_existence(relation, ">=", 1, negate=True, callback=callback)
+
+    def or_where_doesnt_have(
+        self,
+        relation: str,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+    ) -> QueryBuilder:
+        return self._relation_existence(
+            relation, ">=", 1, negate=True, callback=callback, boolean="or"
+        )
+
+    def with_where_has(
+        self,
+        relation: str,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+    ) -> QueryBuilder:
+        """Filter on a relation and eager load it under the same constraint."""
+        self.where_has(relation, callback)
+        return self.with_(**{relation: callback}) if callback is not None else self.with_(relation)
+
+    def where_relation(
+        self,
+        relation: str,
+        column: str,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        """Inline existence query — ``whereRelation``."""
+        operator, value = self._operator_and_value(operator, value)
+        return self.where_has(relation, lambda query: query.where(column, operator, value))
+
+    def or_where_relation(
+        self,
+        relation: str,
+        column: str,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        return self.or_where_has(relation, lambda query: query.where(column, operator, value))
 
     def _relation_existence(
         self,
@@ -516,20 +679,185 @@ class QueryBuilder:
         *,
         negate: bool,
         callback: Callable[[QueryBuilder], Any] | None = None,
+        boolean: str = "and",
     ) -> QueryBuilder:
         if self.model is None:
             raise RuntimeError("Relation constraints require a model")
+
+        head, _, tail = relation.partition(".")
+        if tail:
+            # "posts.comments" asks for a post that has comments, so the count
+            # and the callback belong to the innermost relation.
+            def nested(builder: QueryBuilder) -> None:
+                builder._relation_existence(tail, operator, count, negate=False, callback=callback)
+
+            return self._relation_existence(
+                head, ">=", 1, negate=negate, callback=nested, boolean=boolean
+            )
+
         instance = self.model()
         relation_obj = instance.get_relation(relation)
         subquery = relation_obj.existence_query(self, callback)
         if negate:
-            return self._push_where("and", ~sa.exists(subquery))
+            return self._push_where(boolean, ~sa.exists(subquery))
         if operator == ">=" and count <= 1:
-            return self._push_where("and", sa.exists(subquery))
+            return self._push_where(boolean, sa.exists(subquery))
         counted = subquery.with_only_columns(sa.func.count(), maintain_column_froms=True).order_by(
             None
         )
-        return self._push_where("and", _OPERATORS[operator](counted.scalar_subquery(), count))
+        return self._push_where(boolean, _OPERATORS[operator](counted.scalar_subquery(), count))
+
+    def _guess_belongs_to(self, related: type[Any]) -> str:
+        """Find the `belongs_to` on this model that points at ``related``."""
+        from avalon.orm.model import RelationDescriptor
+        from avalon.orm.relations import BelongsTo
+
+        assert self.model is not None
+        instance = self.model()
+        for name in dir(self.model):
+            if not isinstance(getattr(self.model, name, None), RelationDescriptor):
+                continue
+            candidate = instance.get_relation(name)
+            if isinstance(candidate, BelongsTo) and candidate.related is related:
+                return name
+        raise RuntimeError(
+            f"{self.model.__name__} has no belongs_to relation to {related.__name__}"
+        )
+
+    def where_belongs_to(
+        self,
+        parent: Any,
+        relation: str | None = None,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """Constrain to children of a parent model — Laravel's ``whereBelongsTo``.
+
+        Pass one model or many; the relation name is guessed from the parent's
+        class when you leave it out.
+        """
+        from avalon.orm.model import Model as ModelBase
+
+        if self.model is None:
+            raise RuntimeError("Relation constraints require a model")
+
+        parents = [parent] if isinstance(parent, ModelBase) else list(parent)
+        if not parents:
+            raise ValueError("where_belongs_to needs at least one parent model")
+
+        name = relation or self._guess_belongs_to(type(parents[0]))
+        relation_obj = self.model().get_relation(name)
+        keys = [model.get_raw_attribute(relation_obj.owner_key) for model in parents]
+        if len(keys) == 1:
+            return self._push_where(boolean, self.column(relation_obj.foreign_key) == keys[0])
+        return self._push_where(boolean, self.column(relation_obj.foreign_key).in_(keys))
+
+    def or_where_belongs_to(self, parent: Any, relation: str | None = None) -> QueryBuilder:
+        return self.where_belongs_to(parent, relation, boolean="or")
+
+    # --- morph to existence -------------------------------------------------
+
+    def has_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+        *,
+        negate: bool = False,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """Existence across a `morph_to` relation's possible types."""
+        if self.model is None:
+            raise RuntimeError("Relation constraints require a model")
+        instance = self.model()
+        relation_obj = instance.get_relation(relation)
+        if not hasattr(relation_obj, "existence_query_for"):
+            raise TypeError(f"Relation {relation!r} is not a morph_to relation")
+
+        clauses = []
+        for alias, target in _morph_targets(relation_obj, types):
+            scoped = None
+            if callback is not None:
+                scoped = functools.partial(_call_morph_callback, callback, alias)
+            subquery = relation_obj.existence_query_for(target, self, scoped)
+            morph_type = self.column(f"{self.table}.{relation_obj.morph_type}")
+            clauses.append(sa.and_(morph_type == alias, sa.exists(subquery)))
+
+        if not clauses:
+            return self._push_where(boolean, sa.false())
+        clause = sa.or_(*clauses)
+        return self._push_where(boolean, ~clause if negate else clause)
+
+    def or_has_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback, boolean="or")
+
+    def doesnt_have_morph(self, relation: str, types: Any = "*") -> QueryBuilder:
+        return self.has_morph(relation, types, negate=True)
+
+    def or_doesnt_have_morph(self, relation: str, types: Any = "*") -> QueryBuilder:
+        return self.has_morph(relation, types, negate=True, boolean="or")
+
+    def where_has_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback)
+
+    def or_where_has_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback, boolean="or")
+
+    def where_doesnt_have_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback, negate=True)
+
+    def or_where_doesnt_have_morph(
+        self,
+        relation: str,
+        types: Any = "*",
+        callback: Callable[..., Any] | None = None,
+    ) -> QueryBuilder:
+        return self.has_morph(relation, types, callback, negate=True, boolean="or")
+
+    def where_morph_relation(
+        self,
+        relation: str,
+        types: Any,
+        column: str,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        return self.where_has_morph(
+            relation, types, lambda query, _type: query.where(column, operator, value)
+        )
+
+    def or_where_morph_relation(
+        self,
+        relation: str,
+        types: Any,
+        column: str,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        return self.or_where_has_morph(
+            relation, types, lambda query, _type: query.where(column, operator, value)
+        )
 
     # --- compilation --------------------------------------------------------
 
@@ -604,12 +932,19 @@ class QueryBuilder:
         return await connection.select(self.to_select())
 
     async def _load_eager(self, models: list[Any]) -> None:
-        from avalon.orm.eager import eager_load, eager_load_counts
+        from avalon.orm.eager import eager_load, eager_load_aggregate
 
         if self._eager:
             await eager_load(models, self._eager)
-        for relation, alias in self._eager_counts:
-            await eager_load_counts(models, relation, alias)
+        for pending in self._eager_counts:
+            await eager_load_aggregate(
+                models,
+                pending.relation,
+                pending.alias,
+                pending.function,
+                pending.column,
+                pending.callback,
+            )
 
     async def first(self) -> Any:
         results = await self.clone().limit(1).get()

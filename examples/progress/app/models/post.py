@@ -26,7 +26,16 @@ class Post(Prunable, SoftDeletes, Model):
         return self.belongs_to(User)
 
     @relation
+    def author_or_ghost(self):
+        """M41 — a placeholder model instead of `None` when nobody owns the post."""
+        from app.models.user import User
+
+        return self.belongs_to(User).with_default({"name": "Ghost Writer"})
+
+    @relation
     def comments(self):
         from app.models.comment import Comment
 
-        return self.morph_many(Comment, "commentable")
+        # M41 chaperone — each comment gets this post as its `commentable`,
+        # so walking children and reading the parent costs no extra query.
+        return self.morph_many(Comment, "commentable").chaperone("commentable")

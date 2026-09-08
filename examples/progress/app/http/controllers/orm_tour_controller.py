@@ -16,6 +16,20 @@ class OrmTourController(Controller):
         trashed = await Post.only_trashed().count()
         authors = await User.query().has("posts", ">=", 1).with_count("posts").get()
         with_roles = await User.query().with_("roles").first()
+
+        # M41 — one of many, defaults, chaperone, aggregates, existence queries.
+        latest = await User.query().with_("latest_post").has("posts").first()
+        orphan = Post()
+        commented = await Post.query().has("comments").with_("comments").first()
+        summed = await User.query().with_sum("posts", "views").with_exists("posts").get()
+        if summed:
+            await summed.load_count("comments")
+        publishers = await User.query().where_relation("posts", "published", True).get()
+        constrained = await (
+            User.query()
+            .with_where_has("posts", lambda query: query.where("published", "=", True))
+            .first()
+        )
         return {
             "features": {
                 "eager_load": {
@@ -50,15 +64,50 @@ class OrmTourController(Controller):
                     "endpoint": "GET /api/users",
                     "sample_roles": (
                         [
-                            {
-                                "name": role.name,
-                                "pivot_level": role.get_raw_attribute("pivot_level"),
-                            }
+                            # M41 — the intermediate row arrives as an object.
+                            {"name": role.name, "pivot_level": role.pivot.level}
                             for role in with_roles.roles
                         ]
                         if with_roles and with_roles.relation_loaded("roles")
                         else []
                     ),
+                },
+                "one_of_many": {
+                    "relation": "User.latest_post -> has_many(Post).latest_of_many()",
+                    "latest_post": latest.latest_post.title if latest else None,
+                },
+                "default_models": {
+                    "relation": "Post.author_or_ghost -> belongs_to(User).with_default(...)",
+                    "orphan_author": (await orphan.author_or_ghost().get()).name,
+                },
+                "chaperone": {
+                    "relation": "Post.comments -> morph_many(...).chaperone('commentable')",
+                    "child_sees_parent": (
+                        commented.comments[0].commentable.title
+                        if commented and len(commented.comments)
+                        else None
+                    ),
+                },
+                "aggregates": {
+                    "endpoint": "GET /api/orm",
+                    "sums": [
+                        {
+                            "email": user.email,
+                            "posts_sum_views": user.posts_sum_views,
+                            "posts_exists": user.posts_exists,
+                        }
+                        for user in summed
+                    ],
+                    "deferred": {"comments_count": summed[0].comments_count if summed else 0},
+                },
+                "existence_queries": {
+                    "where_relation": [user.email for user in publishers],
+                    "with_where_has": {
+                        "email": constrained.email if constrained else None,
+                        "published_posts": (
+                            [post.title for post in constrained.posts] if constrained else []
+                        ),
+                    },
                 },
                 "morph_many": {
                     "endpoint": "GET /api/posts/1/comments",

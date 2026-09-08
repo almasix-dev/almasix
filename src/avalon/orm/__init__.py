@@ -21,8 +21,15 @@ from avalon.orm.model import (
     RelationNotLoadedError,
     relation,
 )
+from avalon.orm.morph import (
+    clear_morph_map,
+    enforce_morph_map,
+    morph_alias,
+    morph_map,
+)
 from avalon.orm.pagination import Paginator, SimplePaginator
 from avalon.orm.provider import DatabaseServiceProvider
+from avalon.orm.pivot import MorphPivot, Pivot
 from avalon.orm.pruning import MassPrunable, Prunable
 from avalon.orm.relations import (
     BelongsTo,
@@ -88,6 +95,12 @@ __all__ = [
     "Paginator",
     "Prunable",
     "QueryBuilder",
+    "MorphPivot",
+    "Pivot",
+    "clear_morph_map",
+    "enforce_morph_map",
+    "morph_alias",
+    "morph_map",
     "Relation",
     "RelationNotLoadedError",
     "Schema",

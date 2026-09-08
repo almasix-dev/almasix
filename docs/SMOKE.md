@@ -539,6 +539,32 @@ pytest -q tests/test_m40_*.py tests/smoke/test_m40_smoke.py
 
 ---
 
+## M41 — Relationship exhaust
+
+```bash
+pytest -q tests/test_m41_*.py tests/smoke/test_m41_smoke.py
+```
+
+### M41 exit criteria
+
+- [x] Has one of many: `of_many` / `latest_of_many` / `oldest_of_many` / `one()`, aggregate mappings, constraining callbacks, morph support, one row per parent on eager loads
+- [x] Default models: `with_default()` on `belongs_to` / `has_one` / `morph_one`, with mapping, callable, and empty forms, applied to eager loads
+- [x] Chaperone: `chaperone()` hydrates the inverse relation on `has_many` / `has_one` / `morph_many` / `morph_one` children
+- [x] Existence querying: `or_has` / `or_doesnt_have` / `or_where_has` / `or_where_doesnt_have`, dotted nesting, `where_relation` / `or_where_relation`, `with_where_has`, and the eight morph variants plus `where_morph_relation`
+- [x] Aggregates: `with_count` / `with_sum` / `with_avg` / `with_min` / `with_max` / `with_exists` / `with_aggregate` with `as` aliases and callbacks; `load_count` / `load_sum` / `load_avg` / `load_min` / `load_max` / `load_exists` / `load_aggregate` on `Model` and `Collection`
+- [x] Pivots: `pivot` accessor with `as_` renaming, `using` custom `Pivot` models, `with_timestamps`, `where_pivot_in` / `not_in` / `null` / `not_null` / `between`, `order_by_pivot`, per-id attach attributes, `sync` `updated` results, `sync_without_detaching`
+- [x] Morph maps: `morph_map` / `enforce_morph_map`, `morph_to` without an explicit types dict, null types resolving to `None`
+- [x] Touching: `touches`, `without_touching`, `without_touching_on`
+- [x] Relation write helpers: `make` / `make_many` / `create_quietly` / `first_or_new` / `find_or_new` / `update_or_create`
+- [x] Whole-graph writes: `push()` saves loaded relations depth-first, stops on a cancelled save, and survives chaperoned cycles
+- [x] Parent queries: `where_belongs_to` / `or_where_belongs_to` with a guessed or named relation, one parent or many
+- [x] Dynamic relations: `resolve_relation_using` relations query, eager-load, and still refuse to lazy-load
+- [x] Morph loading: `load_morph` / `load_morph_count` take a relation list per target class on both `Model` and `Collection`
+- [x] `articulate/relationships` rewritten in Laravel section order, with the N+1 deviation documented and the two unimplemented sections (`withAttributes`, `automaticallyEagerLoadRelationships`) named
+- [x] Living example: `/api/orm` relationship tour (pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates, existence queries); milestone board covers M0–M48 with `partial` statuses
+
+---
+
 ## Out of scope until later milestones
 
 - Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)

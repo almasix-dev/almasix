@@ -164,11 +164,17 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M17** | `grail progress:encryption` — Crypt.encrypt / decrypt + tamper fail |
 | **M18** | `grail progress:events` — Event.listen / dispatch / until |
 | **M19** | `grail progress:authorization` — Gate / Policy / authorize |
-| **M20–M29** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M20** | `grail progress:http` — `Http` façade, fakes, retry, pool |
+| **M30** | `grail progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated` (parts 2–3 owed) |
+| **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `grail model:prune` |
+| **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
+| **M21–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Avalon
 
-M0–M19 are closed. Next is **M20 — HTTP Client**. The board lists the full **M0–M29** roadmap.
+M0–M20, M40, and M41 are closed; **M5** and **M30** are partly done. Next is
+**M42 — query builder + database exhaust**. The board on `/progress` lists the
+full **M0–M48** roadmap with a status and proof for each milestone.
 ## CLI
 
 ```bash

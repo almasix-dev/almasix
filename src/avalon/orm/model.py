@@ -48,6 +48,8 @@ _STRICT_MISSING = False
 
 # Classes whose timestamps are suspended, plus a global unguard switch.
 _TIMESTAMPS_OFF: ContextVar[frozenset[type]] = ContextVar("_TIMESTAMPS_OFF", default=frozenset())
+_TOUCHING_OFF: ContextVar[bool] = ContextVar("_TOUCHING_OFF", default=False)
+_TOUCH_EXEMPT: ContextVar[frozenset[type]] = ContextVar("_TOUCH_EXEMPT", default=frozenset())
 _UNGUARDED = False
 
 _UNSET = object()
@@ -134,6 +136,8 @@ class Model(metaclass=ModelMeta):
 
     fillable: ClassVar[tuple[str, ...]] = ()
     guarded: ClassVar[tuple[str, ...]] = ("*",)
+    #: Relations whose parents get their `updated_at` bumped on write.
+    touches: ClassVar[tuple[str, ...]] = ()
     hidden: ClassVar[tuple[str, ...]] = ()
     visible: ClassVar[tuple[str, ...]] = ()
     appends: ClassVar[tuple[str, ...]] = ()
@@ -151,6 +155,7 @@ class Model(metaclass=ModelMeta):
 
     _events: ClassVar[dict[str, list[Callable[..., Any]]]] = {}
     _global_scopes: ClassVar[dict[str, Callable[[QueryBuilder], Any]]] = {}
+    _dynamic_relations: ClassVar[dict[str, Callable[[Model], Any]]] = {}
 
     def __init__(self, attributes: Mapping[str, Any] | None = None, **kwargs: Any) -> None:
         self._attributes: dict[str, Any] = {}
@@ -542,6 +547,10 @@ class Model(metaclass=ModelMeta):
         if callable(accessor):
             return self.get_attribute(name)
 
+        dynamic = type(self)._dynamic_relations.get(name)
+        if dynamic is not None:
+            return PendingRelation(self, dynamic, name)
+
         # A declared relation that was never loaded must fail loudly.
         # Unreachable for class methods (normal lookup finds them before __getattr__);
         # retained for plain callables stashed only on the type without a descriptor.
@@ -674,7 +683,63 @@ class Model(metaclass=ModelMeta):
 
         if saved:
             await self._fire_event("saved")
+            await self.touch_owners()
         return saved
+
+    async def push(self, _seen: set[int] | None = None) -> bool:
+        """Save this model and every loaded relation — Laravel's ``push``.
+
+        Chaperoned children hold a reference back to their parent, so the walk
+        tracks what it has already saved rather than looping forever.
+        """
+        seen = _seen if _seen is not None else set()
+        if id(self) in seen:
+            return True
+        seen.add(id(self))
+
+        if not await self.save():
+            return False
+
+        for value in list(self._relations.values()):
+            group = value if isinstance(value, Collection) else [value]
+            for related in group:
+                if isinstance(related, Model) and not await related.push(seen):
+                    return False
+        return True
+
+    async def touch_owners(self) -> None:
+        """Bump `updated_at` on the relations named in `touches`."""
+        if _TOUCHING_OFF.get() or type(self) in _TOUCH_EXEMPT.get():
+            return
+        for name in type(self).touches:
+            relation = self.get_relation(name)
+            owners = await relation.get()
+            if owners is None:
+                continue
+            group = owners if isinstance(owners, Collection) else [owners]
+            for owner in group:
+                if owner is not None and owner.exists:  # pragma: no branch
+                    await owner.touch()
+
+    @classmethod
+    @contextmanager
+    def without_touching(cls) -> Iterator[None]:
+        """Suspend `touches` for the duration of the block."""
+        token = _TOUCHING_OFF.set(True)
+        try:
+            yield
+        finally:
+            _TOUCHING_OFF.reset(token)
+
+    @staticmethod
+    @contextmanager
+    def without_touching_on(*models: type[Model]) -> Iterator[None]:
+        """Suspend `touches` for particular models only."""
+        token = _TOUCH_EXEMPT.set(_TOUCH_EXEMPT.get() | set(models))
+        try:
+            yield
+        finally:
+            _TOUCH_EXEMPT.reset(token)
 
     async def _quietly(self, operation: Callable[[], Any]) -> Any:
         """Run one write with this instance's events muted."""
@@ -796,11 +861,23 @@ class Model(metaclass=ModelMeta):
 
     # --- relations ----------------------------------------------------------
 
+    @classmethod
+    def resolve_relation_using(cls, name: str, callback: Callable[[Model], Any]) -> None:
+        """Define a relation from outside the class — ``resolveRelationUsing``.
+
+        Useful when a package needs to relate your models to its own without
+        editing them.
+        """
+        cls._dynamic_relations = {**cls._dynamic_relations, name: callback}
+
     def get_relation(self, name: str) -> Any:
         """Build the relation object itself, ignoring any loaded value."""
         declared = getattr(type(self), name, None)
         if isinstance(declared, RelationDescriptor):
             return declared.build(self)
+        dynamic = type(self)._dynamic_relations.get(name)
+        if dynamic is not None:
+            return dynamic(self)
         if declared is None:
             raise AttributeError(f"{type(self).__name__} has no relation {name!r}")
         if callable(declared):
@@ -832,6 +909,52 @@ class Model(metaclass=ModelMeta):
         if pending:
             await self.load(*pending)
         return self
+
+    async def load_morph(self, relation: str, spec: Mapping[Any, Any]) -> Model:
+        """Eager load per-type relations behind a `morph_to` (``loadMorph``)."""
+        from avalon.orm.eager import load_morph
+
+        await load_morph([self], relation, spec)
+        return self
+
+    async def load_morph_count(self, relation: str, spec: Mapping[Any, Any]) -> Model:
+        """Count per-type relations behind a `morph_to` (``loadMorphCount``)."""
+        from avalon.orm.eager import load_morph_aggregate
+
+        await load_morph_aggregate([self], relation, spec)
+        return self
+
+    async def load_aggregate(
+        self,
+        relations: Any,
+        column: str | None = None,
+        function: str = "count",
+        **constrained: Any,
+    ) -> Model:
+        """Attach an aggregate over a relation after the model was loaded."""
+        from avalon.orm.eager import load_aggregates
+
+        names = relations if isinstance(relations, (list, tuple)) else [relations]
+        await load_aggregates([self], names, function, column, constrained)
+        return self
+
+    async def load_count(self, *relations: Any, **constrained: Any) -> Model:
+        return await self.load_aggregate(list(relations), None, "count", **constrained)
+
+    async def load_exists(self, *relations: Any, **constrained: Any) -> Model:
+        return await self.load_aggregate(list(relations), None, "exists", **constrained)
+
+    async def load_sum(self, relations: Any, column: str, **constrained: Any) -> Model:
+        return await self.load_aggregate(relations, column, "sum", **constrained)
+
+    async def load_avg(self, relations: Any, column: str, **constrained: Any) -> Model:
+        return await self.load_aggregate(relations, column, "avg", **constrained)
+
+    async def load_min(self, relations: Any, column: str, **constrained: Any) -> Model:
+        return await self.load_aggregate(relations, column, "min", **constrained)
+
+    async def load_max(self, relations: Any, column: str, **constrained: Any) -> Model:
+        return await self.load_aggregate(relations, column, "max", **constrained)
 
     def has_one(self, related: type[Model], foreign: str | None = None, local: str | None = None):
         from avalon.orm.relations import HasOne
@@ -899,7 +1022,7 @@ class Model(metaclass=ModelMeta):
 
         return MorphMany(self, related, name)
 
-    def morph_to(self, name: str, types: Mapping[str, type[Model]]):
+    def morph_to(self, name: str, types: Mapping[str, type[Model]] | None = None):
         from avalon.orm.relations import MorphTo
 
         return MorphTo(self, name, types)

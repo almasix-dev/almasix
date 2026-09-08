@@ -5,7 +5,10 @@
 @section('content')
   <section class="section" style="padding-top: 2.5rem">
     <h2>Milestones</h2>
-    <p class="sub">{{ completed }} of {{ total }} complete on Avalon {{ version }}.</p>
+    <p class="sub">
+      {{ completed }} of {{ total }} complete on Avalon {{ version }} —
+      {{ in_progress }} in progress, {{ next_id }} up next.
+    </p>
     <table class="board">
       <thead>
         <tr><th>ID</th><th>Milestone</th><th>Status</th><th>Proof</th></tr>

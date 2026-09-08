@@ -8,6 +8,7 @@ and ``find``.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from avalon.support.collection import Collection as SupportCollection
@@ -151,6 +152,55 @@ class Collection(SupportCollection[T]):
 
         await eager_load(items, relations)
         return self
+
+    async def load_morph(self, relation: str, spec: Mapping[Any, Any]) -> Collection[T]:
+        """Eager load per-type relations behind a `morph_to` (``loadMorph``)."""
+        from avalon.orm.eager import load_morph
+
+        await load_morph(self._values_list(), relation, spec)
+        return self
+
+    async def load_morph_count(self, relation: str, spec: Mapping[Any, Any]) -> Collection[T]:
+        """Count per-type relations behind a `morph_to` (``loadMorphCount``)."""
+        from avalon.orm.eager import load_morph_aggregate
+
+        await load_morph_aggregate(self._values_list(), relation, spec)
+        return self
+
+    async def load_aggregate(
+        self,
+        relations: Any,
+        column: str | None = None,
+        function: str = "count",
+        **constrained: Any,
+    ) -> Collection[T]:
+        """Attach an aggregate over a relation to every model in one query."""
+        items = self._values_list()
+        if not items:
+            return self
+        from avalon.orm.eager import load_aggregates
+
+        names = relations if isinstance(relations, (list, tuple)) else [relations]
+        await load_aggregates(items, names, function, column, constrained)
+        return self
+
+    async def load_count(self, *relations: Any, **constrained: Any) -> Collection[T]:
+        return await self.load_aggregate(list(relations), None, "count", **constrained)
+
+    async def load_exists(self, *relations: Any, **constrained: Any) -> Collection[T]:
+        return await self.load_aggregate(list(relations), None, "exists", **constrained)
+
+    async def load_sum(self, relations: Any, column: str, **constrained: Any) -> Collection[T]:
+        return await self.load_aggregate(relations, column, "sum", **constrained)
+
+    async def load_avg(self, relations: Any, column: str, **constrained: Any) -> Collection[T]:
+        return await self.load_aggregate(relations, column, "avg", **constrained)
+
+    async def load_min(self, relations: Any, column: str, **constrained: Any) -> Collection[T]:
+        return await self.load_aggregate(relations, column, "min", **constrained)
+
+    async def load_max(self, relations: Any, column: str, **constrained: Any) -> Collection[T]:
+        return await self.load_aggregate(relations, column, "max", **constrained)
 
     async def load_missing(self, *relations: str) -> Collection[T]:
         items = self._values_list()

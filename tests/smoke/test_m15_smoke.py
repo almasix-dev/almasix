@@ -59,4 +59,6 @@ def test_m15_progress_board_marks_cache_complete(progress_client: TestClient) ->
     assert by_id["M16"]["name"] == "Redis"
     assert by_id["M29"]["status"] == "planned"
     assert by_id["M29"]["name"] == "Package development"
-    assert data["total"] == 30  # M0–M29
+    # The board grows as the plan does, so pin coverage rather than a count.
+    assert data["total"] == len(data["milestones"])
+    assert {f"M{n}" for n in range(30)} <= set(by_id)

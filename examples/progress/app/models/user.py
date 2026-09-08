@@ -23,6 +23,13 @@ class User(AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):
         return self.has_many(Post)
 
     @relation
+    def latest_post(self):
+        """M41 — one related model per parent, picked in a subquery."""
+        from app.models.post import Post
+
+        return self.has_many(Post).latest_of_many()
+
+    @relation
     def roles(self):
         from app.models.role import Role
 
