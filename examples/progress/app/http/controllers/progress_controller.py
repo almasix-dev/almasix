@@ -278,8 +278,10 @@ def _milestones() -> list[dict]:
                 "full signature parser + option shortcuts",
                 "Artisan.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",
+                "one surface: every command is a Command class",
+                "stub:publish · vendor:publish · cache/view/optimize",
                 "progress:console · progress:import",
-                "owed: one command surface · stub:publish · built-ins",
+                "owed: the Grail Console page",
             ],
         },
         {
