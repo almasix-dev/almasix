@@ -119,6 +119,8 @@ class Model(metaclass=ModelMeta):
     date_format: ClassVar[str | None] = None
     attributes: ClassVar[dict[str, Any]] = {}
     with_: ClassVar[tuple[str, ...]] = ()
+    # Override to return a custom collection from multi-row reads.
+    collection_class: ClassVar[type[Collection[Any]]] = Collection
     # When True, `await model.rel` lazy-loads that relation. Attribute use
     # without await still raises — async cannot hide IO in `__getattr__`.
     lazy_relations: ClassVar[bool] = False
@@ -135,6 +137,7 @@ class Model(metaclass=ModelMeta):
         # None means "use the class attribute" — overrides stay per instance.
         self._hidden: tuple[str, ...] | None = None
         self._visible: tuple[str, ...] | None = None
+        self._appends: tuple[str, ...] | None = None
         self._cast_overrides: dict[str, Any] = {}
         self._attribute_cache: dict[str, Any] = {}
 
@@ -295,6 +298,11 @@ class Model(metaclass=ModelMeta):
         return not cls.fillable and tuple(cls.guarded) == ("*",)
 
     # --- casting ------------------------------------------------------------
+
+    @classmethod
+    def new_collection(cls, items: Any = None) -> Collection[Any]:
+        """Build the collection type this model returns (``newCollection``)."""
+        return cls.collection_class(items)
 
     @classmethod
     def class_casts(cls) -> dict[str, Any]:
@@ -821,6 +829,16 @@ class Model(metaclass=ModelMeta):
         """Effective visible allowlist — instance override, else the class."""
         return self._visible if self._visible is not None else tuple(type(self).visible)
 
+    def get_appends(self) -> tuple[str, ...]:
+        """Effective appended keys — instance override, else the class."""
+        return self._appends if self._appends is not None else tuple(type(self).appends)
+
+    def _is_arrayable(self, key: str, hidden: Sequence[str], visible: Sequence[str]) -> bool:
+        """Laravel's visible / hidden rules, applied to attributes and relations."""
+        if visible and key not in visible:
+            return False
+        return key not in hidden
+
     def serialize_date(self, value: date) -> str:
         """Format a date for `to_dict()` — override to change the default."""
         fmt = type(self).date_format
@@ -834,30 +852,29 @@ class Model(metaclass=ModelMeta):
         return serialize_value(value, cast)
 
     def attributes_to_dict(self) -> dict[str, Any]:
-        cls = type(self)
         hidden = self.get_hidden()
         visible = self.get_visible()
         data: dict[str, Any] = {}
         for key in self._attributes:
-            if visible and key not in visible:
-                continue
-            if key in hidden:
+            if not self._is_arrayable(key, hidden, visible):
                 continue
             data[key] = self._serialize(key, self.get_attribute(key))
-        for key in cls.appends:
-            if key in hidden:
+        # Appended accessors respect visible / hidden too, as in Laravel.
+        for key in self.get_appends():
+            if not self._is_arrayable(key, hidden, visible):
                 continue
             data[key] = self._serialize(key, self.get_attribute(key))
         for key, value in self._extra.items():
-            if key not in hidden:
+            if self._is_arrayable(key, hidden, visible):
                 data[key] = self._serialize(key, value)
         return data
 
     def relations_to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
         hidden = self.get_hidden()
+        visible = self.get_visible()
         for name, value in self._relations.items():
-            if name in hidden:
+            if not self._is_arrayable(name, hidden, visible):
                 continue
             if isinstance(value, Collection):
                 data[name] = value.to_dict()
@@ -870,10 +887,11 @@ class Model(metaclass=ModelMeta):
     def to_dict(self) -> dict[str, Any]:
         return {**self.attributes_to_dict(), **self.relations_to_dict()}
 
-    def to_json(self) -> str:
+    def to_json(self, **options: Any) -> str:
+        """JSON for this model — extra keyword arguments go to `json.dumps`."""
         import json
 
-        return json.dumps(self.to_dict())
+        return json.dumps(self.to_dict(), **options)
 
     def make_hidden(self, *keys: str) -> Model:
         """Hide extra attributes on **this** model only (Laravel ``makeHidden``)."""
@@ -895,6 +913,34 @@ class Model(metaclass=ModelMeta):
     def set_visible(self, keys: Sequence[str]) -> Model:
         """Replace this model's visible allowlist outright (``setVisible``)."""
         self._visible = tuple(keys)
+        return self
+
+    def merge_hidden(self, keys: Sequence[str]) -> Model:
+        """Merge more keys into this model's hidden list (``mergeHidden``)."""
+        return self.make_hidden(*keys)
+
+    def merge_visible(self, keys: Sequence[str]) -> Model:
+        """Merge more keys into this model's visible allowlist (``mergeVisible``)."""
+        self._visible = tuple({*self.get_visible(), *keys})
+        return self
+
+    def append(self, *keys: str) -> Model:
+        """Append accessors to this model's serialized form (``append``)."""
+        self._appends = tuple({*self.get_appends(), *keys})
+        return self
+
+    def merge_appends(self, keys: Sequence[str]) -> Model:
+        """Merge a list of accessors into the appended keys (``mergeAppends``)."""
+        return self.append(*keys)
+
+    def set_appends(self, keys: Sequence[str]) -> Model:
+        """Replace this model's appended keys outright (``setAppends``)."""
+        self._appends = tuple(keys)
+        return self
+
+    def without_appends(self) -> Model:
+        """Drop every appended key from this model (``withoutAppends``)."""
+        self._appends = ()
         return self
 
 

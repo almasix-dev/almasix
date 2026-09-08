@@ -597,7 +597,7 @@ class QueryBuilder:
         models = [self.model._hydrate(row, casts=self._casts) for row in rows]
         if models and (self._eager or self._eager_counts):
             await self._load_eager(models)
-        return Collection(models)
+        return self.model.new_collection(models)
 
     async def get_raw(self) -> list[dict[str, Any]]:
         connection = self.get_connection()

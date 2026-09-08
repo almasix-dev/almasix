@@ -123,7 +123,7 @@ Each returns the model, so they chain. Relation names may be hidden the same way
 - `is_dirty("name")` / `is_clean()` / `get_dirty()` / `get_changes()` / `get_original("name")` / `was_changed("name")`
 - `user.is_(other)` — same class and primary key
 - `exists` — whether the model has been persisted
-- `to_dict()` / `to_json()` honor `hidden`, `visible`, `appends`, and loaded relations
+- `to_dict()` / `to_json()` honor `hidden`, `visible`, `appends`, and loaded relations — see [Serialization](/articulate/serialization/)
 
 ## Async & loading defaults
 
@@ -149,6 +149,7 @@ If you know Laravel Eloquent, Articulate will feel familiar — same Active Reco
 
 - [Relationships](/articulate/relationships/)
 - [Mutators & Casts](/articulate/casts/)
+- [Serialization](/articulate/serialization/)
 - [Collections](/articulate/collections/)
 - [Soft Deletes & Events](/articulate/events/)
 - [Query Builder](/database/queries/)

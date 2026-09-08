@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						{ label: 'Articulate: Getting Started', slug: 'articulate' },
 						{ label: 'Relationships', slug: 'articulate/relationships' },
 						{ label: 'Mutators & Casts', slug: 'articulate/casts' },
+						{ label: 'Serialization', slug: 'articulate/serialization' },
 						{ label: 'Collections', slug: 'articulate/collections' },
 						{ label: 'Soft Deletes & Events', slug: 'articulate/events' },
 					],

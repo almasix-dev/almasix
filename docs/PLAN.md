@@ -329,8 +329,8 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Avalon as fol
 | HTTP Client | `http-client` | **M20** | Shipped |
 | Processes | `processes` | **M21** | Write when Processes ship |
 | Concurrency | `concurrency` | **M22** | Write when Concurrency ships |
-| Eloquent: Mutators & Casting | Articulate page / section | **Partial (M5)** — magic-method accessors + basic casts; `Attribute` objects, custom / inbound / encrypted / hashed / enum casts and query-time casts = **M40** | **Docs deepen** — dedicated Mutators & Casts how-to with M40 |
-| Eloquent: Serialization | `articulate/serialization` | **Partial (M5)** — `to_dict` / `to_json` / hidden / visible / appends; `append` / `set_appends` / `serialize_date` = **M40** | Write with M40 (API Resources stay M23) |
+| Eloquent: Mutators & Casting | `articulate/casts` | **Done (M40)** | Page published |
+| Eloquent: Serialization | `articulate/serialization` | **Done (M40)** | Page published; API Resources stay M23 |
 | Eloquent: API Resources | `eloquent-resources` / `api-resources` | **M23** | Write when Resources ship |
 | Eloquent: Factories | `database/factories` | **M24** | Write when factories ship |
 | MongoDB / NoSQL | `database/nosql` (+ Articulate pages) | **M25** | Write when document-store driver ships — core Articulate multi-store, not a satellite ORM |
@@ -1313,10 +1313,10 @@ The documentation-site commitments from the Documentation decision above, promot
 Laravel [Eloquent: Getting Started](https://laravel.com/docs/eloquent), [Mutators & Casting](https://laravel.com/docs/eloquent-mutators), [Serialization](https://laravel.com/docs/eloquent-serialization), [Collections](https://laravel.com/docs/eloquent-collections). M5 shipped the ladder; these four pages are not exhausted.
 
 - **Casting overhaul — done (1/3):** `Attribute` accessor objects (class-attribute and `@attribute` method forms, flexible callback arity, multi-column writes, `cache=True`) alongside the existing `get_x_attribute` methods; `CastsAttributes` custom casts, `CastsInboundAttributes` inbound-only casts, and `cast_using` castables; `encrypted` / `encrypted:array|object|collection` on M17 Crypt; `hashed` on M7 (idempotent — never double-hashes); `EnumCollection.of()`; `immutable_date` / `immutable_datetime` as documented aliases (Python dates are already immutable); per-attribute date formats (`date:%d/%m/%Y`) plus `date_format` and a `serialize_date` hook; query-time `with_casts` and per-instance `merge_casts`; a `casts()` method as well as the class attribute. Fixed along the way: the `timestamp` cast could not read back a value it had written.
-- **Serialization:** `append` / `merge_appends` / `set_appends` / `without_appends`; `merge_hidden` / `merge_visible`; relation serialization rules. (Instance-scoped `make_hidden` / `make_visible` / `set_hidden` / `set_visible` and `serialize_date` already landed.)
+- **Serialization — done (2/3):** `append` / `merge_appends` / `set_appends` / `without_appends` / `get_appends`; `merge_hidden` / `merge_visible`; `to_json(**options)`; appended keys now respect `visible` as well as `hidden`, and relations respect `visible` as well (both Laravel rules that were missing). Instance-scoped `make_hidden` / `make_visible` / `set_hidden` / `set_visible` and `serialize_date` landed earlier. Docs: **Serialization** page published (`articulate/serialization`) — it is no longer owed by M23.
 - **Model surface:** UUID / ULID primary keys; strictness configuration (`prevent_silently_discarding_attributes`, `prevent_accessing_missing_attributes`); `without_timestamps`; quiet writes (`save_quietly` / `delete_quietly`); `unguarded`; `Prunable` / `MassPrunable` + `model:prune`; advanced subqueries; real cursors and `lazy` / `chunk_by_id`; pending attributes on scopes
-- **Collections:** Eloquent-specific `find`, `fresh`, `to_query`, `only` / `except` by model key, `make_visible` / `make_hidden`, `append`, and custom collection classes (`new_collection`)
-- Docs: **Mutators & Casts** page published (`articulate/casts`); **Serialization** page still owed (was slated for M23), plus a deeper `articulate/index`
+- **Collections — done (2/3):** Eloquent-specific `find` (by key, model, or callback), `fresh` (optionally eager-loading, dropping deleted rows), `to_query`, plus `contains` / `only` / `except_` / `diff` / `intersect` / `unique` overridden to key off primary keys rather than collection indexes; `make_hidden` / `make_visible` / `set_hidden` / `set_visible` / `append` across every model; custom collection classes via `collection_class` + `new_collection`
+- Docs: **Mutators & Casts** and **Serialization** pages published (`articulate/casts`, `articulate/serialization`), Collections page extended; a deeper `articulate/index` still owed
 
 **Depends on:** M5 (base), M17 encryption (encrypted casts), M7 hashing. Factories stay **M24**; API Resources stay **M23**.
 

@@ -261,5 +261,6 @@ class Money:
 ## Related
 
 - [Articulate: Getting Started](/articulate/) — models, retrieval, and mass assignment
+- [Serialization](/articulate/serialization/) — how cast values reach JSON
 - [Encryption](/encryption/) — the key behind `encrypted` casts
 - [Hashing](/hashing/) — the driver behind the `hashed` cast
