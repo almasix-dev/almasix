@@ -75,8 +75,10 @@ s3 = ["boto3>=1.34"]
 redis = ["redis>=5"]
 
 [project.scripts]
+# Only the installer is global. `smith` drives one application, so a scaffolded
+# app declares it in its own pyproject and it appears in that project's
+# environment — installing the framework with pipx must not put it on PATH.
 almasix = "almasix.installer.cli:app"
-smith = "almasix.smith.cli:app"
 
 [tool.hatch.build.targets.wheel]
 # Stubs and exception views live inside the package and are tracked, so hatchling

@@ -116,14 +116,14 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
 _SMITH_SCRIPT = '''#!/usr/bin/env python
 """Smith — Almasix in-application CLI.
 
-With the virtualenv active (Almasix installed):
+Once this project is installed into its virtualenv (``pip install -e .``):
 
     smith version
     smith serve
     smith list
     smith loupe   # aliases: tinker, repl
 
-Or via this root script:
+Or via this root script, which needs no install step:
 
     python smith serve
 """
@@ -281,6 +281,11 @@ requires-python = ">=3.11"
 dependencies = [
     "almasix",
 ]
+
+# Smith drives this application, so it belongs to this project's environment
+# rather than to a global Almasix install.
+[project.scripts]
+smith = "almasix.smith.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app", "bootstrap", "config", "routes"]

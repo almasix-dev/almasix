@@ -102,12 +102,28 @@ jobs:
               print(f"{label}: ok")
           PY
 
+      # Installing the framework must publish the installer and nothing else.
+      # `smith` drives a single application, so a global install — `pipx install
+      # almasix` especially — must not put it on PATH.
+      - name: Only `almasix` is a global command
+        run: |
+          command -v almasix
+          if command -v smith; then
+            echo "::error::Installing the framework put 'smith' on PATH; it belongs to a scaffolded app"
+            exit 1
+          fi
+          echo "almasix is global, smith is not."
+
       - name: Installer scaffolds a working application
         run: |
           almasix new blog
           cd blog
+          # The root script works without installing anything.
           python smith list
-          python smith migrate
+          # Installing the app is what provides the bare `smith` command.
+          pip install -e .
+          smith list
+          smith migrate
 
   testpypi:
     name: Publish to TestPyPI

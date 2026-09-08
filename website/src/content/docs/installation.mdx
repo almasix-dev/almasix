@@ -14,6 +14,7 @@ with **Smith** — Almasix’s in-app CLI:
 ```bash
 almasix new blog
 cd blog
+pip install -e .
 smith serve
 ```
 
@@ -78,9 +79,14 @@ and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**
 </Steps>
 
 :::tip[Smith]
-With the virtualenv active, Almasix installs a `smith` console script — run
-`smith serve`, `smith migrate`, `smith loupe`, and so on. The root `smith`
-file still works as `python smith …` if you prefer that form.
+`smith` belongs to your application, not to Almasix itself. Step 3 installs it
+into the project's virtualenv, so with that environment active you can run
+`smith serve`, `smith migrate`, `smith loupe`, and so on. The root `smith` file
+works as `python smith …` without any install step.
+
+Installing the framework globally — with `pipx install almasix`, say — gives you
+the `almasix` command only, so one application's CLI never leaks onto your
+`PATH` system-wide.
 :::
 
 ## Directory structure at a glance
