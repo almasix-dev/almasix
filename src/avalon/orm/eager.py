@@ -7,7 +7,7 @@ from typing import Any
 
 import sqlalchemy as sa
 
-from avalon.orm.builder import QueryBuilder
+from avalon.orm.builder import QueryBuilder, _split_alias
 from avalon.orm.collection import Collection
 from avalon.orm.relations import MorphTo, Relation
 
@@ -85,10 +85,36 @@ async def eager_load(models: Sequence[Any], relations: Any) -> None:
                 await eager_load(children, nested[name])
 
 
+_AGGREGATES: dict[str, Any] = {
+    "count": lambda column: sa.func.count(),
+    "sum": sa.func.sum,
+    "avg": sa.func.avg,
+    "min": sa.func.min,
+    "max": sa.func.max,
+    "exists": lambda column: sa.func.count(),
+}
+
+
 async def eager_load_counts(models: Sequence[Any], relation_name: str, alias: str) -> None:
     """Attach `{relation}_count` without hydrating the related rows."""
+    await eager_load_aggregate(models, relation_name, alias, "count")
+
+
+async def eager_load_aggregate(
+    models: Sequence[Any],
+    relation_name: str,
+    alias: str,
+    function: str,
+    column: str | None = None,
+    callback: Callable[[QueryBuilder], Any] | None = None,
+) -> None:
+    """Attach an aggregate over a relation without hydrating the related rows."""
     if not models:
         return
+    if function not in _AGGREGATES:
+        raise ValueError(f"Unsupported aggregate: {function!r}")
+    if column is None and function not in ("count", "exists"):
+        raise ValueError(f"Aggregate {function!r} needs a column")
 
     relation: Relation = models[0].get_relation(relation_name)
     grouping = relation.grouping_column()
@@ -98,12 +124,61 @@ async def eager_load_counts(models: Sequence[Any], relation_name: str, alias: st
     builder._selects = []
     builder._eager = {}
     builder._eager_counts = []
-    column = builder.column(grouping)
-    builder.select(column.label("__group"), sa.func.count().label("__count"))
-    builder.group_by(column)
+    if callback is not None:
+        callback(builder)
+    group = builder.column(grouping)
+    target = builder.column(column) if column is not None else None
+    builder.select(group.label("__group"), _AGGREGATES[function](target).label("__value"))
+    builder.group_by(group)
 
     rows = await builder.get_raw()
-    counts = {row["__group"]: int(row["__count"]) for row in rows}
+    values = {row["__group"]: row["__value"] for row in rows}
 
     for model in models:
-        model._extra[alias] = counts.get(model.get_raw_attribute(parent_key), 0)
+        value = values.get(model.get_raw_attribute(parent_key))
+        model._extra[alias] = _finalize(function, value)
+
+
+def _finalize(function: str, value: Any) -> Any:
+    """Empty relations count zero and exist not at all; other aggregates are null."""
+    if function == "count":
+        return int(value or 0)
+    if function == "exists":
+        return bool(value)
+    return value
+
+
+def aggregate_alias(relation: str, function: str, column: str | None) -> str:
+    """`posts_count`, `posts_exists`, `posts_sum_votes` — Laravel's naming."""
+    base = relation.replace(".", "_")
+    if function in ("count", "exists"):
+        return f"{base}_{function}"
+    return f"{base}_{function}_{str(column).replace('.', '_')}"
+
+
+async def load_aggregates(
+    models: Sequence[Any],
+    relations: Any,
+    function: str,
+    column: str | None = None,
+    constrained: Mapping[str, Any] | None = None,
+) -> None:
+    """Deferred aggregate loading — the `load_count` / `load_sum` family."""
+    specs: list[tuple[str, Callable[[QueryBuilder], Any] | None]] = []
+    for relation in relations:
+        if isinstance(relation, Mapping):
+            specs.extend((str(name), callback) for name, callback in relation.items())
+        else:
+            specs.append((str(relation), None))
+    specs.extend((name, callback) for name, callback in (constrained or {}).items())
+
+    for name, callback in specs:
+        relation_name, _, alias = _split_alias(name)
+        await eager_load_aggregate(
+            models,
+            relation_name,
+            alias or aggregate_alias(relation_name, function, column),
+            function,
+            column,
+            callback,
+        )

@@ -833,6 +833,38 @@ class Model(metaclass=ModelMeta):
             await self.load(*pending)
         return self
 
+    async def load_aggregate(
+        self,
+        relations: Any,
+        column: str | None = None,
+        function: str = "count",
+        **constrained: Any,
+    ) -> Model:
+        """Attach an aggregate over a relation after the model was loaded."""
+        from avalon.orm.eager import load_aggregates
+
+        names = relations if isinstance(relations, (list, tuple)) else [relations]
+        await load_aggregates([self], names, function, column, constrained)
+        return self
+
+    async def load_count(self, *relations: Any, **constrained: Any) -> Model:
+        return await self.load_aggregate(list(relations), None, "count", **constrained)
+
+    async def load_exists(self, *relations: Any, **constrained: Any) -> Model:
+        return await self.load_aggregate(list(relations), None, "exists", **constrained)
+
+    async def load_sum(self, relations: Any, column: str, **constrained: Any) -> Model:
+        return await self.load_aggregate(relations, column, "sum", **constrained)
+
+    async def load_avg(self, relations: Any, column: str, **constrained: Any) -> Model:
+        return await self.load_aggregate(relations, column, "avg", **constrained)
+
+    async def load_min(self, relations: Any, column: str, **constrained: Any) -> Model:
+        return await self.load_aggregate(relations, column, "min", **constrained)
+
+    async def load_max(self, relations: Any, column: str, **constrained: Any) -> Model:
+        return await self.load_aggregate(relations, column, "max", **constrained)
+
     def has_one(self, related: type[Model], foreign: str | None = None, local: str | None = None):
         from avalon.orm.relations import HasOne
 

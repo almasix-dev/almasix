@@ -168,6 +168,62 @@ await user.load_missing("profile")
 await users.load("posts")   # Collection
 ```
 
+## Aggregating related models
+
+Counting or summing a relation does not need the related rows loaded. Each
+aggregate runs one extra query for the whole result set and lands on the parent
+under a conventional name:
+
+```python
+writers = await Writer.query().with_count("entries").get()
+writers[0].entries_count            # 2
+
+writers = await (
+    Writer.query()
+    .with_sum("entries", "votes")   # entries_sum_votes
+    .with_avg("entries", "votes")   # entries_avg_votes
+    .with_min("entries", "votes")   # entries_min_votes
+    .with_max("entries", "votes")   # entries_max_votes
+    .with_exists("entries")         # entries_exists -> bool
+    .get()
+)
+```
+
+A relation with no rows counts `0` and exists `False`; the column aggregates are
+`None`, matching Laravel's null.
+
+Constrain an aggregate with a keyword callback, and rename it with `as`:
+
+```python
+await Writer.query().with_count(
+    entries=lambda q: q.where("published", "=", True)
+).get()
+
+await Writer.query().with_count({
+    "entries as published_count": lambda q: q.where("published", "=", True)
+}).get()
+```
+
+`with_aggregate("entries", "sum", "votes", "score")` is the long form when you
+want to name both the function and the attribute yourself. Aggregates are
+independent of `select`, so narrowing the parent's columns does not drop them.
+
+### Deferred aggregates
+
+When the parents are already in hand, the `load_` family does the same work:
+
+```python
+await writer.load_count("entries")
+await writer.load_sum("entries", "votes")
+await writer.load_exists("entries")
+await writer.load_aggregate("entries", "votes", "max")
+
+writers = await Writer.query().get()
+await writers.load_count("entries")   # one query for the whole collection
+```
+
+These take the same callbacks, mappings, and `as` aliases as their eager twins.
+
 ## Querying relationship existence
 
 ```python

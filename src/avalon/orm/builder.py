@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import inspect
 from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
@@ -58,6 +59,23 @@ class ModelNotFoundError(LookupError):
         self.identifier = identifier
         suffix = f" with key {identifier!r}" if identifier is not None else ""
         super().__init__(f"No query results for model [{model}]{suffix}.")
+
+
+@dataclasses.dataclass(frozen=True)
+class _Aggregate:
+    """One pending `with_count` / `with_sum` / ... on a builder."""
+
+    relation: str
+    function: str
+    column: str | None
+    alias: str
+    callback: Callable[[Any], Any] | None = None
+
+
+def _split_alias(relation: str) -> tuple[str, str, str | None]:
+    """Split Laravel's `"posts as published_count"` relation syntax."""
+    name, separator, alias = str(relation).partition(" as ")
+    return name.strip(), separator, alias.strip() or None
 
 
 def _morph_targets(relation: Any, types: Any) -> list[tuple[str, Any]]:
@@ -120,7 +138,7 @@ class QueryBuilder:
         self._offset: int | None = None
         self._distinct = False
         self._eager: dict[str, Callable[[QueryBuilder], Any] | None] = {}
-        self._eager_counts: list[tuple[str, str]] = []
+        self._eager_counts: list[_Aggregate] = []
         self._without_scopes: set[str] = set()
         self._all_scopes_disabled = False
         self._casts: dict[str, Any] = {}
@@ -513,10 +531,66 @@ class QueryBuilder:
         clone._casts.update(casts)
         return clone
 
-    def with_count(self, *relations: str) -> QueryBuilder:
+    def with_count(self, *relations: Any, **constrained: Callable[[QueryBuilder], Any]) -> Any:
+        """Count related rows without loading them — ``withCount``.
+
+        Accepts names, `{"posts as published_count": callback}` mappings, and
+        `posts=callback` keywords.
+        """
+        return self._with_aggregate_group("count", None, relations, constrained)
+
+    def with_exists(self, *relations: Any, **constrained: Callable[[QueryBuilder], Any]) -> Any:
+        return self._with_aggregate_group("exists", None, relations, constrained)
+
+    def with_sum(self, relation: Any, column: str, **constrained: Any) -> Any:
+        return self._with_aggregate_group("sum", column, (relation,), constrained)
+
+    def with_avg(self, relation: Any, column: str, **constrained: Any) -> Any:
+        return self._with_aggregate_group("avg", column, (relation,), constrained)
+
+    def with_min(self, relation: Any, column: str, **constrained: Any) -> Any:
+        return self._with_aggregate_group("min", column, (relation,), constrained)
+
+    def with_max(self, relation: Any, column: str, **constrained: Any) -> Any:
+        return self._with_aggregate_group("max", column, (relation,), constrained)
+
+    def with_aggregate(
+        self,
+        relation: str,
+        function: str,
+        column: str | None = None,
+        alias: str | None = None,
+        callback: Callable[[QueryBuilder], Any] | None = None,
+    ) -> QueryBuilder:
+        from avalon.orm.eager import aggregate_alias
+
+        name, _, explicit = _split_alias(relation)
+        self._eager_counts.append(
+            _Aggregate(
+                relation=name,
+                function=function,
+                column=column,
+                alias=alias or explicit or aggregate_alias(name, function, column),
+                callback=callback,
+            )
+        )
+        return self
+
+    def _with_aggregate_group(
+        self,
+        function: str,
+        column: str | None,
+        relations: Sequence[Any],
+        constrained: Mapping[str, Any],
+    ) -> QueryBuilder:
         for relation in relations:
-            alias = f"{relation}_count"
-            self._eager_counts.append((relation, alias))
+            if isinstance(relation, Mapping):
+                for name, callback in relation.items():
+                    self.with_aggregate(str(name), function, column, callback=callback)
+            else:
+                self.with_aggregate(str(relation), function, column)
+        for name, callback in constrained.items():
+            self.with_aggregate(name, function, column, callback=callback)
         return self
 
     def has(self, relation: str, operator: str = ">=", count: int = 1) -> QueryBuilder:
@@ -811,12 +885,19 @@ class QueryBuilder:
         return await connection.select(self.to_select())
 
     async def _load_eager(self, models: list[Any]) -> None:
-        from avalon.orm.eager import eager_load, eager_load_counts
+        from avalon.orm.eager import eager_load, eager_load_aggregate
 
         if self._eager:
             await eager_load(models, self._eager)
-        for relation, alias in self._eager_counts:
-            await eager_load_counts(models, relation, alias)
+        for pending in self._eager_counts:
+            await eager_load_aggregate(
+                models,
+                pending.relation,
+                pending.alias,
+                pending.function,
+                pending.column,
+                pending.callback,
+            )
 
     async def first(self) -> Any:
         results = await self.clone().limit(1).get()
