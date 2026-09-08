@@ -1,6 +1,6 @@
 """Filesystem disks."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("FILESYSTEM_DISK", "local"),

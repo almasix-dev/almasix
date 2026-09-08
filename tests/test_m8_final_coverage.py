@@ -1,4 +1,4 @@
-"""Final coverage hits for avalon.exceptions + avalon.log."""
+"""Final coverage hits for almasix.exceptions + almasix.log."""
 
 from __future__ import annotations
 
@@ -7,15 +7,15 @@ from types import ModuleType
 
 import pytest
 
-from avalon.exceptions.handler import Handler
-from avalon.exceptions import mapping as mapping_mod
-from avalon.exceptions import provider as provider_mod
-from avalon.exceptions import publish as publish_mod
-from avalon.exceptions.publish import ErrorsPublishError, publish_errors
-from avalon.framework import Application
-from avalon.http import HttpException
-from avalon.log import log
-from avalon.log.helpers import LogWriter
+from almasix.exceptions.handler import Handler
+from almasix.exceptions import mapping as mapping_mod
+from almasix.exceptions import provider as provider_mod
+from almasix.exceptions import publish as publish_mod
+from almasix.exceptions.publish import ErrorsPublishError, publish_errors
+from almasix.framework import Application
+from almasix.http import HttpException
+from almasix.log import log
+from almasix.log.helpers import LogWriter
 from tests.support import purge_generated_app_modules
 
 
@@ -37,8 +37,8 @@ def test_provider_boot_when_fallback_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from avalon.caliburn.engine import Engine
-    from avalon.caliburn.helpers import set_engine
+    from almasix.prism.engine import Engine
+    from almasix.prism.helpers import set_engine
 
     purge_generated_app_modules()
     (tmp_path / "config").mkdir()
@@ -95,8 +95,8 @@ def test_provider_import_engine_failure(monkeypatch: pytest.MonkeyPatch) -> None
     real_import = builtins.__import__
 
     def boom(name, *args, **kwargs):
-        if name == "avalon.caliburn.engine" or (
-            isinstance(name, str) and name.startswith("avalon.caliburn.engine")
+        if name == "almasix.prism.engine" or (
+            isinstance(name, str) and name.startswith("almasix.prism.engine")
         ):
             raise ImportError("no engine")
         return real_import(name, *args, **kwargs)
@@ -134,7 +134,7 @@ def test_publish_missing_bundle_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 def test_publish_skips_non_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     bundle_dir = tmp_path / "bundle" / "errors"
     bundle_dir.mkdir(parents=True)
-    (bundle_dir / "404.cal.html").write_text("<p>404</p>", encoding="utf-8")
+    (bundle_dir / "404.prism.html").write_text("<p>404</p>", encoding="utf-8")
     (bundle_dir / "subdir").mkdir()
 
     monkeypatch.setattr(
@@ -143,7 +143,7 @@ def test_publish_skips_non_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
         lambda _name="default": bundle_dir,
     )
     dest = publish_errors(tmp_path / "app", bundle="default")
-    assert (dest / "404.cal.html").is_file()
+    assert (dest / "404.prism.html").is_file()
     assert not (dest / "subdir").is_file()
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-import avalon.orm as orm
+import almasix.orm as orm
 
 pytestmark = pytest.mark.regression
 

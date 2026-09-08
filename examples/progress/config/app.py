@@ -1,6 +1,6 @@
 """Application configuration."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "name": env("APP_NAME", "Progress"),

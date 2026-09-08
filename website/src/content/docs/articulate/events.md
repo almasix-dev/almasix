@@ -35,7 +35,7 @@ In addition to actually removing records from your database, Articulate can "sof
 
 ```python
 # app/models/post.py
-from avalon.orm import Model, SoftDeletes
+from almasix.orm import Model, SoftDeletes
 
 class Post(SoftDeletes, Model):   # mixin before Model
     fillable = ("title",)

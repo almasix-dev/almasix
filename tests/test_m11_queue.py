@@ -8,15 +8,15 @@ from typing import Any, ClassVar
 
 import pytest
 
-from avalon.console.kernel import ConsoleKernel
-from avalon.framework import Application
-from avalon.orm import DatabaseManager, set_manager
-from avalon.queue import Job, JobMiddleware, ShouldQueue, dispatch, dispatch_sync, ensure_tables
-from avalon.queue.dispatcher import Dispatcher
-from avalon.queue.helpers import default_queue_config, set_dispatcher, set_manager
-from avalon.queue.manager import QueueManager
-from avalon.queue.provider import QueueServiceProvider
-from avalon.queue.worker import Worker
+from almasix.console.kernel import ConsoleKernel
+from almasix.framework import Application
+from almasix.orm import DatabaseManager, set_manager
+from almasix.queue import Job, JobMiddleware, ShouldQueue, dispatch, dispatch_sync, ensure_tables
+from almasix.queue.dispatcher import Dispatcher
+from almasix.queue.helpers import default_queue_config, set_dispatcher, set_manager
+from almasix.queue.manager import QueueManager
+from almasix.queue.provider import QueueServiceProvider
+from almasix.queue.worker import Worker
 from tests.orm_support import memory_db
 
 
@@ -217,7 +217,7 @@ async def test_failed_job_store_and_retry(database_manager: QueueManager) -> Non
     await worker.run_once("database")
     await worker.run_once("database")
 
-    from avalon.queue.failed import FailedJobRepository
+    from almasix.queue.failed import FailedJobRepository
 
     repo = FailedJobRepository(database_manager.failed_config())
     rows = await repo.all()

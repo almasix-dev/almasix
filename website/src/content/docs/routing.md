@@ -1,11 +1,11 @@
 ---
 title: Routing
-description: Define web and API routes with Avalon's Route DSL.
+description: Define web and API routes with Almasix's Route DSL.
 ---
 
-Routes map HTTP verbs and URIs to controller actions. Avalon splits **browser** and **API** surfaces: `routes/web.py` returns HTML; `routes/api.py` returns JSON.
+Routes map HTTP verbs and URIs to controller actions. Almasix splits **browser** and **API** surfaces: `routes/web.py` returns HTML; `routes/api.py` returns JSON.
 
-Register routes with the `Route` façade from `avalon.routing`. Controllers are resolved from the container — never import FastAPI in application code.
+Register routes with the `Route` façade from `almasix.routing`. Controllers are resolved from the container — never import FastAPI in application code.
 
 ## Basic routing
 
@@ -13,7 +13,7 @@ Register routes with the `Route` façade from `avalon.routing`. Controllers are 
 # routes/web.py
 from app.http.controllers.welcome_controller import WelcomeController
 
-from avalon.routing import Route
+from almasix.routing import Route
 
 Route.get("/", [WelcomeController, "index"])
 Route.post("/posts", [WelcomeController, "store"])

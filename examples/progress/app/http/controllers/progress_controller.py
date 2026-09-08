@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from avalon import __version__
-from avalon.caliburn import view
-from avalon.config import config
-from avalon.http import Controller, Response
-from avalon.routing import url
+from almasix import __version__
+from almasix.prism import view
+from almasix.config import config
+from almasix.http import Controller, Response
+from almasix.routing import url
 
 
 def _milestones() -> list[dict]:
@@ -16,7 +16,7 @@ def _milestones() -> list[dict]:
             "id": "M0",
             "name": "Skeleton",
             "status": "complete",
-            "proof": ["avalon new", "python grail serve", "examples/progress scaffold"],
+            "proof": ["almasix new", "python smith serve", "examples/progress scaffold"],
         },
         {
             "id": "M1",
@@ -49,7 +49,7 @@ def _milestones() -> list[dict]:
             "proof": [
                 "FormRequest + Laravel-shaped 422",
                 "authorize() -> 403, messages(), attributes()",
-                "python grail make:controller/middleware/provider/request",
+                "python smith make:controller/middleware/provider/request",
                 "url() honoring APP_BASE_PATH",
             ],
         },
@@ -71,16 +71,16 @@ def _milestones() -> list[dict]:
             "proof": [
                 "GET /api/orm feature tour",
                 "eager load / soft deletes / pivot / morphs",
-                "grail migrate / make:model",
+                "smith migrate / make:model",
                 "ladder shipped — query builder + schema owed by M42/M43",
             ],
         },
         {
             "id": "M6",
-            "name": "Caliburn",
+            "name": "Prism",
             "status": "complete",
             "proof": [
-                ".cal.html layouts + @foreach",
+                ".prism.html layouts + @foreach",
                 "components / slots / @props",
                 "@push / @stack / @parent",
                 "view() + @csrf / @auth / @guest",
@@ -114,10 +114,10 @@ def _milestones() -> list[dict]:
             "name": "Console + scheduler",
             "status": "complete",
             "proof": [
-                "Command base + grail list",
+                "Command base + smith list",
                 "schedule:run / schedule:work",
-                "grail fiddle REPL",
-                "Avalon Prompts + dump()/dd()",
+                "smith loupe REPL",
+                "Almasix Prompts + dump()/dd()",
                 "progress:hello · progress:prompts",
             ],
         },
@@ -152,7 +152,7 @@ def _milestones() -> list[dict]:
             "proof": [
                 "Arr / Number / data_* helpers",
                 "Str / Stringable / str_()",
-                "grail progress:helpers",
+                "smith progress:helpers",
             ],
         },
         {
@@ -272,7 +272,7 @@ def _milestones() -> list[dict]:
         },
         {
             "id": "M30",
-            "name": "Grail Console exhaust",
+            "name": "Smith Console exhaust",
             "status": "complete",
             "proof": [
                 "84 commands, every one a Command class",
@@ -281,7 +281,7 @@ def _milestones() -> list[dict]:
                 "--isolated locks · trap · with_progress_bar",
                 "stub:publish · vendor:publish · cache/view/optimize",
                 "db:show / db:table / model:show · migrate:reset / refresh",
-                "grail progress:console · grail progress:import",
+                "smith progress:console · smith progress:import",
             ],
         },
         {
@@ -293,14 +293,14 @@ def _milestones() -> list[dict]:
                 "sub-minute tasks · groups · one server · background",
                 "output to file / mail · lifecycle events",
                 "schedule:list / test / interrupt / clear-cache · down / up",
-                "grail progress:schedule",
+                "smith progress:schedule",
             ],
         },
         {
             "id": "M32",
             "name": "Installer + scaffold stacks",
             "status": "planned",
-            "proof": ["interactive avalon new", "tailwind / bootstrap / plain CSS"],
+            "proof": ["interactive almasix new", "tailwind / bootstrap / plain CSS"],
         },
         {
             "id": "M33",
@@ -336,7 +336,7 @@ def _milestones() -> list[dict]:
             "id": "M38",
             "name": "Deployment + production ops",
             "status": "planned",
-            "proof": ["grail serve --workers", "optimize / cache warm"],
+            "proof": ["smith serve --workers", "optimize / cache warm"],
         },
         {
             "id": "M39",
@@ -352,7 +352,7 @@ def _milestones() -> list[dict]:
                 "Attribute accessors + custom casts",
                 "encrypted / hashed casts · with_casts",
                 "User.display_name append · GET /api/users",
-                "Prunable Post + grail model:prune",
+                "Prunable Post + smith model:prune",
                 "UUID/ULID keys · strictness · quiet writes",
             ],
         },
@@ -392,34 +392,34 @@ def _milestones() -> list[dict]:
         },
         {
             "id": "M45",
-            "name": "Caliburn language support",
+            "name": "Prism language support",
             "status": "planned",
-            "proof": [".cal.html grammar", "syntax highlighting"],
+            "proof": [".prism.html grammar", "syntax highlighting"],
         },
         {
             "id": "M46",
-            "name": "Avalon Language Server",
+            "name": "Almasix Language Server",
             "status": "planned",
-            "proof": ["avalon-lsp", "completion + go-to-definition"],
+            "proof": ["almasix-lsp", "completion + go-to-definition"],
         },
         {
             "id": "M47",
             "name": "Editor integrations + stubs",
             "status": "planned",
-            "proof": ["VS Code + JetBrains plugins", "grail ide:stubs"],
+            "proof": ["VS Code + JetBrains plugins", "smith ide:stubs"],
         },
         {
             "id": "M48",
             "name": "AI agent support",
             "status": "planned",
-            "proof": ["grail mcp server", "agent guidelines"],
+            "proof": ["smith mcp server", "agent guidelines"],
         },
         {
             "id": "M49",
             "name": "Support Collections exhaust",
             "status": "complete",
             "proof": [
-                "grail progress:collections",
+                "smith progress:collections",
                 "LazyCollection + async twin (Model.cursor)",
                 "higher order messages",
                 "155 documented methods",
@@ -430,7 +430,7 @@ def _milestones() -> list[dict]:
             "name": "Helpers + Str exhaust",
             "status": "complete",
             "proof": [
-                "grail progress:helpers",
+                "smith progress:helpers",
                 "Stringable delegates the Str surface",
                 "app / request / response / session / validator",
                 "377 documented methods",
@@ -446,7 +446,7 @@ def _count(milestones: list[dict], status: str) -> int:
 def _board() -> dict:
     milestones = _milestones()
     return {
-        "framework": "avalon",
+        "framework": "almasix",
         "version": __version__,
         "app": str(config("app.name")),
         "completed": _count(milestones, "complete"),

@@ -9,14 +9,14 @@ In the past you may have written a cron entry for each task you needed to run
 on a schedule. That gets painful quickly: the schedule is not in source
 control, and you have to SSH into the server to see what is there.
 
-Avalon's scheduler lets you define the whole schedule inside the application,
+Almasix's scheduler lets you define the whole schedule inside the application,
 in code, and needs a single cron entry on the server. Tasks are usually
 defined in `routes/console.py`.
 
 ```python
 # routes/console.py
-from avalon.console import schedule
-from avalon.orm import DB
+from almasix.console import schedule
+from almasix.orm import DB
 
 
 async def clear_recent_users() -> None:
@@ -26,15 +26,15 @@ async def clear_recent_users() -> None:
 schedule.call(clear_recent_users).daily()
 ```
 
-**Deviation, in Avalon's favour:** a scheduled callback may be `async`, and the
-scheduler awaits it. Laravel has nothing to do here, but Avalon's ORM, queue,
+**Deviation, in Almasix's favour:** a scheduled callback may be `async`, and the
+scheduler awaits it. Laravel has nothing to do here, but Almasix's ORM, queue,
 and HTTP client are awaitable, so a callback that could not await them would be
 useless for most of what people schedule.
 
 Then one cron entry runs the whole schedule:
 
 ```
-* * * * * cd /path/to/app && grail schedule:run >> /dev/null 2>&1
+* * * * * cd /path/to/app && smith schedule:run >> /dev/null 2>&1
 ```
 
 ## Defining schedules
@@ -74,7 +74,7 @@ schedule.call(clear_recent_users).name("clear-recent-users").purpose(
 To see what is scheduled and when each task next runs, use `schedule:list`:
 
 ```bash
-grail schedule:list
+smith schedule:list
 ```
 
 ```
@@ -83,9 +83,9 @@ grail schedule:list
   every 10 seconds  metrics:push  next: 2026-09-08 07:37:20
 ```
 
-### Scheduling Grail commands
+### Scheduling Smith commands
 
-`schedule.command()` schedules a [Grail command](/console/) by name. Arguments
+`schedule.command()` schedules a [Smith command](/console/) by name. Arguments
 and options can be part of the string, or a list:
 
 ```python
@@ -93,8 +93,8 @@ schedule.command("emails:send taylor --force").daily()
 schedule.command("emails:send", ["taylor", "--force"]).daily()
 ```
 
-**Named deviation:** Laravel also accepts a command *class* here. Avalon
-schedules by name, because that is the identity Grail resolves and the string
+**Named deviation:** Laravel also accepts a command *class* here. Almasix
+schedules by name, because that is the identity Smith resolves and the string
 is what appears in `schedule:list`.
 
 #### Scheduling closure commands
@@ -104,7 +104,7 @@ definition, passing any arguments the closure needs:
 
 ```python
 # routes/console.py
-from avalon.console import Artisan
+from almasix.console import Artisan
 
 Artisan.command("delete:recent-users", clear_recent_users).purpose(
     "Delete recent users"
@@ -243,7 +243,7 @@ schedule.command("emails:send").hourly().days([0, 3])
 The constants on `Schedule` say the same thing with names:
 
 ```python
-from avalon.console import Schedule
+from almasix.console import Schedule
 
 schedule.command("emails:send").hourly().days([Schedule.SUNDAY, Schedule.WEDNESDAY])
 ```
@@ -322,13 +322,13 @@ schedule.command("emails:send").without_overlapping(10)
 ```
 
 Locks come from the [cache](/cache/) when the cache manager is booted, keyed
-`schedule:{name}`. Without a cache — a bare `grail schedule:run` in a fresh
+`schedule:{name}`. Without a cache — a bare `smith schedule:run` in a fresh
 app — the scheduler falls back to a file lock under
 `storage/framework/schedule/`. If a task gets stuck and leaves its lock
 behind, release it:
 
 ```bash
-grail schedule:clear-cache
+smith schedule:clear-cache
 ```
 
 ### Running tasks on one server
@@ -355,12 +355,12 @@ schedule.use_cache("redis")
 #### Naming single server tasks
 
 A command names itself, but a closure or a job does not — and two servers would
-take two different locks. Name them, and Avalon raises a `RuntimeError` if you
+take two different locks. Name them, and Almasix raises a `RuntimeError` if you
 forget:
 
 ```python
-schedule.job(CheckUptime("https://avalon.dev")).name(
-    "check_uptime:avalon.dev"
+schedule.job(CheckUptime("https://almasix.dev")).name(
+    "check_uptime:almasix.dev"
 ).every_five_minutes().on_one_server()
 
 schedule.call(reset_api_counts).name("reset-api-counts").daily().on_one_server()
@@ -377,7 +377,7 @@ schedule.command("analytics:report").daily().run_in_background()
 ```
 
 **Named deviation:** Laravel detaches an OS process and reports back through
-`schedule:finish`. Avalon runs the task in a worker thread, so the tasks still
+`schedule:finish`. Almasix runs the task in a worker thread, so the tasks still
 run simultaneously, but `schedule:run` waits for them before it exits — a
 thread cannot outlive the interpreter that started it. A task that must
 survive the tick belongs on a [queue](/queues/).
@@ -388,8 +388,8 @@ Scheduled tasks do not run while the application is down for maintenance, so
 they cannot interfere with whatever you are doing to the server:
 
 ```bash
-grail down    # tasks stop
-grail up      # tasks resume
+smith down    # tasks stop
+smith up      # tasks resume
 ```
 
 `even_in_maintenance_mode()` exempts a task:
@@ -399,8 +399,8 @@ schedule.command("emails:send").even_in_maintenance_mode()
 ```
 
 **Not shipped yet:** maintenance mode today is only the scheduler's side of
-Laravel's feature — a marker file at `storage/framework/down` that `grail down`
-writes and `grail up` removes. HTTP requests are still served normally; the
+Laravel's feature — a marker file at `storage/framework/down` that `smith down`
+writes and `smith up` removes. HTTP requests are still served normally; the
 503 response, the secret bypass URL, `--render`, and `--retry` are owed by
 their own milestone.
 
@@ -427,13 +427,13 @@ the outer one rather than replacing it.
 `schedule:run` evaluates the schedule and runs whatever is due:
 
 ```bash
-grail schedule:run
+smith schedule:run
 ```
 
 That is the only cron entry you need:
 
 ```
-* * * * * cd /path/to/app && grail schedule:run >> /dev/null 2>&1
+* * * * * cd /path/to/app && smith schedule:run >> /dev/null 2>&1
 ```
 
 The command exits non-zero if any task it ran did. Tasks a constraint turned
@@ -443,8 +443,8 @@ To run one task immediately, whatever its frequency says, use `schedule:test`.
 With no `--name` it asks which task you meant:
 
 ```bash
-grail schedule:test
-grail schedule:test --name mail:digest
+smith schedule:test
+smith schedule:test --name mail:digest
 ```
 
 ### Sub-minute scheduled tasks
@@ -474,7 +474,7 @@ instance running the previous release's code until the minute is out. Add this
 to the end of your deployment script:
 
 ```bash
-grail schedule:interrupt
+smith schedule:interrupt
 ```
 
 The running command stops at the end of the current second. The signal is
@@ -487,7 +487,7 @@ You would not normally add a cron entry on your development machine. Run the
 scheduler in the foreground instead:
 
 ```bash
-grail schedule:work
+smith schedule:work
 ```
 
 It ticks every minute until you stop it, and stays inside the minute when
@@ -525,8 +525,8 @@ schedule.command("report:generate").daily().email_output_on_failure(
 )
 ```
 
-**Deviation, in Avalon's favour:** Laravel restricts the output methods to
-`command` and `exec` tasks. Avalon captures `stdout` and `stderr` around every
+**Deviation, in Almasix's favour:** Laravel restricts the output methods to
+`command` and `exec` tasks. Almasix captures `stdout` and `stderr` around every
 task, so `call` and `job` tasks can send their output to a file or an inbox
 too.
 
@@ -600,19 +600,19 @@ The scheduler dispatches these on the [event bus](/events/):
 
 | Event |
 | --- |
-| `avalon.console.scheduling.ScheduledTaskStarting` |
-| `avalon.console.scheduling.ScheduledTaskFinished` |
-| `avalon.console.scheduling.ScheduledBackgroundTaskFinished` |
-| `avalon.console.scheduling.ScheduledTaskSkipped` |
-| `avalon.console.scheduling.ScheduledTaskFailed` |
+| `almasix.console.scheduling.ScheduledTaskStarting` |
+| `almasix.console.scheduling.ScheduledTaskFinished` |
+| `almasix.console.scheduling.ScheduledBackgroundTaskFinished` |
+| `almasix.console.scheduling.ScheduledTaskSkipped` |
+| `almasix.console.scheduling.ScheduledTaskFailed` |
 
 Each carries the task it is about, and the finished ones carry the exit code
 and the captured output:
 
 ```python
-from avalon.console.scheduling import ScheduledTaskFailed
-from avalon.events import Event
-from avalon.log import log
+from almasix.console.scheduling import ScheduledTaskFailed
+from almasix.events import Event
+from almasix.log import log
 
 Event.listen(
     ScheduledTaskFailed,
@@ -627,13 +627,13 @@ constraint, a lock, another server, or maintenance mode turned the task away.
 
 | Command | What it does |
 | --- | --- |
-| `grail schedule:run` | Run the due tasks — the one cron entry. |
-| `grail schedule:work` | Run the scheduler in the foreground. |
-| `grail schedule:list` | List the tasks and when each next runs. |
-| `grail schedule:test` | Run one task now, whatever its frequency. |
-| `grail schedule:interrupt` | Stop an in-progress `schedule:run`. |
-| `grail schedule:clear-cache` | Release without-overlapping locks. |
-| `grail down` / `grail up` | Stop and resume scheduled tasks. |
+| `smith schedule:run` | Run the due tasks — the one cron entry. |
+| `smith schedule:work` | Run the scheduler in the foreground. |
+| `smith schedule:list` | List the tasks and when each next runs. |
+| `smith schedule:test` | Run one task now, whatever its frequency. |
+| `smith schedule:interrupt` | Stop an in-progress `schedule:run`. |
+| `smith schedule:clear-cache` | Release without-overlapping locks. |
+| `smith down` / `smith up` | Stop and resume scheduled tasks. |
 
 ## Cron expressions
 
@@ -650,7 +650,7 @@ across a month boundary.
 
 ## Related
 
-- [Grail Console](/console/) — the commands the scheduler runs
+- [Smith Console](/console/) — the commands the scheduler runs
 - [Queues](/queues/) — for work that should outlive the tick
 - [Cache](/cache/) — where overlapping and one-server locks live
 - [Mail](/mail/) — for `email_output_to`

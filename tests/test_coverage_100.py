@@ -13,9 +13,9 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from avalon.auth import events as auth_events
-from avalon.auth.cookies import apply_queued_cookies, begin_cookie_queue, queue_cookie, reset_cookie_queue
-from avalon.auth.guard import (
+from almasix.auth import events as auth_events
+from almasix.auth.cookies import apply_queued_cookies, begin_cookie_queue, queue_cookie, reset_cookie_queue
+from almasix.auth.guard import (
     AuthManager,
     Guard,
     SessionGuard,
@@ -28,7 +28,7 @@ from avalon.auth.guard import (
     reset_auth,
     set_auth,
 )
-from avalon.auth.middleware import (
+from almasix.auth.middleware import (
     AuthenticateWithBasicAuth,
     RedirectIfAuthenticated,
     RequirePassword,
@@ -36,27 +36,27 @@ from avalon.auth.middleware import (
     _configured_guard_names,
     _unauthenticated,
 )
-from avalon.auth.passwords import (
+from almasix.auth.passwords import (
     DatabaseTokenRepository,
     Password,
     PasswordBroker,
     PasswordBrokerManager,
     set_password_manager,
 )
-from avalon.auth.providers import ArticulateUserProvider, MemoryUserProvider
-from avalon.config import ConfigRepository, env, set_repository
-from avalon.hashing import Hash, HashManager, set_hash_manager
-from avalon.http.exceptions import UnauthorizedHttpException
-from avalon.http.request import Request
-from avalon.http.trust import (
+from almasix.auth.providers import ArticulateUserProvider, MemoryUserProvider
+from almasix.config import ConfigRepository, env, set_repository
+from almasix.hashing import Hash, HashManager, set_hash_manager
+from almasix.http.exceptions import UnauthorizedHttpException
+from almasix.http.request import Request
+from almasix.http.trust import (
     HEADER_X_FORWARDED_ALL,
     TrustProxiesASGI,
     _scope_peer,
     peer_is_trusted,
 )
-from avalon.session.encrypt_middleware import EncryptCookies
-from avalon.session.middleware import StartSession
-from avalon.session.store import Session, set_session
+from almasix.session.encrypt_middleware import EncryptCookies
+from almasix.session.middleware import StartSession
+from almasix.session.store import Session, set_session
 
 
 @pytest.fixture(autouse=True)
@@ -314,17 +314,17 @@ async def test_password_remaining() -> None:
     async def fake_select(sql, params=None):
         return [{"email": "a@b.c", "token": "h", "created_at": FakeCreated()}]
 
-    with patch("avalon.orm.facade.DB.select", fake_select_empty):
+    with patch("almasix.orm.facade.DB.select", fake_select_empty):
         tokens.use_database = True
         assert await tokens._db_get("a@b.c") is None  # noqa: SLF001
 
-    with patch("avalon.orm.facade.DB.select", fake_select):
+    with patch("almasix.orm.facade.DB.select", fake_select):
         assert (await tokens._db_get("a@b.c"))["created_at"] == 123.0  # noqa: SLF001
 
     async def boom(*a, **k):
         raise RuntimeError("db down")
 
-    with patch("avalon.orm.facade.DB.statement", boom):
+    with patch("almasix.orm.facade.DB.statement", boom):
         assert await tokens._db_delete_expired(0.0) == 0  # noqa: SLF001
 
     provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("old")}])
@@ -403,10 +403,10 @@ async def test_session_clean_no_set_cookie() -> None:
 
 @pytest.mark.asyncio
 async def test_kernel_parameterized_and_invoke(tmp_path: Path) -> None:
-    from avalon.auth.middleware import Authenticate, AuthenticateWithBasicAuth, RequirePassword
-    from avalon.framework.application import Application
-    from avalon.http.kernel import HttpKernel
-    from avalon.routing.router import Router
+    from almasix.auth.middleware import Authenticate, AuthenticateWithBasicAuth, RequirePassword
+    from almasix.framework.application import Application
+    from almasix.http.kernel import HttpKernel
+    from almasix.routing.router import Router
 
     root = tmp_path / "app"
     for part in ("bootstrap", "config", "routes"):
@@ -438,7 +438,7 @@ async def test_kernel_parameterized_and_invoke(tmp_path: Path) -> None:
     def handler(request: Request):
         return "z"
 
-    with patch("avalon.http.kernel.get_type_hints", side_effect=Exception("no hints")):
+    with patch("almasix.http.kernel.get_type_hints", side_effect=Exception("no hints")):
         assert await kernel._invoke(handler, _req()) == "z"  # noqa: SLF001
 
     class C:
@@ -449,8 +449,8 @@ async def test_kernel_parameterized_and_invoke(tmp_path: Path) -> None:
 
 
 def test_trust_and_router_and_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.framework.application import Application
-    from avalon.routing.router import Router
+    from almasix.framework.application import Application
+    from almasix.routing.router import Router
 
     assert peer_is_trusted("not-an-ip", ["not-an-ip"]) is True
     assert _scope_peer({}) is None
@@ -498,16 +498,16 @@ def test_trust_and_router_and_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 
 
 @pytest.mark.asyncio
-async def test_env_grail_translation_support(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.grail import lang_cmd
-    from avalon.grail.make import MakeError, make_component
-    from avalon.support.collection import Collection
-    from avalon.translation.loader import FileLoader
-    from avalon.translation.middleware import SetLocaleMiddleware
-    from avalon.translation.translator import Translator
+async def test_env_smith_translation_support(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from almasix.smith import lang_cmd
+    from almasix.smith.make import MakeError, make_component
+    from almasix.support.collection import Collection
+    from almasix.translation.loader import FileLoader
+    from almasix.translation.middleware import SetLocaleMiddleware
+    from almasix.translation.translator import Translator
 
-    monkeypatch.setenv("AVALON_BOOL_FALSE", "off")
-    assert env("AVALON_BOOL_FALSE", True) is False
+    monkeypatch.setenv("ALMASIX_BOOL_FALSE", "off")
+    assert env("ALMASIX_BOOL_FALSE", True) is False
 
     base = tmp_path / "langapp"
     base.mkdir()
@@ -548,7 +548,7 @@ async def test_env_grail_translation_support(tmp_path: Path, monkeypatch: pytest
     # key with dot goes through group parse; force JSON-style via runtime key match
     assert t._lookup("full.key", "en") in {"via-key", None}  # noqa: SLF001
 
-    from avalon.translation.locale import reset_locale_context
+    from almasix.translation.locale import reset_locale_context
 
     reset_locale_context()
     req = _req()

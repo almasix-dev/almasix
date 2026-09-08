@@ -16,7 +16,7 @@ description: Log channels and the log() helper — wired to the exception Handle
 | `null` | Discard (tests) |
 
 ```python
-from avalon.log import log
+from almasix.log import log
 
 log().info("Application started")
 log("stderr").warning("Something odd")

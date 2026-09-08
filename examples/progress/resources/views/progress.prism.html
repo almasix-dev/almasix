@@ -1,0 +1,33 @@
+@extends('layouts.app')
+
+@section('title', 'Milestones — Almasix')
+
+@section('content')
+  <section class="section" style="padding-top: 2.5rem">
+    <h2>Milestones</h2>
+    <p class="sub">
+      {{ completed }} of {{ total }} complete on Almasix {{ version }} —
+      {{ in_progress }} in progress, {{ next_id }} up next.
+    </p>
+    <table class="board">
+      <thead>
+        <tr><th>ID</th><th>Milestone</th><th>Status</th><th>Proof</th></tr>
+      </thead>
+      <tbody>
+        @foreach(milestones as m)
+          @component('milestone_row', {
+            'id': m['id'],
+            'name': m['name'],
+            'status': m['status'],
+            'proof': m['proof_text'],
+          })
+          @endcomponent
+        @endforeach
+      </tbody>
+    </table>
+    <p style="margin-top: 1.25rem">
+      <a href="{{ home_url }}">Back home</a> — JSON twin at
+      <code><a href="{{ api_url }}">{{ api_url }}</a></code>.
+    </p>
+  </section>
+@endsection

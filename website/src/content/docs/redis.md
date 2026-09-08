@@ -5,21 +5,21 @@ description: Redis connections, façade, and cache / session / queue drivers.
 
 ## Introduction
 
-Avalon talks to Redis through `avalon.redis`. Connections are configured in
+Almasix talks to Redis through `almasix.redis`. Connections are configured in
 `config/redis.py`. Cache, session, and queue can opt into Redis drivers while
 keeping their local defaults for development.
 
 Install the optional extra:
 
 ```bash
-pip install 'avalon[redis]'
+pip install 'almasix[redis]'
 ```
 
 ## Configuration
 
 ```python
 # config/redis.py
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("REDIS_CLIENT", "default"),
@@ -48,7 +48,7 @@ Cluster mode is not claimed yet — use a single connection.
 ## The `Redis` façade
 
 ```python
-from avalon.redis import Redis, redis
+from almasix.redis import Redis, redis
 
 Redis.set("greeting", b"hello", ex=60)
 Redis.get("greeting")
@@ -77,7 +77,7 @@ async code when you already have an event loop.
 ```
 
 ```python
-from avalon.cache import Cache
+from almasix.cache import Cache
 
 Cache.store("redis").put("users:1", user, 60)
 Cache.store("redis").tags("users").put("ada", user, 60)
@@ -98,7 +98,7 @@ SESSION_DRIVER=redis
 # config/session.py
 "driver": env("SESSION_DRIVER", "cookie"),
 "connection": env("SESSION_CONNECTION", "default"),
-"prefix": env("SESSION_PREFIX", "avalon_session:"),
+"prefix": env("SESSION_PREFIX", "almasix_session:"),
 ```
 
 The cookie then holds a signed session **id**; the payload lives in Redis under
@@ -119,7 +119,7 @@ the configured prefix. Default remains `cookie` for local apps.
 QUEUE_CONNECTION=redis
 ```
 
-Workers use the same `grail queue:work` entry point as the database driver.
+Workers use the same `smith queue:work` entry point as the database driver.
 
 ## Related
 

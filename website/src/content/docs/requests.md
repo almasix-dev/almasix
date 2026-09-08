@@ -1,9 +1,9 @@
 ---
 title: Requests
-description: Inspect the incoming HTTP request with Avalon's Request bag.
+description: Inspect the incoming HTTP request with Almasix's Request bag.
 ---
 
-Avalon's `Request` is the application façade over the ASGI request. Application code should type-hint `avalon.http.Request`, not Starlette/FastAPI request types.
+Almasix's `Request` is the application façade over the ASGI request. Application code should type-hint `almasix.http.Request`, not Starlette/FastAPI request types.
 
 ## Accessing the request
 
@@ -11,7 +11,7 @@ Inject `Request` into a controller action (or use a [`FormRequest`](/validation/
 
 ```python
 # app/http/controllers/demo_controller.py
-from avalon.http import Controller, Request
+from almasix.http import Controller, Request
 
 
 class DemoController(Controller):

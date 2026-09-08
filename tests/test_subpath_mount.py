@@ -6,17 +6,17 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from avalon.framework import Application
-from avalon.http.controller import Controller
-from avalon.http.subpath import mount_asgi, normalize_base_path
-from avalon.routing import Route
+from almasix.framework import Application
+from almasix.http.controller import Controller
+from almasix.http.subpath import mount_asgi, normalize_base_path
+from almasix.routing import Route
 
 
 def test_normalize_base_path() -> None:
     assert normalize_base_path("") == ""
     assert normalize_base_path("/") == ""
-    assert normalize_base_path("avalon") == "/avalon"
-    assert normalize_base_path("/avalon/") == "/avalon"
+    assert normalize_base_path("almasix") == "/almasix"
+    assert normalize_base_path("/almasix/") == "/almasix"
 
 
 def test_mount_asgi_noop_without_prefix() -> None:
@@ -28,7 +28,7 @@ def test_mount_asgi_noop_without_prefix() -> None:
 def test_kernel_mounts_app_at_base_path(tmp_path: Path) -> None:
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "app.py").write_text(
-        'config = {"name": "MountApp", "debug": True, "base_path": "/avalon", "providers": []}\n',
+        'config = {"name": "MountApp", "debug": True, "base_path": "/almasix", "providers": []}\n',
         encoding="utf-8",
     )
     (tmp_path / "config" / "http.py").write_text(
@@ -50,8 +50,8 @@ def test_kernel_mounts_app_at_base_path(tmp_path: Path) -> None:
     client = TestClient(app.asgi)
     root = client.get("/", follow_redirects=False)
     assert root.status_code == 307
-    assert root.headers["location"] == "/avalon/"
+    assert root.headers["location"] == "/almasix/"
 
-    assert client.get("/avalon/").json() == {"here": "home"}
-    assert client.get("/avalon/api/health").json() == {"here": "home"}
+    assert client.get("/almasix/").json() == {"here": "home"}
+    assert client.get("/almasix/api/health").json() == {"here": "home"}
     assert client.get("/api/health").status_code == 404

@@ -1,6 +1,6 @@
 """Password hashing configuration."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "driver": env("HASH_DRIVER", "bcrypt"),

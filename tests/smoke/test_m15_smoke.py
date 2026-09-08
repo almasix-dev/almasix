@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
+from almasix.smith.cli import app as smith_app
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
@@ -24,9 +24,9 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
     purge_generated_app_modules()
     monkeypatch.chdir(PROGRESS)
     monkeypatch.syspath_prepend(str(PROGRESS))
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.kernel import ConsoleKernel
 
-    ConsoleKernel.from_cwd(PROGRESS).register_on_typer(grail_app)
+    ConsoleKernel.from_cwd(PROGRESS).register_on_typer(smith_app)
     return PROGRESS
 
 
@@ -44,7 +44,7 @@ def progress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
 
 
 def test_m15_progress_cache_command(progress_cwd: Path) -> None:
-    result = runner.invoke(grail_app, ["progress:cache"])
+    result = runner.invoke(smith_app, ["progress:cache"])
     assert result.exit_code == 0, result.stdout + result.stderr
     assert "cache demo ok" in result.stdout or "remember" in result.stdout.lower()
 

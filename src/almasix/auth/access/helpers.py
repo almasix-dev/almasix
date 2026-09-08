@@ -1,0 +1,56 @@
+"""Functional helpers: ``gate`` / ``authorize`` / Prism ``@can``."""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Any
+
+from almasix.auth.access.facade import Gate
+from almasix.auth.access.gate import Gate as AccessGate
+from almasix.auth.access.response import AuthorizationResponse
+
+
+def resolve_gate() -> AccessGate:
+    """Return the bound gate, or a process-local instance."""
+    existing = Gate._gate
+    if existing is not None:
+        return existing
+    instance = AccessGate()
+    Gate.set_gate(instance)
+    return instance
+
+
+def gate() -> AccessGate:
+    return Gate.get_gate()
+
+
+def policy(model: Any) -> Any:
+    """Return the policy registered for ``model`` (Laravel ``policy``)."""
+    instance = Gate.get_policy_for(model)
+    if instance is None:
+        name = getattr(model, "__name__", type(model).__name__)
+        raise LookupError(f"No policy is registered for {name}.")
+    return instance
+
+
+def authorize(ability: str, arguments: Any = None) -> AuthorizationResponse:
+    return Gate.authorize(ability, arguments)
+
+
+def gate_allows(ability: str, *arguments: Any) -> bool:
+    if not arguments:
+        return Gate.allows(ability)
+    if len(arguments) == 1:
+        return Gate.allows(ability, arguments[0])
+    return Gate.allows(ability, list(arguments))
+
+
+def gate_any(abilities: Sequence[str], *arguments: Any) -> bool:
+    payload: Any
+    if not arguments:
+        payload = None
+    elif len(arguments) == 1:
+        payload = arguments[0]
+    else:
+        payload = list(arguments)
+    return Gate.any(list(abilities), payload)

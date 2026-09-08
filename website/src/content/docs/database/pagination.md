@@ -3,7 +3,7 @@ title: Pagination
 description: Paginate query results with length-aware or simple paginators.
 ---
 
-Avalon includes convenient pagination that integrates with the [query builder](/database/queries/) and [Articulate](/articulate/). There are two styles: length-aware pagination and simple pagination.
+Almasix includes convenient pagination that integrates with the [query builder](/database/queries/) and [Articulate](/articulate/). There are two styles: length-aware pagination and simple pagination.
 
 ## Paginating query builder results
 
@@ -39,4 +39,4 @@ The default `per_page` is taken from `Model.per_page` (15 unless you override it
 
 ## Displaying results
 
-Pass `page.to_dict()` (or the paginator itself from a JSON route) to your frontend. HTML view helpers for link rendering will arrive with Caliburn templates.
+Pass `page.to_dict()` (or the paginator itself from a JSON route) to your frontend. HTML view helpers for link rendering will arrive with Prism templates.

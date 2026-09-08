@@ -14,12 +14,12 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console import repl
-from avalon.console.command import Command
-from avalon.console.commands import model_show
-from avalon.console.kernel import ConsoleKernel
-from avalon.orm import DB
-from avalon.orm.schema import Schema
+from almasix.console import repl
+from almasix.console.command import Command
+from almasix.console.commands import model_show
+from almasix.console.kernel import ConsoleKernel
+from almasix.orm import DB
+from almasix.orm.schema import Schema
 
 CONFIG: dict[str, str] = {
     "app.py": (
@@ -37,7 +37,7 @@ POST_MODEL = '''
 
 from enum import Enum
 
-from avalon.orm import EnumCollection, Model, SoftDeletes, relation
+from almasix.orm import EnumCollection, Model, SoftDeletes, relation
 
 
 class Status(str, Enum):
@@ -121,7 +121,7 @@ Post.resolve_relation_using("editor", lambda post: post.belongs_to(Post))
 USER_MODEL = '''
 """A user, with an accessor object and no timestamps of its own."""
 
-from avalon.orm import Attribute, Model, relation
+from almasix.orm import Attribute, Model, relation
 
 
 class User(Model):
@@ -141,7 +141,7 @@ class User(Model):
 SUPPORT_MODELS = '''
 """The models the others point at, plus a class that is not a model at all."""
 
-from avalon.orm import Model, relation
+from almasix.orm import Model, relation
 
 
 class Comment(Model):
@@ -177,7 +177,7 @@ BROKEN_MODULE = "raise RuntimeError('this module does not import')\n"
 DRAFT_MODULE = '''
 """A private module: ``_draft`` is scratch work, not part of the application."""
 
-from avalon.orm import Model
+from almasix.orm import Model
 
 
 class Draft(Model):
@@ -547,7 +547,7 @@ def test_model_show_refuses_a_class_that_is_not_a_model(
     kernel: ConsoleKernel, capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert show(kernel, "app.models.support.Helper") == Command.FAILURE
-    assert "[app.models.support.Helper] is not an Avalon model." in capsys.readouterr().err
+    assert "[app.models.support.Helper] is not an Almasix model." in capsys.readouterr().err
 
 
 def test_model_show_says_how_to_name_a_model_when_the_application_has_none(

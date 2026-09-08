@@ -11,33 +11,33 @@ from pydantic import field_validator
 from sqlalchemy.dialects import mysql, oracle, postgresql
 from typer.testing import CliRunner
 
-from avalon.framework import Container
-from avalon.framework.bootstrap import Middleware
-from avalon.grail.cli import app as grail_app
-from avalon.grail.lang_cmd import LangError, _collect_keys, _flatten, _load_py_dict, missing_keys
-from avalon.grail.make import MakeError, make_component
-from avalon.http.request import Request, _flatten_multi
-from avalon.orm import Collection, Model, RelationNotLoadedError, Schema, SchemaError, relation
-from avalon.orm.builder import QueryBuilder, _invoke_scope, _native_upsert
-from avalon.orm.connection import Connection
-from avalon.orm.dialects import drop_table_sql, ensure_async_driver
-from avalon.orm.inflector import pluralize, singularize
-from avalon.orm.model import ModelNotFoundError
-from avalon.orm.pagination import Paginator
-from avalon.orm.relations import BelongsTo, BelongsToMany, HasManyThrough, MorphMany
-from avalon.orm.schema import Blueprint, Column, ForeignKeyDefinition, compile_table_statements
-from avalon.routing import Router
-from avalon.translation import Translator, set_translator
-from avalon.translation.locale import peek_locale, reset_locale_context, set_locale
-from avalon.translation.middleware import (
+from almasix.framework import Container
+from almasix.framework.bootstrap import Middleware
+from almasix.http.request import Request, _flatten_multi
+from almasix.orm import Collection, Model, RelationNotLoadedError, Schema, SchemaError, relation
+from almasix.orm.builder import QueryBuilder, _invoke_scope, _native_upsert
+from almasix.orm.connection import Connection
+from almasix.orm.dialects import drop_table_sql, ensure_async_driver
+from almasix.orm.inflector import pluralize, singularize
+from almasix.orm.model import ModelNotFoundError
+from almasix.orm.pagination import Paginator
+from almasix.orm.relations import BelongsTo, BelongsToMany, HasManyThrough, MorphMany
+from almasix.orm.schema import Blueprint, Column, ForeignKeyDefinition, compile_table_statements
+from almasix.routing import Router
+from almasix.smith.cli import app as smith_app
+from almasix.smith.lang_cmd import LangError, _collect_keys, _flatten, _load_py_dict, missing_keys
+from almasix.smith.make import MakeError, make_component
+from almasix.translation import Translator, set_translator
+from almasix.translation.locale import peek_locale, reset_locale_context, set_locale
+from almasix.translation.middleware import (
     SetLocaleMiddleware,
     _available_locales,
     _negotiate,
     _parse_accept_language,
 )
-from avalon.translation.plural import plural_index, select
-from avalon.validation.form_request import FormRequest
-from avalon.validation.messages import _Blanks, message_for
+from almasix.translation.plural import plural_index, select
+from almasix.validation.form_request import FormRequest
+from almasix.validation.messages import _Blanks, message_for
 
 pytest_plugins = ("tests.orm_support",)
 
@@ -229,7 +229,7 @@ async def test_request_bag_edges() -> None:
     assert _flatten_multi([("a", 1), ("a", 2), ("a", 3)]) == {"a": [1, 2, 3]}
 
 
-# --- framework / grail / dialects -------------------------------------------
+# --- framework / smith / dialects -------------------------------------------
 
 
 def test_bootstrap_middleware_use_and_replace() -> None:
@@ -268,7 +268,7 @@ def test_container_string_annotation_and_defaults() -> None:
     built = container.resolve(HasDefault)
     assert built.value == 7
 
-    with patch("avalon.framework.container.get_type_hints", side_effect=RuntimeError("boom")):
+    with patch("almasix.framework.container.get_type_hints", side_effect=RuntimeError("boom")):
         # Force the string-annotation branch; evaluate returns the real class.
         with patch.object(container, "_evaluate_string_annotation", return_value=Dep):
             assert isinstance(container.resolve(NeedsStringHint), NeedsStringHint)
@@ -283,20 +283,20 @@ def test_parse_accept_language_bad_quality() -> None:
     assert ordered.index("sw") < ordered.index("en")
 
 
-def test_grail_cli_error_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_smith_cli_error_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     runner = CliRunner()
 
     with patch(
-        "avalon.console.commands.database.DatabaseCommand.migrator",
+        "almasix.console.commands.database.DatabaseCommand.migrator",
         side_effect=RuntimeError("no db"),
     ):
         for command in ("migrate", "migrate:fresh", "migrate:rollback", "migrate:status"):
-            assert runner.invoke(grail_app, [command]).exit_code == 1
-    with patch("avalon.console.commands.publishing.make_lang", side_effect=LangError("bad")):
-        assert runner.invoke(grail_app, ["make:lang", "!!"]).exit_code == 1
-    with patch("avalon.console.commands.publishing.publish_lang", side_effect=LangError("bad")):
-        assert runner.invoke(grail_app, ["lang:publish"]).exit_code == 1
+            assert runner.invoke(smith_app, [command]).exit_code == 1
+    with patch("almasix.console.commands.publishing.make_lang", side_effect=LangError("bad")):
+        assert runner.invoke(smith_app, ["make:lang", "!!"]).exit_code == 1
+    with patch("almasix.console.commands.publishing.publish_lang", side_effect=LangError("bad")):
+        assert runner.invoke(smith_app, ["lang:publish"]).exit_code == 1
 
 
 def test_make_component_error_paths(tmp_path: Path) -> None:
@@ -341,7 +341,7 @@ def test_dialect_and_connection_edges(tmp_path: Path) -> None:
     assert conn.url.startswith("sqlite")
 
     # Non-sqlite branch sets pool_pre_ping (engine creation mocked).
-    with patch("avalon.orm.connection.create_async_engine") as create:
+    with patch("almasix.orm.connection.create_async_engine") as create:
         create.return_value = MagicMock()
         Connection("pg", {"url": "postgresql+asyncpg://u:p@localhost/db"})
         kwargs = create.call_args.kwargs
@@ -482,7 +482,7 @@ async def test_model_equality_accessors_and_relations(memory_db) -> None:
     Author.hidden = ("label",)
 
     # _fire_sync while events disabled.
-    from avalon.orm import model as model_mod
+    from almasix.orm import model as model_mod
 
     model_mod._EVENTS_DISABLED = True
     try:
@@ -640,7 +640,7 @@ async def test_relation_existence_callbacks_and_upsert(memory_db) -> None:
 
     _invoke_scope(scope_self, Person, Person.query(), (), {})
     _invoke_scope(scope_plain, Person, Person.query(), (), {})
-    with patch("avalon.orm.builder.inspect.signature", side_effect=TypeError):
+    with patch("almasix.orm.builder.inspect.signature", side_effect=TypeError):
         _invoke_scope(_Weird(), Person, Person.query(), (), {})
 
 
@@ -652,7 +652,7 @@ def test_router_prefix_normalization() -> None:
 
 
 def test_lang_add_lines_helper() -> None:
-    from avalon.translation.helpers import Lang
+    from almasix.translation.helpers import Lang
 
     reset_locale_context()
     t = Translator(locale="en", fallback="en")

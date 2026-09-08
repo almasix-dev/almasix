@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from avalon import config as config_pkg
-from avalon import framework as framework_pkg
-from avalon import providers as providers_pkg
-from avalon.config import config, env
-from avalon.framework import Application, Container, ResolutionError
-from avalon.installer.scaffold import scaffold_app
-from avalon.providers import FoundationServiceProvider, ServiceProvider
+from almasix import config as config_pkg
+from almasix import framework as framework_pkg
+from almasix import providers as providers_pkg
+from almasix.config import config, env
+from almasix.framework import Application, Container, ResolutionError
+from almasix.installer.scaffold import scaffold_app
+from almasix.providers import FoundationServiceProvider, ServiceProvider
 
 pytestmark = [pytest.mark.regression]
 
@@ -69,7 +69,7 @@ def test_bootstrap_lifecycle_contract(tmp_path: Path, monkeypatch: pytest.Monkey
 def test_scaffold_kernel_files_contract(tmp_path: Path) -> None:
     root = scaffold_app("contract_app", destination=tmp_path / "contract_app")
     required = [
-        "grail",
+        "smith",
         ".env",
         ".env.example",
         "bootstrap/app.py",
@@ -107,7 +107,7 @@ def test_env_override_contract(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     """Real process env wins over ``.env`` (12-factor / Laravel dotenv default)."""
     monkeypatch.setenv("APP_NAME", "FromProcess")
     (tmp_path / ".env").write_text("APP_NAME=FromDotEnv\n", encoding="utf-8")
-    from avalon.config import load_environment
+    from almasix.config import load_environment
 
     assert load_environment(tmp_path) is True
     assert env("APP_NAME") == "FromProcess"

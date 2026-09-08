@@ -3,7 +3,7 @@ title: Authentication
 description: Guards, providers, attempt(), remember-me, events, and protecting routes.
 ---
 
-Avalon authentication uses **guards** to decide how a request is authenticated,
+Almasix authentication uses **guards** to decide how a request is authenticated,
 **providers** to retrieve users, and `auth()` as the request-scoped manager.
 
 Session/CSRF for browsers live on the `web` group; the `api` group stays
@@ -11,7 +11,7 @@ stateless and uses the token guard (bearer / `api_token`).
 
 ## Config
 
-Scaffolded by `avalon new`:
+Scaffolded by `almasix new`:
 
 ```python
 # config/auth.py
@@ -35,7 +35,7 @@ config = {
 
 ```python
 # app/http/controllers/auth_controller.py
-from avalon.auth import auth
+from almasix.auth import auth
 
 user = auth().user()
 auth().check()
@@ -48,7 +48,7 @@ request.user()
 request.user("api")
 ```
 
-Caliburn `@auth` / `@guest` read `auth_user` / `__authenticated` shared by
+Prism `@auth` / `@guest` read `auth_user` / `__authenticated` shared by
 `AuthServiceProvider`.
 
 ## Attempt login
@@ -65,16 +65,16 @@ if not ok:
 await auth().logout()
 ```
 
-With `remember=True`, Avalon rotates the user’s `remember_token` and queues a
+With `remember=True`, Almasix rotates the user’s `remember_token` and queues a
 long-lived `remember_{guard}` cookie (`{id}|{token}`). `EncryptCookies` encrypts
 it; `StartAuth` hydrates the session from that cookie when no login payload
 exists. Logout clears the cookie and nulls the token.
 
-Passwords are verified with [`Hash`](/hashing/). On success, Avalon rehashes when
+Passwords are verified with [`Hash`](/hashing/). On success, Almasix rehashes when
 `Hash.needs_rehash` says the work factor changed.
 
 Failed and successful attempts dispatch auth events (`Attempting`, `Validated`,
-`Login`, `Failed`, `Logout`, …) — listen with `avalon.auth.listen`.
+`Login`, `Failed`, `Logout`, …) — listen with `almasix.auth.listen`.
 
 ## Intended URL
 
@@ -108,9 +108,9 @@ provider hit authenticates the `api` guard.
 
 ```python
 # app/models/user.py
-from avalon.auth import AuthenticatableMixin
-from avalon.notifications import MustVerifyEmail, Notifiable
-from avalon.orm import Model
+from almasix.auth import AuthenticatableMixin
+from almasix.notifications import MustVerifyEmail, Notifiable
+from almasix.orm import Model
 
 class User(AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):
     fillable = ("email", "name", "password", "email_verified_at")
@@ -130,7 +130,7 @@ and [Passwords](/passwords/).
 
 ```python
 # app/http/controllers/auth_controller.py
-from avalon.auth import auth
+from almasix.auth import auth
 
 auth().via_request("custom", lambda request: lookup(request))
 ```
@@ -139,9 +139,9 @@ auth().via_request("custom", lambda request: lookup(request))
 
 ```python
 # app/models/user.py
-from avalon.auth import AuthenticatableMixin
-from avalon.notifications import MustVerifyEmail, Notifiable
-from avalon.orm import Model
+from almasix.auth import AuthenticatableMixin
+from almasix.notifications import MustVerifyEmail, Notifiable
+from almasix.orm import Model
 
 class User(AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):
     fillable = ("email", "name", "password", "remember_token", "api_token", "email_verified_at")

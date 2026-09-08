@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from avalon.auth import AuthorizationException, Gate, Policy
-from avalon.console.command import Command
+from almasix.auth import AuthorizationException, Gate, Policy
+from almasix.console.command import Command
 
 
 class _User:

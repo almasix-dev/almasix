@@ -1,0 +1,71 @@
+@extends('layouts.app')
+
+@section('title', 'Prism showcase — Almasix')
+
+@section('head')
+  <meta name="description" content="Prism exhaust surface in the progress example.">
+@endsection
+
+@section('content')
+  <section class="section" style="padding-top: 2.5rem">
+    <h2>Prism showcase</h2>
+    <p class="sub">
+      This page is a living checklist of view surfaces: inheritance, components,
+      slots, stacks, control flow, and localization helpers.
+    </p>
+
+    @if(show_welcome)
+      <p>@lang('messages.welcome')</p>
+    @endif
+
+    <div class="feature-grid" style="margin-top: 1.5rem">
+      @component('feature', {'title': 'Layouts'})
+        {{ '@extends' }}, {{ '@section' }}, {{ '@yield' }}, and {{ '@include' }}
+        for the shared shell and nav.
+      @endcomponent
+      @component('feature', {'title': 'Components'})
+        Anonymous components with {{ '@props' }} and attribute bags —
+        scaffolded via <code>smith make:component</code>.
+      @endcomponent
+      @component('feature', {'title': 'Stacks'})
+        Script stacks render after content via {{ "@stack('scripts')" }}.
+      @endcomponent
+      @component('feature', {'title': 'Assets'})
+        CSS/JS load through <code>asset()</code> from <code>public/</code> —
+        no Vite in framework core.
+      @endcomponent
+    </div>
+
+    <h2 style="margin-top: 2.5rem">Slots &amp; nesting</h2>
+    <p class="sub">Named slots, <code>x-slot</code>, nested tags, and class-based components.</p>
+    <div class="feature-grid">
+      <x-card>
+        <x-slot:title>Named slots</x-slot>
+        Default slot body with a nested
+        <x-status-badge status="next">badge</x-status-badge>.
+        <x-slot name="footer">Footer via x-slot name=</x-slot>
+      </x-card>
+
+      @component('demo_form', {'method': 'put', 'action': '#'})
+        <p class="hint" style="margin:0 0 0.75rem">Parent form method is <code>put</code>.</p>
+        @component('demo_input', {'name': 'email', 'label': 'Email (aware of method)'})
+        @endcomponent
+      @endcomponent
+    </div>
+
+    <h2 style="margin-top: 2.5rem">Directive tour</h2>
+    <ul class="api-list">
+      @forelse(directives as d)
+        <li><code>{{ d }}</code></li>
+      @empty
+        <li>No directives listed.</li>
+      @endforelse
+    </ul>
+  </section>
+
+  @push('scripts')
+    <script>
+      console.info('Prism showcase loaded');
+    </script>
+  @endpush
+@endsection

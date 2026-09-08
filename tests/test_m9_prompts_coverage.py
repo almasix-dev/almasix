@@ -1,4 +1,4 @@
-"""Coverage fill for Avalon Prompts interactive branches."""
+"""Coverage fill for Almasix Prompts interactive branches."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import time
 import pytest
 from prompt_toolkit.validation import ValidationError
 
-from avalon.console.prompts import (
+from almasix.console.prompts import (
     confirm,
     multiselect,
     password,
@@ -20,11 +20,11 @@ from avalon.console.prompts import (
     text,
     textarea,
 )
-from avalon.console.prompts import choices as choices_mod
-from avalon.console.prompts import inputs as inputs_mod
-from avalon.console.prompts.busy import Progress, progress
-from avalon.console.prompts.inputs import number
-from avalon.console.prompts.style import label_html
+from almasix.console.prompts import choices as choices_mod
+from almasix.console.prompts import inputs as inputs_mod
+from almasix.console.prompts.busy import Progress, progress
+from almasix.console.prompts.inputs import number
+from almasix.console.prompts.style import label_html
 
 
 def _fire(kb, key: str, *, result_holder: dict | None = None) -> None:
@@ -51,11 +51,11 @@ def _fire(kb, key: str, *, result_holder: dict | None = None) -> None:
 @pytest.fixture()
 def interactive():
     with (
-        patch("avalon.console.prompts.types.is_interactive", return_value=True),
-        patch("avalon.console.prompts.inputs.is_interactive", return_value=True),
-        patch("avalon.console.prompts.confirm.is_interactive", return_value=True),
-        patch("avalon.console.prompts.choices.is_interactive", return_value=True),
-        patch("avalon.console.prompts.busy.is_interactive", return_value=True),
+        patch("almasix.console.prompts.types.is_interactive", return_value=True),
+        patch("almasix.console.prompts.inputs.is_interactive", return_value=True),
+        patch("almasix.console.prompts.confirm.is_interactive", return_value=True),
+        patch("almasix.console.prompts.choices.is_interactive", return_value=True),
+        patch("almasix.console.prompts.busy.is_interactive", return_value=True),
     ):
         yield
 
@@ -96,18 +96,18 @@ def test_number_validators(interactive) -> None:
 
 def test_textarea_paths(interactive, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("builtins.input", lambda: (_ for _ in ()).throw(EOFError()))
-    with patch("avalon.console.prompts.messages.note"):
+    with patch("almasix.console.prompts.messages.note"):
         assert textarea("Story", placeholder="p", default="kept") == "kept"
 
     lines = iter(["one", "two", "."])
     monkeypatch.setattr("builtins.input", lambda: next(lines))
-    with patch("avalon.console.prompts.messages.note"):
+    with patch("almasix.console.prompts.messages.note"):
         assert textarea("Story") == "one\ntwo"
 
     monkeypatch.setattr("builtins.input", lambda: ".")
     with (
-        patch("avalon.console.prompts.messages.note"),
-        patch("avalon.console.prompts.messages.error"),
+        patch("almasix.console.prompts.messages.note"),
+        patch("almasix.console.prompts.messages.error"),
         patch.object(inputs_mod, "textarea", return_value="retry") as again,
     ):
         assert textarea("Story", required=True) == "retry"
@@ -130,12 +130,12 @@ def test_confirm_keybindings(interactive) -> None:
             _fire(kb, "c-c", result_holder=holder)
             return True
 
-    with patch("avalon.console.prompts.confirm.Application", FakeApp):
+    with patch("almasix.console.prompts.confirm.Application", FakeApp):
         assert confirm("Ok?", hint="h", default=False) is True
 
 
 def test_confirm_required_retry(interactive) -> None:
-    with patch("avalon.console.prompts.confirm.Application") as App:
+    with patch("almasix.console.prompts.confirm.Application") as App:
         App.return_value.run.side_effect = [None, True]
         assert confirm("Ok?", required=True) is True
 
@@ -178,7 +178,7 @@ def test_select_and_multiselect_keybindings(interactive) -> None:
 def test_select_validate_retries(interactive) -> None:
     with (
         patch.object(choices_mod, "Application") as App,
-        patch("avalon.console.prompts.messages.error"),
+        patch("almasix.console.prompts.messages.error"),
         patch.object(choices_mod, "select", return_value="good") as retry,
     ):
         App.return_value.run.return_value = "bad"
@@ -189,7 +189,7 @@ def test_select_validate_retries(interactive) -> None:
 def test_multiselect_validate_retries(interactive) -> None:
     with (
         patch.object(choices_mod, "Application") as App,
-        patch("avalon.console.prompts.messages.error"),
+        patch("almasix.console.prompts.messages.error"),
         patch.object(choices_mod, "multiselect", return_value=["a"]),
     ):
         App.return_value.run.return_value = []
@@ -211,7 +211,7 @@ def test_suggest_and_search(interactive) -> None:
     original = choices_mod.search
     with (
         patch.object(choices_mod, "pt_prompt", return_value="zz"),
-        patch("avalon.console.prompts.messages.warning"),
+        patch("almasix.console.prompts.messages.warning"),
         patch.object(choices_mod, "search", return_value="next"),
     ):
         assert original("Find", lambda q: []) == "next"
@@ -224,11 +224,11 @@ def test_spin_and_progress_interactive(interactive) -> None:
         def print(self, *args, **kwargs):
             printed.append(str(args[0]) if args else "")
 
-    with patch("avalon.console.prompts.busy.Console", FakeConsole):
+    with patch("almasix.console.prompts.busy.Console", FakeConsole):
         assert spin(lambda: 7, "work") == 7
         assert printed
 
-    with patch("avalon.console.prompts.busy.RichProgress") as RP:
+    with patch("almasix.console.prompts.busy.RichProgress") as RP:
         prog = MagicMock()
         RP.return_value = prog
         prog.add_task.return_value = 1
@@ -252,7 +252,7 @@ def test_spin_error_and_progress_edges(interactive) -> None:
             printed.append("tick")
             time.sleep(0.05)
 
-    with patch("avalon.console.prompts.busy.Console", SlowConsole):
+    with patch("almasix.console.prompts.busy.Console", SlowConsole):
         with pytest.raises(RuntimeError, match="boom"):
             spin(lambda: (_ for _ in ()).throw(RuntimeError("boom")), "x")
         assert spin(lambda: time.sleep(0.12) or 1, "slow") == 1
@@ -301,7 +301,7 @@ def test_choices_scroll_and_cc(interactive) -> None:
 
 def test_textarea_hint_placeholder(interactive, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("builtins.input", lambda: ".")
-    with patch("avalon.console.prompts.messages.note") as note_fn:
+    with patch("almasix.console.prompts.messages.note") as note_fn:
         assert textarea("Story", placeholder="ph", hint="hint text") == ""
         assert note_fn.called
 
@@ -317,17 +317,17 @@ def test_number_custom_validate(interactive) -> None:
 
 
 def test_is_interactive_tty(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("AVALON_PROMPTS_INTERACTIVE", raising=False)
+    monkeypatch.delenv("ALMASIX_PROMPTS_INTERACTIVE", raising=False)
     monkeypatch.delenv("CI", raising=False)
     monkeypatch.setattr(
-        "avalon.console.prompts.types.sys.stdin",
+        "almasix.console.prompts.types.sys.stdin",
         SimpleNamespace(isatty=lambda: True),
     )
     monkeypatch.setattr(
-        "avalon.console.prompts.types.sys.stdout",
+        "almasix.console.prompts.types.sys.stdout",
         SimpleNamespace(isatty=lambda: True),
     )
-    from avalon.console.prompts.types import is_interactive
+    from almasix.console.prompts.types import is_interactive
 
     assert is_interactive() is True
 
@@ -343,5 +343,5 @@ def test_confirm_enter_binding(interactive) -> None:
             _fire(kb, "enter", result_holder=holder)
             return holder.get("result", True)
 
-    with patch("avalon.console.prompts.confirm.Application", FakeApp):
+    with patch("almasix.console.prompts.confirm.Application", FakeApp):
         assert confirm("Ok?", default=True) is True

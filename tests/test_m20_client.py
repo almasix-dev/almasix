@@ -11,7 +11,7 @@ from typing import Any
 import httpx
 import pytest
 
-from avalon.client import (
+from almasix.client import (
     ConnectionException,
     Factory,
     Http,
@@ -33,10 +33,10 @@ from avalon.client import (
     http_post,
     set_factory,
 )
-from avalon.client.provider import ClientServiceProvider
-from avalon.debug import DumpAndDie
-from avalon.framework.application import Application
-from avalon.support.collection import Collection
+from almasix.client.provider import ClientServiceProvider
+from almasix.debug import DumpAndDie
+from almasix.framework.application import Application
+from almasix.support.collection import Collection
 
 URL = "https://api.example.test/users"
 
@@ -493,7 +493,7 @@ def test_assertion_failures_are_reported() -> None:
 
 
 def test_factory_globals_seed_every_pending_request(fresh_factory: Factory) -> None:
-    fresh_factory.with_headers({"X-App": "avalon"})
+    fresh_factory.with_headers({"X-App": "almasix"})
     fresh_factory.with_options({"follow_redirects": False})
     fresh_factory.base_url("https://api.example.test")
     Http.fake()
@@ -501,8 +501,8 @@ def test_factory_globals_seed_every_pending_request(fresh_factory: Factory) -> N
     Http.get("/users")
     recorded = sent()[0]
     assert recorded.url == URL
-    assert recorded.header("X-App") == "avalon"
-    assert fresh_factory.global_headers() == {"X-App": "avalon"}
+    assert recorded.header("X-App") == "almasix"
+    assert fresh_factory.global_headers() == {"X-App": "almasix"}
 
 
 def test_factory_global_middleware_wraps_requests_and_responses() -> None:
@@ -556,7 +556,7 @@ def test_fluent_setters_never_mutate_the_source_request() -> None:
 def test_header_helpers() -> None:
     assert Http.with_token("secret").headers["Authorization"] == "Bearer secret"
     assert Http.with_token("secret", "Token").headers["Authorization"] == "Token secret"
-    assert Http.with_user_agent("avalon/1").headers["User-Agent"] == "avalon/1"
+    assert Http.with_user_agent("almasix/1").headers["User-Agent"] == "almasix/1"
     assert Http.accept("text/csv").headers["Accept"] == "text/csv"
     assert Http.accept_json().headers["Accept"] == "application/json"
     assert Http.content_type("text/plain").headers["Content-Type"] == "text/plain"
@@ -657,7 +657,7 @@ def test_form_bytes_and_scalar_payload_encoding() -> None:
 
 
 def test_accept_and_global_headers_are_defaults_not_overrides() -> None:
-    get_factory().with_headers({"X-App": "avalon", "Accept": "text/html"})
+    get_factory().with_headers({"X-App": "almasix", "Accept": "text/html"})
     Http.fake()
     Http.accept("text/csv").with_header("X-App", "mine").get(URL)
     recorded = sent()[0]
@@ -1055,7 +1055,7 @@ FLUENT_DELEGATIONS: list[tuple[str, tuple[Any, ...]]] = [
     ("with_header", ("X", "1")),
     ("replace_headers", ({"X": "1"},)),
     ("with_token", ("secret",)),
-    ("with_user_agent", ("avalon",)),
+    ("with_user_agent", ("almasix",)),
     ("with_basic_auth", ("user", "pass")),
     ("with_digest_auth", ("user", "pass")),
     ("with_url_parameters", ({"id": 1},)),

@@ -6,7 +6,7 @@ venv/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-.caliburn_cache/
+.prism_cache/
 storage/framework/views/
 storage/framework/schedule/
 storage/framework/schedule-heartbeat.txt

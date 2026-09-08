@@ -11,7 +11,7 @@ tokens instead of CSRF.
 
 1. `StartSession` loads the signed (and encrypted) session cookie
 2. `VerifyCsrfToken` ensures `_csrf_token` exists and checks mutating requests
-3. Caliburn `@csrf` emits a hidden `_token` field from `csrf_token`
+3. Prism `@csrf` emits a hidden `_token` field from `csrf_token`
 
 Accepted sources for the token:
 
@@ -21,10 +21,10 @@ Accepted sources for the token:
 
 Mismatch raises **419** (`TokenMismatchError`).
 
-## Caliburn
+## Prism
 
 ```html
-<!-- resources/views/auth/login.cal.html -->
+<!-- resources/views/auth/login.prism.html -->
 <form method="post" action="/login">
   @csrf
   <input name="email" type="email">
@@ -53,4 +53,4 @@ Do **not** put `csrf` on the `api` group.
 
 - [Session](/session/)
 - [Middleware](/middleware/)
-- [Caliburn stacks & directives](/caliburn/stacks/)
+- [Prism stacks & directives](/prism/stacks/)

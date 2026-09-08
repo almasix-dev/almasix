@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.console.kernel import ConsoleKernel
-from avalon.grail.cli import app as grail_app
+from almasix.console.kernel import ConsoleKernel
+from almasix.smith.cli import app as smith_app
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
@@ -51,8 +51,8 @@ def test_m40_s2_example_post_is_prunable(progress: ConsoleKernel) -> None:
 
 
 def test_m40_s3_model_prune_is_registered(progress: ConsoleKernel) -> None:
-    progress.register_on_typer(grail_app)
-    result = runner.invoke(grail_app, ["--help"])
+    progress.register_on_typer(smith_app)
+    result = runner.invoke(smith_app, ["--help"])
 
     assert result.exit_code == 0
     assert "model:prune" in result.stdout
@@ -65,17 +65,17 @@ def test_m40_s4_model_prune_pretends_against_the_example(
     monkeypatch.setenv("DB_CONNECTION", "sqlite")
     monkeypatch.setenv("DB_DATABASE", str(tmp_path / "prune_smoke.sqlite"))
 
-    migrated = runner.invoke(grail_app, ["migrate"])
+    migrated = runner.invoke(smith_app, ["migrate"])
     assert migrated.exit_code == 0, migrated.stdout
 
-    result = runner.invoke(grail_app, ["model:prune", "--pretend"])
+    result = runner.invoke(smith_app, ["model:prune", "--pretend"])
 
     assert result.exit_code == 0, result.stdout
     assert "Post: 0 model(s) would be pruned." in result.stdout
 
 
 def test_m40_s5_uuid_keys_round_trip(progress: ConsoleKernel) -> None:
-    from avalon.orm import DatabaseManager, HasUuids, Model, Schema, set_manager
+    from almasix.orm import DatabaseManager, HasUuids, Model, Schema, set_manager
 
     class Ticket(HasUuids, Model):
         table = "tickets"

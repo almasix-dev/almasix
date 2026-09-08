@@ -1,4 +1,4 @@
-# Avalon documentation
+# Almasix documentation
 
 | Layer | Path | Role |
 | --- | --- | --- |
@@ -6,7 +6,7 @@
 | Binding plan | [`PLAN.md`](PLAN.md) | Architecture, milestone contracts (framework contributors) |
 | Gates | [`SMOKE.md`](SMOKE.md) | Smoke / regression / coverage exit criteria |
 
-**Published docs** target people building apps with Avalon. Tone and organization follow Laravel’s documentation style (Getting Started → The Basics → Database → Articulate).
+**Published docs** target people building apps with Almasix. Tone and organization follow Laravel’s documentation style (Getting Started → The Basics → Database → Articulate).
 
 ```bash
 cd website && npm install && npm run dev

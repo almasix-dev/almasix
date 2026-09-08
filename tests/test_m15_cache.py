@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from avalon.cache import (
+from almasix.cache import (
     Cache,
     CacheManager,
     DatabaseLock,
@@ -18,12 +18,12 @@ from avalon.cache import (
     ensure_cache_table,
     set_manager,
 )
-from avalon.cache.drivers.array import ArrayStore
-from avalon.cache.drivers.database import DatabaseStore
-from avalon.cache.drivers.file import FileStore
-from avalon.cache.provider import CacheServiceProvider
-from avalon.console.scheduling import Event, run_event
-from avalon.framework.application import Application
+from almasix.cache.drivers.array import ArrayStore
+from almasix.cache.drivers.database import DatabaseStore
+from almasix.cache.drivers.file import FileStore
+from almasix.cache.provider import CacheServiceProvider
+from almasix.console.scheduling import Event, run_event
+from almasix.framework.application import Application
 from tests.orm_support import memory_db
 
 
@@ -44,12 +44,12 @@ def array_cache() -> CacheManager:
 def test_array_get_put_remember_pull(array_cache: CacheManager) -> None:
     store = array_cache.store()
     assert store.missing("a")
-    assert store.put("a", "avalon", 60)
+    assert store.put("a", "almasix", 60)
     assert store.has("a")
-    assert store.get("a") == "avalon"
+    assert store.get("a") == "almasix"
     assert store.add("a", "nope") is False
     assert store.add("b", 1, 30) is True
-    assert store.pull("a") == "avalon"
+    assert store.pull("a") == "almasix"
     assert store.missing("a")
     assert store.remember("c", 10, lambda: "computed") == "computed"
     assert store.remember("c", 10, lambda: "other") == "computed"
@@ -196,7 +196,7 @@ def test_ttl_normalization(array_cache: CacheManager) -> None:
 
 
 def test_extend_custom_driver(array_cache: CacheManager) -> None:
-    from avalon.cache.drivers.array import ArrayStore
+    from almasix.cache.drivers.array import ArrayStore
 
     array_cache.extend("custom", lambda app, cfg, name: ArrayStore())
     array_cache.config.setdefault("stores", {})["custom"] = {"driver": "custom"}

@@ -18,11 +18,11 @@ from prompt_toolkit.application import create_app_session
 from prompt_toolkit.input import PipeInput, create_pipe_input
 from prompt_toolkit.output import DummyOutput
 
-from avalon.console.prompts import choices, inputs
+from almasix.console.prompts import choices, inputs
 
 # The package exports a ``confirm`` *function*, which shadows the module of
 # that name — so reach for the module itself rather than the export.
-confirm_module = import_module("avalon.console.prompts.confirm")
+confirm_module = import_module("almasix.console.prompts.confirm")
 
 #: What prompt_toolkit sends for the arrow keys.
 DOWN = "\x1b[B"

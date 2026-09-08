@@ -1,5 +1,5 @@
-from avalon import __version__
-from avalon.framework import Application, Container
+from almasix import __version__
+from almasix.framework import Application, Container
 
 
 def test_version() -> None:
@@ -8,8 +8,8 @@ def test_version() -> None:
 
 def test_container_bind_and_resolve() -> None:
     container = Container()
-    container.bind(str, lambda c: "avalon")
-    assert container.resolve(str) == "avalon"
+    container.bind(str, lambda c: "almasix")
+    assert container.resolve(str) == "almasix"
 
 
 def test_container_singleton() -> None:

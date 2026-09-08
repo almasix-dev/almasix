@@ -1,0 +1,18 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from almasix.http import Request, Response
+
+
+class {{ class }}(Exception):
+    """{{ class }}."""
+
+    def report(self) -> bool | None:
+        """Report the exception. Return ``False`` to skip the handler's logging."""
+        return None
+
+    def render(self, request: Request) -> Response | None:
+        """Render the exception. Return ``None`` to fall back to the handler."""
+        del request
+        return None

@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.orm import guess_migration, make_migration
-from avalon.orm.migration import MigrationError, _load
+from almasix.orm import guess_migration, make_migration
+from almasix.orm.migration import MigrationError, _load
+from almasix.smith.cli import app as smith_app
 
 runner = CliRunner()
 
@@ -90,7 +90,7 @@ def test_cli_make_migration_infers_from_name(
     migrations.mkdir(parents=True)
     monkeypatch.chdir(tmp_path)
     result = runner.invoke(
-        grail_app,
+        smith_app,
         ["make:migration", "create_widgets_table"],
         catch_exceptions=False,
     )

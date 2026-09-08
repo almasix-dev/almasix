@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from avalon.auth import AuthenticatableMixin
-from avalon.notifications import MustVerifyEmail, Notifiable
-from avalon.orm import Attribute, Model, relation
+from almasix.auth import AuthenticatableMixin
+from almasix.notifications import MustVerifyEmail, Notifiable
+from almasix.orm import Attribute, Model, relation
 
 
 class User(AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):

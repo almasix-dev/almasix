@@ -10,12 +10,12 @@ from typing import Any
 
 import pytest
 
-from avalon.encryption.encrypter import Encrypter
-from avalon.encryption.facade import Crypt
-from avalon.hashing import Hash
-from avalon.orm import Schema
-from avalon.orm.attributes import Attribute, MethodAttribute, attribute
-from avalon.orm.casts import (
+from almasix.encryption.encrypter import Encrypter
+from almasix.encryption.facade import Crypt
+from almasix.hashing import Hash
+from almasix.orm import Schema
+from almasix.orm.attributes import Attribute, MethodAttribute, attribute
+from almasix.orm.casts import (
     CastError,
     CastsAttributes,
     CastsInboundAttributes,
@@ -27,7 +27,7 @@ from avalon.orm.casts import (
     serialize_value,
     uncast_value,
 )
-from avalon.orm.model import Model
+from almasix.orm.model import Model
 from tests.orm_support import memory_db  # noqa: F401
 
 pytestmark = pytest.mark.anyio
@@ -586,7 +586,7 @@ async def test_magic_accessors_and_mutators_still_win_where_declared() -> None:
 
 
 async def test_arity_falls_back_when_a_signature_is_unavailable() -> None:
-    from avalon.orm.attributes import _arity
+    from almasix.orm.attributes import _arity
 
     assert _arity(object()) == 2  # not introspectable
     assert _arity(lambda *args: args) == 2  # *args accepts anything

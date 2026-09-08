@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.orm import Collection, Model, RelationNotLoadedError, relation
+from almasix.orm import Collection, Model, RelationNotLoadedError, relation
 from tests.orm_support import memory_db  # noqa: F401
 
 
@@ -34,7 +34,7 @@ class StrictBook(Model):
 
 
 async def _schema(db) -> None:
-    from avalon.orm import Schema
+    from almasix.orm import Schema
 
     await Schema.create(
         "authors",

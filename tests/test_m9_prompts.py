@@ -1,4 +1,4 @@
-"""M9 Avalon Prompts — non-interactive fallbacks and helpers."""
+"""M9 Almasix Prompts — non-interactive fallbacks and helpers."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import time
 
 import pytest
 
-from avalon.console.command import Command
-from avalon.console.prompts import (
+from almasix.console.command import Command
+from almasix.console.prompts import (
     alert,
     clear,
     confirm,
@@ -30,19 +30,19 @@ from avalon.console.prompts import (
     textarea,
     warning,
 )
-from avalon.console.prompts.busy import Progress
-from avalon.console.prompts.types import is_interactive, required_message, run_validation
+from almasix.console.prompts.busy import Progress
+from almasix.console.prompts.types import is_interactive, required_message, run_validation
 
 
 @pytest.fixture(autouse=True)
 def _force_noninteractive(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("AVALON_PROMPTS_INTERACTIVE", "0")
+    monkeypatch.setenv("ALMASIX_PROMPTS_INTERACTIVE", "0")
 
 
 def test_is_interactive_env_gate(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("AVALON_PROMPTS_INTERACTIVE", "0")
+    monkeypatch.setenv("ALMASIX_PROMPTS_INTERACTIVE", "0")
     assert is_interactive() is False
-    monkeypatch.delenv("AVALON_PROMPTS_INTERACTIVE", raising=False)
+    monkeypatch.delenv("ALMASIX_PROMPTS_INTERACTIVE", raising=False)
     monkeypatch.setenv("CI", "true")
     assert is_interactive() is False
 
@@ -140,7 +140,7 @@ def test_html_escape_ampersand_options() -> None:
     """Option labels with ``&`` must not blow up prompt_toolkit HTML parsing."""
     from prompt_toolkit.formatted_text import HTML
 
-    from avalon.console.prompts.style import html_escape, tagged
+    from almasix.console.prompts.style import html_escape, tagged
 
     assert "&amp;" in html_escape("Bold & bright")
     HTML(

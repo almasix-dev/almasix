@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from avalon.client import Http
-from avalon.console.command import Command
+from almasix.client import Http
+from almasix.console.command import Command
 
 
 class ProgressHttpCommand(Command):

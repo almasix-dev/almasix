@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import signal
 
-from avalon.console import Artisan, Command, Isolatable, PromptsForMissingInput
+from almasix.console import Artisan, Command, Isolatable, PromptsForMissingInput
 
 
 class ProgressConsoleCommand(PromptsForMissingInput, Command):
@@ -36,18 +36,18 @@ class ProgressConsoleCommand(PromptsForMissingInput, Command):
         return self.SUCCESS
 
     def _show_the_one_surface(self) -> None:
-        """What ``grail`` is made of: commands, stubs, and publishable files.
+        """What ``smith`` is made of: commands, stubs, and publishable files.
 
         Every command below is a ``Command`` class, including this one — the
         CLI has no second way in, which is what makes ``Artisan.call`` and the
         scheduler able to reach all of them.
         """
-        from avalon.console import stub
-        from avalon.providers import ServiceProvider
+        from almasix.console import stub
+        from almasix.providers import ServiceProvider
 
         commands = sorted({cls.name() for cls in (self.kernel.commands if self.kernel else {}).values()})
         self.line(f"  commands -> {len(commands)}, every one a Command class")
-        self.line(f"  stubs    -> {len(stub.names())} (grail stub:publish to customise)")
+        self.line(f"  stubs    -> {len(stub.names())} (smith stub:publish to customise)")
         self.line(f"  publish  -> {', '.join(ServiceProvider.publishable_tags()) or 'nothing declared'}")
 
 

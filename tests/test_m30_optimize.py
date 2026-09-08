@@ -7,9 +7,8 @@ from typing import Any
 
 import pytest
 
-from avalon.cache import Cache
-from avalon.caliburn.engine import Engine
-from avalon.console.commands.optimize import (
+from almasix.cache import Cache
+from almasix.console.commands.optimize import (
     NOT_CACHED,
     CacheClearCommand,
     CacheForgetCommand,
@@ -18,7 +17,8 @@ from avalon.console.commands.optimize import (
     ViewCacheCommand,
     ViewClearCommand,
 )
-from avalon.console.kernel import ConsoleKernel
+from almasix.console.kernel import ConsoleKernel
+from almasix.prism.engine import Engine
 
 
 def views_of(app: Any) -> Path:
@@ -30,16 +30,16 @@ def app(tmp_path: Path) -> Any:
     """A booted application with one template and an array cache."""
     views = tmp_path / "resources" / "views"
     views.mkdir(parents=True)
-    (views / "welcome.cal.html").write_text("<p>{{ 'hello' }}</p>")
+    (views / "welcome.prism.html").write_text("<p>{{ 'hello' }}</p>")
 
-    from avalon.cache.provider import CacheServiceProvider
-    from avalon.caliburn.provider import CaliburnServiceProvider
-    from avalon.framework.application import Application
+    from almasix.cache.provider import CacheServiceProvider
+    from almasix.framework.application import Application
+    from almasix.prism.provider import PrismServiceProvider
 
     application = Application(tmp_path)
     application.config.set("cache.default", "array")
     application.register(CacheServiceProvider)
-    application.register(CaliburnServiceProvider)
+    application.register(PrismServiceProvider)
     application.boot()
     return application
 
@@ -101,7 +101,7 @@ def test_view_cache_compiles_every_template(app: Any, capsys: pytest.CaptureFixt
 
 
 def test_view_cache_reports_a_template_that_will_not_compile(app: Any, capsys: pytest.CaptureFixture[str]) -> None:
-    broken = views_of(app) / "broken.cal.html"
+    broken = views_of(app) / "broken.prism.html"
     broken.write_text("@if\n  never\n@endif")
 
     code, text = run(ViewCacheCommand, app, capsys)
@@ -123,7 +123,7 @@ def test_view_clear_drops_the_compiled_templates(app: Any, capsys: pytest.Captur
 
 
 def test_the_view_commands_report_an_application_without_an_engine(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    from avalon.framework.application import Application
+    from almasix.framework.application import Application
 
     bare = Application(tmp_path)  # never booted, so nothing is bound
 

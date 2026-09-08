@@ -50,7 +50,7 @@ jobs:
       - name: Full suite with coverage
         run: >
           pytest -q
-          --cov=avalon
+          --cov=almasix
           --cov-report=term-missing
           --cov-report=xml
 

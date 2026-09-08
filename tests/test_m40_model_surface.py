@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from avalon.orm import (
+from almasix.orm import (
     DiscardedAttributeError,
     HasUlids,
     HasUuids,
@@ -22,7 +22,7 @@ from avalon.orm import (
     ordered_uuid,
     ulid,
 )
-from avalon.orm import model as model_mod
+from almasix.orm import model as model_mod
 from tests.orm_support import memory_db  # noqa: F401
 
 pytestmark = pytest.mark.asyncio
@@ -190,7 +190,7 @@ async def test_get_attribute_raises_in_strict_mode(schema) -> None:
 
 
 async def test_unique_string_id_base_demands_a_generator() -> None:
-    from avalon.orm import HasUniqueStringIds
+    from almasix.orm import HasUniqueStringIds
 
     class Bare(HasUniqueStringIds, Model):
         table = "notes"
@@ -570,7 +570,7 @@ async def test_cursor_streams_models(many) -> None:
 
 
 async def test_cursor_streams_plain_rows_without_a_model(many) -> None:
-    from avalon.orm import DB
+    from almasix.orm import DB
 
     rows = [row async for row in DB.table("notes").order_by("id").cursor()]
     assert [row["title"] for row in rows] == [f"note-{index}" for index in range(1, 8)]
@@ -582,7 +582,7 @@ async def test_cursor_applies_query_time_casts(many) -> None:
 
 
 async def test_keyset_paging_falls_back_to_id_without_a_model(many) -> None:
-    from avalon.orm import DB
+    from almasix.orm import DB
 
     seen: list[Any] = []
     await DB.table("notes").chunk_by_id(3, lambda rows: seen.extend(rows))

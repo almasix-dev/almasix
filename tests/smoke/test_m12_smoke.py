@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console.kernel import ConsoleKernel
-from avalon.mail import Content, Envelope, Mail, Mailable
+from almasix.console.kernel import ConsoleKernel
+from almasix.mail import Content, Envelope, Mail, Mailable
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
@@ -40,7 +40,7 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
 def test_m12_mail_send_array(progress_cwd: Path) -> None:
     kernel = ConsoleKernel.from_cwd(progress_cwd)
     kernel.app.config.set("mail.default", "array")
-    from avalon.mail.provider import MailServiceProvider
+    from almasix.mail.provider import MailServiceProvider
 
     MailServiceProvider(kernel.app).register()
     MailServiceProvider(kernel.app).boot()

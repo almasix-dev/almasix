@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from avalon.orm import Migration, Migrator, Schema, make_migration
+from almasix.orm import Migration, Migrator, Schema, make_migration
 from tests.orm_support import memory_db  # noqa: F401
 
 pytestmark = pytest.mark.asyncio
@@ -71,7 +71,7 @@ async def test_migrator_fresh(memory_db, tmp_path: Path) -> None:
     # Write a real file so Migrator can load it.
     file = tmp_path / "2020_01_01_000000_create_extras_table.py"
     file.write_text(
-        "from avalon.orm import Migration, Schema\n"
+        "from almasix.orm import Migration, Schema\n"
         "class CreateExtras(Migration):\n"
         "    async def up(self):\n"
         "        await Schema.create('extras', lambda t: (t.id(), t.string('name')))\n"

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from avalon.translation import (
+from almasix.translation import (
     Lang,
     Translator,
     __,
@@ -16,8 +16,8 @@ from avalon.translation import (
     set_translator,
     trans_choice,
 )
-from avalon.translation.locale import peek_locale, reset_locale_context
-from avalon.translation.plural import select
+from almasix.translation.locale import peek_locale, reset_locale_context
+from almasix.translation.plural import select
 
 
 @pytest.fixture(autouse=True)
@@ -40,8 +40,8 @@ def translator(tmp_path: Path) -> Translator:
         'translations = {"welcome": "Habari, :name"}\n',
         encoding="utf-8",
     )
-    (lang / "en.json").write_text('{"I love Avalon.": "I love Avalon."}\n', encoding="utf-8")
-    (lang / "sw.json").write_text('{"I love Avalon.": "Napenda Avalon."}\n', encoding="utf-8")
+    (lang / "en.json").write_text('{"I love Almasix.": "I love Almasix."}\n', encoding="utf-8")
+    (lang / "sw.json").write_text('{"I love Almasix.": "Napenda Almasix."}\n', encoding="utf-8")
     t = Translator(locale="en", fallback="en")
     t.add_path(framework_lang_path())
     t.add_path(lang)
@@ -53,10 +53,10 @@ def translator(tmp_path: Path) -> Translator:
 def test_file_and_json_lookup(translator: Translator) -> None:
     assert __("messages.title") == "Welcome"
     assert __("messages.welcome", {"name": "Ada"}) == "Hello, Ada"
-    assert __("I love Avalon.") == "I love Avalon."
+    assert __("I love Almasix.") == "I love Almasix."
     set_locale("sw")
     assert __("messages.welcome", {"name": "Ada"}) == "Habari, Ada"
-    assert __("I love Avalon.") == "Napenda Avalon."
+    assert __("I love Almasix.") == "Napenda Almasix."
     # Fallback for missing key in sw.
     assert __("messages.title") == "Welcome"
 

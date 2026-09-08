@@ -9,14 +9,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from avalon.orm.builder import QueryBuilder, _native_upsert
-from avalon.orm.collection import Collection
-from avalon.orm.connection import Connection
-from avalon.orm.eager import _children, eager_load
-from avalon.orm.migration import MigrationError, Migrator, _load
-from avalon.orm.model import Model, RelationNotLoadedError
-from avalon.orm.schema import Blueprint, Column
-from avalon.orm.seeder import SeederError, _load_module
+from almasix.orm.builder import QueryBuilder, _native_upsert
+from almasix.orm.collection import Collection
+from almasix.orm.connection import Connection
+from almasix.orm.eager import _children, eager_load
+from almasix.orm.migration import MigrationError, Migrator, _load
+from almasix.orm.model import Model, RelationNotLoadedError
+from almasix.orm.schema import Blueprint, Column
+from almasix.orm.seeder import SeederError, _load_module
 import sqlalchemy as sa
 
 
@@ -108,7 +108,7 @@ async def test_builder_upsert_probe_and_mysql_empty_update() -> None:
 
 
 def test_model_accessors_relations_load_missing() -> None:
-    from avalon.orm import relation
+    from almasix.orm import relation
 
     class Post(Model):
         table = "posts"

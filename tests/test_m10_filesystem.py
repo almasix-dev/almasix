@@ -9,15 +9,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from avalon.console.kernel import ConsoleKernel
-from avalon.filesystem import Storage, storage
-from avalon.filesystem.adapter import normalize_path
-from avalon.filesystem.drivers.local import LocalAdapter
-from avalon.filesystem.drivers.memory import MemoryAdapter
-from avalon.filesystem.helpers import default_filesystems_config
-from avalon.filesystem.manager import StorageManager
-from avalon.filesystem.provider import FilesystemServiceProvider
-from avalon.framework import Application
+from almasix.console.kernel import ConsoleKernel
+from almasix.filesystem import Storage, storage
+from almasix.filesystem.adapter import normalize_path
+from almasix.filesystem.drivers.local import LocalAdapter
+from almasix.filesystem.drivers.memory import MemoryAdapter
+from almasix.filesystem.helpers import default_filesystems_config
+from almasix.filesystem.manager import StorageManager
+from almasix.filesystem.provider import FilesystemServiceProvider
+from almasix.framework import Application
 from tests.support import purge_generated_app_modules
 
 
@@ -116,7 +116,7 @@ def test_storage_manager_local_and_public(tmp_path: Path) -> None:
 
 
 def test_s3_adapter_with_mock_client() -> None:
-    from avalon.filesystem.drivers.s3 import S3Adapter
+    from almasix.filesystem.drivers.s3 import S3Adapter
 
     client = MagicMock()
     client.get_object.return_value = {"Body": BytesIO(b"s3")}
@@ -146,10 +146,10 @@ def test_s3_adapter_with_mock_client() -> None:
 
 
 def test_s3_requires_boto3_without_client() -> None:
-    from avalon.filesystem.drivers.s3 import S3Adapter
+    from almasix.filesystem.drivers.s3 import S3Adapter
 
     # If boto3 is installed this still constructs; force ImportError path via monkeypatch.
-    import avalon.filesystem.drivers.s3 as s3_mod
+    import almasix.filesystem.drivers.s3 as s3_mod
     import builtins
 
     real_import = builtins.__import__

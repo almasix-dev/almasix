@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from avalon.console.command import Command
-from avalon.support import Collection, LazyCollection, collect
+from almasix.console.command import Command
+from almasix.support import Collection, LazyCollection, collect
 
 
 class Ticket:

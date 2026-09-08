@@ -9,10 +9,10 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
-from avalon.config import config
-from avalon.framework import Application
-from avalon.installer.cli import app as avalon_app
-from avalon.installer.scaffold import scaffold_app
+from almasix.config import config
+from almasix.framework import Application
+from almasix.installer.cli import app as almasix_app
+from almasix.installer.scaffold import scaffold_app
 from tests.support import purge_generated_app_modules
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
@@ -24,7 +24,7 @@ def test_m1_s1_scaffold_bootstraps_kernel(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    result = runner.invoke(avalon_app, ["new", "kernel_smoke", "--path", str(tmp_path)])
+    result = runner.invoke(almasix_app, ["new", "kernel_smoke", "--path", str(tmp_path)])
     assert result.exit_code == 0, result.stdout
     root = tmp_path / "kernel_smoke"
     purge_generated_app_modules()
@@ -53,7 +53,7 @@ def test_m1_s2_welcome_uses_config(tmp_path: Path, monkeypatch: pytest.MonkeyPat
         client = TestClient(module.asgi)
         response = client.get("/")
         assert response.status_code == 200
-        assert "Welcome to Avalon" in response.text
+        assert "Welcome to Almasix" in response.text
         # Web page and API both read app.name from config.
         assert "ConfigSmoke" in response.text
         assert client.get("/api/health").json()["app"] == "ConfigSmoke"

@@ -5,7 +5,7 @@ from __future__ import annotations
 from app.models.post import Post
 from app.models.user import User
 from app.support.demo_db import ensure_demo_database
-from avalon.http import Controller
+from almasix.http import Controller
 
 
 class OrmTourController(Controller):
@@ -115,7 +115,7 @@ class OrmTourController(Controller):
                 },
                 "upsert": {
                     "endpoint": "POST /api/users/upsert",
-                    "body": {"email": "ada@avalon.dev", "name": "Ada Lovelace"},
+                    "body": {"email": "ada@almasix.dev", "name": "Ada Lovelace"},
                 },
                 "no_lazy_load": {
                     "endpoint": "GET /api/users/1/posts",

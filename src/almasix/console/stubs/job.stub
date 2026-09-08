@@ -1,0 +1,14 @@
+"""{{ class }} job."""
+
+from __future__ import annotations
+
+from almasix.queue import Job
+
+
+class {{ class }}(Job):
+    """Synchronous job — ``await {{ class }}.dispatch()`` runs it in-process."""
+
+    tries = 1
+
+    async def handle(self) -> None:
+        """Run the job."""

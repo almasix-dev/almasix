@@ -6,7 +6,7 @@ import inspect
 
 import pytest
 
-from avalon.support import Str, Stringable, str_
+from almasix.support import Str, Stringable, str_
 
 # --- the methods the audit found missing --------------------------------------
 
@@ -182,7 +182,7 @@ def test_base64_round_trips() -> None:
 
 
 def test_hashing_and_encryption_go_through_the_application_services() -> None:
-    from avalon.hashing import Hash
+    from almasix.hashing import Hash
 
     hashed = str_("secret").hash()
     assert Hash.check("secret", str(hashed))
@@ -235,7 +235,7 @@ def test_the_when_family(method: str, subject: str, args: tuple, expected: str) 
 
 
 def test_when_is_uuid_and_ulid() -> None:
-    from avalon.orm.ids import ulid
+    from almasix.orm.ids import ulid
 
     identifier = str_(Str.uuid())
     assert str(identifier.when_is_uuid(lambda s: s.append("!"))).endswith("!")
@@ -281,7 +281,7 @@ def test_the_pad_family_repeats_the_whole_pad_string() -> None:
     assert Str.pad_right("7", 5, "ab") == "7abab"
     assert Str.pad_both("x", 7, "-=") == "-=-x-=-"
     assert Str.pad_left("7", 5) == "    7"
-    assert Str.pad_both("Avalon", 12, "_") == "___Avalon___"
+    assert Str.pad_both("Almasix", 12, "_") == "__Almasix___"
     assert Str.pad_right("already long", 4, "-") == "already long"
 
 

@@ -8,12 +8,12 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.console.command import Command, parse_signature
-from avalon.console.kernel import ConsoleKernel
-from avalon.console.mutex import Mutex
-from avalon.console.scheduling import Event, Schedule, _cron_matches, run_event, schedule
-from avalon.framework import Application
-from avalon.grail.cli import app as grail_app
+from almasix.console.command import Command, parse_signature
+from almasix.console.kernel import ConsoleKernel
+from almasix.console.mutex import Mutex
+from almasix.console.scheduling import Event, Schedule, _cron_matches, run_event, schedule
+from almasix.framework import Application
+from almasix.smith.cli import app as smith_app
 from tests.support import purge_generated_app_modules
 
 runner = CliRunner()
@@ -42,7 +42,7 @@ def test_parse_signature() -> None:
 
 def test_command_run_arguments() -> None:
     cmd = DemoCommand()
-    assert cmd.run(arguments={"name": "Avalon"}, options={"yell": True}) == 0
+    assert cmd.run(arguments={"name": "Almasix"}, options={"yell": True}) == 0
 
 
 def test_cron_matching() -> None:
@@ -92,15 +92,15 @@ def test_console_kernel_discovers_inspire(tmp_path: Path, monkeypatch: pytest.Mo
     assert kernel.run_command("inspire") == 0
 
 
-def test_grail_make_command_and_list(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_smith_make_command_and_list(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     purge_generated_app_modules()
     monkeypatch.chdir(tmp_path)
     (tmp_path / "bootstrap").mkdir()
     (tmp_path / "bootstrap" / "app.py").write_text("asgi = None\n", encoding="utf-8")
-    result = runner.invoke(grail_app, ["make:command", "SendDigest"])
+    result = runner.invoke(smith_app, ["make:command", "SendDigest"])
     assert result.exit_code == 0, result.stdout
     assert (tmp_path / "app" / "console" / "commands" / "send_digest.py").is_file()
-    listed = runner.invoke(grail_app, ["list"])
+    listed = runner.invoke(smith_app, ["list"])
     assert listed.exit_code == 0
     assert "make:command" in listed.stdout
 

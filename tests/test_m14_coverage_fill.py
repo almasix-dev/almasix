@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from avalon.http.exceptions import HttpException
-from avalon.support import Arr, Number, Str, Stringable
-from avalon.support.helpers import (
+from almasix.http.exceptions import HttpException
+from almasix.support import Arr, Number, Str, Stringable
+from almasix.support.helpers import (
     abort,
     abort_if,
     abort_unless,
@@ -38,7 +38,7 @@ from avalon.support.helpers import (
     trait_uses_recursive,
     when,
 )
-from avalon.support.helpers import tap
+from almasix.support.helpers import tap
 
 
 def test_arr_edge_branches() -> None:
@@ -356,11 +356,11 @@ def test_str_edge_branches() -> None:
     assert Stringable("a1").replace_matches(r"\d", "").to_string() == "a"
     assert Stringable("a b").swap({"a": "x"}).to_string() == "x b"
     assert Stringable("abc").is_("a*")
-    assert Stringable("Avalon").contains("val")
-    assert Stringable("Avalon").contains_all(["Av", "on"])
-    assert Stringable("Avalon").doesnt_contain("z")
-    assert Stringable("Avalon").starts_with("Av")
-    assert Stringable("Avalon").ends_with("on")
+    assert Stringable("Almasix").contains("mas")
+    assert Stringable("Almasix").contains_all(["Al", "ix"])
+    assert Stringable("Almasix").doesnt_contain("z")
+    assert Stringable("Almasix").starts_with("Al")
+    assert Stringable("Almasix").ends_with("ix")
     assert Str.title("hello world") == "Hello World"
     assert "and" in Str.apa("War and Peace")
     assert len(Str.password(4, letters=False, numbers=False, symbols=False, spaces=False)) == 4
@@ -384,7 +384,7 @@ def test_str_edge_branches() -> None:
     assert Stringable("FOO").lower().to_string() == "foo"
     assert Str.plural("CHILD") == "CHILDREN"
     assert Str.plural("Child") == "Children"
-    from avalon.support.str import _match_case
+    from almasix.support.str import _match_case
 
     assert _match_case("foo", "bar") == "bar"
     assert Str.excerpt("abcdefghij", "def", options={"radius": 1, "omission": "…"})

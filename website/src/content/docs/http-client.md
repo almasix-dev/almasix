@@ -5,12 +5,12 @@ description: Outbound Http.get/post façade with fakes, retry, pool, and async.
 
 ## Introduction
 
-Avalon’s HTTP client lives in `avalon.client`. It is the Laravel-shaped
+Almasix’s HTTP client lives in `almasix.client`. It is the Laravel-shaped
 wrapper around **httpx** for *outbound* requests (calling other APIs). Inbound
-HTTP stays in `avalon.http`.
+HTTP stays in `almasix.http`.
 
 ```python
-from avalon.client import Http
+from almasix.client import Http
 
 response = Http.get("https://api.example.test/users")
 response.json()
@@ -25,16 +25,16 @@ The `ClientServiceProvider` (registered with the foundation) binds a process-wid
 
 | Piece | Path |
 | --- | --- |
-| Façade | `src/avalon/client/facade.py` — `Http` |
-| Pending request | `src/avalon/client/pending.py` — `PendingRequest` |
-| Response | `src/avalon/client/response.py` — `Response` |
-| Fakes / recording | `src/avalon/client/factory.py` — `Factory`, `Sequence` |
-| Pool | `src/avalon/client/pool.py` — `Pool`, `PoolRequest` |
-| Batching | `src/avalon/client/batch.py` — `Batch` |
-| Events | `src/avalon/client/events.py` |
-| URI templates | `src/avalon/client/uri_template.py` |
-| Provider | `src/avalon/client/provider.py` — `ClientServiceProvider` |
-| Exceptions | `src/avalon/client/exceptions.py` |
+| Façade | `src/almasix/client/facade.py` — `Http` |
+| Pending request | `src/almasix/client/pending.py` — `PendingRequest` |
+| Response | `src/almasix/client/response.py` — `Response` |
+| Fakes / recording | `src/almasix/client/factory.py` — `Factory`, `Sequence` |
+| Pool | `src/almasix/client/pool.py` — `Pool`, `PoolRequest` |
+| Batching | `src/almasix/client/batch.py` — `Batch` |
+| Events | `src/almasix/client/events.py` |
+| URI templates | `src/almasix/client/uri_template.py` |
+| Provider | `src/almasix/client/provider.py` — `ClientServiceProvider` |
+| Exceptions | `src/almasix/client/exceptions.py` |
 
 ## Making requests
 
@@ -141,7 +141,7 @@ attribute access to it, so `exc.status()` and `exc.json()` work directly.
 The exception message includes the response body, truncated to 120 characters:
 
 ```python
-from avalon.client import RequestException
+from almasix.client import RequestException
 
 RequestException.truncate_at(240)          # globally, e.g. from a provider
 RequestException.dont_truncate()
@@ -232,7 +232,7 @@ the whole pool, so a value may be a `Response`, a `ConnectionException`, or a
 `Http.batch()` is a pool with completion callbacks:
 
 ```python
-from avalon.client import Batch
+from almasix.client import Batch
 
 results = Http.batch(lambda batch: [
     batch.get("https://api.example.test/first"),
@@ -288,8 +288,8 @@ cleared with `Http.flush_macros()`.
 Every request dispatches through the application event dispatcher:
 
 ```python
-from avalon.client import ConnectionFailed, RequestSending, ResponseReceived
-from avalon.events import Event
+from almasix.client import ConnectionFailed, RequestSending, ResponseReceived
+from almasix.events import Event
 
 Event.listen(RequestSending, lambda event: log(event.request.url))
 Event.listen(ResponseReceived, lambda event: log(event.response.status()))
@@ -316,7 +316,7 @@ Under the hood this is `httpx.AsyncClient`.
 Never hit the network in tests:
 
 ```python
-from avalon.client import Http
+from almasix.client import Http
 
 Http.fake()
 Http.get("https://example.test")          # empty 200, nothing leaves the process
@@ -404,7 +404,7 @@ Python makes that natural (`request.url`, not `request.url()`).
 Reset fakes between tests:
 
 ```python
-from avalon.client import set_factory
+from almasix.client import set_factory
 
 @pytest.fixture(autouse=True)
 def _reset_http():
@@ -432,12 +432,12 @@ Http.with_options({"transport": httpx.MockTransport(handler)}).get("https://exam
 ```python
 Http.global_request_middleware(lambda req: req)
 Http.global_response_middleware(lambda resp: resp)
-Http.with_headers({"X-App": "avalon"}).get(url)   # per request
+Http.with_headers({"X-App": "almasix"}).get(url)   # per request
 
 Http.global_options({"follow_redirects": False})
 
-from avalon.client import get_factory
-get_factory().with_headers({"X-App": "avalon"})
+from almasix.client import get_factory
+get_factory().with_headers({"X-App": "almasix"})
 get_factory().base_url("https://api.example.test")
 ```
 

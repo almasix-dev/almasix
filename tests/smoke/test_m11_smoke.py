@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console.kernel import ConsoleKernel
-from avalon.queue import Job, dispatch_sync
+from almasix.console.kernel import ConsoleKernel
+from almasix.queue import Job, dispatch_sync
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]

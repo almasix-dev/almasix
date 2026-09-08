@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console.kernel import ConsoleKernel
-from avalon.console.stub import FRAMEWORK_STUBS, StubError, names, path_for, publish, render
-from avalon.grail.make import command_name, make
-from avalon.orm.migration import make_migration
+from almasix.console.kernel import ConsoleKernel
+from almasix.console.stub import FRAMEWORK_STUBS, StubError, names, path_for, publish, render
+from almasix.orm.migration import make_migration
+from almasix.smith.make import command_name, make
 
 
 def test_the_framework_ships_a_stub_for_every_generator() -> None:
@@ -43,10 +43,10 @@ def test_the_framework_ships_a_stub_for_every_generator() -> None:
 def test_no_generator_builds_its_template_in_python() -> None:
     """The stubs moved out of f-strings; they must not creep back in."""
     for module in (
-        "src/avalon/grail/make.py",
-        "src/avalon/orm/migration.py",
-        "src/avalon/console/commands/make_policy.py",
-        "src/avalon/console/commands/make_event.py",
+        "src/almasix/smith/make.py",
+        "src/almasix/orm/migration.py",
+        "src/almasix/console/commands/make_policy.py",
+        "src/almasix/console/commands/make_event.py",
     ):
         source = Path(module).read_text(encoding="utf-8")
         assert "_stub(" not in source, f"{module} still renders a stub inline"
@@ -216,7 +216,7 @@ def test_each_listener_variant_has_its_own_stub(
 
     assert stub in names()
     assert ("(ShouldQueue)" in body) is queued
-    assert ("from avalon.events import ShouldQueue" in body) is queued
+    assert ("from almasix.events import ShouldQueue" in body) is queued
     assert ("from app.events.order_shipped import OrderShipped" in body) is typed
     assert ("def handle(self, event: OrderShipped) -> None:" in body) is typed
     assert "{{" not in body

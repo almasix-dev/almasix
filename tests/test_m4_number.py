@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 
-from avalon.translation import Number, localize_date, set_locale
-from avalon.translation.locale import reset_locale_context
+from almasix.translation import Number, localize_date, set_locale
+from almasix.translation.locale import reset_locale_context
 
 
 def setup_function() -> None:

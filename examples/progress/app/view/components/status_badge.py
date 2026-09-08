@@ -1,8 +1,8 @@
-"""StatusBadge — class-based Caliburn component."""
+"""StatusBadge — class-based Prism component."""
 
 from __future__ import annotations
 
-from avalon.caliburn import Component
+from almasix.prism import Component
 
 
 class StatusBadge(Component):

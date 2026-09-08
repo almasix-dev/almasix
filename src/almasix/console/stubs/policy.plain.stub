@@ -1,0 +1,11 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from almasix.auth import Policy
+
+
+class {{ class }}(Policy):
+    """{{ class }}."""
+
+    pass

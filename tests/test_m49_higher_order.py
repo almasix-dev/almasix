@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.support import collect
-from avalon.support.collection import (
+from almasix.support import collect
+from almasix.support.collection import (
     HIGHER_ORDER_MESSAGES,
     BoundMessage,
     Collection,
@@ -187,7 +187,7 @@ def test_dunder_lookups_do_not_become_messages() -> None:
 
 
 def test_model_collections_still_answer_messages() -> None:
-    from avalon.orm.collection import Collection as ModelCollection
+    from almasix.orm.collection import Collection as ModelCollection
 
     people = ModelCollection([Member("Ada", 9), Member("Grace", 4, "ops")])
 
@@ -209,7 +209,7 @@ def test_dump_prints_and_returns_the_collection(capsys) -> None:
 
 
 def test_dd_prints_and_halts(capsys) -> None:
-    from avalon.debug import DumpAndDie
+    from almasix.debug import DumpAndDie
 
     with pytest.raises(DumpAndDie):
         collect([1, 2]).dd()

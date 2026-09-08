@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+"""Smith — Almasix in-application CLI.
+
+With the virtualenv active (Almasix installed)::
+
+    smith version
+    smith serve
+    smith make:controller UserController
+    smith loupe   # aliases: tinker, repl
+
+Or via this root script::
+
+    python smith serve
+
+Create new apps with ``almasix new``, not this script.
+"""
+
+from __future__ import annotations
+
+from almasix.smith.cli import app
+
+if __name__ == "__main__":
+    app()

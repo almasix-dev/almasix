@@ -9,10 +9,10 @@ from typing import Any
 
 import pytest
 
-from avalon.cache.helpers import set_manager as set_cache_manager
-from avalon.console.kernel import ConsoleKernel
-from avalon.console.output import Output
-from avalon.orm.schema import Schema
+from almasix.cache.helpers import set_manager as set_cache_manager
+from almasix.console.kernel import ConsoleKernel
+from almasix.console.output import Output
+from almasix.orm.schema import Schema
 
 Build = Callable[..., ConsoleKernel]
 
@@ -94,7 +94,7 @@ def test_db_wipe_says_when_there_is_nothing_to_drop(
 def test_db_wipe_refuses_views_and_types_rather_than_ignore_them(
     argv: list[str], expected: str, build: Build, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Avalon's schema layer knows tables only, and says so before dropping any."""
+    """Almasix's schema layer knows tables only, and says so before dropping any."""
     kernel = build()
     make_tables("posts")
 

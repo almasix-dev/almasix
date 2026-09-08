@@ -19,8 +19,8 @@ Prefer explicit helpers when the intent matters:
 
 ```python
 # app/http/controllers/welcome_controller.py
-from avalon.http import html, json, redirect
-from avalon.caliburn import view
+from almasix.http import html, json, redirect
+from almasix.prism import view
 
 
 async def index(self):
@@ -41,7 +41,7 @@ async def leave(self):
 
 ## Web vs API polarity
 
-- **Web routes** (`routes/web.py`) should return Caliburn views or `html(...)`.
+- **Web routes** (`routes/web.py`) should return Prism views or `html(...)`.
 - **API routes** (`routes/api.py`) should return `dict` / `list` / `json(...)`.
 
 Throwing an [`HttpException`](/errors/) on an API route still yields the locked JSON envelope `{message, status, errors?}`.
@@ -65,6 +65,6 @@ return html("<p>Gone</p>", status=410)
 
 ## Related
 
-- [Views](/views/) — Caliburn templates
+- [Views](/views/) — Prism templates
 - [URL Generation](/urls/)
 - [Error Handling](/errors/)

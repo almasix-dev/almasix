@@ -7,8 +7,8 @@ import re
 
 import pytest
 
-from avalon.console.scheduling import Event, Schedule
-from avalon.grail.cli import app as grail_app
+from almasix.console.scheduling import Event, Schedule
+from almasix.smith.cli import app as smith_app
 
 pytestmark = pytest.mark.smoke
 
@@ -150,7 +150,7 @@ def test_every_way_of_defining_a_task_is_on_the_schedule(method: str) -> None:
 
 @pytest.mark.parametrize("command", COMMANDS)
 def test_every_scheduler_command_is_registered(command: str) -> None:
-    registered = {entry.name for entry in grail_app.registered_commands}
+    registered = {entry.name for entry in smith_app.registered_commands}
 
     assert command in registered
 
@@ -193,7 +193,7 @@ def test_the_page_names_its_deviations_rather_than_hiding_them() -> None:
 
 @pytest.fixture()
 def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> pathlib.Path:
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.kernel import ConsoleKernel
     from tests.support import purge_generated_app_modules, without_base_path
 
     without_base_path(monkeypatch)
@@ -202,14 +202,14 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> pathlib.Path:
     monkeypatch.syspath_prepend(str(PROGRESS))
     kernel = ConsoleKernel.from_cwd(PROGRESS)
     kernel.load_console_routes()
-    kernel.register_on_typer(grail_app)
+    kernel.register_on_typer(smith_app)
     return PROGRESS
 
 
 def invoke(*argv: str) -> str:
     from typer.testing import CliRunner
 
-    result = CliRunner().invoke(grail_app, list(argv))
+    result = CliRunner().invoke(smith_app, list(argv))
     output = result.stdout + (result.stderr or "")
     assert result.exit_code == 0, output
     return output

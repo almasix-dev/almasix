@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from avalon.console.command import Command
-from avalon.encryption import Crypt, DecryptException
+from almasix.console.command import Command
+from almasix.encryption import Crypt, DecryptException
 
 
 class ProgressEncryptionCommand(Command):

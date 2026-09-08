@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from avalon.console.command import Command
-from avalon.framework import app
-from avalon.log import logger
-from avalon.support import Arr, Number, Str, blank, data_get, str_
+from almasix.console.command import Command
+from almasix.framework import app
+from almasix.log import logger
+from almasix.support import Arr, Number, Str, blank, data_get, str_
 
 
 class ProgressHelpersCommand(Command):
@@ -15,7 +15,7 @@ class ProgressHelpersCommand(Command):
     def handle(self) -> int:
         payload = {"user": {"name": "Ada", "roles": ["admin", "editor"]}}
         self.info(f"data path → {Arr.get(payload, 'user.name')}")
-        self.info(f"slug → {Str.slug('Hello Avalon Framework')}")
+        self.info(f"slug → {Str.slug('Hello Almasix Framework')}")
         self.info(f"fluent → {str_('foo_bar').camel()}")
         self.info(f"ordinal → {Number.ordinal(3)}")
         self.info(f"blank('') → {blank('')}")
@@ -25,7 +25,7 @@ class ProgressHelpersCommand(Command):
         self.comment("M50 — the fluent surface, the gaps, and the global helpers")
 
         # Stringable delegates every Str method and never alters its subject.
-        subject = str_("  avalon framework  ")
+        subject = str_("  almasix framework  ")
         self.info(f"chained → {subject.trim().headline().append('!')}")
         self.info(f"unchanged → {subject!r}")
         self.info(f"initials → {Str.initials('Ada Lovelace')}")

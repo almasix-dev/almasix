@@ -1,28 +1,28 @@
 ---
-title: Grail Console
-description: Grail commands, Command classes, discovery, and the Fiddle REPL.
+title: Smith Console
+description: Smith commands, Command classes, discovery, and the Loupe REPL.
 ---
 
-## Grail
+## Smith
 
-Every Avalon application ships **Grail** — the in-app CLI. With your virtualenv active and Avalon installed, run commands as `grail …`. You can also invoke the root `grail` script with `python grail …`.
+Every Almasix application ships **Smith** — the in-app CLI. With your virtualenv active and Almasix installed, run commands as `smith …`. You can also invoke the root `smith` script with `python smith …`.
 
 ```bash
-grail list
-grail make:command SendDigest
-grail inspire
-grail fiddle
+smith list
+smith make:command SendDigest
+smith inspire
+smith loupe
 ```
 
-`grail list` prints every command Grail can reach, grouped by namespace, and `grail help <command>` describes one. [Command reference](#command-reference) lists what ships with the framework.
+`smith list` prints every command Smith can reach, grouped by namespace, and `smith help <command>` describes one. [Command reference](#command-reference) lists what ships with the framework.
 
 Framework commands (`serve`, `migrate`, `make:*`, …) live on the same surface as the `Command` classes your application declares — there is no second kind of command, which is why `Artisan.call` and the scheduler reach all of them.
 
-## Fiddle REPL
+## Loupe REPL
 
-`grail fiddle` (or `tinker` / `repl`) boots the application and opens an interactive shell with helpers and models available.
+`smith loupe` (or `tinker` / `repl`) boots the application and opens an interactive shell with helpers and models available.
 
-Articulate is **async**. Fiddle auto-resolves coroutine expression results, so these both work:
+Articulate is **async**. Loupe auto-resolves coroutine expression results, so these both work:
 
 ```python
 User.all()
@@ -34,7 +34,7 @@ Results render as **JSON key/value panels** (models, collections, dicts, lists).
 
 ```python
 dump(users)          # pretty dump, continue
-dd(users)            # dump and exit Fiddle
+dd(users)            # dump and exit Loupe
 to_json(users)       # JSON string
 serialize(users)     # plain Python dict/list
 ```
@@ -43,7 +43,7 @@ serialize(users)     # plain Python dict/list
 
 ```python
 # app/console/commands/send_digest.py
-from avalon.console import Command
+from almasix.console import Command
 
 class SendDigest(Command):
     signature = "mail:digest {user?} {--queue=default}"
@@ -55,7 +55,7 @@ class SendDigest(Command):
         return 0
 ```
 
-Generate a stub with `grail make:command SendDigest`.
+Generate a stub with `smith make:command SendDigest`.
 
 ### Exit codes
 
@@ -81,7 +81,7 @@ Commands do not need a class. Define them in `routes/console.py`, the way Larave
 
 ```python
 # routes/console.py
-from avalon.console import Artisan
+from almasix.console import Artisan
 
 def send(user: str, queue: str) -> int:
     print(f"Sending to {user} on {queue}")
@@ -100,14 +100,14 @@ def report(command, reports: ReportService, format: str = "text") -> int:
 Artisan.command("report:daily {--format=text}", report)
 ```
 
-`purpose()` (aliased as `describe()`) sets the description shown by `grail list`. Without it, the callable's first docstring line is used.
+`purpose()` (aliased as `describe()`) sets the description shown by `smith list`. Without it, the callable's first docstring line is used.
 
 ## Isolatable commands
 
 Mix in `Isolatable` and the command gains an `--isolated` flag. While one instance holds the lock, other invocations exit immediately instead of running concurrently:
 
 ```python
-from avalon.console import Command, Isolatable
+from almasix.console import Command, Isolatable
 
 class ImportOrders(Isolatable, Command):
     signature = "orders:import"
@@ -120,8 +120,8 @@ class ImportOrders(Isolatable, Command):
 ```
 
 ```bash
-grail orders:import --isolated       # exits 0 when already running
-grail orders:import --isolated=12    # exits 12 instead
+smith orders:import --isolated       # exits 0 when already running
+smith orders:import --isolated=12    # exits 12 instead
 ```
 
 The lock uses the [cache](/cache/) when a store is configured, and falls back to a filesystem mutex under `storage/framework/schedule`.
@@ -138,7 +138,7 @@ The lock uses the [cache](/cache/) when a store is configured, and falls back to
 | `{names*}` | Argument array (all remaining values) |
 | `{names?*}` | Optional argument array |
 | `{names=*a,b}` | Argument array with defaults |
-| `{tags...}` | Variadic — Avalon's original spelling of `{tags*}` |
+| `{tags...}` | Variadic — Almasix's original spelling of `{tags*}` |
 | `{--flag}` | Boolean option |
 | `{--queue=}` | Option that accepts a value |
 | `{--queue=default}` | Option with a default |
@@ -153,7 +153,7 @@ signature = "mail:send {user : Who to notify} {--Q|queue=default : Which queue} 
 ```
 
 ```bash
-grail mail:send 7 -Q bulk --cc=a@example.com --cc=b@example.com
+smith mail:send 7 -Q bulk --cc=a@example.com --cc=b@example.com
 ```
 
 `--cc` arrives as `["a@example.com", "b@example.com"]`. Everything after a bare `--` is treated as a positional value.
@@ -163,7 +163,7 @@ grail mail:send 7 -Q bulk --cc=a@example.com --cc=b@example.com
 Mix in `PromptsForMissingInput` and a required argument that was not supplied is asked for instead of erroring:
 
 ```python
-from avalon.console import Command, PromptsForMissingInput
+from almasix.console import Command, PromptsForMissingInput
 
 class SendDigest(PromptsForMissingInput, Command):
     signature = "mail:digest {user}"
@@ -172,7 +172,7 @@ class SendDigest(PromptsForMissingInput, Command):
         return {"user": "Which user should receive the digest?"}
 ```
 
-Values may be callables for full control, and `prompt_for_missing_argument(name)` can be overridden outright. Without a mapping, Avalon asks `What is the user?`. In a non-interactive shell the underlying prompt raises rather than hanging.
+Values may be callables for full control, and `prompt_for_missing_argument(name)` can be overridden outright. Without a mapping, Almasix asks `What is the user?`. In a non-interactive shell the underlying prompt raises rather than hanging.
 
 ## Command I/O
 
@@ -205,14 +205,14 @@ sent = self.with_progress_bar(users, lambda user: mailer.send(user))
 
 `ConsoleKernel` finds commands in four places, in order:
 
-1. Framework commands in `avalon.console.commands` (e.g. `inspire`)
+1. Framework commands in `almasix.console.commands` (e.g. `inspire`)
 2. The application package `app.console.commands`
 3. Files under `app/console/commands/*.py`, when that directory is not an importable package
 4. Closure commands defined in `routes/console.py`
 
-There is no list to maintain: a `Command` subclass with a `signature` in one of those places is a command. Everything Grail can run is a `Command` class, which is why `Artisan.call`, the scheduler, and the CLI all reach exactly the same set.
+There is no list to maintain: a `Command` subclass with a `signature` in one of those places is a command. Everything Smith can run is a `Command` class, which is why `Artisan.call`, the scheduler, and the CLI all reach exactly the same set.
 
-A command module that fails to import does not take the rest of the CLI down with it. Grail reports it and carries on:
+A command module that fails to import does not take the rest of the CLI down with it. Smith reports it and carries on:
 
 ```
 Some commands could not be loaded:
@@ -226,7 +226,7 @@ Failed command *runs* report through the exception `Handler` before exiting.
 The `Artisan` façade runs commands from anywhere — controllers, jobs, other commands:
 
 ```python
-from avalon.console import Artisan
+from almasix.console import Artisan
 
 Artisan.call("mail:send 7 --queue=bulk")
 Artisan.call("mail:send", {"user": 7, "--queue": "bulk", "--cc": ["a@x.test", "b@x.test"]})
@@ -234,7 +234,7 @@ Artisan.call("mail:send", {"user": 7, "--queue": "bulk", "--cc": ["a@x.test", "b
 
 Keys beginning with `--` are options; a `True` boolean passes the flag and `False` omits it; lists repeat the option. `Artisan.output()` returns everything the last call printed, and `Artisan.call_silently()` runs without echoing it.
 
-To run a command on a queue worker, `await Artisan.queue()` (Avalon's queue dispatch is async):
+To run a command on a queue worker, `await Artisan.queue()` (Almasix's queue dispatch is async):
 
 ```python
 await Artisan.queue("mail:send", {"user": 7}, queue="bulk")
@@ -267,8 +267,8 @@ def handle(self) -> int:
 Every generator — `make:model`, `make:controller`, `make:migration`, and the rest — renders a `.stub` file. Publish them to change what your application generates:
 
 ```bash
-grail stub:publish
-grail stub:publish --force   # overwrite stubs you have already published
+smith stub:publish
+smith stub:publish --force   # overwrite stubs you have already published
 ```
 
 The stubs land in `stubs/` at your project root. A generator prefers your copy and falls back to the framework's, so publish only the ones you want to change and delete the rest:
@@ -295,13 +295,13 @@ class CourierServiceProvider(ServiceProvider):
 ```
 
 ```bash
-grail vendor:publish                                  # choose from a list
-grail vendor:publish --tag=courier-config
-grail vendor:publish --provider=courier.CourierServiceProvider
-grail vendor:publish --tag=courier-config --force     # overwrite what is there
+smith vendor:publish                                  # choose from a list
+smith vendor:publish --tag=courier-config
+smith vendor:publish --provider=courier.CourierServiceProvider
+smith vendor:publish --tag=courier-config --force     # overwrite what is there
 ```
 
-Declaring a path copies nothing on its own. Avalon publishes its own stubs and language files this way, under the `avalon-stubs` and `avalon-lang` tags.
+Declaring a path copies nothing on its own. Almasix publishes its own stubs and language files this way, under the `almasix-stubs` and `almasix-lang` tags.
 
 ## Events
 
@@ -314,33 +314,33 @@ The console dispatches through the [event dispatcher](/events/):
 | `CommandFinished` | After it returns — adds `exit_code` |
 
 ```python
-from avalon.console import CommandFinished
-from avalon.events import Event
+from almasix.console import CommandFinished
+from almasix.events import Event
 
 Event.listen(CommandFinished, lambda event: log_duration(event.command, event.exit_code))
 ```
 
 ## Command reference
 
-What the framework ships, 84 commands, as `grail list` groups them. An application's own commands appear alongside these.
+What the framework ships, 84 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
 | Command | Description |
 | --- | --- |
 | `about` | Show a summary of the application's environment and drivers |
-| `docs` | Open Avalon's documentation in a browser |
+| `docs` | Open Almasix's documentation in a browser |
 | `down` | Put the application into maintenance mode (scheduled tasks stop) |
 | `env` | Display the current framework environment |
-| `fiddle` | Interactive Avalon REPL *(also `tinker`, `repl`)* |
+| `loupe` | Interactive Almasix REPL *(also `tinker`, `repl`)* |
 | `help` | Describe a command — its usage, arguments, and options |
 | `inspire` | Display an inspiring quote |
-| `list` | List the commands available to Grail |
+| `list` | List the commands available to Smith |
 | `migrate` | Run outstanding migrations |
-| `optimize` | Cache what Avalon can cache, and say what it deliberately does not |
+| `optimize` | Cache what Almasix can cache, and say what it deliberately does not |
 | `serve` | Serve the application with Uvicorn |
 | `up` | Bring the application out of maintenance mode |
-| `version` | Show Avalon version |
+| `version` | Show Almasix version |
 
 ### `cache`
 
@@ -404,7 +404,7 @@ What the framework ships, 84 commands, as `grail list` groups them. An applicati
 | `make:cast` | Create an attribute cast in app/casts |
 | `make:class` | Create a class in app, under the path its name gives |
 | `make:command` | Create a console command in app/console/commands |
-| `make:component` | Create an anonymous Caliburn component in resources/views/components |
+| `make:component` | Create an anonymous Prism component in resources/views/components |
 | `make:controller` | Create a controller in app/http/controllers |
 | `make:enum` | Create an enum in app/enums |
 | `make:event` | Create a new event class |
@@ -424,7 +424,7 @@ What the framework ships, 84 commands, as `grail list` groups them. An applicati
 | `make:request` | Create a FormRequest in app/http/requests |
 | `make:rule` | Create a validation rule in app/rules |
 | `make:seeder` | Create a seeder in database/seeders |
-| `make:view` | Create a Caliburn view in resources/views |
+| `make:view` | Create a Prism view in resources/views |
 
 ### `migrate`
 
@@ -505,14 +505,14 @@ What the framework ships, 84 commands, as `grail list` groups them. An applicati
 
 | Command | Description |
 | --- | --- |
-| `view:cache` | Compile every Caliburn template |
-| `view:clear` | Drop the compiled Caliburn templates |
+| `view:cache` | Compile every Prism template |
+| `view:clear` | Drop the compiled Prism templates |
 ## `dump()` / `dd()`
 
 Debug helpers live on the package root:
 
 ```python
-from avalon import dump, dd
+from almasix import dump, dd
 
 dump(user, request)   # Rich panel(s) in the terminal; execution continues
 dd(User.find(1))      # same chrome, then halt
@@ -523,11 +523,11 @@ dd(User.find(1))      # same chrome, then halt
 | HTTP **web** | Dedicated `dd()` HTML page (CDN-free), status 200 — not reported as an error |
 | HTTP **api** | JSON `{dd, caller, values}` |
 | Console command | Pretty print, exit code `0` |
-| Fiddle | Pretty print, leave the REPL |
+| Loupe | Pretty print, leave the REPL |
 
 `DumpAndDie` is never logged by the exception Handler (`should_report` is false).
 
-In Caliburn views: `@dump(user)` embeds an HTML card; `@dd(user)` halts with the dump page. See [Stacks & Directives](/caliburn/stacks/#debugging).
+In Prism views: `@dump(user)` embeds an HTML card; `@dd(user)` halts with the dump page. See [Stacks & Directives](/prism/stacks/#debugging).
 
 Shell preference:
 
@@ -536,23 +536,23 @@ Shell preference:
 3. **Rich fallback** — pretty output + tip to install IPython
 
 ```bash
-pip install 'avalon[fiddle]'
+pip install 'almasix[loupe]'
 # or, for contributors:
 pip install -e '.[dev]'
 ```
 
 Preloaded names typically include `app`, `config`, `Route`, `url`, `DB`, `Model`, `log`, `run`, and app models such as `User` / `Post` when present.
 
-### Choosing what Fiddle preloads
+### Choosing what Loupe preloads
 
-`config/fiddle.py` decides what is waiting for you in the shell:
+`config/loupe.py` decides what is waiting for you in the shell:
 
 ```python
 config = {
     # Commands to have as callables: "inspire" → inspire()
     "commands": ["inspire"],
     # Extra names to import, as name -> dotted path
-    "alias": {"Str": "avalon.support.Str"},
+    "alias": {"Str": "almasix.support.Str"},
     # Names to keep out, even if a model would have claimed them
     "dont_alias": ["Post"],
 }
@@ -562,12 +562,12 @@ Your models under `app/models` are aliased automatically; `dont_alias` wins over
 
 ```python
 inspire()
-queue_work(once=True)     # grail queue:work --once
+queue_work(once=True)     # smith queue:work --once
 ```
 
 ## Prompts
 
-Interactive UI lives in [`avalon.console.prompts`](/prompts/) — `text`, `select`, `confirm`, `spin`, `progress`, and Command helpers `ask` / `choice` / `secret` / `anticipate`.
+Interactive UI lives in [`almasix.console.prompts`](/prompts/) — `text`, `select`, `confirm`, `spin`, `progress`, and Command helpers `ask` / `choice` / `secret` / `anticipate`.
 
 ## Related
 

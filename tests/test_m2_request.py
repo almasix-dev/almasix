@@ -6,9 +6,9 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import JSONResponse
 
-from avalon.http import Middleware, Request, UploadedFile, make_response
-from avalon.http.middleware import Middleware as MiddlewareBase
-from avalon.routing import Route
+from almasix.http import Middleware, Request, UploadedFile, make_response
+from almasix.http.middleware import Middleware as MiddlewareBase
+from almasix.routing import Route
 
 
 def _starlette_request(
@@ -78,18 +78,18 @@ async def test_request_json_bag_and_selectors() -> None:
         query="q=from-query&flag=0",
         headers=[
             (b"content-type", b"application/json"),
-            (b"user-agent", b"avalon-test"),
+            (b"user-agent", b"almasix-test"),
         ],
-        body=b'{"name":"Avalon","flag":true,"count":"3","q":"from-body"}',
+        body=b'{"name":"Almasix","flag":true,"count":"3","q":"from-body"}',
     )
     request = await Request.create(raw)
     assert request.is_json()
-    assert request.all()["name"] == "Avalon"
+    assert request.all()["name"] == "Almasix"
     assert request.all()["q"] == "from-body"  # body wins
     assert request.query("q") == "from-query"
-    assert request.post("name") == "Avalon"
-    assert request.json("name") == "Avalon"
-    assert request.only("name", "count") == {"name": "Avalon", "count": "3"}
+    assert request.post("name") == "Almasix"
+    assert request.json("name") == "Almasix"
+    assert request.only("name", "count") == {"name": "Almasix", "count": "3"}
     assert "flag" not in request.except_("flag")
     assert request.has("name", "flag")
     assert request.has_any("nope", "name")
@@ -97,10 +97,10 @@ async def test_request_json_bag_and_selectors() -> None:
     assert request.missing("x")
     assert request.boolean("flag") is True
     assert request.integer("count") == 3
-    assert request.string("name") == "Avalon"
-    assert request.user_agent() == "avalon-test"
+    assert request.string("name") == "Almasix"
+    assert request.user_agent() == "almasix-test"
     assert "name" in request
-    assert request["name"] == "Avalon"
+    assert request["name"] == "Almasix"
     request.merge({"extra": 1})
     assert request.input("extra") == 1
     request.replace({"only": True})
@@ -109,7 +109,7 @@ async def test_request_json_bag_and_selectors() -> None:
 
 @pytest.mark.asyncio
 async def test_request_form_and_files() -> None:
-    boundary = "----avalon"
+    boundary = "----almasix"
     body = (
         f"--{boundary}\r\n"
         'Content-Disposition: form-data; name="title"\r\n\r\n'
@@ -159,7 +159,7 @@ def test_make_response_passthrough_headers() -> None:
 
 
 def test_route_static_facade_methods() -> None:
-    from avalon.routing.router import Router, set_router
+    from almasix.routing.router import Router, set_router
 
     router = Router()
     set_router(router)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.orm import (
+from almasix.orm import (
     Model,
     Pivot,
     Schema,
@@ -607,7 +607,7 @@ async def test_morph_to_with_no_stored_type_resolves_to_nothing(memory_db, morph
 
 @pytest.mark.asyncio
 async def test_morph_enforcement_is_introspectable(memory_db, morph_registry) -> None:
-    from avalon.orm.morph import morph_enforced
+    from almasix.orm.morph import morph_enforced
 
     assert morph_enforced() is False
     enforce_morph_map({"article": Article})

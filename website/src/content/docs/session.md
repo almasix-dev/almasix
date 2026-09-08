@@ -3,8 +3,8 @@ title: Session
 description: Cookie and Redis session drivers for stateful web routes.
 ---
 
-Avalon sessions power the `web` middleware group. The default **cookie** driver
-stores a signed JSON bag in `avalon_session` (wrapped by `EncryptCookies`). Set
+Almasix sessions power the `web` middleware group. The default **cookie** driver
+stores a signed JSON bag in `almasix_session` (wrapped by `EncryptCookies`). Set
 `SESSION_DRIVER=redis` to keep only a signed session id in the cookie and store
 the payload in Redis. The `api` group stays stateless (no session cookie).
 
@@ -12,8 +12,8 @@ the payload in Redis. The `api` group stays stateless (no session cookie).
 
 ```python
 # bootstrap/app.py
-from avalon.session import EncryptCookies, StartSession, VerifyCsrfToken
-from avalon.auth.middleware import StartAuth
+from almasix.session import EncryptCookies, StartSession, VerifyCsrfToken
+from almasix.auth.middleware import StartAuth
 
 middleware.alias({
     "cookies.encrypt": EncryptCookies,
@@ -47,12 +47,12 @@ Flash values survive one redirect, then age out on the next request.
 | Key | Default | Role |
 | --- | --- | --- |
 | `session.driver` | `cookie` | `cookie` or `redis` |
-| `session.cookie` | `avalon_session` | Cookie name |
+| `session.cookie` | `almasix_session` | Cookie name |
 | `session.lifetime` | `120` | Minutes |
 | `session.path` | `/` | Cookie path |
 | `session.secure` | `false` | HTTPS-only |
 | `session.connection` | `default` | Redis connection name (redis driver) |
-| `session.prefix` | `avalon_session:` | Redis key prefix |
+| `session.prefix` | `almasix_session:` | Redis key prefix |
 | `app.key` | — | HMAC + cookie encryption secret |
 
 See [Redis](/redis/) for connection settings when using the redis driver.

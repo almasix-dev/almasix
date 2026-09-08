@@ -1,7 +1,7 @@
 /* Progress demo — theme toggle + nav current page. */
 (function () {
   var root = document.documentElement;
-  var KEY = "avalon-theme";
+  var KEY = "almasix-theme";
 
   function apply(theme) {
     root.setAttribute("data-theme", theme);

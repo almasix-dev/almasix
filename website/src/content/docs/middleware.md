@@ -1,11 +1,11 @@
 ---
 title: Middleware
-description: Register and configure HTTP middleware in your Avalon application.
+description: Register and configure HTTP middleware in your Almasix application.
 ---
 
-Middleware provide a convenient mechanism for inspecting and filtering HTTP requests entering your application. For example, Avalon includes middleware for setting the request locale. You may also write your own.
+Middleware provide a convenient mechanism for inspecting and filtering HTTP requests entering your application. For example, Almasix includes middleware for setting the request locale. You may also write your own.
 
-Avalon registers middleware in **`bootstrap/app.py`**. Keep `config/http.py` for group shells and defaults; put your application's middleware wiring in the bootstrap configurator.
+Almasix registers middleware in **`bootstrap/app.py`**. Keep `config/http.py` for group shells and defaults; put your application's middleware wiring in the bootstrap configurator.
 
 ## Registering middleware
 
@@ -13,9 +13,9 @@ Avalon registers middleware in **`bootstrap/app.py`**. Keep `config/http.py` for
 # bootstrap/app.py
 from pathlib import Path
 
-from avalon.framework import Application, Middleware
-from avalon.http import HEADER_X_FORWARDED_ALL
-from avalon.translation import SetLocaleMiddleware
+from almasix.framework import Application, Middleware
+from almasix.http import HEADER_X_FORWARDED_ALL
+from almasix.translation import SetLocaleMiddleware
 
 BASE_PATH = Path(__file__).resolve().parent.parent
 
@@ -52,7 +52,7 @@ Your ASGI entry point is `asgi` — deploy that with Uvicorn or any ASGI server.
 
 `trust_proxies` wraps the ASGI application so client IP, scheme, host, port, and `root_path` reflect forwarded headers. `trust_hosts` prepends global middleware that rejects disallowed hosts.
 
-Header bitmasks are available from `avalon.http` (`HEADER_X_FORWARDED_FOR`, `HEADER_X_FORWARDED_HOST`, `HEADER_X_FORWARDED_PORT`, `HEADER_X_FORWARDED_PROTO`, `HEADER_X_FORWARDED_PREFIX`, `HEADER_X_FORWARDED_ALL`, `HEADER_X_FORWARDED_AWS_ELB`).
+Header bitmasks are available from `almasix.http` (`HEADER_X_FORWARDED_FOR`, `HEADER_X_FORWARDED_HOST`, `HEADER_X_FORWARDED_PORT`, `HEADER_X_FORWARDED_PROTO`, `HEADER_X_FORWARDED_PREFIX`, `HEADER_X_FORWARDED_ALL`, `HEADER_X_FORWARDED_AWS_ELB`).
 
 :::tip
 Callbacks run after configuration is loaded and merge into `http.*`. In tests you can still call `Application(base).bootstrap()` without the fluent builder.
@@ -75,7 +75,7 @@ class DemoTagMiddleware:
 Generate a stub with:
 
 ```bash
-grail make:middleware DemoTagMiddleware
+smith make:middleware DemoTagMiddleware
 ```
 
 Then alias it in `bootstrap/app.py` and attach it to a group or route.

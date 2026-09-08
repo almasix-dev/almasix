@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
+from almasix.smith.cli import app as smith_app
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke]
@@ -23,9 +23,9 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
     purge_generated_app_modules()
     monkeypatch.chdir(PROGRESS)
     monkeypatch.syspath_prepend(str(PROGRESS))
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.kernel import ConsoleKernel
 
-    ConsoleKernel.from_cwd(PROGRESS).register_on_typer(grail_app)
+    ConsoleKernel.from_cwd(PROGRESS).register_on_typer(smith_app)
     return PROGRESS
 
 
@@ -36,7 +36,7 @@ def test_m18_docs_and_sidebar_exist() -> None:
 
 def test_m18_progress_events_command(progress_cwd: Path) -> None:
     del progress_cwd
-    result = runner.invoke(grail_app, ["progress:events"])
+    result = runner.invoke(smith_app, ["progress:events"])
     assert result.exit_code == 0, result.stdout + result.stderr
     assert "events demo ok" in (result.stdout + result.stderr).lower()
 

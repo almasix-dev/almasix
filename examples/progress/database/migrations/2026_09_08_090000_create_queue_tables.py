@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from avalon.orm.migration import Migration
-from avalon.orm.schema import Schema
+from almasix.orm.migration import Migration
+from almasix.orm.schema import Schema
 
 
 class CreateQueueTables(Migration):

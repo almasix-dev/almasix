@@ -1,4 +1,4 @@
-"""Drive avalon.caliburn to 100% statement/branch coverage where reachable."""
+"""Drive almasix.prism to 100% statement/branch coverage where reachable."""
 
 from __future__ import annotations
 
@@ -8,15 +8,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from avalon.caliburn.compiler import (
+from almasix.prism.compiler import (
     _compile_child,
     _split_slots,
     _tag_kind,
     compile_template,
 )
-from avalon.caliburn.component import Component
-from avalon.caliburn.engine import Engine
-from avalon.caliburn.xtags import _parse_attrs, expand_x_tags
+from almasix.prism.component import Component
+from almasix.prism.engine import Engine
+from almasix.prism.xtags import _parse_attrs, expand_x_tags
 
 
 def test_balanced_paren_escape_in_string() -> None:
@@ -41,11 +41,11 @@ def test_balanced_always_requires_parens() -> None:
 def test_extends_errors_and_implicit_content(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "layouts").mkdir(parents=True)
-    (views / "layouts" / "app.cal.html").write_text(
+    (views / "layouts" / "app.prism.html").write_text(
         "@yield('content')",
         encoding="utf-8",
     )
-    (views / "implicit.cal.html").write_text(
+    (views / "implicit.prism.html").write_text(
         "@extends('layouts.app')\nHello",
         encoding="utf-8",
     )
@@ -71,7 +71,7 @@ def test_unknown_tag_kind() -> None:
 def test_section_override_string_and_zero_arg(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "p.cal.html").write_text("@yield('content')", encoding="utf-8")
+    (views / "p.prism.html").write_text("@yield('content')", encoding="utf-8")
     mid = _compile_child("p", {"content": "MID"}, name="mid")
     engine = Engine(paths=[views])
     assert mid({"__sections": {"content": "plain"}}, engine) == "plain"
@@ -124,8 +124,8 @@ def test_elseif_chain() -> None:
 def test_each_without_empty_view(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "row.cal.html").write_text("{{ item }}", encoding="utf-8")
-    (views / "page.cal.html").write_text(
+    (views / "row.prism.html").write_text("{{ item }}", encoding="utf-8")
+    (views / "page.prism.html").write_text(
         "@each('row', items, 'item')",
         encoding="utf-8",
     )
@@ -146,11 +146,11 @@ def test_nested_named_slots(tmp_path: Path) -> None:
 
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "outer.cal.html").write_text(
+    (views / "components" / "outer.prism.html").write_text(
         "<o>{{ slot }}{{ inner }}</o>",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @component('outer')
 @slot('inner')INNER@endslot
@@ -185,8 +185,8 @@ def test_include_arg_errors() -> None:
 def test_split_args_escape_in_string(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "bit.cal.html").write_text("ok", encoding="utf-8")
-    (views / "page.cal.html").write_text(
+    (views / "bit.prism.html").write_text("ok", encoding="utf-8")
+    (views / "page.prism.html").write_text(
         r"""@include('bit', {'x': 'a\'b'})""",
         encoding="utf-8",
     )
@@ -206,11 +206,11 @@ def test_engine_find_extension_cache_and_leftovers(
 ) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "hi.cal.html").write_text("H", encoding="utf-8")
+    (views / "hi.prism.html").write_text("H", encoding="utf-8")
     engine = Engine(paths=[views, tmp_path / "missing-dir"])
-    (views / "ghost.cal.html").mkdir()
-    assert engine.find("hi.cal.html").name == "hi.cal.html"
-    assert engine.find("hi").name == "hi.cal.html"
+    (views / "ghost.prism.html").mkdir()
+    assert engine.find("hi.prism.html").name == "hi.prism.html"
+    assert engine.find("hi").name == "hi.prism.html"
     assert engine.cache_views() >= 1
 
     # Composer whose pattern does not match still exercises the miss branch.
@@ -223,7 +223,7 @@ def test_engine_find_extension_cache_and_leftovers(
     (pkg / "__init__.py").write_text("", encoding="utf-8")
     (pkg / "badge.py").write_text(
         """
-from avalon.caliburn import Component
+from almasix.prism import Component
 class Badge(Component):
     def __init__(self, label: str = ""):
         self.label = label
@@ -237,7 +237,7 @@ class Badge(Component):
         encoding="utf-8",
     )
     (views / "components").mkdir(exist_ok=True)
-    (views / "components" / "badge.cal.html").write_text(
+    (views / "components" / "badge.prism.html").write_text(
         "<b>{{ label }}{{ attributes }}</b>",
         encoding="utf-8",
     )

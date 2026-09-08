@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.config import ConfigRepository, set_repository
-from avalon.http import redirect
-from avalon.routing import UrlGenerator, asset, url
+from almasix.config import ConfigRepository, set_repository
+from almasix.http import redirect
+from almasix.routing import UrlGenerator, asset, url
 
 
 @pytest.fixture

@@ -9,13 +9,13 @@ Instead of defining all route logic as closures, you may organize related action
 
 ```python
 # app/http/controllers/welcome_controller.py
-from avalon.http import Controller
-from avalon.caliburn import view
+from almasix.http import Controller
+from almasix.prism import view
 
 
 class WelcomeController(Controller):
     async def index(self):
-        return view("welcome", {"title": "Avalon"})
+        return view("welcome", {"title": "Almasix"})
 ```
 
 Wire the action in a route file:
@@ -28,10 +28,10 @@ Route.get("/", [WelcomeController, "index"])
 Generate a stub:
 
 ```bash
-python grail make:controller PostController
+python smith make:controller PostController
 ```
 
-Nested namespaces work (`python grail make:controller Admin/UserController`) and create `__init__.py` files as needed.
+Nested namespaces work (`python smith make:controller Admin/UserController`) and create `__init__.py` files as needed.
 
 ## Dependency injection
 
@@ -39,8 +39,8 @@ Constructor and method dependencies are resolved from the application container:
 
 ```python
 # app/http/controllers/demo_controller.py
-from avalon.config import ConfigRepository
-from avalon.http import Controller, Request
+from almasix.config import ConfigRepository
+from almasix.http import Controller, Request
 
 
 class DemoController(Controller):
@@ -55,7 +55,7 @@ Type-hint `Request` or a [`FormRequest`](/validation/) subclass to receive the c
 
 ## Single-action style
 
-Prefer one public `index` / `store` / `show` method per intent. Avalon does not require invokable `__call__` controllers — use an explicitly named method on the route.
+Prefer one public `index` / `store` / `show` method per intent. Almasix does not require invokable `__call__` controllers — use an explicitly named method on the route.
 
 ## Related
 

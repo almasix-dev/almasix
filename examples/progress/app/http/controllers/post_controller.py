@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from app.models.post import Post
 from app.support.demo_db import ensure_demo_database
-from avalon.http import Controller, Request
-from avalon.http.exceptions import NotFoundHttpException
-from avalon.orm import ModelNotFoundError
+from almasix.http import Controller, Request
+from almasix.http.exceptions import NotFoundHttpException
+from almasix.orm import ModelNotFoundError
 
 
 class PostController(Controller):

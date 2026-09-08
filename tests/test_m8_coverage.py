@@ -1,4 +1,4 @@
-"""Coverage fill for avalon.exceptions + avalon.log (M8)."""
+"""Coverage fill for almasix.exceptions + almasix.log (M8)."""
 
 from __future__ import annotations
 
@@ -9,16 +9,16 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.responses import HTMLResponse
 
-from avalon.exceptions.debug import render_debug_html
-from avalon.exceptions.handler import Handler
-from avalon.exceptions.provider import _resolve_app_handler
-from avalon.exceptions.publish import framework_errors_path, framework_views_root, publish_errors
-from avalon.framework import Application
-from avalon.http import Controller, HttpException, Request, html
-from avalon.http.kernel import polarity_from_middleware
-from avalon.log.helpers import LogWriter, log
-from avalon.log.manager import LogManager, get_log_manager, get_logger, set_log_manager
-from avalon.routing import Route, set_router
+from almasix.exceptions.debug import render_debug_html
+from almasix.exceptions.handler import Handler
+from almasix.exceptions.provider import _resolve_app_handler
+from almasix.exceptions.publish import framework_errors_path, framework_views_root, publish_errors
+from almasix.framework import Application
+from almasix.http import Controller, HttpException, Request, html
+from almasix.http.kernel import polarity_from_middleware
+from almasix.log.helpers import LogWriter, log
+from almasix.log.manager import LogManager, get_log_manager, get_logger, set_log_manager
+from almasix.routing import Route, set_router
 from tests.support import purge_generated_app_modules
 
 
@@ -35,10 +35,10 @@ def test_debug_html_missing_source(tmp_path: Path) -> None:
         body = render_debug_html(exc, request_method="GET", request_path="/", app_name="T")
     assert "ValueError" in body
     # Force missing file branch via a fake frame path
-    from avalon.exceptions import debug as debug_mod
+    from almasix.exceptions import debug as debug_mod
 
     assert debug_mod._source_excerpt(str(tmp_path / "nope.py"), 1) == "" or True
-    text = debug_mod._source_excerpt("/nonexistent/avalon_missing_source.py", 1)
+    text = debug_mod._source_excerpt("/nonexistent/almasix_missing_source.py", 1)
     assert isinstance(text, str)
 
 
@@ -208,13 +208,13 @@ def test_log_channels(tmp_path: Path) -> None:
 def test_errors_publish_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from typer.testing import CliRunner
 
-    from avalon.grail.cli import app as grail_app
+    from almasix.smith.cli import app as smith_app
 
     monkeypatch.chdir(tmp_path)
     runner = CliRunner()
-    ok = runner.invoke(grail_app, ["errors:publish", "--bundle", "default"])
+    ok = runner.invoke(smith_app, ["errors:publish", "--bundle", "default"])
     assert ok.exit_code == 0
-    bad = runner.invoke(grail_app, ["errors:publish", "--bundle", "nope"])
+    bad = runner.invoke(smith_app, ["errors:publish", "--bundle", "nope"])
     assert bad.exit_code == 1
 
 

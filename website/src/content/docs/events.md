@@ -5,12 +5,12 @@ description: Event.listen / dispatch / subscribe — application events and queu
 
 ## Introduction
 
-Avalon’s application event bus lives in `avalon.events`. It is separate from
+Almasix’s application event bus lives in `almasix.events`. It is separate from
 Articulate **model** events (`creating`, `saved`, …). Use it to decouple
 domain actions from side effects.
 
 ```python
-from avalon.events import Event, event, listen
+from almasix.events import Event, event, listen
 
 class OrderShipped:
     def __init__(self, order_id: int) -> None:
@@ -30,7 +30,7 @@ Register in a provider `boot()` method, or subclass `EventServiceProvider` and
 fill the `listen` map:
 
 ```python
-from avalon.events import Event, EventServiceProvider
+from almasix.events import Event, EventServiceProvider
 
 class AppEventServiceProvider(EventServiceProvider):
     listen = {
@@ -74,11 +74,11 @@ Return `False` from a listener to stop propagation.
 
 ## Queued listeners
 
-Implement `ShouldQueue` (from `avalon.events` / `avalon.queue`) on a listener
-class. When the event fires, Avalon pushes a `CallQueuedListener` job:
+Implement `ShouldQueue` (from `almasix.events` / `almasix.queue`) on a listener
+class. When the event fires, Almasix pushes a `CallQueuedListener` job:
 
 ```python
-from avalon.events import ShouldQueue
+from almasix.events import ShouldQueue
 
 class SendShipmentNotification(ShouldQueue):
     queue = "listeners"
@@ -94,9 +94,9 @@ Optional `should_queue(event) -> bool`, `via_connection()`, `via_queue()`, and
 ## Generating stubs
 
 ```bash
-grail make:event OrderShipped
-grail make:listener SendShipmentNotification --event=OrderShipped --queued
-grail event:list
+smith make:event OrderShipped
+smith make:listener SendShipmentNotification --event=OrderShipped --queued
+smith event:list
 ```
 
 ## Broadcasting (M26)

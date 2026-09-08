@@ -1,29 +1,29 @@
 ---
 title: Installation
-description: Install Avalon and create your first application.
+description: Install Almasix and create your first application.
 ---
 
 import { Steps } from '@astrojs/starlight/components';
 
-## Meet Avalon
+## Meet Almasix
 
-Avalon is a Python web framework with expressive structure and first-class
-`async`/`await` for ASGI. Create applications with `avalon new`, then drive them
-with **Grail** — Avalon’s in-app CLI:
+Almasix is a Python web framework with expressive structure and first-class
+`async`/`await` for ASGI. Create applications with `almasix new`, then drive them
+with **Smith** — Almasix’s in-app CLI:
 
 ```bash
-avalon new blog
+almasix new blog
 cd blog
-grail serve
+smith serve
 ```
 
 Templates, routing, validation, localization, and the ORM all live behind the
-`avalon.*` package. You write application code; Avalon boots the container,
+`almasix.*` package. You write application code; Almasix boots the container,
 compiles your routes, and serves them over ASGI.
 
 :::note
-Avalon is inspired by Laravel’s application shape. The public APIs, CLI, ORM,
-and view engine are Avalon’s own — **Grail**, **Articulate**, and **Caliburn**.
+Almasix is inspired by Laravel’s application shape. The public APIs, CLI, ORM,
+and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**.
 :::
 
 ## Requirements
@@ -32,22 +32,22 @@ and view engine are Avalon’s own — **Grail**, **Articulate**, and **Caliburn
 - `pip` and a virtual environment
 - Node.js **18+** (optional but recommended) for the default Vite + Tailwind toolchain
 
-## Creating an Avalon project
+## Creating an Almasix project
 
 <Steps>
 
-1. **Install Avalon** (once published, or from a local checkout while developing against main):
+1. **Install Almasix** (once published, or from a local checkout while developing against main):
 
    ```bash
-   pip install avalon
+   pip install almasix
    # or, from a local clone of the framework:
-   pip install -e /path/to/avalon
+   pip install -e /path/to/almasix
    ```
 
 2. **Create a new application:**
 
    ```bash
-   avalon new blog
+   almasix new blog
    cd blog
    ```
 
@@ -57,7 +57,7 @@ and view engine are Avalon’s own — **Grail**, **Articulate**, and **Caliburn
    python -m venv .venv
    source .venv/bin/activate
    pip install -e .                 # your app
-   pip install avalon               # or -e /path/to/avalon during local development
+   pip install almasix               # or -e /path/to/almasix during local development
    ```
 
 4. **Install frontend dependencies (Vite + Tailwind):**
@@ -69,18 +69,18 @@ and view engine are Avalon’s own — **Grail**, **Articulate**, and **Caliburn
 5. **Start the development server:**
 
    ```bash
-   grail serve
+   smith serve
    ```
 
-   Visit the URL Grail prints (typically `http://127.0.0.1:3000`). In another
+   Visit the URL Smith prints (typically `http://127.0.0.1:3000`). In another
    terminal, run `npm run dev` while iterating on CSS/JS.
 
 </Steps>
 
-:::tip[Grail]
-With the virtualenv active, Avalon installs a `grail` console script — run
-`grail serve`, `grail migrate`, `grail fiddle`, and so on. The root `grail`
-file still works as `python grail …` if you prefer that form.
+:::tip[Smith]
+With the virtualenv active, Almasix installs a `smith` console script — run
+`smith serve`, `smith migrate`, `smith loupe`, and so on. The root `smith`
+file still works as `python smith …` if you prefer that form.
 :::
 
 ## Directory structure at a glance
@@ -103,7 +103,7 @@ blog/
   routes/api.py
   package.json
   vite.config.js
-  grail
+  smith
 ```
 
 Read more in [Directory Structure](/structure/) and [Asset Bundling](/asset-bundling/).
@@ -113,11 +113,11 @@ Read more in [Directory Structure](/structure/) and [Asset Bundling](/asset-bund
 SQLite works out of the box. For other engines, install the matching optional extra:
 
 ```bash
-pip install avalon[pgsql]    # PostgreSQL
-pip install avalon[mysql]    # MySQL / MariaDB
-pip install avalon[sqlsrv]   # SQL Server
-pip install avalon[oracle]   # Oracle (optional)
-pip install avalon[db]       # all of the above
+pip install almasix[pgsql]    # PostgreSQL
+pip install almasix[mysql]    # MySQL / MariaDB
+pip install almasix[sqlsrv]   # SQL Server
+pip install almasix[oracle]   # Oracle (optional)
+pip install almasix[db]       # all of the above
 ```
 
 Configure connections in `config/database.py` — see [Database: Getting Started](/database/).
@@ -127,4 +127,4 @@ Configure connections in `config/database.py` — see [Database: Getting Started
 - [Directory Structure](/structure/)
 - [Middleware](/middleware/)
 - [Articulate](/articulate/)
-- [Grail Console](/console/)
+- [Smith Console](/console/)

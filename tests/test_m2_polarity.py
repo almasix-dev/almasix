@@ -7,16 +7,16 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from avalon.framework import Application
-from avalon.http import Controller, Middleware, NotFoundHttpException, Request, Response, html
-from avalon.http.kernel import HttpKernel
-from avalon.routing import Route, Router, set_router
+from almasix.framework import Application
+from almasix.http import Controller, Middleware, NotFoundHttpException, Request, Response, html
+from almasix.http.kernel import HttpKernel
+from almasix.routing import Route, Router, set_router
 from tests.support import purge_generated_app_modules
 
 
 class PageController(Controller):
     async def show(self) -> Response:
-        return html("<h1>Avalon</h1>")
+        return html("<h1>Almasix</h1>")
 
 
 class DataController(Controller):
@@ -78,7 +78,7 @@ def test_web_serves_html_and_api_serves_json(
     page = client.get("/")
     assert page.status_code == 200
     assert page.headers["content-type"].startswith("text/html")
-    assert page.text == "<h1>Avalon</h1>"
+    assert page.text == "<h1>Almasix</h1>"
     # The `web` group is empty until sessions land, so no api stamp leaks in.
     assert "x-stamp" not in page.headers
 

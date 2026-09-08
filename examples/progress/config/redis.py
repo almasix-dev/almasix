@@ -1,6 +1,6 @@
 """Redis connections."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("REDIS_CLIENT", "default"),

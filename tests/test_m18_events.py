@@ -8,7 +8,7 @@ from typing import ClassVar
 import pytest
 from typer.testing import CliRunner
 
-from avalon.events import (
+from almasix.events import (
     CallQueuedListener,
     Dispatcher,
     Event,
@@ -20,10 +20,10 @@ from avalon.events import (
     listen,
     set_dispatcher,
 )
-from avalon.events.queued import queue_listener
-from avalon.framework.application import Application
-from avalon.grail.cli import app as grail_app
-from avalon.queue.job import ShouldQueue as QueueShouldQueue
+from almasix.events.queued import queue_listener
+from almasix.framework.application import Application
+from almasix.queue.job import ShouldQueue as QueueShouldQueue
+from almasix.smith.cli import app as smith_app
 
 
 class Ping:
@@ -206,7 +206,7 @@ def test_queued_listener_pushes_job(monkeypatch: pytest.MonkeyPatch) -> None:
         pushed.append(job)
         return True
 
-    monkeypatch.setattr("avalon.queue.helpers.dispatch", fake_dispatch)
+    monkeypatch.setattr("almasix.queue.helpers.dispatch", fake_dispatch)
     d = Dispatcher()
     d.listen(Ping, QueuedListener)
     d.dispatch(Ping("q"))
@@ -240,7 +240,7 @@ def test_queue_listener_via_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_dispatch(job):
         pushed.append(job)
 
-    monkeypatch.setattr("avalon.queue.helpers.dispatch", fake_dispatch)
+    monkeypatch.setattr("almasix.queue.helpers.dispatch", fake_dispatch)
 
     class Fancy(ShouldQueue):
         connection = "sync"
@@ -275,16 +275,16 @@ def test_make_event_listener_and_list(tmp_path: Path, monkeypatch: pytest.Monkey
     monkeypatch.chdir(tmp_path)
     (tmp_path / "app").mkdir()
     runner = CliRunner()
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.kernel import ConsoleKernel
 
-    ConsoleKernel.from_cwd(tmp_path).register_on_typer(grail_app)
+    ConsoleKernel.from_cwd(tmp_path).register_on_typer(smith_app)
 
-    r1 = runner.invoke(grail_app, ["make:event", "OrderShipped"])
+    r1 = runner.invoke(smith_app, ["make:event", "OrderShipped"])
     assert r1.exit_code == 0, r1.stdout + r1.stderr
     assert (tmp_path / "app" / "events" / "order_shipped.py").is_file()
 
     r2 = runner.invoke(
-        grail_app,
+        smith_app,
         ["make:listener", "SendNote", "--event=OrderShipped", "--queued"],
     )
     assert r2.exit_code == 0, r2.stdout + r2.stderr
@@ -293,25 +293,25 @@ def test_make_event_listener_and_list(tmp_path: Path, monkeypatch: pytest.Monkey
     assert "OrderShipped" in text
 
     # duplicate fails — for the listener too, and neither loses what is there
-    assert runner.invoke(grail_app, ["make:event", "OrderShipped"]).exit_code == 1
-    again = runner.invoke(grail_app, ["make:listener", "SendNote", "--event=OrderShipped"])
+    assert runner.invoke(smith_app, ["make:event", "OrderShipped"]).exit_code == 1
+    again = runner.invoke(smith_app, ["make:listener", "SendNote", "--event=OrderShipped"])
     assert again.exit_code == 1
     assert "already exists" in again.stdout + again.stderr
     assert (tmp_path / "app" / "listeners" / "send_note.py").read_text(encoding="utf-8") == text
 
     # A second generator into a package that exists leaves its __init__ alone.
     (tmp_path / "app" / "events" / "__init__.py").write_text("# mine\n", encoding="utf-8")
-    assert runner.invoke(grail_app, ["make:event", "OrderRefunded"]).exit_code == 0
-    assert runner.invoke(grail_app, ["make:listener", "LogRefund"]).exit_code == 0
+    assert runner.invoke(smith_app, ["make:event", "OrderRefunded"]).exit_code == 0
+    assert runner.invoke(smith_app, ["make:listener", "LogRefund"]).exit_code == 0
     assert (tmp_path / "app" / "events" / "__init__.py").read_text(encoding="utf-8") == "# mine\n"
 
     set_dispatcher(Dispatcher())
-    empty = runner.invoke(grail_app, ["event:list"])
+    empty = runner.invoke(smith_app, ["event:list"])
     assert empty.exit_code == 0
     assert "No event listeners registered." in empty.stdout + empty.stderr
 
     Event.listen(Ping, lambda e: None)
-    r3 = runner.invoke(grail_app, ["event:list"])
+    r3 = runner.invoke(smith_app, ["event:list"])
     assert r3.exit_code == 0
     assert "Ping" in (r3.stdout + r3.stderr) or "ping" in (r3.stdout + r3.stderr).lower()
 
@@ -374,12 +374,12 @@ def test_coverage_fill_remaining_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     d4.listen(Ping, Ok)
     assert d4.dispatch(Ping("g")) == ["ok"]
 
-    from avalon.events.dispatcher import _import_symbol
+    from almasix.events.dispatcher import _import_symbol
 
     with pytest.raises(ImportError):
         _import_symbol("NoDots")
 
-    from avalon.events.queued import _import_symbol as qi
+    from almasix.events.queued import _import_symbol as qi
 
     with pytest.raises(ImportError):
         qi("NoDots")
@@ -391,12 +391,12 @@ def test_coverage_fill_remaining_paths(monkeypatch: pytest.MonkeyPatch) -> None:
 
     d5 = Dispatcher()
     set_dispatcher(d5)
-    from avalon.events.helpers import get_dispatcher, resolve_dispatcher
+    from almasix.events.helpers import get_dispatcher, resolve_dispatcher
 
     assert get_dispatcher() is d5
     assert resolve_dispatcher() is d5
 
-    from avalon.framework.container import Container
+    from almasix.framework.container import Container
 
     class Mini:
         def __init__(self) -> None:
@@ -410,7 +410,7 @@ def test_coverage_fill_remaining_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_dispatch(job):
         pushed.append(job)
 
-    monkeypatch.setattr("avalon.queue.helpers.dispatch", fake_dispatch)
+    monkeypatch.setattr("almasix.queue.helpers.dispatch", fake_dispatch)
     queue_listener(QueuedListener, Ping("cls"))
     assert pushed
 
@@ -442,7 +442,7 @@ def test_queued_with_should_queue_true(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_dispatch(job):
         pushed.append(job)
 
-    monkeypatch.setattr("avalon.queue.helpers.dispatch", fake_dispatch)
+    monkeypatch.setattr("almasix.queue.helpers.dispatch", fake_dispatch)
     d = Dispatcher()
     d.listen(Ping, ConditionalQueued)
     d.dispatch(Ping("queue-me"))

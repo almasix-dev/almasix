@@ -5,11 +5,11 @@ description: Exception Handler, polarity-aware pages, APP_DEBUG, and publishable
 
 ## Handler
 
-Unhandled exceptions pass through `avalon.exceptions.Handler` — `report(exc)` for logging, `render(request, exc)` for the HTTP response. Apps override at `app/exceptions/handler.py` (resolved from the container).
+Unhandled exceptions pass through `almasix.exceptions.Handler` — `report(exc)` for logging, `render(request, exc)` for the HTTP response. Apps override at `app/exceptions/handler.py` (resolved from the container).
 
 ```python
 # app/exceptions/handler.py
-from avalon.exceptions import Handler as ExceptionHandler
+from almasix.exceptions import Handler as ExceptionHandler
 
 class Handler(ExceptionHandler):
     dont_report: list[type[BaseException]] = []
@@ -45,18 +45,18 @@ Extend at runtime with `register_status(MyError, 422)`.
 The security gate is **`APP_DEBUG` only** (not `APP_ENV`):
 
 - `APP_DEBUG=true` (web) — rich debug page with traceback and source excerpts
-- `APP_DEBUG=false` (web) — `resources/views/errors/{status}.cal.html`
+- `APP_DEBUG=false` (web) — `resources/views/errors/{status}.prism.html`
 - Api — always JSON; debug only expands `message`, never embeds a stack trace
 
 ## Publishable views
 
 ```bash
-python grail errors:publish
-python grail errors:publish --bundle=tailwind
-python grail errors:publish --bundle=bootstrap --force
+python smith errors:publish
+python smith errors:publish --bundle=tailwind
+python smith errors:publish --bundle=bootstrap --force
 ```
 
-Bundles: `default` (plain CSS), `tailwind`, `bootstrap`. `avalon new` ships the default set under `resources/views/errors/` (`404`, `419`, `429`, `500`, `503`).
+Bundles: `default` (plain CSS), `tailwind`, `bootstrap`. `almasix new` ships the default set under `resources/views/errors/` (`404`, `419`, `429`, `500`, `503`).
 
 ## HttpException classes
 
@@ -75,7 +75,7 @@ Validation uses `ValidationException` (422 with `errors`). Default production co
 
 ## `dump()` / `dd()`
 
-Intentional debug halts use `from avalon import dump, dd` — not application errors. The Handler skips reporting `DumpAndDie` and renders a dedicated dump page (web HTML or api JSON) with status **200**. See [Grail Console](/console/#dump--dd).
+Intentional debug halts use `from almasix import dump, dd` — not application errors. The Handler skips reporting `DumpAndDie` and renders a dedicated dump page (web HTML or api JSON) with status **200**. See [Smith Console](/console/#dump--dd).
 
 ## Related
 

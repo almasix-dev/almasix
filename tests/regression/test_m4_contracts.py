@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-import avalon.translation
-from avalon.installer.scaffold import scaffold_app
+import almasix.translation
+from almasix.installer.scaffold import scaffold_app
 
 pytestmark = pytest.mark.regression
 
@@ -27,8 +27,8 @@ def test_translation_exports() -> None:
         "is_locale",
         "localize_date",
     ):
-        assert name in avalon.translation.__all__
-        assert hasattr(avalon.translation, name)
+        assert name in almasix.translation.__all__
+        assert hasattr(almasix.translation, name)
 
 
 def test_scaffold_declares_locale_and_lang_tree(tmp_path: Path) -> None:

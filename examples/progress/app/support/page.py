@@ -1,6 +1,6 @@
 """Minimal HTML layout helper for web routes.
 
-Prefer Caliburn templates via ``avalon.caliburn.view()``. This helper remains
+Prefer Prism templates via ``almasix.prism.view()``. This helper remains
 for one-off strings and tests.
 """
 

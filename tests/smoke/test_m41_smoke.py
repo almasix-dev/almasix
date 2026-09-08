@@ -108,6 +108,6 @@ def test_m41_board_page_renders_the_new_rows(progress_client: TestClient) -> Non
     page = progress_client.get("/progress").text
 
     assert "Relationship exhaust" in page
-    assert "Avalon Language Server" in page
+    assert "Almasix Language Server" in page
     assert "in progress" in page
     assert "@section" not in page

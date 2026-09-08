@@ -9,8 +9,8 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.installer.scaffold import scaffold_app
+from almasix.installer.scaffold import scaffold_app
+from almasix.smith.cli import app as smith_app
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
@@ -32,7 +32,7 @@ def test_m3_s1_make_commands_scaffold_into_a_generated_app(
         ("make:middleware", "EnsureToken", "app/http/middleware/ensure_token.py"),
         ("make:provider", "BillingServiceProvider", "app/providers/billing_service_provider.py"),
     ):
-        result = runner.invoke(grail_app, [command, name], catch_exceptions=False)
+        result = runner.invoke(smith_app, [command, name], catch_exceptions=False)
         assert result.exit_code == 0, result.stdout
         assert (root / relative).is_file()
 
@@ -50,7 +50,7 @@ def test_m3_s2_form_request_validates_before_the_action(
     (root / "app" / "http" / "requests").mkdir(parents=True, exist_ok=True)
     (root / "app" / "http" / "requests" / "__init__.py").write_text("", encoding="utf-8")
     (root / "app" / "http" / "requests" / "store_user_request.py").write_text(
-        "from avalon.validation import Field, FormRequest\n"
+        "from almasix.validation import Field, FormRequest\n"
         "\n"
         "class StoreUserRequest(FormRequest):\n"
         "    name: str = Field(min_length=2)\n"
@@ -59,7 +59,7 @@ def test_m3_s2_form_request_validates_before_the_action(
     )
     (root / "app" / "http" / "controllers" / "user_controller.py").write_text(
         "from app.http.requests.store_user_request import StoreUserRequest\n"
-        "from avalon.http import Controller\n"
+        "from almasix.http import Controller\n"
         "\n"
         "class UserController(Controller):\n"
         "    async def store(self, request: StoreUserRequest) -> dict:\n"
@@ -69,7 +69,7 @@ def test_m3_s2_form_request_validates_before_the_action(
     (root / "routes" / "api.py").write_text(
         '"""API routes."""\n'
         "from app.http.controllers.user_controller import UserController\n"
-        "from avalon.routing import Route\n"
+        "from almasix.routing import Route\n"
         "\n"
         'with Route.group(prefix="/api", middleware=["api"]):\n'
         '    Route.post("/users", [UserController, "store"])\n',
@@ -152,10 +152,10 @@ def test_m3_s4_progress_example_validation_loop(monkeypatch: pytest.MonkeyPatch)
         module = importlib.import_module("bootstrap.app")
         client = TestClient(module.asgi, raise_server_exceptions=False)
 
-        ok = client.post("/api/items", json={"name": "avalon", "count": "3", "flag": "true"})
+        ok = client.post("/api/items", json={"name": "almasix", "count": "3", "flag": "true"})
         assert ok.status_code == 200
         assert ok.json()["validated"] == {
-            "name": "avalon",
+            "name": "almasix",
             "count": 3,
             "flag": True,
             "tags": [],
@@ -173,7 +173,7 @@ def test_m3_s4_progress_example_validation_loop(monkeypatch: pytest.MonkeyPatch)
 
         denied = client.post(
             "/api/items",
-            json={"name": "avalon"},
+            json={"name": "almasix"},
             headers={"x-demo-forbid": "1"},
         )
         assert denied.status_code == 403

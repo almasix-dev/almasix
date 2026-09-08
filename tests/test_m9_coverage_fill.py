@@ -12,14 +12,14 @@ import sys
 import pytest
 import typer
 
-from avalon.console.command import Command, parse_signature
-from avalon.console.kernel import ConsoleKernel, _parse_argv
-from avalon.console.mutex import Mutex, sleep_until
-from avalon.console.output import Output
-from avalon.console.provider import ConsoleServiceProvider
-from avalon.console.repl import BANNER, build_namespace, resolve_awaitable, run, start_fiddle
-from avalon.console.scheduling import Event, Schedule, _cron_matches, run_event, schedule
-from avalon.framework import Application
+from almasix.console.command import Command, parse_signature
+from almasix.console.kernel import ConsoleKernel, _parse_argv
+from almasix.console.mutex import Mutex, sleep_until
+from almasix.console.output import Output
+from almasix.console.provider import ConsoleServiceProvider
+from almasix.console.repl import BANNER, build_namespace, resolve_awaitable, run, start_loupe
+from almasix.console.scheduling import Event, Schedule, _cron_matches, run_event, schedule
+from almasix.framework import Application
 from tests.support import purge_generated_app_modules
 
 
@@ -88,7 +88,7 @@ def test_parse_signature_errors_and_optional() -> None:
 
 
 def test_command_helpers_and_unimplemented(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("AVALON_PROMPTS_INTERACTIVE", "0")
+    monkeypatch.setenv("ALMASIX_PROMPTS_INTERACTIVE", "0")
     cmd = FullCommand()
     assert cmd.run(arguments={"name": "n", "tags": ["a"]}, options={"queue": "high", "force": True}) == 0
     with pytest.raises(NotImplementedError):
@@ -97,7 +97,7 @@ def test_command_helpers_and_unimplemented(monkeypatch: pytest.MonkeyPatch) -> N
 
 
 def test_output_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("AVALON_PROMPTS_INTERACTIVE", "0")
+    monkeypatch.setenv("ALMASIX_PROMPTS_INTERACTIVE", "0")
     out = Output()
     echoes: list[str] = []
     monkeypatch.setattr(typer, "echo", lambda msg="": echoes.append(str(msg)))
@@ -166,7 +166,7 @@ def test_kernel_paths_and_exceptions(tmp_path: Path, monkeypatch: pytest.MonkeyP
     cmds.mkdir(parents=True)
     (cmds / "__init__.py").write_text("", encoding="utf-8")
     (cmds / "local_hi.py").write_text(
-        "from avalon.console import Command\n"
+        "from almasix.console import Command\n"
         "class LocalHi(Command):\n"
         "    signature = 'local:hi'\n"
         "    def handle(self):\n"
@@ -189,7 +189,7 @@ def test_kernel_paths_and_exceptions(tmp_path: Path, monkeypatch: pytest.MonkeyP
         kernel.run_command("demo:broken")
 
     (tmp_path / "routes" / "console.py").write_text(
-        "from avalon.console import schedule\n"
+        "from almasix.console import schedule\n"
         "schedule.call(lambda: None, description='noop').every_minute()\n",
         encoding="utf-8",
     )
@@ -215,7 +215,7 @@ def test_kernel_report_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     fake_handler = MagicMock()
     fake_handler.report = boom
     monkeypatch.setattr(
-        "avalon.exceptions.handler.Handler",
+        "almasix.exceptions.handler.Handler",
         lambda *a, **k: fake_handler,
     )
     kernel._report_exception(RuntimeError("y"))
@@ -226,7 +226,7 @@ def test_kernel_import_and_missing_routes(tmp_path: Path, monkeypatch: pytest.Mo
     app.load_environment()
     app.load_configuration()
     kernel = ConsoleKernel(app)
-    kernel._load_package("avalon.console.commands.does_not_exist_pkg")
+    kernel._load_package("almasix.console.commands.does_not_exist_pkg")
     kernel.load_console_routes()  # no routes/console.py yet
 
     with patch("importlib.util.spec_from_file_location", return_value=None):
@@ -290,13 +290,13 @@ def test_mutex_release_noop_and_sleep(tmp_path: Path, monkeypatch: pytest.Monkey
     mutex.release()
     sleep_until(0)
     assert mutex.acquire()
-    monkeypatch.setattr("avalon.console.mutex.os.name", "nt")
+    monkeypatch.setattr("almasix.console.mutex.os.name", "nt")
     mutex.release()
 
 
 def test_mutex_acquire_windows_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     mutex = Mutex(tmp_path, "win")
-    monkeypatch.setattr("avalon.console.mutex.os.name", "nt")
+    monkeypatch.setattr("almasix.console.mutex.os.name", "nt")
 
     class FakeMsvcrt:
         @staticmethod
@@ -346,23 +346,23 @@ def test_repl_namespace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
     assert ns["app"] is app
     assert "config" in ns
     assert "run" in ns
-    assert "Fiddle" in BANNER
+    assert "Loupe" in BANNER
 
 
-def test_start_fiddle_ipython_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_start_loupe_ipython_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     app = _minimal_app(tmp_path, monkeypatch)
     app.load_environment()
     app.load_configuration()
     called: list[bool] = []
 
-    with patch("avalon.console.repl._start_ipython", side_effect=lambda ns: called.append(True) or 0):
-        assert start_fiddle(app) == 0
+    with patch("almasix.console.repl._start_ipython", side_effect=lambda ns: called.append(True) or 0):
+        assert start_loupe(app) == 0
     assert called
 
 
 def test_start_ipython_real_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Drive `_start_ipython` with a fake InteractiveShellEmbed."""
-    from avalon.console import repl as repl_mod
+    from almasix.console import repl as repl_mod
 
     app = _minimal_app(tmp_path, monkeypatch)
     app.load_environment()
@@ -392,7 +392,7 @@ def test_start_ipython_real_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
             return None
 
     with (
-        patch.object(repl_mod, "_fiddle_prompts_class", return_value=object),
+        patch.object(repl_mod, "_loupe_prompts_class", return_value=object),
         patch.dict(
             "sys.modules",
             {
@@ -407,7 +407,7 @@ def test_start_ipython_real_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 
 
 def test_start_ipython_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.console import repl as repl_mod
+    from almasix.console import repl as repl_mod
 
     real_import = __import__
 
@@ -421,7 +421,7 @@ def test_start_ipython_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_start_ptpython_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.console import repl as repl_mod
+    from almasix.console import repl as repl_mod
 
     configured: list[bool] = []
     embeds: list[dict] = []
@@ -451,7 +451,7 @@ def test_start_ptpython_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_start_ptpython_missing() -> None:
-    from avalon.console import repl as repl_mod
+    from almasix.console import repl as repl_mod
 
     real_import = __import__
 
@@ -465,7 +465,7 @@ def test_start_ptpython_missing() -> None:
 
 
 def test_start_rich_and_plain_consoles(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.console import repl as repl_mod
+    from almasix.console import repl as repl_mod
 
     app = _minimal_app(tmp_path, monkeypatch)
     app.load_environment()
@@ -489,41 +489,41 @@ def test_start_rich_and_plain_consoles(tmp_path: Path, monkeypatch: pytest.Monke
         assert repl_mod._start_rich_console(ns) == 0
 
 
-def test_start_fiddle_chains_to_rich(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_start_loupe_chains_to_rich(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     app = _minimal_app(tmp_path, monkeypatch)
     app.load_environment()
     app.load_configuration()
     monkeypatch.setattr("builtins.input", lambda *a, **k: (_ for _ in ()).throw(EOFError()))
     with (
-        patch("avalon.console.repl._start_ipython", return_value=None),
-        patch("avalon.console.repl._start_ptpython", return_value=None),
+        patch("almasix.console.repl._start_ipython", return_value=None),
+        patch("almasix.console.repl._start_ptpython", return_value=None),
     ):
-        assert start_fiddle(app) == 0
+        assert start_loupe(app) == 0
 
 
-def test_start_fiddle_ptpython_chain(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_start_loupe_ptpython_chain(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     app = _minimal_app(tmp_path, monkeypatch)
     app.load_environment()
     app.load_configuration()
     with (
-        patch("avalon.console.repl._start_ipython", return_value=None),
-        patch("avalon.console.repl._start_ptpython", return_value=0),
+        patch("almasix.console.repl._start_ipython", return_value=None),
+        patch("almasix.console.repl._start_ptpython", return_value=0),
     ):
-        assert start_fiddle(app) == 0
+        assert start_loupe(app) == 0
 
 
-def test_fiddle_prompts_tokens() -> None:
-    from avalon.console.repl import _fiddle_prompts_class
+def test_loupe_prompts_tokens() -> None:
+    from almasix.console.repl import _loupe_prompts_class
 
-    prompts_cls = _fiddle_prompts_class()
+    prompts_cls = _loupe_prompts_class()
     shell = SimpleNamespace(execution_count=3)
     prompts = prompts_cls(shell)
-    assert any("fiddle" in str(t[1]) for t in prompts.in_prompt_tokens())
+    assert any("loupe" in str(t[1]) for t in prompts.in_prompt_tokens())
     assert any("out" in str(t[1]) for t in prompts.out_prompt_tokens())
 
 
 def test_configure_ptpython() -> None:
-    from avalon.console.repl import _configure_ptpython
+    from almasix.console.repl import _configure_ptpython
 
     repl = SimpleNamespace(
         show_signature=False,
@@ -541,7 +541,7 @@ def test_configure_ptpython() -> None:
 
 
 def test_rich_displayhook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.console import repl as repl_mod
+    from almasix.console import repl as repl_mod
 
     app = _minimal_app(tmp_path, monkeypatch)
     app.load_environment()
@@ -565,8 +565,8 @@ def test_rich_displayhook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
 
     if sys.displayhook is not original:
         sys.displayhook(None)
-        sys.displayhook({"hello": "fiddle"})
-        assert builtins._ == {"hello": "fiddle"}
+        sys.displayhook({"hello": "loupe"})
+        assert builtins._ == {"hello": "loupe"}
 
 
 def test_build_namespace_import_failures(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -577,7 +577,7 @@ def test_build_namespace_import_failures(tmp_path: Path, monkeypatch: pytest.Mon
     real_import = __import__
 
     def guarded(name, *args, **kwargs):
-        if name in {"avalon.routing", "avalon.orm", "avalon.log", "app.models.user"}:
+        if name in {"almasix.routing", "almasix.orm", "almasix.log", "app.models.user"}:
             raise ImportError(name)
         return real_import(name, *args, **kwargs)
 

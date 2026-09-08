@@ -11,14 +11,14 @@ import pytest
 import sqlalchemy as sa
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.grail.ports import NoFreePortError, find_available_port
-from avalon.orm import DB, Collection, Model, RelationNotLoadedError
-from avalon.orm.builder import _invoke_scope
-from avalon.orm.casts import _parse_datetime, cast_value
-from avalon.orm.eager import eager_load, eager_load_counts
-from avalon.orm.migration import MigrationError, Migrator
-from avalon.orm.relations import Relation
+from almasix.orm import DB, Collection, Model, RelationNotLoadedError
+from almasix.orm.builder import _invoke_scope
+from almasix.orm.casts import _parse_datetime, cast_value
+from almasix.orm.eager import eager_load, eager_load_counts
+from almasix.orm.migration import MigrationError, Migrator
+from almasix.orm.relations import Relation
+from almasix.smith.cli import app as smith_app
+from almasix.smith.ports import NoFreePortError, find_available_port
 from tests.test_m5_parity import Badge, Memo, Nation, Person, Remark, Tag, _schema
 
 pytest_plugins = ("tests.orm_support",)
@@ -233,21 +233,21 @@ async def test_remaining_model_hooks(memory_db) -> None:
 def test_cli_error_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     monkeypatch.chdir(tmp_path)
-    status = runner.invoke(grail_app, ["migrate:status"], catch_exceptions=False)
+    status = runner.invoke(smith_app, ["migrate:status"], catch_exceptions=False)
     assert status.exit_code == 0
     assert "No migrations" in status.stdout
-    migrated = runner.invoke(grail_app, ["migrate"], catch_exceptions=False)
+    migrated = runner.invoke(smith_app, ["migrate"], catch_exceptions=False)
     assert migrated.exit_code == 0
-    rolled = runner.invoke(grail_app, ["migrate:rollback"], catch_exceptions=False)
+    rolled = runner.invoke(smith_app, ["migrate:rollback"], catch_exceptions=False)
     assert rolled.exit_code == 0
-    fresh = runner.invoke(grail_app, ["migrate:fresh"], catch_exceptions=False)
+    fresh = runner.invoke(smith_app, ["migrate:fresh"], catch_exceptions=False)
     assert fresh.exit_code == 0
-    made = runner.invoke(grail_app, ["make:migration", "???"], catch_exceptions=False)
+    made = runner.invoke(smith_app, ["make:migration", "???"], catch_exceptions=False)
     assert made.exit_code == 1
-    model = runner.invoke(grail_app, ["make:model", "Widget"], catch_exceptions=False)
+    model = runner.invoke(smith_app, ["make:model", "Widget"], catch_exceptions=False)
     assert model.exit_code == 0
-    with patch("avalon.console.commands.runtime.find_available_port", side_effect=NoFreePortError("full")):
-        serve = runner.invoke(grail_app, ["serve", "--app", "x:y"], catch_exceptions=False)
+    with patch("almasix.console.commands.runtime.find_available_port", side_effect=NoFreePortError("full")):
+        serve = runner.invoke(smith_app, ["serve", "--app", "x:y"], catch_exceptions=False)
         assert serve.exit_code == 1
     with pytest.raises(ValueError):
         find_available_port(start=5, end=1)

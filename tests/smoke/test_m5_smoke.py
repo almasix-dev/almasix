@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.installer.scaffold import scaffold_app
+from almasix.installer.scaffold import scaffold_app
+from almasix.smith.cli import app as smith_app
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
 
@@ -27,7 +27,7 @@ def test_m5_s1_scaffold_ships_database_config(tmp_path: Path) -> None:
 
 
 def test_m5_s1b_progress_keeps_scaffold_baseline(tmp_path: Path) -> None:
-    """Progress must remain a superset of `avalon new` so scaffold gaps stay visible."""
+    """Progress must remain a superset of `almasix new` so scaffold gaps stay visible."""
     scaffold = scaffold_app("baseline", destination=tmp_path / "baseline")
     progress = Path(__file__).resolve().parents[2] / "examples" / "progress"
     # Content may diverge (demo routes, README); paths must exist.
@@ -54,7 +54,7 @@ def test_m5_s2_make_model_and_migration(
 ) -> None:
     root = scaffold_app("m5_make", destination=tmp_path / "m5_make")
     monkeypatch.chdir(root)
-    result = runner.invoke(grail_app, ["make:model", "Post", "-m"], catch_exceptions=False)
+    result = runner.invoke(smith_app, ["make:model", "Post", "-m"], catch_exceptions=False)
     assert result.exit_code == 0, result.stdout
     assert (root / "app" / "models" / "post.py").is_file()
     migrations = list((root / "database" / "migrations").glob("*create_posts_table.py"))
@@ -111,7 +111,7 @@ def test_m5_s3_progress_posts_eager_load(
 
         upsert = client.post(
             "/api/users/upsert",
-            json={"email": "ada@avalon.dev", "name": "Ada Lovelace"},
+            json={"email": "ada@almasix.dev", "name": "Ada Lovelace"},
         )
         assert upsert.status_code == 200
         assert upsert.json()["user"]["name"] == "Ada Lovelace"

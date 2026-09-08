@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.orm import Collection, Model, Schema, relation
+from almasix.orm import Collection, Model, Schema, relation
 from tests.orm_support import memory_db  # noqa: F401
 
 
@@ -190,7 +190,7 @@ async def test_resolve_relation_using_defines_a_relation_from_outside(memory_db)
 
 @pytest.mark.asyncio
 async def test_unloaded_dynamic_relations_still_refuse_to_lazy_load(memory_db) -> None:
-    from avalon.orm import RelationNotLoadedError
+    from almasix.orm import RelationNotLoadedError
 
     await _schema()
     shop = await Shop.create(name="Corner")
@@ -267,7 +267,7 @@ async def test_where_belongs_to_complains_when_it_cannot_guess(memory_db) -> Non
     with pytest.raises(ValueError, match="at least one parent"):
         Item.query().where_belongs_to([])
 
-    from avalon.orm.builder import QueryBuilder
+    from almasix.orm.builder import QueryBuilder
 
     with pytest.raises(RuntimeError, match="require a model"):
         QueryBuilder.for_table("items").where_belongs_to(video)
@@ -355,7 +355,7 @@ async def test_load_morph_leaves_unlisted_types_alone(memory_db) -> None:
 
 @pytest.mark.asyncio
 async def test_morph_loading_on_an_empty_set_does_nothing(memory_db) -> None:
-    from avalon.orm.eager import load_morph, load_morph_aggregate
+    from almasix.orm.eager import load_morph, load_morph_aggregate
 
     await _seed_notes()
     empty = await Note.query().where("body", "=", "absent").get()

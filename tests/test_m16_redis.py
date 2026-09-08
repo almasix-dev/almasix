@@ -7,18 +7,18 @@ from typing import Any
 
 import pytest
 
-from avalon.cache.drivers.redis import RedisStore
-from avalon.cache.manager import CacheManager
-from avalon.cache.store import Repository
-from avalon.installer.scaffold import scaffold_app
-from avalon.queue.connections.redis import RedisQueue
-from avalon.queue.job import Job
-from avalon.queue.manager import QueueManager
-from avalon.queue.worker import Worker
-from avalon.redis.facade import Redis
-from avalon.redis.helpers import default_redis_config, redis, set_manager
-from avalon.redis.manager import RedisManager, require_redis
-from avalon.session.handlers import CookieSessionHandler, RedisSessionHandler, resolve_session_handler
+from almasix.cache.drivers.redis import RedisStore
+from almasix.cache.manager import CacheManager
+from almasix.cache.store import Repository
+from almasix.installer.scaffold import scaffold_app
+from almasix.queue.connections.redis import RedisQueue
+from almasix.queue.job import Job
+from almasix.queue.manager import QueueManager
+from almasix.queue.worker import Worker
+from almasix.redis.facade import Redis
+from almasix.redis.helpers import default_redis_config, redis, set_manager
+from almasix.redis.manager import RedisManager, require_redis
+from almasix.session.handlers import CookieSessionHandler, RedisSessionHandler, resolve_session_handler
 from tests.support_redis import FakeRedis
 
 
@@ -48,7 +48,7 @@ def test_require_redis_imports() -> None:
     try:
         mod = require_redis()
     except RuntimeError as exc:
-        assert "avalon[redis]" in str(exc)
+        assert "almasix[redis]" in str(exc)
         return
     assert hasattr(mod, "Redis")
 
@@ -64,7 +64,7 @@ def test_require_redis_missing_package(monkeypatch: pytest.MonkeyPatch) -> None:
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", _import)
-    with pytest.raises(RuntimeError, match="avalon\\[redis\\]"):
+    with pytest.raises(RuntimeError, match="almasix\\[redis\\]"):
         require_redis()
 
 
@@ -102,7 +102,7 @@ def test_redis_manager_from_url(monkeypatch: pytest.MonkeyPatch) -> None:
             def __init__(self, **kwargs):
                 created["redis_kwargs"] = kwargs
 
-    monkeypatch.setattr("avalon.redis.manager.require_redis", lambda: DummyAsync)
+    monkeypatch.setattr("almasix.redis.manager.require_redis", lambda: DummyAsync)
     manager = RedisManager(
         None,
         {"default": "default", "connections": {"default": {"url": "redis://example/0"}}},
@@ -307,7 +307,7 @@ def test_default_redis_config_shape() -> None:
 
 
 def test_resolve_session_handler_cookie(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("avalon.config.config", lambda key, default=None: {
+    monkeypatch.setattr("almasix.config.config", lambda key, default=None: {
         "session.driver": "cookie",
     }.get(key, default))
     assert isinstance(resolve_session_handler(), CookieSessionHandler)
@@ -315,7 +315,7 @@ def test_resolve_session_handler_cookie(monkeypatch: pytest.MonkeyPatch) -> None
 
 def test_resolve_session_handler_redis(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "avalon.config.config",
+        "almasix.config.config",
         lambda key, default=None: {
             "session.driver": "redis",
             "session.connection": "default",
@@ -327,7 +327,7 @@ def test_resolve_session_handler_redis(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_resolve_session_handler_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("avalon.config.config", lambda key, default=None: "bogus" if key == "session.driver" else default)
+    monkeypatch.setattr("almasix.config.config", lambda key, default=None: "bogus" if key == "session.driver" else default)
     with pytest.raises(ValueError):
         resolve_session_handler()
 
@@ -344,7 +344,7 @@ def test_redis_manager_host_password_and_forget(monkeypatch: pytest.MonkeyPatch)
             def __init__(self, **kwargs):
                 created.update(kwargs)
 
-    monkeypatch.setattr("avalon.redis.manager.require_redis", lambda: DummyAsync)
+    monkeypatch.setattr("almasix.redis.manager.require_redis", lambda: DummyAsync)
     manager = RedisManager(
         None,
         {
@@ -355,7 +355,7 @@ def test_redis_manager_host_password_and_forget(monkeypatch: pytest.MonkeyPatch)
                     "port": 6380,
                     "database": 2,
                     "password": "secret",
-                    "username": "avalon",
+                    "username": "almasix",
                 }
             },
         },
@@ -364,7 +364,7 @@ def test_redis_manager_host_password_and_forget(monkeypatch: pytest.MonkeyPatch)
     client = manager.connection()
     assert created["host"] == "redis.local"
     assert created["password"] == "secret"
-    assert created["username"] == "avalon"
+    assert created["username"] == "almasix"
     assert created["db"] == 2
     manager.forget_clients()
     assert manager._clients == {}
@@ -378,14 +378,14 @@ def test_redis_facade_errors_and_empty_delete(redis_manager: RedisManager) -> No
     with pytest.raises(RuntimeError):
         Redis.manager()
     with pytest.raises(RuntimeError):
-        from avalon.redis.helpers import get_manager
+        from almasix.redis.helpers import get_manager
 
         get_manager()
 
 
 def test_redis_provider_register_boot(tmp_path: Path) -> None:
-    from avalon.framework.application import Application
-    from avalon.redis.provider import RedisServiceProvider
+    from almasix.framework.application import Application
+    from almasix.redis.provider import RedisServiceProvider
 
     app = Application(tmp_path)
     app.config.set(
@@ -405,8 +405,8 @@ def test_redis_provider_register_boot(tmp_path: Path) -> None:
 
 
 def test_redis_provider_default_config(tmp_path: Path) -> None:
-    from avalon.framework.application import Application
-    from avalon.redis.provider import RedisServiceProvider
+    from almasix.framework.application import Application
+    from almasix.redis.provider import RedisServiceProvider
 
     app = Application(tmp_path)
     provider = RedisServiceProvider(app)
@@ -417,7 +417,7 @@ def test_redis_provider_default_config(tmp_path: Path) -> None:
 
 
 def test_redis_store_corrupt_value_and_lock_block(fake_redis: FakeRedis) -> None:
-    from avalon.cache.locks import LockTimeoutError
+    from almasix.cache.locks import LockTimeoutError
 
     store = RedisStore(client=fake_redis)
     # corrupt pickle
@@ -453,7 +453,7 @@ def test_redis_store_uses_manager_client(redis_manager: RedisManager, fake_redis
 
 @pytest.mark.asyncio
 async def test_redis_session_edge_cases(fake_redis: FakeRedis) -> None:
-    from avalon.session.signing import sign_payload
+    from almasix.session.signing import sign_payload
 
     manager = RedisManager(None, {"default": "default", "connections": {"default": {}}})
     manager.set_client("default", fake_redis)
@@ -579,7 +579,7 @@ async def test_redis_queue_release_missing(fake_redis: FakeRedis) -> None:
 
 @pytest.mark.asyncio
 async def test_redis_session_corrupt_payload(fake_redis: FakeRedis) -> None:
-    from avalon.session.signing import sign_payload
+    from almasix.session.signing import sign_payload
 
     manager = RedisManager(None, {"default": "default", "connections": {"default": {}}})
     manager.set_client("default", fake_redis)
@@ -643,7 +643,7 @@ def test_lock_block_returns_true_without_callback(fake_redis: FakeRedis) -> None
 
 
 def test_lock_block_callback_and_enter_fail(fake_redis: FakeRedis) -> None:
-    from avalon.cache.locks import LockTimeoutError
+    from almasix.cache.locks import LockTimeoutError
 
     store = RedisStore(client=fake_redis)
     assert store.increment("brand-new") == 1
@@ -658,8 +658,8 @@ def test_lock_block_callback_and_enter_fail(fake_redis: FakeRedis) -> None:
 
 
 def test_provider_boot_when_unbound(tmp_path: Path) -> None:
-    from avalon.framework.application import Application
-    from avalon.redis.provider import RedisServiceProvider
+    from almasix.framework.application import Application
+    from almasix.redis.provider import RedisServiceProvider
 
     app = Application(tmp_path)
     RedisServiceProvider(app).boot()  # no-op when unbound
@@ -673,7 +673,7 @@ def test_manager_optional_auth_branches(monkeypatch: pytest.MonkeyPatch) -> None
             def __init__(self, **kwargs):
                 seen.append(kwargs)
 
-    monkeypatch.setattr("avalon.redis.manager.require_redis", lambda: DummyAsync)
+    monkeypatch.setattr("almasix.redis.manager.require_redis", lambda: DummyAsync)
     manager = RedisManager(
         None,
         {"default": "default", "connections": {"default": {"host": "h", "port": 1, "database": 0}}},

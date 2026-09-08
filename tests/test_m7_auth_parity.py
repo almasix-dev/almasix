@@ -8,25 +8,25 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from avalon.auth.authenticatable import AuthenticatableMixin
-from avalon.auth.guard import Guard, SessionGuard, TokenGuard, auth_failed_message
-from avalon.auth.middleware import (
+from almasix.auth.authenticatable import AuthenticatableMixin
+from almasix.auth.guard import Guard, SessionGuard, TokenGuard, auth_failed_message
+from almasix.auth.middleware import (
     Authenticate,
     AuthenticateWithBasicAuth,
     RedirectIfAuthenticated,
     RequirePassword,
     mark_password_confirmed,
 )
-from avalon.auth.passwords import (
+from almasix.auth.passwords import (
     DatabaseTokenRepository,
     Password,
     PasswordBroker,
 )
-from avalon.auth.providers import ArticulateUserProvider, MemoryUserProvider
-from avalon.config import ConfigRepository, set_repository
-from avalon.hashing import Hash, HashManager, set_hash_manager
-from avalon.http.request import Request
-from avalon.session.store import Session, reset_session, set_session
+from almasix.auth.providers import ArticulateUserProvider, MemoryUserProvider
+from almasix.config import ConfigRepository, set_repository
+from almasix.hashing import Hash, HashManager, set_hash_manager
+from almasix.http.request import Request
+from almasix.session.store import Session, reset_session, set_session
 
 
 @pytest.fixture(autouse=True)
@@ -170,7 +170,7 @@ async def test_token_guard_and_basic_auth_middleware() -> None:
             )
         ]
     )
-    from avalon.auth.guard import AuthManager, reset_auth, set_auth
+    from almasix.auth.guard import AuthManager, reset_auth, set_auth
 
     manager = AuthManager()
     manager._providers["users"] = provider  # noqa: SLF001
@@ -207,7 +207,7 @@ async def test_password_confirm_and_guest_named_guard() -> None:
     finally:
         reset_session(token)
 
-    from avalon.auth.guard import AuthManager, reset_auth, set_auth
+    from almasix.auth.guard import AuthManager, reset_auth, set_auth
 
     manager = AuthManager()
     manager.guard("web").once({"id": 1})
@@ -289,15 +289,15 @@ def test_authenticatable_mixin_fallback() -> None:
     plain.set_remember_token("n")
     assert plain.get_remember_token() == "n"
 
-    from avalon.auth.contracts import Authenticatable
+    from almasix.auth.contracts import Authenticatable
 
     assert isinstance(DummyUser(id=1, password="p"), Authenticatable)
 
 
 @pytest.mark.asyncio
 async def test_remember_cookie_hydrate_and_manager_helpers() -> None:
-    from avalon.auth.guard import AuthManager, reset_auth, set_auth
-    from avalon.auth.middleware import StartAuth
+    from almasix.auth.guard import AuthManager, reset_auth, set_auth
+    from almasix.auth.middleware import StartAuth
 
     provider = MemoryUserProvider(
         [
@@ -341,7 +341,7 @@ async def test_remember_cookie_hydrate_and_manager_helpers() -> None:
 
 @pytest.mark.asyncio
 async def test_auth_manager_attempt_validate_via_auth_helper() -> None:
-    from avalon.auth.guard import AuthManager, auth, reset_auth, set_auth
+    from almasix.auth.guard import AuthManager, auth, reset_auth, set_auth
 
     provider = MemoryUserProvider(
         [{"id": 1, "email": "a@b.c", "password": Hash.make("pw")}]

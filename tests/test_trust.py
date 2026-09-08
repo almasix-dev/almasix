@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.http.trust import (
+from almasix.http.trust import (
     HEADER_X_FORWARDED_ALL,
     HEADER_X_FORWARDED_FOR,
     HEADER_X_FORWARDED_HOST,
@@ -54,9 +54,9 @@ def test_peer_and_host_trust_rules() -> None:
     assert host_is_trusted("app.test", []) is True
     assert host_is_trusted(None, ["app.test"]) is False
     assert host_is_trusted("app.test:443", ["app.test"]) is True
-    assert host_is_trusted("demo.avalon.dev", ["*.avalon.dev"]) is True
-    assert host_is_trusted("avalon.dev", ["*.avalon.dev"]) is True
-    assert host_is_trusted("evil.test", ["*.avalon.dev"]) is False
+    assert host_is_trusted("demo.almasix.dev", ["*.almasix.dev"]) is True
+    assert host_is_trusted("almasix.dev", ["*.almasix.dev"]) is True
+    assert host_is_trusted("evil.test", ["*.almasix.dev"]) is False
     assert host_is_trusted("x.test", ["", "x.test"]) is True
 
 
@@ -86,7 +86,7 @@ async def test_trust_proxies_asgi_rewrites_all_headers() -> None:
             (b"x-forwarded-proto", b"https"),
             (b"x-forwarded-host", b"app.example"),
             (b"x-forwarded-port", b"8443"),
-            (b"x-forwarded-prefix", b"/avalon/"),
+            (b"x-forwarded-prefix", b"/almasix/"),
             (b"host", b"127.0.0.1"),
         ],
     }
@@ -94,7 +94,7 @@ async def test_trust_proxies_asgi_rewrites_all_headers() -> None:
     assert seen["client"] == ("203.0.113.9", 9)
     assert seen["scheme"] == "https"
     assert seen["server"] == ("127.0.0.1", 8443)
-    assert seen["root_path"] == "/avalon"
+    assert seen["root_path"] == "/almasix"
     assert seen["host"] == b"app.example"
 
     # Untrusted peer — no rewrite

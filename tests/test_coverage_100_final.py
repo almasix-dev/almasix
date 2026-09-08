@@ -11,30 +11,30 @@ import sqlalchemy as sa
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from avalon.auth.guard import (
+from almasix.auth.guard import (
     AuthManager,
     SessionGuard,
     _session_payload,
     reset_auth,
     set_auth,
 )
-from avalon.auth.middleware import (
+from almasix.auth.middleware import (
     AuthenticateWithBasicAuth,
     RequirePassword,
     _from_remember_cookie,
 )
-from avalon.auth.passwords import DatabaseTokenRepository
-from avalon.auth.providers import MemoryUserProvider
-from avalon.config import ConfigRepository, set_repository
-from avalon.hashing import Hash, HashManager, set_hash_manager
-from avalon.http.request import Request
-from avalon.http.trust import peer_is_trusted
-from avalon.orm.builder import QueryBuilder
-from avalon.orm.model import Model
-from avalon.orm.relations import BelongsToMany, MorphOne
-from avalon.support.collection import Collection
-from avalon.translation.loader import FileLoader
-from avalon.translation.translator import Translator
+from almasix.auth.passwords import DatabaseTokenRepository
+from almasix.auth.providers import MemoryUserProvider
+from almasix.config import ConfigRepository, set_repository
+from almasix.hashing import Hash, HashManager, set_hash_manager
+from almasix.http.request import Request
+from almasix.http.trust import peer_is_trusted
+from almasix.orm.builder import QueryBuilder
+from almasix.orm.model import Model
+from almasix.orm.relations import BelongsToMany, MorphOne
+from almasix.support.collection import Collection
+from almasix.translation.loader import FileLoader
+from almasix.translation.translator import Translator
 
 
 @pytest.fixture(autouse=True)
@@ -83,9 +83,9 @@ async def test_require_password_config_exception_and_basic_decode() -> None:
         return Response(b"ok")
 
     # config() raises → timeout fallback 135-136
-    with patch("avalon.config.config", side_effect=RuntimeError("no cfg")):
+    with patch("almasix.config.config", side_effect=RuntimeError("no cfg")):
         req = _req()
-        from avalon.session.store import Session, set_session
+        from almasix.session.store import Session, set_session
 
         req._session = Session({"auth.password_confirmed_at": 10**12})  # noqa: SLF001
         set_session(req._session)
@@ -131,19 +131,19 @@ async def test_password_db_delete_expired_success_and_fail() -> None:
     async def boom(*a, **k):
         raise RuntimeError("fail")
 
-    with patch("avalon.orm.facade.DB.statement", ok):
+    with patch("almasix.orm.facade.DB.statement", ok):
         assert await tokens._db_delete_expired(0.0) == 0  # noqa: SLF001 — hits return 0 at 170
-    with patch("avalon.orm.facade.DB.statement", boom):
+    with patch("almasix.orm.facade.DB.statement", boom):
         assert await tokens._db_delete_expired(0.0) == 0  # noqa: SLF001
         await tokens._db_delete("a@b.c")  # noqa: SLF001
 
 
 @pytest.mark.asyncio
 async def test_kernel_self_only_and_make_class_exists(tmp_path) -> None:
-    from avalon.framework.application import Application
-    from avalon.grail.make import MakeError, make_component
-    from avalon.http.kernel import HttpKernel
-    from avalon.routing.router import Router
+    from almasix.framework.application import Application
+    from almasix.smith.make import MakeError, make_component
+    from almasix.http.kernel import HttpKernel
+    from almasix.routing.router import Router
 
     root = tmp_path / "app"
     for part in ("bootstrap", "config", "routes"):
@@ -161,14 +161,14 @@ async def test_kernel_self_only_and_make_class_exists(tmp_path) -> None:
     (app_root / "resources" / "views" / "components").mkdir(parents=True)
     (app_root / "app" / "view" / "components").mkdir(parents=True)
     make_component("card", base_path=app_root, class_based=True, force=True)
-    (app_root / "resources" / "views" / "components" / "card.cal.html").unlink()
+    (app_root / "resources" / "views" / "components" / "card.prism.html").unlink()
     with pytest.raises(MakeError, match="already exists"):
         make_component("card", base_path=app_root, class_based=True, force=False)
 
 
 @pytest.mark.asyncio
 async def test_builder_first_or_fail_success_and_model_paths() -> None:
-    from avalon.orm import relation
+    from almasix.orm import relation
 
     class Post(Model):
         table = "posts"

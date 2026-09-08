@@ -9,9 +9,9 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.installer.scaffold import scaffold_app
-from avalon.validation.messages import message_for
+from almasix.installer.scaffold import scaffold_app
+from almasix.smith.cli import app as smith_app
+from almasix.validation.messages import message_for
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
@@ -35,10 +35,10 @@ def test_m4_s2_lang_cli_in_scaffolded_app(
 ) -> None:
     root = scaffold_app("m4_cli", destination=tmp_path / "m4_cli")
     monkeypatch.chdir(root)
-    result = runner.invoke(grail_app, ["lang:publish", "--force"], catch_exceptions=False)
+    result = runner.invoke(smith_app, ["lang:publish", "--force"], catch_exceptions=False)
     assert result.exit_code == 0, result.stdout
     assert (root / "lang" / "en" / "validation.py").is_file()
-    result = runner.invoke(grail_app, ["make:lang", "de"], catch_exceptions=False)
+    result = runner.invoke(smith_app, ["make:lang", "de"], catch_exceptions=False)
     assert result.exit_code == 0, result.stdout
 
 
@@ -58,7 +58,7 @@ def test_m4_s3_progress_locale_endpoint(monkeypatch: pytest.MonkeyPatch) -> None
         assert body["locale"] == "en"
         assert "Welcome" in body["welcome"]
         assert body["items"] == "2 items"
-        assert "I love Avalon." in body["json"]
+        assert "I love Almasix." in body["json"]
 
         sw = client.get(
             "/api/locale",

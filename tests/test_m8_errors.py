@@ -8,12 +8,12 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from avalon.exceptions import Handler, publish_errors
-from avalon.exceptions.publish import ErrorsPublishError
-from avalon.framework import Application
-from avalon.http import Controller, Middleware, NotFoundHttpException, Request, Response, html
-from avalon.log import log
-from avalon.routing import Route, set_router
+from almasix.exceptions import Handler, publish_errors
+from almasix.exceptions.publish import ErrorsPublishError
+from almasix.framework import Application
+from almasix.http import Controller, Middleware, NotFoundHttpException, Request, Response, html
+from almasix.log import log
+from almasix.routing import Route, set_router
 from tests.support import purge_generated_app_modules
 
 
@@ -148,7 +148,7 @@ def test_web_debug_page_gated_on_app_debug(
     assert "text/html" in boom.headers["content-type"]
     assert "RuntimeError" in boom.text
     assert "web-boom" in boom.text
-    assert "Avalon debug page" in boom.text
+    assert "Almasix debug page" in boom.text
 
     # APP_ENV alone must not keep the debug page when APP_DEBUG is false.
     app.config.set("app.env", "local")
@@ -157,7 +157,7 @@ def test_web_debug_page_gated_on_app_debug(
     client = TestClient(app.asgi, raise_server_exceptions=False)
     prod = client.get("/boom")
     assert prod.status_code == 500
-    assert "Avalon debug page" not in prod.text
+    assert "Almasix debug page" not in prod.text
     assert "500" in prod.text
 
 
@@ -174,21 +174,21 @@ def test_accept_json_on_web_still_html(
 
 def test_errors_publish_bundles(tmp_path: Path) -> None:
     dest = publish_errors(tmp_path, bundle="default")
-    assert (dest / "404.cal.html").is_file()
+    assert (dest / "404.prism.html").is_file()
     publish_errors(tmp_path, bundle="tailwind", force=True)
-    assert "text-6xl" in (dest / "404.cal.html").read_text(encoding="utf-8")
-    assert "cdn.tailwindcss.com" not in (dest / "404.cal.html").read_text(encoding="utf-8")
+    assert "text-6xl" in (dest / "404.prism.html").read_text(encoding="utf-8")
+    assert "cdn.tailwindcss.com" not in (dest / "404.prism.html").read_text(encoding="utf-8")
     publish_errors(tmp_path, bundle="bootstrap", force=True)
-    assert "display-3" in (dest / "404.cal.html").read_text(encoding="utf-8")
-    assert "cdn.jsdelivr.net" not in (dest / "404.cal.html").read_text(encoding="utf-8")
+    assert "display-3" in (dest / "404.prism.html").read_text(encoding="utf-8")
+    assert "cdn.jsdelivr.net" not in (dest / "404.prism.html").read_text(encoding="utf-8")
     with pytest.raises(ErrorsPublishError):
         publish_errors(tmp_path, bundle="nope")
 
 
 def test_status_mapping_model_not_found() -> None:
-    from avalon.exceptions.mapping import status_for_exception
-    from avalon.http import ServiceUnavailableHttpException
-    from avalon.orm import ModelNotFoundError
+    from almasix.exceptions.mapping import status_for_exception
+    from almasix.http import ServiceUnavailableHttpException
+    from almasix.orm import ModelNotFoundError
 
     assert status_for_exception(ModelNotFoundError("Post")) == 404
     assert status_for_exception(ServiceUnavailableHttpException()) == 503
@@ -198,7 +198,7 @@ def test_model_not_found_renders_404(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from avalon.orm import ModelNotFoundError
+    from almasix.orm import ModelNotFoundError
 
     app = _boot(tmp_path, monkeypatch, debug=False)
 
@@ -236,8 +236,8 @@ def test_unmatched_routes_use_path_polarity(
 
 
 def test_fallback_html_without_engine() -> None:
-    from avalon.caliburn.helpers import set_engine
-    from avalon.exceptions.handler import Handler
+    from almasix.prism.helpers import set_engine
+    from almasix.exceptions.handler import Handler
 
     set_engine(None)
     handler = Handler(None)
@@ -256,7 +256,7 @@ def test_fallback_html_without_engine() -> None:
 
 
 def test_mapping_and_publish_edges(tmp_path: Path) -> None:
-    from avalon.exceptions.mapping import (
+    from almasix.exceptions.mapping import (
         default_message_for_status,
         polarity_from_path,
         register_status,
@@ -264,13 +264,13 @@ def test_mapping_and_publish_edges(tmp_path: Path) -> None:
         status_for_exception,
         _load_type,
     )
-    from avalon.exceptions.publish import ErrorsPublishError, framework_views_root, publish_errors
+    from almasix.exceptions.publish import ErrorsPublishError, framework_views_root, publish_errors
 
     assert polarity_from_path("/api") == "api"
     assert polarity_from_path("/api/") == "api"
     assert polarity_from_path("/about") == "web"
     assert _load_type("nope") is None
-    assert _load_type("avalon.exceptions.mapping.not_a_type") is None
+    assert _load_type("almasix.exceptions.mapping.not_a_type") is None
     assert resolved_status_map()
 
     class CustomBoom(Exception):
@@ -283,15 +283,15 @@ def test_mapping_and_publish_edges(tmp_path: Path) -> None:
 
     # force=False skips existing
     publish_errors(tmp_path, bundle="default")
-    first = (tmp_path / "resources" / "views" / "errors" / "404.cal.html").read_text(
+    first = (tmp_path / "resources" / "views" / "errors" / "404.prism.html").read_text(
         encoding="utf-8"
     )
-    (tmp_path / "resources" / "views" / "errors" / "404.cal.html").write_text(
+    (tmp_path / "resources" / "views" / "errors" / "404.prism.html").write_text(
         "KEEP", encoding="utf-8"
     )
     publish_errors(tmp_path, bundle="default", force=False)
     assert (
-        tmp_path / "resources" / "views" / "errors" / "404.cal.html"
+        tmp_path / "resources" / "views" / "errors" / "404.prism.html"
     ).read_text(encoding="utf-8") == "KEEP"
     assert framework_views_root("default").is_dir()
     with pytest.raises(ErrorsPublishError):
@@ -303,8 +303,8 @@ def test_handler_try_view_and_http_warning_branches(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from avalon.exceptions.handler import Handler
-    from avalon.http import HttpException
+    from almasix.exceptions.handler import Handler
+    from almasix.http import HttpException
 
     app = _boot(tmp_path, monkeypatch, debug=True)
     handler = app.make(Handler)
@@ -317,7 +317,7 @@ def test_handler_try_view_and_http_warning_branches(
 
     assert handler._try_view("errors.nope", 404, "x") is None
     monkeypatch.setattr(
-        "avalon.caliburn.helpers.get_engine",
+        "almasix.prism.helpers.get_engine",
         lambda: (_ for _ in ()).throw(RuntimeError("down")),
     )
     assert handler._try_view("errors.404", 404, "x") is None
@@ -328,8 +328,8 @@ def test_handler_try_view_and_http_warning_branches(
     real_import = builtins.__import__
 
     def boom_import(name, *args, **kwargs):
-        if name.startswith("avalon.caliburn"):
-            raise ImportError("no caliburn")
+        if name.startswith("almasix.prism"):
+            raise ImportError("no prism")
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", boom_import)
@@ -337,8 +337,8 @@ def test_handler_try_view_and_http_warning_branches(
 
 
 def test_provider_boot_without_engine(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.exceptions.provider import ExceptionsServiceProvider
-    from avalon.framework import Application
+    from almasix.exceptions.provider import ExceptionsServiceProvider
+    from almasix.framework import Application
 
     purge_generated_app_modules()
     (tmp_path / "config").mkdir()
@@ -356,11 +356,11 @@ def test_provider_boot_without_engine(tmp_path: Path, monkeypatch: pytest.Monkey
 
 
 def test_remaining_m8_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.exceptions.handler import Handler
-    from avalon.exceptions import mapping as mapping_mod
-    from avalon.exceptions.publish import publish_errors
-    from avalon.log.helpers import LogWriter
-    from avalon.log.manager import LogManager, set_log_manager
+    from almasix.exceptions.handler import Handler
+    from almasix.exceptions import mapping as mapping_mod
+    from almasix.exceptions.publish import publish_errors
+    from almasix.log.helpers import LogWriter
+    from almasix.log.manager import LogManager, set_log_manager
 
     app = _boot(tmp_path, monkeypatch, debug=False)
     handler = app.make(Handler)
@@ -407,13 +407,13 @@ def test_remaining_m8_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         raise RuntimeError("no translator")
 
     monkeypatch.setattr(
-        "avalon.exceptions.mapping.__",
+        "almasix.exceptions.mapping.__",
         boom_trans,
         raising=False,
     )
     # Call through default_message which tries __ then falls back
-    from avalon.exceptions.mapping import default_message_for_status
-    import avalon.exceptions.mapping as m
+    from almasix.exceptions.mapping import default_message_for_status
+    import almasix.exceptions.mapping as m
 
     real = m.__dict__.get("__")  # may not exist at module level
 
@@ -432,7 +432,7 @@ def test_remaining_m8_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
     # Directly exercise fallbacks by patching the import inside the function
     monkeypatch.setattr(
-        "avalon.translation.__",
+        "almasix.translation.__",
         lambda key: (_ for _ in ()).throw(RuntimeError("down")),
     )
     assert default_message_for_status(404) == "Not Found"
@@ -459,6 +459,6 @@ def test_remaining_m8_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         {"lonely": {"driver": "stack", "channels": ["ghost"]}, "ghost": {"driver": "stderr"}},
     )
     lonely = LogManager(app)
-    lonely._loggers["ghost"] = __import__("logging").getLogger("avalon.channel.ghost")
+    lonely._loggers["ghost"] = __import__("logging").getLogger("almasix.channel.ghost")
     lonely._loggers["ghost"].handlers.clear()
     lonely.channel("lonely").info("needs-fallback")

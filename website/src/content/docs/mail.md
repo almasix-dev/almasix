@@ -6,7 +6,7 @@ description: Mailable classes, Mail façade, log/array/SMTP transports, Markdown
 ## Sending mail
 
 ```python
-from avalon.mail import Mail, Mailable, Envelope, Content, Attachment
+from almasix.mail import Mail, Mailable, Envelope, Content, Attachment
 
 class WelcomeMail(Mailable):
     def envelope(self) -> Envelope:
@@ -33,18 +33,18 @@ Configure `config/mail.py`:
 | `smtp` | Production baseline via smtplib |
 
 ```python
-from avalon.mail import MailAssertions
+from almasix.mail import MailAssertions
 
 MailAssertions(Mail.manager()).assert_sent(WelcomeMail)
 ```
 
 ## Markdown / views
 
-`Content(markdown="mail.welcome", with_data={...})` renders through Caliburn and
+`Content(markdown="mail.welcome", with_data={...})` renders through Prism and
 wraps the body in a theme (default `mail.themes.default`, overridable via
 `Content.theme`). Place templates under `resources/views/mail/`.
 
-Themeable building blocks ship as Caliburn components under
+Themeable building blocks ship as Prism components under
 `resources/views/components/mail/` — e.g. `<x-mail.button>`, `<x-mail.panel>`,
 `<x-mail.subcopy>`.
 

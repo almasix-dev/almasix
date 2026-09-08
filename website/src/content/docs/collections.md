@@ -9,18 +9,18 @@ collection, and `all()` gets you back to plain Python.
 
 ```python
 # app/http/controllers/welcome_controller.py
-from avalon.support import collect
+from almasix.support import collect
 
 collect(["", "Ada", None, "Grace"]).filter().values().all()
 # ["Ada", "Grace"]
 ```
 
-Avalon ships two collection types:
+Almasix ships two collection types:
 
 | Type | Import | Role |
 | --- | --- | --- |
-| **Support** | `from avalon.support import collect, Collection` | General list and map work — this page |
-| **Articulate** | `from avalon.orm import Collection` | Model results; **extends** Support with `load`, `model_keys`, and key-aware overrides — see [Articulate: Collections](/articulate/collections/) |
+| **Support** | `from almasix.support import collect, Collection` | General list and map work — this page |
+| **Articulate** | `from almasix.orm import Collection` | Model results; **extends** Support with `load`, `model_keys`, and key-aware overrides — see [Articulate: Collections](/articulate/collections/) |
 
 ## Keys
 
@@ -44,7 +44,7 @@ differently.
 collection, or nothing at all:
 
 ```python
-from avalon.support import Collection, collect
+from almasix.support import Collection, collect
 
 collect([1, 2, 3])
 collect({"a": 1, "b": 2})
@@ -64,7 +64,7 @@ your application performs often enough to deserve a name:
 
 ```python
 # app/providers/app_service_provider.py
-from avalon.support import Collection
+from almasix.support import Collection
 
 Collection.macro("to_upper", lambda collection: collection.map(str.upper))
 
@@ -93,7 +93,7 @@ Twenty-four methods support this: `average`, `avg`, `contains`, `each`,
 `sort_by_desc`, `sum`, `take_until`, `take_while`, and `unique`.
 
 PHP can tell a property read apart from a method call at the call site and
-Python cannot, so Avalon decides by looking at the items: a callable member is
+Python cannot, so Almasix decides by looking at the items: a callable member is
 invoked, anything else is read. Reading works on model attributes and on
 mapping keys, so `collect([{"votes": 3}]).sum.votes` is `3`.
 
@@ -107,7 +107,7 @@ applies your operations one item at a time, which is what you want for a
 database cursor or a file with a million lines in it.
 
 ```python
-from avalon.support import LazyCollection
+from almasix.support import LazyCollection
 
 def lines():
     with open("access.log") as handle:
@@ -199,7 +199,7 @@ last = collect([1, 2, 3, 4]).after(4)
 # None
 ```
 
-Laravel's `after` also accepts a callback and a strict flag; Avalon's takes a
+Laravel's `after` also accepts a callback and a strict flag; Almasix's takes a
 plain value only and always compares with `==`.
 
 ### all
@@ -295,7 +295,7 @@ result = (
 # [[1, 2, 3], [5, 6], [8]]
 ```
 
-Laravel passes the value, the key, and the chunk; Avalon passes the previous
+Laravel passes the value, the key, and the chunk; Almasix passes the previous
 item in the second position instead of the key.
 
 ### collapse
@@ -370,7 +370,7 @@ result = collect([1, 2]).concat([3, 4]).all()
 # [1, 2, 3, 4]
 ```
 
-In Avalon `concat` is `merge`, so it only appends when both sides are list-like.
+In Almasix `concat` is `merge`, so it only appends when both sides are list-like.
 Given string keys it merges and colliding keys overwrite, where Laravel's
 `concat` always appends and reindexes:
 
@@ -405,7 +405,7 @@ by_operator = collect(books).contains("pages", ">", 450)
 # True
 ```
 
-With a single argument Avalon checks the keys as well as the values, so
+With a single argument Almasix checks the keys as well as the values, so
 `collect({"a": 1}).contains("a")` is `True`. Also available as a higher order
 message.
 
@@ -436,7 +436,7 @@ result = collect([[1], [2]]).contains_strict([1])
 # False
 ```
 
-Laravel's `containsStrict` is a type-strict `===` comparison; Avalon's compares
+Laravel's `containsStrict` is a type-strict `===` comparison; Almasix's compares
 object identity.
 
 ### count
@@ -481,7 +481,7 @@ result = collect([1, 2]).cross_join(["a", "b"]).all()
 ### dd
 
 Prints the collection's contents to stderr and halts by raising
-`avalon.debug.DumpAndDie`, which the HTTP and console kernels catch and render
+`almasix.debug.DumpAndDie`, which the HTTP and console kernels catch and render
 as a dump page. It returns nothing — execution after the call does not run.
 
 ```python
@@ -502,7 +502,7 @@ result = collect([1, 2, 3, 4, 5]).diff([2, 4, 6]).all()
 # [1, 3, 5]
 ```
 
-Unlike Laravel, Avalon's `diff` does not preserve the original keys — the
+Unlike Laravel, Almasix's `diff` does not preserve the original keys — the
 surviving values are reindexed from zero:
 
 ```python
@@ -540,7 +540,7 @@ result = collect({"colour": "orange", "type": "fruit"}).diff_assoc_using(
 # {'type': 'fruit'}
 ```
 
-Laravel's `diffAssocUsing` hands the callback the *keys* to compare; Avalon's
+Laravel's `diffAssocUsing` hands the callback the *keys* to compare; Almasix's
 compares the values.
 
 ### diff_keys
@@ -769,7 +769,7 @@ Also available as a higher order message.
 ### first_or_fail
 
 Returns the first item (optionally the first matching a predicate) and raises
-`avalon.support.collection.ItemNotFoundError` when there is none.
+`almasix.support.collection.ItemNotFoundError` when there is none.
 
 ```python
 result = collect([1, 2, 3]).first_or_fail(lambda item: item > 2)
@@ -839,9 +839,9 @@ Swaps keys and values. On a list-like collection the values become keys and the
 integer positions become the values.
 
 ```python
-result = collect({"name": "Sara", "framework": "avalon"}).flip().all()
+result = collect({"name": "Sara", "framework": "almasix"}).flip().all()
 
-# {'Sara': 'name', 'avalon': 'framework'}
+# {'Sara': 'name', 'almasix': 'framework'}
 
 from_list = collect(["a", "b"]).flip().all()
 
@@ -1191,7 +1191,7 @@ classmethod taking the name and the callback, and the callback receives the
 collection as its first argument followed by whatever the caller passes.
 
 ```python
-from avalon.support import Collection
+from almasix.support import Collection
 
 Collection.macro("to_upper", lambda collection: collection.map(lambda item: item.upper()))
 
@@ -1214,7 +1214,7 @@ the class directly, and the form to use when you have a `Collection` subclass in
 hand. With no argument you get an empty collection.
 
 ```python
-from avalon.support import Collection
+from almasix.support import Collection
 
 result = Collection.make([1, 2, 3]).all()
 
@@ -1625,7 +1625,7 @@ nested = collect([{"speakers": {"first": "Ana"}}]).pluck("speakers.first").all()
 # ['Ana']
 ```
 
-A second argument names the key to index the result by — and in that form Avalon
+A second argument names the key to index the result by — and in that form Almasix
 returns a **plain dict**, not a collection, so there is nothing to chain onto and
 no `.all()` to call:
 
@@ -1776,7 +1776,7 @@ an instance method. Both ends are **inclusive**, and the range counts down when
 `end` is below `start`.
 
 ```python
-from avalon.support import Collection
+from almasix.support import Collection
 
 result = Collection.range(1, 5).all()
 
@@ -1823,7 +1823,7 @@ result = collect([[1, 2], [3, 4]]).reduce_spread(lambda carry, a, b: carry + (a 
 ```
 
 Laravel's `reduceSpread` is a different method — there it is the *carry* that is
-spread, so the callback returns several accumulators. Avalon's spreads the item
+spread, so the callback returns several accumulators. Almasix's spreads the item
 instead, and returns a single value.
 
 ### reject
@@ -1876,7 +1876,7 @@ result = collect({"db": {"host": "localhost", "port": 5432}}).replace_recursive(
 # {'db': OrderedDict({'host': 'localhost', 'port': 6543})}
 ```
 
-In Avalon this is an alias for `merge_recursive`, so it only recurses into
+In Almasix this is an alias for `merge_recursive`, so it only recurses into
 dicts: nested lists are replaced as a whole, where Laravel's `replaceRecursive`
 would descend into them by index. As with `merge_recursive`, nested results are
 `OrderedDict` instances.
@@ -2066,11 +2066,11 @@ result = collect([1, 2, 3, 4, 5]).sliding(3, step=2).map(lambda chunk: chunk.all
 Returns the single item matching the optional callback. Raises
 `ItemNotFoundError` when nothing matches and `MultipleItemsFoundError` when more
 than one item does; both are `LookupError` subclasses exported from
-`avalon.support`. Laravel's `sole` also accepts a key/operator/value triple —
-Avalon accepts a callback only.
+`almasix.support`. Laravel's `sole` also accepts a key/operator/value triple —
+Almasix accepts a callback only.
 
 ```python
-from avalon.support import collect, MultipleItemsFoundError
+from almasix.support import collect, MultipleItemsFoundError
 
 result = collect([1, 2, 3]).sole(lambda n: n == 2)
 
@@ -2180,7 +2180,7 @@ result = collect({"id": 1, "first": "John", "last": "Doe"}).sort_keys_desc().all
 ### sort_keys_using
 
 Sorts by key using the callback to derive the sort value for each key. Laravel
-passes the keys to a comparison function such as `strnatcmp`; Avalon's callback
+passes the keys to a comparison function such as `strnatcmp`; Almasix's callback
 is a key function receiving one key and returning something sortable.
 
 ```python
@@ -2317,7 +2317,7 @@ Class method that builds a collection by invoking the callback with the numbers
 you get the numbers themselves.
 
 ```python
-from avalon.support import Collection
+from almasix.support import Collection
 
 result = Collection.times(4, lambda n: n * 9).all()
 
@@ -2518,7 +2518,7 @@ Class method that returns the underlying items of a collection, or the value
 unchanged if it is not a collection. The counterpart to `wrap`.
 
 ```python
-from avalon.support import Collection
+from almasix.support import Collection
 
 result = Collection.unwrap(collect([1, 2, 3]))
 
@@ -2775,7 +2775,7 @@ tuples and sets are wrapped as-is, and anything else becomes a single-item
 collection.
 
 ```python
-from avalon.support import Collection
+from almasix.support import Collection
 
 result = Collection.wrap("Desk").all()
 

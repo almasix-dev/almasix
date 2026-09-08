@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from avalon.orm.model import Model
+from almasix.orm.model import Model
 
 
 class Account(Model):

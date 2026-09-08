@@ -7,9 +7,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.installer.scaffold import scaffold_app
-from avalon.orm import (
+from almasix.installer.scaffold import scaffold_app
+from almasix.orm import (
     Model,
     Schema,
     Seeder,
@@ -22,7 +21,8 @@ from avalon.orm import (
     resolve_seeder_class,
     without_model_events,
 )
-from avalon.orm import model as model_mod
+from almasix.orm import model as model_mod
+from almasix.smith.cli import app as smith_app
 from tests.orm_support import memory_db  # noqa: F401
 
 runner = CliRunner()
@@ -147,7 +147,7 @@ async def test_resolve_seeder_class_edges(tmp_path: Path, seed_db) -> None:
     seeders = tmp_path / "database" / "seeders"
     seeders.mkdir(parents=True)
     (seeders / "alias_seeder.py").write_text(
-        "from avalon.orm import Seeder\n"
+        "from almasix.orm import Seeder\n"
         "class RenamedSeeder(Seeder):\n"
         "    async def run(self):\n"
         "        pass\n",
@@ -189,12 +189,12 @@ async def test_resolve_seeder_class_edges(tmp_path: Path, seed_db) -> None:
 
 
 def test_run_seeder_sync_cli_wrapper(tmp_path: Path) -> None:
-    from avalon.orm import run_seeder
+    from almasix.orm import run_seeder
 
     seeders = tmp_path / "database" / "seeders"
     seeders.mkdir(parents=True)
     (seeders / "database_seeder.py").write_text(
-        "from avalon.orm import Seeder\n"
+        "from almasix.orm import Seeder\n"
         "class DatabaseSeeder(Seeder):\n"
         "    async def run(self):\n"
         "        pass\n",
@@ -250,7 +250,7 @@ async def test_make_and_load_database_seeder(tmp_path: Path, seed_db) -> None:
 
     db_path = seeders / "database_seeder.py"
     db_path.write_text(
-        "from avalon.orm import Seeder\n"
+        "from almasix.orm import Seeder\n"
         "class DatabaseSeeder(Seeder):\n"
         "    async def run(self):\n"
         "        pass\n",
@@ -274,7 +274,7 @@ async def test_run_seeder_default_entry(tmp_path: Path, seed_db) -> None:
     seeders = tmp_path / "database" / "seeders"
     seeders.mkdir(parents=True)
     (seeders / "database_seeder.py").write_text(
-        "from avalon.orm import Seeder\n"
+        "from almasix.orm import Seeder\n"
         "from tests.test_m5_seeders import CountingSeeder\n"
         "class DatabaseSeeder(Seeder):\n"
         "    async def run(self):\n"
@@ -302,23 +302,23 @@ def test_cli_make_seeder_and_db_seed(
     monkeypatch.setenv("DB_CONNECTION", "sqlite")
     monkeypatch.setenv("DB_DATABASE", str(tmp_path / "cli_seed.sqlite"))
 
-    made = runner.invoke(grail_app, ["make:seeder", "UserSeeder"], catch_exceptions=False)
+    made = runner.invoke(smith_app, ["make:seeder", "UserSeeder"], catch_exceptions=False)
     assert made.exit_code == 0, made.stdout
     assert (root / "database" / "seeders" / "user_seeder.py").is_file()
 
     (root / "database" / "seeders" / "database_seeder.py").write_text(
-        "from avalon.orm import Seeder\n"
+        "from almasix.orm import Seeder\n"
         "class DatabaseSeeder(Seeder):\n"
         "    async def run(self):\n"
         "        pass\n",
         encoding="utf-8",
     )
-    seeded = runner.invoke(grail_app, ["db:seed"], catch_exceptions=False)
+    seeded = runner.invoke(smith_app, ["db:seed"], catch_exceptions=False)
     assert seeded.exit_code == 0, seeded.stdout
     assert "Database seeding completed successfully." in seeded.stdout
 
     classed = runner.invoke(
-        grail_app,
+        smith_app,
         ["db:seed", "--class", "UserSeeder"],
         catch_exceptions=False,
     )
@@ -334,7 +334,7 @@ def test_cli_db_seed_missing_seeder(
     monkeypatch.chdir(root)
     monkeypatch.setenv("DB_CONNECTION", "sqlite")
     monkeypatch.setenv("DB_DATABASE", str(tmp_path / "seed_miss.sqlite"))
-    failed = runner.invoke(grail_app, ["db:seed"], catch_exceptions=False)
+    failed = runner.invoke(smith_app, ["db:seed"], catch_exceptions=False)
     assert failed.exit_code == 1
 
 
@@ -349,7 +349,7 @@ def test_cli_migrate_seed(
 
     mig = root / "database" / "migrations" / "2020_01_01_000000_create_widgets_table.py"
     mig.write_text(
-        "from avalon.orm import Migration, Schema\n"
+        "from almasix.orm import Migration, Schema\n"
         "class CreateWidgets(Migration):\n"
         "    async def up(self):\n"
         "        await Schema.create('widgets', lambda t: (t.id(), t.string('name')))\n"
@@ -358,17 +358,17 @@ def test_cli_migrate_seed(
         encoding="utf-8",
     )
     (root / "database" / "seeders" / "database_seeder.py").write_text(
-        "from avalon.orm import Seeder\n"
+        "from almasix.orm import Seeder\n"
         "class DatabaseSeeder(Seeder):\n"
         "    async def run(self):\n"
         "        pass\n",
         encoding="utf-8",
     )
-    result = runner.invoke(grail_app, ["migrate", "--seed"], catch_exceptions=False)
+    result = runner.invoke(smith_app, ["migrate", "--seed"], catch_exceptions=False)
     assert result.exit_code == 0, result.stdout
     assert "Migrated:" in result.stdout
     assert "Database seeding completed successfully." in result.stdout
 
-    fresh = runner.invoke(grail_app, ["migrate:fresh", "--seed"], catch_exceptions=False)
+    fresh = runner.invoke(smith_app, ["migrate:fresh", "--seed"], catch_exceptions=False)
     assert fresh.exit_code == 0, fresh.stdout
     assert "Database seeding completed successfully." in fresh.stdout

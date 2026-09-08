@@ -5,12 +5,12 @@ description: Crypt.encrypt / decrypt — JSON-safe payloads, APP_KEY, and key ro
 
 ## Introduction
 
-Avalon encrypts values with an authenticated stream cipher keyed by `APP_KEY`.
+Almasix encrypts values with an authenticated stream cipher keyed by `APP_KEY`.
 Encrypted payloads are MAC-signed so tampering fails closed. Cookie encryption
 (M7) and the app-facing `Crypt` façade share the same cipher.
 
 ```python
-from avalon.encryption import Crypt, DecryptException, encrypt, decrypt
+from almasix.encryption import Crypt, DecryptException, encrypt, decrypt
 
 encrypted = Crypt.encrypt({"token": "secret"})
 Crypt.decrypt(encrypted)
@@ -31,13 +31,13 @@ Helpers `encrypt` / `decrypt` / `encrypt_string` / `decrypt_string` mirror the f
 
 | Variable | Purpose |
 | --- | --- |
-| `APP_KEY` | Current encryption key (set with `grail key:generate`) |
+| `APP_KEY` | Current encryption key (set with `smith key:generate`) |
 | `APP_PREVIOUS_KEYS` | Comma-separated prior keys for graceful rotation |
 
 Generate a key:
 
 ```bash
-grail key:generate
+smith key:generate
 ```
 
 ## JSON-safe encrypt
@@ -47,7 +47,7 @@ lists, strings, numbers, booleans, or `null`. Non-JSON-safe objects raise
 `EncryptException` — use `encrypt_string` for raw text instead.
 
 ```python
-from avalon.encryption import EncryptException
+from almasix.encryption import EncryptException
 
 try:
     Crypt.encrypt(object())  # not JSON-serializable
@@ -57,11 +57,11 @@ except EncryptException:
 
 ## Decrypting and tamper detection
 
-If the MAC is invalid or no key can open the payload, Avalon raises
+If the MAC is invalid or no key can open the payload, Almasix raises
 `DecryptException`:
 
 ```python
-from avalon.encryption import Crypt, DecryptException
+from almasix.encryption import Crypt, DecryptException
 
 try:
     Crypt.decrypt(tampered)

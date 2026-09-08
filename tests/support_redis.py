@@ -8,7 +8,7 @@ from typing import Any
 
 
 class FakeRedis:
-    """Minimal subset of ``redis.asyncio.Redis`` used by Avalon drivers."""
+    """Minimal subset of ``redis.asyncio.Redis`` used by Almasix drivers."""
 
     def __init__(self) -> None:
         self._kv: dict[str, tuple[bytes, float | None]] = {}

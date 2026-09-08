@@ -6,7 +6,7 @@ description: Notifiable models, channels, database notifications, and email veri
 ## Notifiable
 
 ```python
-from avalon.notifications import Notifiable, Notification, notify
+from almasix.notifications import Notifiable, Notification, notify
 
 class InvoicePaid(Notification):
     def via(self, notifiable):
@@ -30,7 +30,7 @@ Channels: **mail**, **database** (`notifications` table via `ensure_tables()`), 
 `NotificationServiceProvider` wires the password broker to `ResetPasswordNotification` (mail) by default.
 
 ```python
-from avalon.notifications import MustVerifyEmail, Notifiable
+from almasix.notifications import MustVerifyEmail, Notifiable
 
 class User(AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):
     ...

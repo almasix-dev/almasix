@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
+from almasix.smith.cli import app as smith_app
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke]
@@ -23,9 +23,9 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
     purge_generated_app_modules()
     monkeypatch.chdir(PROGRESS)
     monkeypatch.syspath_prepend(str(PROGRESS))
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.kernel import ConsoleKernel
 
-    ConsoleKernel.from_cwd(PROGRESS).register_on_typer(grail_app)
+    ConsoleKernel.from_cwd(PROGRESS).register_on_typer(smith_app)
     return PROGRESS
 
 
@@ -37,7 +37,7 @@ def test_m19_docs_and_sidebar_exist() -> None:
 
 def test_m19_progress_authorization_command(progress_cwd: Path) -> None:
     del progress_cwd
-    result = runner.invoke(grail_app, ["progress:authorization"])
+    result = runner.invoke(smith_app, ["progress:authorization"])
     assert result.exit_code == 0, result.stdout + result.stderr
     assert "authorization demo ok" in (result.stdout + result.stderr).lower()
 
@@ -53,7 +53,7 @@ def test_m19_board_marks_authorization_complete(progress_cwd: Path) -> None:
 
 
 def test_m19_scaffold_registers_can_alias(tmp_path: Path) -> None:
-    from avalon.installer.scaffold import scaffold_app
+    from almasix.installer.scaffold import scaffold_app
 
     root = scaffold_app("m19_authz", destination=tmp_path / "m19_authz")
     boot = (root / "bootstrap" / "app.py").read_text(encoding="utf-8")

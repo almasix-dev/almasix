@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.support import Arr, Number, data_get, data_set
-from avalon.support.collection import ItemNotFoundError, MultipleItemsFoundError
+from almasix.support import Arr, Number, data_get, data_set
+from almasix.support.collection import ItemNotFoundError, MultipleItemsFoundError
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ def test_from_converts_what_it_is_given() -> None:
 
 
 def test_from_uses_a_conversion_method_when_there_is_one() -> None:
-    from avalon.support import collect
+    from almasix.support import collect
 
     assert Arr.from_(collect([1, 2])) == [1, 2]
 

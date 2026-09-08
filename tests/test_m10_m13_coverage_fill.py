@@ -14,40 +14,40 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from avalon.filesystem.adapter import Visibility, coerce_bytes, normalize_path
-from avalon.filesystem.drivers.local import LocalAdapter
-from avalon.filesystem.drivers.memory import MemoryAdapter
-from avalon.filesystem.drivers.s3 import S3Adapter
-from avalon.filesystem.manager import Storage, StorageManager
-from avalon.filesystem.provider import FilesystemServiceProvider
-from avalon.filesystem.storage import Disk
-from avalon.framework import Application
-from avalon.mail import Mail, Mailable
-from avalon.mail.helpers import default_mail_config
-from avalon.mail.mailable import Content, Envelope
-from avalon.mail.mailer import _dispatch_to_queue
-from avalon.mail.markdown import render_content, render_markdown_component
-from avalon.mail.message import SentMessage
-from avalon.mail.provider import MailServiceProvider
-from avalon.notifications.channels import ArrayChannel, MailChannel
-from avalon.notifications.database import DatabaseNotificationStore, _notifiable_id
-from avalon.notifications.messages import ResetPasswordNotification
-from avalon.notifications.notifiable import Notifiable
-from avalon.notifications.notification import Notification, ShouldQueue
-from avalon.notifications.provider import NotificationServiceProvider
-from avalon.notifications.sender import NotificationSender
-from avalon.notifications.verification import MustVerifyEmail
-from avalon.orm import DatabaseManager, set_manager
-from avalon.queue.connections.database import DatabaseQueue
-from avalon.queue.connections.sync import SyncQueue, _fallback_manager
-from avalon.queue.dispatcher import Dispatcher
-from avalon.queue.failed import FailedJobRepository, report_failure
-from avalon.queue.helpers import dispatch, set_dispatcher, set_manager
-from avalon.queue.job import Job, JobMiddleware, _import_job_class
-from avalon.queue.manager import QueueManager
-from avalon.queue.worker import Worker, _backoff_delay
-from avalon.queue import ShouldQueue as JobShouldQueue, ensure_tables as ensure_queue_tables
-from avalon.notifications import ensure_tables as ensure_notification_tables
+from almasix.filesystem.adapter import Visibility, coerce_bytes, normalize_path
+from almasix.filesystem.drivers.local import LocalAdapter
+from almasix.filesystem.drivers.memory import MemoryAdapter
+from almasix.filesystem.drivers.s3 import S3Adapter
+from almasix.filesystem.manager import Storage, StorageManager
+from almasix.filesystem.provider import FilesystemServiceProvider
+from almasix.filesystem.storage import Disk
+from almasix.framework import Application
+from almasix.mail import Mail, Mailable
+from almasix.mail.helpers import default_mail_config
+from almasix.mail.mailable import Content, Envelope
+from almasix.mail.mailer import _dispatch_to_queue
+from almasix.mail.markdown import render_content, render_markdown_component
+from almasix.mail.message import SentMessage
+from almasix.mail.provider import MailServiceProvider
+from almasix.notifications.channels import ArrayChannel, MailChannel
+from almasix.notifications.database import DatabaseNotificationStore, _notifiable_id
+from almasix.notifications.messages import ResetPasswordNotification
+from almasix.notifications.notifiable import Notifiable
+from almasix.notifications.notification import Notification, ShouldQueue
+from almasix.notifications.provider import NotificationServiceProvider
+from almasix.notifications.sender import NotificationSender
+from almasix.notifications.verification import MustVerifyEmail
+from almasix.orm import DatabaseManager, set_manager
+from almasix.queue.connections.database import DatabaseQueue
+from almasix.queue.connections.sync import SyncQueue, _fallback_manager
+from almasix.queue.dispatcher import Dispatcher
+from almasix.queue.failed import FailedJobRepository, report_failure
+from almasix.queue.helpers import dispatch, set_dispatcher, set_manager
+from almasix.queue.job import Job, JobMiddleware, _import_job_class
+from almasix.queue.manager import QueueManager
+from almasix.queue.worker import Worker, _backoff_delay
+from almasix.queue import ShouldQueue as JobShouldQueue, ensure_tables as ensure_queue_tables
+from almasix.notifications import ensure_tables as ensure_notification_tables
 from tests.orm_support import memory_db
 
 
@@ -388,7 +388,7 @@ def test_filesystem_provider_rewrites_relative_roots(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from avalon.filesystem import helpers as fs_helpers
+    from almasix.filesystem import helpers as fs_helpers
 
     monkeypatch.setattr(
         fs_helpers,
@@ -568,7 +568,7 @@ async def test_failed_repository_limit_flush_and_report(
 
     app.container.instance(type("HandlerMarker", (), {}), TrackingHandler())  # noqa: SLF001
 
-    from avalon.exceptions.handler import Handler
+    from almasix.exceptions.handler import Handler
 
     app.container.singleton(Handler, lambda _c: TrackingHandler())
     await report_failure(app, RuntimeError("reported"), _CounterJob())
@@ -597,7 +597,7 @@ async def test_database_queue_pop_race_and_restore(
     manager = QueueManager(config=config)
     connection = manager.connection("database")
 
-    with patch("avalon.orm.facade.DB") as db:
+    with patch("almasix.orm.facade.DB") as db:
         db.select_one = AsyncMock(
             return_value={"id": 1, "queue": "default", "payload": "{}", "attempts": 0}
         )
@@ -668,15 +668,15 @@ async def test_job_edges_and_dispatcher_explicit_connection(
 
 
 def test_markdown_h2_and_builtin_theme_fallback(tmp_path: Path) -> None:
-    from avalon.caliburn.engine import Engine
-    from avalon.caliburn.helpers import set_engine
+    from almasix.prism.engine import Engine
+    from almasix.prism.helpers import set_engine
 
     html_out = render_markdown_component("## Subtitle\n\nPlain")
     assert "<h2>" in html_out
 
     views = tmp_path / "views"
     views.mkdir()
-    (views / "note.cal.html").write_text("# Hello\n\nWorld", encoding="utf-8")
+    (views / "note.prism.html").write_text("# Hello\n\nWorld", encoding="utf-8")
     set_engine(Engine(paths=[views], cache_enabled=False))
 
     body, text = render_content(
@@ -688,13 +688,13 @@ def test_markdown_h2_and_builtin_theme_fallback(tmp_path: Path) -> None:
 
 
 def test_markdown_view_and_text_alt_path(tmp_path: Path) -> None:
-    from avalon.caliburn.engine import Engine
-    from avalon.caliburn.helpers import set_engine
+    from almasix.prism.engine import Engine
+    from almasix.prism.helpers import set_engine
 
     views = tmp_path / "views"
     mail_dir = views / "mail"
     mail_dir.mkdir(parents=True)
-    (mail_dir / "welcome.cal.html").write_text("# Title\n\nBody", encoding="utf-8")
+    (mail_dir / "welcome.prism.html").write_text("# Title\n\nBody", encoding="utf-8")
     (mail_dir / "welcome.text").write_text("Plain text body", encoding="utf-8")
     set_engine(Engine(paths=[views], cache_enabled=False))
 
@@ -708,21 +708,21 @@ def test_app_name_fallback_when_config_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from avalon.caliburn.engine import Engine
-    from avalon.caliburn.helpers import set_engine
+    from almasix.prism.engine import Engine
+    from almasix.prism.helpers import set_engine
 
     views = tmp_path / "views"
     views.mkdir()
-    (views / "note.cal.html").write_text("Hello", encoding="utf-8")
+    (views / "note.prism.html").write_text("Hello", encoding="utf-8")
     set_engine(Engine(paths=[views], cache_enabled=False))
 
     def boom(*_args: Any, **_kwargs: Any) -> Any:
         raise RuntimeError("no config")
 
-    monkeypatch.setattr("avalon.config.config", boom)
+    monkeypatch.setattr("almasix.config.config", boom)
     body, _ = render_content(Content(markdown="note", with_data={}))
     assert body is not None
-    assert "Avalon" in body
+    assert "Almasix" in body
 
 
 def test_dispatch_to_queue_import_and_exception_paths(
@@ -753,7 +753,7 @@ def test_dispatch_to_queue_import_and_exception_paths(
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> Any:
-        if name == "avalon.queue.helpers":
+        if name == "almasix.queue.helpers":
             raise ImportError("queue unavailable")
         return real_import(name, globals, locals, fromlist, level)
 
@@ -765,7 +765,7 @@ def test_dispatch_to_queue_import_and_exception_paths(
     def boom_dispatch(_job: Job) -> Any:
         raise RuntimeError("dispatch failed")
 
-    monkeypatch.setattr("avalon.queue.helpers.dispatch", boom_dispatch)
+    monkeypatch.setattr("almasix.queue.helpers.dispatch", boom_dispatch)
     assert _dispatch_to_queue(mailer, message) is False
 
 
@@ -906,7 +906,7 @@ async def test_notification_sender_import_fallback(
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> Any:
-        if name == "avalon.queue":
+        if name == "almasix.queue":
             raise ImportError("no queue")
         return real_import(name, globals, locals, fromlist, level)
 
@@ -954,7 +954,7 @@ async def test_notification_sender_typeerror_fallback(
     async def type_error_dispatch(_job: Job) -> Any:
         raise TypeError("cannot serialize")
 
-    monkeypatch.setattr("avalon.queue.helpers.dispatch", type_error_dispatch)
+    monkeypatch.setattr("almasix.queue.helpers.dispatch", type_error_dispatch)
     ArrayChannel.clear()
     await NotificationSender().send(_RouteUser(), QueuedNote())
     assert ArrayChannel.messages
@@ -1001,7 +1001,7 @@ def test_notifiable_id_without_get_key() -> None:
 async def test_database_notification_bad_json(memory_db: DatabaseManager) -> None:
     del memory_db
     await ensure_notification_tables()
-    from avalon.orm import DB
+    from almasix.orm import DB
 
     user = _RouteUser()
     row_id = "00000000-0000-0000-0000-000000000099"
@@ -1058,7 +1058,7 @@ async def test_notification_provider_register_and_password_fallback(
     MailServiceProvider(app).boot()
     NotificationServiceProvider(app).boot()
 
-    from avalon.auth.passwords import PasswordBroker, get_password_manager
+    from almasix.auth.passwords import PasswordBroker, get_password_manager
 
     class Provider:
         async def retrieve_by_credentials(self, credentials: dict[str, Any]) -> PlainVerifyUser | None:

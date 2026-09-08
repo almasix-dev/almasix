@@ -37,7 +37,7 @@ def test_m8_web_boom_html_production(progress_client: TestClient) -> None:
     response = progress_client.get("/boom")
     assert response.status_code == 500
     assert "text/html" in response.headers["content-type"]
-    assert "Avalon debug page" not in response.text
+    assert "Almasix debug page" not in response.text
     assert "500" in response.text
 
 
@@ -77,15 +77,15 @@ def test_m8_unmatched_web_html_vs_api_json(progress_client: TestClient) -> None:
 def test_m8_errors_publish_and_log_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from typer.testing import CliRunner
 
-    from avalon.exceptions import publish_errors
-    from avalon.grail.cli import app as grail_app
-    from avalon.log import log
+    from almasix.exceptions import publish_errors
+    from almasix.log import log
+    from almasix.smith.cli import app as smith_app
 
     dest = publish_errors(tmp_path, bundle="default")
-    assert (dest / "500.cal.html").is_file()
+    assert (dest / "500.prism.html").is_file()
 
     monkeypatch.chdir(tmp_path)
-    result = CliRunner().invoke(grail_app, ["errors:publish", "--bundle", "tailwind", "--force"])
+    result = CliRunner().invoke(smith_app, ["errors:publish", "--bundle", "tailwind", "--force"])
     assert result.exit_code == 0
 
     # Context helper must not raise when no manager is installed.

@@ -1,21 +1,21 @@
 ---
 title: Migrations
-description: Version-control your database schema with Avalon migrations.
+description: Version-control your database schema with Almasix migrations.
 ---
 
-Migrations are like version control for your database, allowing your team to define and share the application's database schema. Avalon's migration system is driven by timestamped Python files and a `migrations` table — not Alembic revision graphs.
+Migrations are like version control for your database, allowing your team to define and share the application's database schema. Almasix's migration system is driven by timestamped Python files and a `migrations` table — not Alembic revision graphs.
 
 ## Generating migrations
 
 ```bash
-grail make:migration create_flights_table
-grail make:migration add_slug_to_posts_table
-grail make:model Post -m          # model + create_posts_table migration
+smith make:migration create_flights_table
+smith make:migration add_slug_to_posts_table
+smith make:model Post -m          # model + create_posts_table migration
 ```
 
 ### Name inference
 
-When you omit `--create` / `--table`, Avalon infers the stub from the migration name:
+When you omit `--create` / `--table`, Almasix infers the stub from the migration name:
 
 | Name | Stub | Table |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ A create migration:
 
 ```python
 # database/migrations/2026_01_01_000000_create_posts_table.py
-from avalon.orm import Migration, Schema
+from almasix.orm import Migration, Schema
 
 class CreatePostsTable(Migration):
     async def up(self) -> None:
@@ -117,11 +117,11 @@ SQLite cannot `ALTER TABLE … ADD CONSTRAINT` for an **existing** column. Add f
 ## Running migrations
 
 ```bash
-grail migrate
-grail migrate --seed
-grail migrate:rollback            # --step N
-grail migrate:fresh --seed
-grail migrate:status
+smith migrate
+smith migrate --seed
+smith migrate:rollback            # --step N
+smith migrate:fresh --seed
+smith migrate:status
 ```
 
-Always implement `down()` so rollbacks can reverse `up()`. Run Grail commands from your application root so `app.*` imports resolve.
+Always implement `down()` so rollbacks can reverse `up()`. Run Smith commands from your application root so `app.*` imports resolve.

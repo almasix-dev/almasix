@@ -1,0 +1,31 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from almasix.auth import Policy
+from {{ namespacedModel }} import {{ model }}
+
+
+class {{ class }}(Policy):
+    """{{ class }}."""
+
+    def view_any(self, user) -> bool:
+        return True
+
+    def view(self, user, {{ modelVariable }}: {{ model }}) -> bool:
+        return True
+
+    def create(self, user) -> bool:
+        return True
+
+    def update(self, user, {{ modelVariable }}: {{ model }}) -> bool:
+        return False
+
+    def delete(self, user, {{ modelVariable }}: {{ model }}) -> bool:
+        return False
+
+    def restore(self, user, {{ modelVariable }}: {{ model }}) -> bool:
+        return False
+
+    def force_delete(self, user, {{ modelVariable }}: {{ model }}) -> bool:
+        return False

@@ -1,4 +1,4 @@
-"""M4 — grail lang:publish / make:lang / lang:missing."""
+"""M4 — smith lang:publish / make:lang / lang:missing."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.grail.lang_cmd import LangError, make_lang, missing_keys, publish_lang
+from almasix.smith.cli import app as smith_app
+from almasix.smith.lang_cmd import LangError, make_lang, missing_keys, publish_lang
 
 runner = CliRunner()
 
@@ -40,12 +40,12 @@ def test_missing_keys_reports_gap(tmp_path: Path) -> None:
 
 def test_cli_lang_commands(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
-    result = runner.invoke(grail_app, ["lang:publish"], catch_exceptions=False)
+    result = runner.invoke(smith_app, ["lang:publish"], catch_exceptions=False)
     assert result.exit_code == 0, result.stdout
-    result = runner.invoke(grail_app, ["make:lang", "fr"], catch_exceptions=False)
+    result = runner.invoke(smith_app, ["make:lang", "fr"], catch_exceptions=False)
     assert result.exit_code == 0, result.stdout
     result = runner.invoke(
-        grail_app,
+        smith_app,
         ["lang:missing", "--locale", "fr"],
         catch_exceptions=False,
     )
