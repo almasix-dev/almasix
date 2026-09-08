@@ -1339,7 +1339,7 @@ Laravel [Deployment](https://laravel.com/docs/deployment) — how an Almasix app
 
 The documentation-site commitments from the Documentation decision above, promoted out of "Later".
 
-- **Publish the site** (scheduled 2026-09-08): `astro.config.mjs` already points at `https://almasix-dev.github.io/almasix`, but nothing deploys there and the URL 404s, so `make docs` on localhost is the only way to read the documentation. Wanted: a Pages workflow that builds `website/` and deploys on pushes to `main`, with the repository's Pages source set to GitHub Actions. Then the README's docs badge links to the live site instead of the Markdown sources, and the docs stop being a repository-only artifact.
+- **Publish the site** (done 2026-09-08): `.github/workflows/docs.yml` builds `website/` and deploys to GitHub Pages on pushes to `main`; pull requests build without deploying, and the repository's Pages source is set to GitHub Actions. Because the site is served from a subpath, `astro.config.mjs` sets `base: '/almasix'` and `website/scripts/prefix-base-links.mjs` prefixes Markdown-authored links after the build — Starlight rebases its own navigation but not author-written links, and Astro 7's default Markdown processor takes no rehype plugins. The README's docs badge points at the live site.
 - Major-version switching (`1.x` / `2.x`) on the Starlight site
 - **Prologue** sidebar group: Release Notes / Changelog, Upgrade Guide, orientation pages
 - Changelogs and upgrade guides authored as docs content, not only GitHub Releases prose

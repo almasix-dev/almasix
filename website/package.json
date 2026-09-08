@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "astro dev --force",
 		"start": "astro dev --force",
-		"build": "astro build",
+		"build": "astro build && node scripts/prefix-base-links.mjs",
 		"preview": "astro preview",
 		"astro": "astro"
 	},
