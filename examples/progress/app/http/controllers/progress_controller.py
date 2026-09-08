@@ -415,8 +415,8 @@ def _milestones() -> list[dict]:
         {
             "id": "M50",
             "name": "Helpers + Str exhaust",
-            "status": "planned",
-            "proof": ["fluent Stringable", "Arr + Number gaps", "a section per method"],
+            "status": "complete",
+            "proof": ["fluent Stringable delegates Str", "global helpers", "377 documented methods"],
         },
     ]
 

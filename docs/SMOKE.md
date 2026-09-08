@@ -583,6 +583,28 @@ pytest -q tests/test_m49_*.py tests/smoke/test_m49_smoke.py
 - [x] `collections` documented as a section per method, alphabetically, plus Keys / Creating / Extending / Higher order messages / Lazy collections. The smoke contract fails if a public method loses its section or a section names a method that does not exist
 - [x] 100% line and branch coverage on `avalon.support.collection` and `avalon.support.lazy`
 
+
+---
+
+## M50 — Helpers, `Str`, and `Stringable` exhaust
+
+```bash
+pytest -q tests/test_m50_*.py tests/smoke/test_m50_smoke.py
+```
+
+### M50 exit criteria
+
+- [x] `Str` closed: `doesnt_start_with`, `doesnt_end_with`, `initials`, `match`, `match_all`, `is_match`, `ucwords`, each with a camelCase alias
+- [x] `Stringable` delegates the whole `Str` surface generically — the subject binds wherever it sits in the signature, string results come back wrapped, and a parameterised test proves the fluent and static forms agree
+- [x] `Stringable` is immutable: every method returns a new instance, and it is hashable to match its equality
+- [x] Fluent-only methods: `new_line`, `strip_tags`, `split`, `test`, `to_base` / `from_base`, `hash`, `encrypt` / `decrypt`, and the `when_*` conditional family
+- [x] `Arr` closed: typed reads (`array`, `boolean`, `integer`, `float`, `string`), `from_`, `has_all`, `every`, `some`, `sole`, `partition`, `push`, `select`, `only_values`, `except_values`
+- [x] `Number` closed: `spell_ordinal`, `parse_int`, `parse_float`
+- [x] Global helpers over surfaces that already ship: `app`, `resolve`, `request`, `response`, `back`, `session`, `old`, `cookie`, `logger`, `info`, `report`, `bcrypt`, `csrf_field`, `method_field`, `validator`, `policy` — with the request `ContextVar`, response factory, redirect flashing, and cookie jar under them
+- [x] Parity gaps the docs rewrite exposed are fixed: `data_get` wildcards, `data_set` writing into lists, `Arr.to_css_styles` reading Laravel's switched-style shape, the pad family repeating the pad string, `Str.char_at` counting back from the end
+- [x] `helpers` and `strings` documented a section per method (377), alphabetical within each group, in Laravel's grouping; the smoke contract fails if a public method loses its section or a section names a method that does not exist
+- [x] Deviations named where Python differs: Pydantic rules for `validator`, `from_` for `from`, keyword-only flags, and the utilities Avalon has not built (Benchmarking, Dates, Deferred Functions, Lottery, Pipeline, Sleep, Timebox)
+
 ---
 
 ## Out of scope until later milestones

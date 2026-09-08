@@ -255,3 +255,11 @@ def test_to_css_styles_takes_properties_or_switched_styles() -> None:
     assert Arr.to_css_styles({"display: none": True, "color: red": False}) == "display: none"
     assert Arr.to_css_styles(["display: none;", "color: red"]) == "display: none;color: red"
     assert Arr.to_css_styles({"color": None, "margin": 0}) == "margin:0"
+
+
+def test_data_set_builds_a_mapping_through_an_index_a_list_has_not_reached() -> None:
+    data: dict = {"users": []}
+
+    data_set(data, "users.1.name", "Ada")
+
+    assert data == {"users": [None, {"name": "Ada"}]}

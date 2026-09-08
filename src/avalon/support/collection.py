@@ -62,14 +62,9 @@ def _data_get_wildcard(target: Any, segments: list[str], default: Any) -> Any:
     collected = [item for item in collected if item is not None]
     if "*" not in after:
         return collected
-    # A second wildcard collapses one level, as Laravel's does.
-    flattened: list[Any] = []
-    for item in collected:
-        if isinstance(item, list):
-            flattened.extend(item)
-        else:
-            flattened.append(item)
-    return flattened
+    # A second wildcard collapses one level, as Laravel's does; every branch
+    # reached past a wildcard is itself a list.
+    return [inner for branch_items in collected for inner in branch_items]
 
 
 def value_get(item: Any, key: str | Callable[[Any], Any] | None) -> Any:

@@ -420,14 +420,12 @@ class Arr:
 
 def _child(container: Any, segment: str) -> Any:
     """Read one segment, whether the container is keyed or indexed."""
-    if isinstance(container, MutableMapping):
-        return container.get(segment)
     if isinstance(container, MutableSequence):
         try:
             return container[int(segment)]
         except (ValueError, IndexError):
             return None
-    return None
+    return container.get(segment)
 
 
 def _put(container: Any, segment: str, value: Any) -> None:
