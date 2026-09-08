@@ -10,6 +10,19 @@ import pytest
 from tests.support import purge_generated_app_modules
 
 
+@pytest.fixture(autouse=True)
+def _forget_generated_app_modules() -> Iterator[None]:
+    """Never let one test's ``app`` package answer another test's import.
+
+    Tests scaffold applications into temporary directories, and Python caches
+    the first ``app`` package it imports. Without this, a test that generates
+    half an app decides what ``app.providers`` means for every test after it —
+    which passes or fails depending on collection order.
+    """
+    yield
+    purge_generated_app_modules()
+
+
 @pytest.fixture
 def clean_app_modules() -> Iterator[None]:
     purge_generated_app_modules()
