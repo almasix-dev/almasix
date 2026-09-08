@@ -2,19 +2,43 @@
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import sqlalchemy as sa
+from sqlalchemy.sql.util import ClauseAdapter
 
-from avalon.orm.builder import QueryBuilder, _MISSING
+from avalon.orm.builder import _MISSING, QueryBuilder
 from avalon.orm.collection import Collection
-from avalon.orm.inflector import pivot_table
+from avalon.orm.inflector import pivot_table, snake
 
 if TYPE_CHECKING:
     from avalon.orm.model import Model
 
 PIVOT_PARENT = "__pivot_parent"
+
+
+@dataclass(frozen=True)
+class _OfMany:
+    """Which columns and aggregates pick the one row per parent."""
+
+    columns: Mapping[str, str]
+    callback: Callable[[QueryBuilder], Any] | None = None
+
+
+def _call_default(func: Callable[..., Any], instance: Any, parent: Any) -> Any:
+    """Call a `with_default` callable with as many arguments as it takes."""
+    try:
+        count = len(inspect.signature(func).parameters)
+    except (TypeError, ValueError):  # pragma: no cover - builtins
+        count = 1
+    if count >= 2:
+        return func(instance, parent)
+    if count == 1:
+        return func(instance)
+    return func()
 
 
 class Relation:
@@ -23,6 +47,7 @@ class Relation:
     def __init__(self, parent: Model, related: type[Model]) -> None:
         self.parent = parent
         self.related = related
+        self._default: Any = None
 
     # --- builder proxy ------------------------------------------------------
 
@@ -69,6 +94,30 @@ class Relation:
         """Parent attribute whose value matches `grouping_column`."""
         raise NotImplementedError
 
+    # --- default models -----------------------------------------------------
+
+    def with_default(self, default: Any = True) -> Any:
+        """Return a placeholder model instead of ``None`` (``withDefault``).
+
+        Pass a mapping to seed attributes, or a callable taking the default
+        instance and (optionally) the parent.
+        """
+        self._default = default
+        return self
+
+    def _default_instance(self) -> Any:
+        default = self._default
+        if default is None or default is False:
+            return None
+        instance = self.related()
+        if isinstance(default, Mapping):
+            instance.force_fill(default)
+        elif callable(default):
+            outcome = _call_default(default, instance, self.parent)
+            if isinstance(outcome, Mapping):
+                instance.force_fill(outcome)
+        return instance
+
     # --- helpers ------------------------------------------------------------
 
     def _related_builder(self) -> QueryBuilder:
@@ -97,15 +146,77 @@ class HasOneOrMany(Relation):
         super().__init__(parent, related)
         self.foreign_key = foreign_key
         self.local_key = local_key
+        self._of_many: _OfMany | None = None
+        self._chaperone: str | None = None
 
     def query(self) -> QueryBuilder:
-        return self._related_builder().where(
+        builder = self._related_builder().where(
             self.foreign_key, "=", self.parent.get_raw_attribute(self.local_key)
         )
+        return self._apply_of_many(builder)
 
     def eager_query(self, models: Sequence[Model]) -> QueryBuilder:
         keys = self._keys(models, self.local_key)
-        return self._related_builder().where_in(self.foreign_key, keys)
+        builder = self._related_builder().where_in(self.foreign_key, keys)
+        return self._apply_of_many(builder)
+
+    def _apply_of_many(self, builder: QueryBuilder) -> QueryBuilder:
+        """Constrain to one row per parent with a correlated subquery.
+
+        Picking in Python instead would mean loading every child row just to
+        discard all but one per parent.
+        """
+        spec = self._of_many
+        if spec is None:
+            return builder
+
+        table = self.related.get_table()
+        key = self.related.primary_key
+
+        # The callback runs against a stand-in table so that every column it
+        # touches exists before we alias it, then gets rewritten onto the alias.
+        probe = sa.table(table)
+        extra = None
+        if spec.callback is not None:
+            scoped = QueryBuilder.for_table(table, connection=self.related.connection)
+            scoped._tables[table] = probe
+            spec.callback(scoped)
+            extra = scoped._compile_wheres()
+        for name in (key, self.foreign_key, *spec.columns):
+            if name not in probe.c:
+                probe.append_column(sa.column(name))
+        inner = probe.alias("of_many")
+        if extra is not None:
+            extra = ClauseAdapter(inner).traverse(extra)
+
+        orders = []
+        for name, aggregate in spec.columns.items():
+            column = inner.c[name]
+            orders.append(sa.desc(column) if aggregate == "max" else sa.asc(column))
+        if key not in spec.columns:  # deterministic tie-break, as Laravel does
+            last = next(iter(spec.columns.values()))
+            orders.append(sa.desc(inner.c[key]) if last == "max" else sa.asc(inner.c[key]))
+
+        picked = (
+            sa.select(inner.c[key])
+            .where(inner.c[self.foreign_key] == builder.column(f"{table}.{self.foreign_key}"))
+            .order_by(*orders)
+            .limit(1)
+        )
+        if extra is not None:
+            picked = picked.where(extra)
+
+        builder._push_where("and", builder.column(f"{table}.{key}") == picked.scalar_subquery())
+        return builder
+
+    def _resolve_single(self, matches: Sequence[Any], parent: Model) -> Any:
+        """The single model for a has-one style relation, or its default."""
+        if not matches:
+            return self._default_instance()
+        found = matches[0]
+        if self._chaperone is not None:
+            found.set_relation(self._chaperone, parent)
+        return found
 
     def _group(self, results: Collection[Any]) -> dict[Any, list[Any]]:
         grouped: dict[Any, list[Any]] = {}
@@ -169,25 +280,90 @@ class HasOneOrMany(Relation):
             return found
         return await self.create({**attributes, **(values or {})})
 
+    # --- one of many --------------------------------------------------------
+
+    def one(self) -> HasOne:
+        """Narrow a "many" relation to a single model — Laravel's ``one()``."""
+        relation = HasOne(self.parent, self.related, self.foreign_key, self.local_key)
+        return self._copy_state_to(relation)
+
+    def of_many(
+        self,
+        column: str | Mapping[str, str] = "id",
+        aggregate: str = "max",
+        callback: Callable[[QueryBuilder], Any] | None = None,
+    ) -> HasOne:
+        """One related model per parent, chosen by an aggregate (``ofMany``).
+
+        ``column`` may be a mapping of column to aggregate, which is how ties
+        are broken on more than one column::
+
+            self.has_many(Price).of_many({"published_at": "max", "id": "max"})
+        """
+        columns = {column: aggregate} if isinstance(column, str) else dict(column)
+        relation = self.one()
+        relation._of_many = _OfMany(columns, callback)
+        return relation
+
+    def latest_of_many(self, column: str | Mapping[str, str] = "id") -> HasOne:
+        """The newest related model per parent (``latestOfMany``)."""
+        return self.of_many(column, "max")
+
+    def oldest_of_many(self, column: str | Mapping[str, str] = "id") -> HasOne:
+        """The oldest related model per parent (``oldestOfMany``)."""
+        return self.of_many(column, "min")
+
+    def chaperone(self, name: str | None = None) -> HasOneOrMany:
+        """Hydrate the inverse relation on each child (``chaperone``).
+
+        Without this, iterating children and reading `child.parent` raises,
+        because the relation was never loaded — even though the parent is the
+        model you already have in hand.
+        """
+        self._chaperone = name or snake(type(self.parent).__name__)
+        return self
+
+    def _copy_state_to(self, relation: HasOneOrMany) -> Any:
+        relation._of_many = self._of_many
+        relation._chaperone = self._chaperone
+        return relation
+
+    def _hydrate_parents(self, children: Iterable[Any], name: str | None = None) -> None:
+        """Set the inverse relation on children when chaperoning."""
+        target = name or self._chaperone
+        if target is None:
+            return
+        for child in children:
+            child.set_relation(target, self.parent)
+
 
 class HasMany(HasOneOrMany):
     def match(self, models: Sequence[Model], results: Collection[Any], name: str) -> None:
         grouped = self._group(results)
         for model in models:
             key = model.get_raw_attribute(self.local_key)
-            model.set_relation(name, Collection(grouped.get(key, [])))
+            matches = grouped.get(key, [])
+            if self._chaperone is not None:
+                for child in matches:
+                    child.set_relation(self._chaperone, model)
+            model.set_relation(name, Collection(matches))
+
+    async def get(self) -> Collection[Any]:
+        results = await self.query().get()
+        self._hydrate_parents(results)
+        return results
 
 
 class HasOne(HasOneOrMany):
     async def get(self) -> Any:  # type: ignore[override]
-        return await self.query().first()
+        found = await self.query().first()
+        return self._resolve_single([found] if found is not None else [], self.parent)
 
     def match(self, models: Sequence[Model], results: Collection[Any], name: str) -> None:
         grouped = self._group(results)
         for model in models:
-            key = model.get_raw_attribute(self.local_key)
-            matches = grouped.get(key, [])
-            model.set_relation(name, matches[0] if matches else None)
+            matches = grouped.get(model.get_raw_attribute(self.local_key), [])
+            model.set_relation(name, self._resolve_single(matches, model))
 
 
 class BelongsTo(Relation):
@@ -208,7 +384,8 @@ class BelongsTo(Relation):
         )
 
     async def get(self) -> Any:  # type: ignore[override]
-        return await self.query().first()
+        found = await self.query().first()
+        return found if found is not None else self._default_instance()
 
     def eager_query(self, models: Sequence[Model]) -> QueryBuilder:
         keys = self._keys(models, self.foreign_key)
@@ -217,7 +394,8 @@ class BelongsTo(Relation):
     def match(self, models: Sequence[Model], results: Collection[Any], name: str) -> None:
         index = {item.get_raw_attribute(self.owner_key): item for item in results}
         for model in models:
-            model.set_relation(name, index.get(model.get_raw_attribute(self.foreign_key)))
+            found = index.get(model.get_raw_attribute(self.foreign_key))
+            model.set_relation(name, found if found is not None else self._default_instance())
 
     def existence_query(
         self,
@@ -544,24 +722,38 @@ class MorphOneOrMany(HasOneOrMany):
         payload = {**(attributes or {}), **kwargs, self.morph_type: self.morph_class}
         return await super().create(payload)
 
+    def one(self) -> Any:
+        """Narrow to a single model, keeping the morph type constraint."""
+        relation = MorphOne(self.parent, self.related, self.morph_name)
+        return self._copy_state_to(relation)
+
 
 class MorphMany(MorphOneOrMany):
     def match(self, models: Sequence[Model], results: Collection[Any], name: str) -> None:
         grouped = self._group(results)
         for model in models:
-            key = model.get_raw_attribute(self.local_key)
-            model.set_relation(name, Collection(grouped.get(key, [])))
+            matches = grouped.get(model.get_raw_attribute(self.local_key), [])
+            if self._chaperone is not None:
+                for child in matches:
+                    child.set_relation(self._chaperone, model)
+            model.set_relation(name, Collection(matches))
+
+    async def get(self) -> Collection[Any]:
+        results = await self.query().get()
+        self._hydrate_parents(results)
+        return results
 
 
 class MorphOne(MorphOneOrMany):
     async def get(self) -> Any:  # type: ignore[override]
-        return await self.query().first()
+        found = await self.query().first()
+        return self._resolve_single([found] if found is not None else [], self.parent)
 
     def match(self, models: Sequence[Model], results: Collection[Any], name: str) -> None:
         grouped = self._group(results)
         for model in models:
             matches = grouped.get(model.get_raw_attribute(self.local_key), [])
-            model.set_relation(name, matches[0] if matches else None)
+            model.set_relation(name, self._resolve_single(matches, model))
 
 
 class MorphTo(Relation):

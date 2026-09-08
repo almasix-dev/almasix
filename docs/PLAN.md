@@ -768,7 +768,7 @@ Eloquent-shaped Active Record on SQLAlchemy Core — see the ORM decision above 
 
 **Shipped since, by M40 (Articulate model exhaust):** modern casting (`Attribute` accessors, custom / inbound casts, `encrypted*`, `hashed`, enum collections, immutable-date aliases, per-attribute date formats, query-time casts); serialization controls (`append` / `merge_appends` / `set_appends` / `without_appends`, `merge_hidden` / `merge_visible`, `serialize_date`); Eloquent collection methods keyed by model (`find`, `fresh`, `to_query`, `only` / `except_` / `diff` / `intersect` / `unique`) and custom collection classes; UUID / ULID keys, strictness config, `unguarded`, `without_timestamps`, quiet writes, pruning + `model:prune`, streaming cursors and `lazy` / `chunk_by_id`.
 
-**Still not exhausted — owed by M41–M44:** relationship completions (`has_one_of_many` / `latest_of_many`, `chaperone`, `with_default`, `where_relation`, `or_where_has`, morph existence queries, aggregate eager loads `with_sum` / `with_avg` / `with_exists`, `load_count` family, pivot `with_timestamps` / `as` / custom pivot models, morph maps, `touches`); query builder gaps (unions, pessimistic locking, JSON wheres, `where_exists` / subquery wheres, `where_not`, `where_any/all/none`, `where_time`, full-text, join subqueries, raw ordering/grouping, `insert_or_ignore`, `update_or_insert`, `increment_each`, `truncate`, `dd` / `dump` debugging); database layer gaps (read/write connections + sticky, query event listening, cumulative query-time monitoring, `DB.insert/update/delete/unprepared/scalar/pretend`, manual transactions, deadlock retries, `after_commit`, `db:show` / `db:table` / `db:monitor` / `db:wipe`); schema gaps (column alteration, `Schema.rename`, dropping indexes / foreign keys, schema inspection, ~25 column types, ~10 modifiers, `migrate:reset` / `migrate:refresh`, `--pretend` / `--step` / `--path` / `--force`, squashing); and pagination gaps (cursor pagination, URL-aware paginators, rendered link views).
+**Still not exhausted — owed by M41–M44:** relationship completions (`where_relation`, `or_where_has`, morph existence queries, aggregate eager loads `with_sum` / `with_avg` / `with_exists`, `load_count` family, pivot `with_timestamps` / `as` / custom pivot models, morph maps, `touches`); query builder gaps (unions, pessimistic locking, JSON wheres, `where_exists` / subquery wheres, `where_not`, `where_any/all/none`, `where_time`, full-text, join subqueries, raw ordering/grouping, `insert_or_ignore`, `update_or_insert`, `increment_each`, `truncate`, `dd` / `dump` debugging); database layer gaps (read/write connections + sticky, query event listening, cumulative query-time monitoring, `DB.insert/update/delete/unprepared/scalar/pretend`, manual transactions, deadlock retries, `after_commit`, `db:show` / `db:table` / `db:monitor` / `db:wipe`); schema gaps (column alteration, `Schema.rename`, dropping indexes / foreign keys, schema inspection, ~25 column types, ~10 modifiers, `migrate:reset` / `migrate:refresh`, `--pretend` / `--step` / `--path` / `--force`, squashing); and pagination gaps (cursor pagination, URL-aware paginators, rendered link views).
 
 ### M6 — Caliburn (`avalon.caliburn`)
 
@@ -1330,7 +1330,7 @@ Laravel [Eloquent: Getting Started](https://laravel.com/docs/eloquent), [Mutator
 
 Laravel [Eloquent: Relationships](https://laravel.com/docs/eloquent-relationships) — the largest page in the Laravel docs (87 sections). All ten relation types exist; their DX does not.
 
-- `has_one_of_many` / `latest_of_many` / `oldest_of_many` / `of_many`; `chaperone()`; `with_default()` default models
+- ~~`latest_of_many` / `oldest_of_many` / `of_many` / `one()`; `chaperone()`; `with_default()` default models~~ **shipped (part 1)** — one-of-many picks one row per parent with a correlated subquery, so eager loads stay one query; defaults cover `belongs_to` / `has_one` / `morph_one`; chaperone covers the has-many and morph-many pairs
 - Aggregate eager loads: `with_sum` / `with_avg` / `with_min` / `with_max` / `with_exists`, and the lazy `load_count` / `load_sum` / `load_aggregate` family
 - Existence querying: `or_has`, `or_where_has`, `or_where_doesnt_have`, `where_relation` / `or_where_relation`, `with_where_has`, and the morph variants (`has_morph`, `where_has_morph`, `where_doesnt_have_morph`)
 - Pivots: `with_timestamps()`, `as()` accessor naming, custom `Pivot` model classes via `using()`, `where_pivot_in` / `where_pivot_null`, `order_by_pivot`, `sync_without_detaching`, and a real `updated` result from `sync`
@@ -1485,7 +1485,11 @@ Scheduled on 2026-09-08: the IDE and editor tooling track (**M45–M48**) — Ca
 
 **M20 HTTP Client gate met** — `Http` façade + fakes + retry + pool + batch + macros + events, exhausted against the Laravel page.
 
-**Now: M30 Grail Console exhaust.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
+**M40 Articulate model exhaust gate met** — casting overhaul, serialization controls, Eloquent collections, UUID/ULID keys, strictness, quiet writes, pruning, and cursor/chunk iteration.
+
+**Now: M41 Relationship exhaust**, the largest page in the Laravel docs and the biggest remaining parity gap, unblocked by M40. Part 1 (one-of-many, default models, chaperone) has shipped; parts 2–5 cover existence queries, aggregates, pivots and morph maps, and the docs rewrite.
+
+**Then: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
 
 **Milestones M21–M29** (Processes → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
@@ -1493,4 +1497,4 @@ Scheduled on 2026-09-08: the IDE and editor tooling track (**M45–M48**) — Ca
 
 **M40–M44 (Articulate + Database exhaust) outrank M33–M39 in priority.** The 2026-09-08 audit found the ORM and database surface materially short of Laravel's Database and Eloquent sections, and every application touches it — so the ORM track should be sequenced ahead of routing sugar, starter kits, and deployment docs, whatever their numbers say.
 
-**Docs (anytime):** see the Docs track above — Localization page (M4 code done); Mutators & Casts Articulate how-to (M5 code done); `@vite` directive (M6 partial).
+**Docs (anytime):** see the Docs track above — Localization page (M4 code done); `@vite` directive (M6 partial). The Mutators & Casts how-to shipped with M40.

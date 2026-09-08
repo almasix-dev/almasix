@@ -58,6 +58,95 @@ Has-many helpers: `create`, `save`, `save_many`, `create_many`, `first_or_create
 
 Belongs-to-many: `attach`, `detach`, `sync`, `toggle`, `update_existing_pivot`, `where_pivot`, `with_pivot`.
 
+## Has one of many
+
+A user has many orders, but you often want exactly one of them — the latest, or
+the most expensive. Narrow a has-many with `latest_of_many`, `oldest_of_many`, or
+`of_many`:
+
+```python
+# app/models/user.py
+class User(Model):
+    @relation
+    def latest_order(self):
+        return self.has_many(Order).latest_of_many()
+
+    @relation
+    def oldest_order(self):
+        return self.has_many(Order).oldest_of_many()
+
+    @relation
+    def largest_order(self):
+        return self.has_many(Order).of_many("price", "max")
+```
+
+`latest_of_many` and `oldest_of_many` sort on the primary key unless you name a
+column, so `latest_of_many("published_at")` works too. These are real has-one
+relations: read them with `await user.latest_order().get()`, or eager-load them
+with `User.with_relations("latest_order")` and get one row per user from one
+query rather than every order.
+
+Break ties by passing a mapping, and constrain the candidates with a callback:
+
+```python
+# The newest of the highest-priced orders.
+return self.has_many(Order).of_many({"price": "max", "id": "max"})
+
+# The largest order that was actually published.
+return self.has_many(Order).of_many(
+    "price", "max", lambda query: query.where("published", "=", True)
+)
+```
+
+`one()` converts a many relation to a has-one without an aggregate, which is
+what `of_many` builds on. Morph relations support the same calls, so
+`self.morph_many(Comment, "commentable").latest_of_many()` stays polymorphic.
+
+## Default models
+
+`belongs_to`, `has_one`, and `morph_one` return `None` when nothing is related,
+which pushes a `None` check into every template. `with_default` returns an
+unsaved placeholder model instead:
+
+```python
+# app/models/post.py
+class Post(Model):
+    @relation
+    def author(self):
+        return self.belongs_to(User).with_default({"name": "Guest Author"})
+```
+
+Pass nothing for an empty model, a mapping to seed attributes, or a callable
+taking the default instance and the parent:
+
+```python
+return self.belongs_to(User).with_default(
+    lambda default, post: default.force_fill({"name": f"Author of {post.title}"})
+)
+```
+
+The default is never persisted — `default.exists` is `False` — and it applies to
+eager loads as well as direct reads.
+
+## Chaperone
+
+Iterating a parent's children and reading the child's parent relation raises,
+because that relation was never loaded — even though the parent is the model you
+already have. `chaperone()` hydrates it:
+
+```python
+# app/models/post.py
+class Post(Model):
+    @relation
+    def comments(self):
+        return self.has_many(Comment).chaperone()
+```
+
+Now `post.comments[0].post` is the same `post` object, with no second query.
+Avalon guesses the inverse relation from the parent class name; pass the name
+explicitly when it differs, as in `chaperone("article")`. It works on
+`has_many`, `has_one`, `morph_many`, and `morph_one`.
+
 ## Eager loading
 
 ```python

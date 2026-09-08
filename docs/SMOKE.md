@@ -539,6 +539,24 @@ pytest -q tests/test_m40_*.py tests/smoke/test_m40_smoke.py
 
 ---
 
+## M41 — Relationship exhaust
+
+```bash
+pytest -q tests/test_m41_*.py
+```
+
+### M41 exit criteria
+
+- [x] Has one of many: `of_many` / `latest_of_many` / `oldest_of_many` / `one()`, aggregate mappings, constraining callbacks, morph support, one row per parent on eager loads
+- [x] Default models: `with_default()` on `belongs_to` / `has_one` / `morph_one`, with mapping, callable, and empty forms, applied to eager loads
+- [x] Chaperone: `chaperone()` hydrates the inverse relation on `has_many` / `has_one` / `morph_many` / `morph_one` children
+- [ ] Existence querying: `or_has`, `or_where_has`, `where_relation`, `with_where_has`, morph variants
+- [ ] Aggregates: `with_sum` / `with_avg` / `with_min` / `with_max` / `with_exists`, `load_count` family
+- [ ] Pivots: `with_timestamps`, `as`, custom pivot models, `order_by_pivot`, `where_pivot_*`; morph maps; `touches`
+- [ ] `articulate/relationships` rewritten in Laravel section order
+
+---
+
 ## Out of scope until later milestones
 
 - Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)
