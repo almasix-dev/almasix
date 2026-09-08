@@ -1230,6 +1230,7 @@ Laravel [Installation](https://laravel.com/docs/installation) — `laravel new` 
 - **Database choice:** SQLite (default, with the file created) / Postgres / MySQL / MariaDB, writing the matching `.env` + `config/database.py` and offering to run migrations
 - **Restructured scaffold:** replace the flat inlined `path -> content` dict in `avalon/installer/scaffold.py` with a parameterized stub tree shared with M30's `stub:publish`
 - Post-create ergonomics: git init (`--git`, `--branch`), optional `uv` / `pip` install, `npm install && npm run build` when a Node stack is chosen, and next-step output that matches what was actually installed
+- **The default migrations Laravel ships and Avalon does not.** A scaffolded app's `database/migrations/` is *empty*, so `users`, `jobs`, `failed_jobs`, `cache`, and `sessions` do not exist and `grail migrate` says "Nothing to migrate." Found during M30: every failed-job command met a table that nothing creates. The commands now say so instead of raising a database error at the user (`The failed_jobs table does not exist.`), but the tables themselves belong here — Laravel 11 ships them in the default migration set, and an app whose queue, cache, and auth tables are missing is not a working scaffold
 - Docs: rewrite Starlight **Installation** with the prompt walkthrough and every flag
 
 **Depends on:** M9 prompts (done), M30 stub tree. Starter kits are **M36**, not this milestone.

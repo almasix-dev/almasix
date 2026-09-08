@@ -610,6 +610,7 @@ config = {
     },
     "failed": {
         "driver": "database",
+        "connection": env("DB_CONNECTION", "sqlite"),
         "table": "failed_jobs",
     },
 }

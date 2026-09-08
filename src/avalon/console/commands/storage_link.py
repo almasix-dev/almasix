@@ -1,11 +1,24 @@
-"""Create the public storage symlink (Laravel ``storage:link``)."""
+"""The public storage symlinks — ``storage:link`` and ``storage:unlink``."""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from avalon.console.command import Command
+
+if TYPE_CHECKING:
+    from avalon.framework.application import Application
+
+#: Laravel's single public link, for an application that configures none.
+DEFAULT_LINKS = {"public/storage": "storage/app/public"}
+
+
+def configured_links(app: Application) -> dict[str, str]:
+    """The ``filesystems.links`` map both commands work through."""
+    links = dict(app.config.get("filesystems.links") or {})
+    return links or dict(DEFAULT_LINKS)
 
 
 class StorageLinkCommand(Command):
@@ -13,9 +26,7 @@ class StorageLinkCommand(Command):
     description = "Create the symbolic links configured for the application"
 
     def handle(self) -> int:
-        links = dict(self.app.config.get("filesystems.links") or {})
-        if not links:
-            links = {"public/storage": "storage/app/public"}
+        links = configured_links(self.app)
 
         relative = bool(self.option("relative"))
         force = bool(self.option("force"))
@@ -47,3 +58,31 @@ class StorageLinkCommand(Command):
             self.info(f"The [{link}] link has been connected to [{target}].")
 
         return 0
+
+
+class StorageUnlinkCommand(Command):
+    """Laravel's ``storage:unlink`` — remove the links ``storage:link`` made.
+
+    A configured path that is a real directory rather than a symlink is left
+    where it is and reported: it holds files nobody asked to delete, and
+    Laravel's version silently skips it.
+    """
+
+    signature = "storage:unlink"
+    description = "Delete the symbolic links configured for the application"
+
+    def handle(self) -> int:
+        base = Path(self.app.base_path)
+        code = self.SUCCESS
+        for link in configured_links(self.app):
+            link_path = base / link
+            # A broken symlink does not exist(), so ask what it is first.
+            if link_path.is_symlink():
+                link_path.unlink()
+                self.info(f"The [{link}] link has been removed.")
+            elif link_path.exists():
+                self.error(f"The [{link}] path is not a symbolic link — refusing to delete it.")
+                code = self.FAILURE
+            else:
+                self.comment(f"The [{link}] link does not exist.")
+        return code

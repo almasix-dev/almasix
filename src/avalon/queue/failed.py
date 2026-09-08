@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from avalon.queue.job import Job
@@ -19,7 +19,10 @@ class FailedJobRepository:
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         self.config = dict(config or {})
         self.table = str(self.config.get("table") or "failed_jobs")
-        self.db_connection = str(self.config.get("connection") or "default")
+        # ``None`` is how DB spells "the configured default connection". The
+        # literal "default" is a connection name, and almost no app has one.
+        configured = self.config.get("connection")
+        self.db_connection: str | None = str(configured) if configured else None
 
     async def store(
         self,
@@ -67,20 +70,49 @@ class FailedJobRepository:
             connection=self.db_connection,
         )
 
-    async def delete(self, failed_id: int) -> None:
+    async def delete(self, failed_id: int) -> bool:
+        """Delete one failed job, reporting whether there was one to delete.
+
+        Laravel's ``forget()``, which ``queue:forget`` reads to tell an unknown
+        ID apart from a deleted one.
+        """
         from avalon.orm.facade import DB
 
-        await DB.statement(
+        deleted = await DB.statement(
             f"DELETE FROM {self.table} WHERE id = :id",
             {"id": failed_id},
             connection=self.db_connection,
         )
+        return bool(deleted)
 
     async def flush(self) -> int:
         from avalon.orm.facade import DB
 
         result = await DB.statement(f"DELETE FROM {self.table}", connection=self.db_connection)
         return int(result)
+
+    async def prune(self, before: datetime) -> int:
+        """Delete every job that failed before ``before``, returning how many.
+
+        Laravel's ``prune()``, behind ``queue:prune-failed`` and
+        ``queue:flush --hours``.
+        """
+        from avalon.orm.facade import DB
+
+        pruned = await DB.statement(
+            f"DELETE FROM {self.table} WHERE failed_at < :before",
+            {"before": before},
+            connection=self.db_connection,
+        )
+        return int(pruned)
+
+    def cutoff(self, hours: float) -> datetime:
+        """The ``failed_at`` boundary ``hours`` ago, for :meth:`prune`.
+
+        Rows are stamped in naive UTC, so the boundary has to be read off the
+        same clock or the comparison is against a different one.
+        """
+        return _utcnow() - timedelta(hours=hours)
 
 
 async def report_failure(app: Any | None, exc: BaseException, job: Job) -> None:

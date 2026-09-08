@@ -1,9 +1,10 @@
 """The commands that answer "what is this application?".
 
-``about`` summarises the environment and the configured drivers, ``help``
-describes one command, ``route:list`` shows what the router answers, and
-``config:show`` prints a config namespace. All four read what the application
-already knows — a row Avalon cannot answer is left out rather than guessed.
+``about`` summarises the environment and the configured drivers, ``env`` names
+that environment on its own, ``help`` describes one command, ``route:list``
+shows what the router answers, and ``config:show`` prints a config namespace.
+All five read what the application already knows — a row Avalon cannot answer
+is left out rather than guessed.
 """
 
 from __future__ import annotations
@@ -119,6 +120,22 @@ class AboutCommand(Command):
     def _is_down(self) -> bool:
         """The marker ``grail down`` writes and the HTTP kernel answers 503 for."""
         return self.app.path("storage", "framework", "down").is_file()
+
+
+class EnvironmentCommand(Command):
+    """Laravel's ``env`` — the one line of ``about`` people actually ask for.
+
+    An application that sets no ``app.env`` is reported as production, which is
+    the value the framework itself falls back to.
+    """
+
+    signature = "env"
+    description = "Display the current framework environment"
+
+    def handle(self) -> int:
+        environment = self.app.config.get("app.env") or "production"
+        self.line(f"Current application environment: {environment}")
+        return self.SUCCESS
 
 
 class HelpCommand(Command):
