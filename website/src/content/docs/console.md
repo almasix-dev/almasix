@@ -322,7 +322,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 85 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 86 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -409,6 +409,7 @@ What the framework ships, 85 commands, as `smith list` groups them. An applicati
 | `make:enum` | Create an enum in app/enums |
 | `make:event` | Create a new event class |
 | `make:exception` | Create an exception in app/exceptions |
+| `make:factory` | Create a model factory in database/factories |
 | `make:interface` | Create a Protocol in app/contracts |
 | `make:job` | Create a queue job in app/jobs |
 | `make:lang` | Create an empty lang/<locale>/ tree |

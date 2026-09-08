@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from almasix.orm import Model
+from almasix.orm import HasFactory, Model
 
 
-class {{ class }}(Model):
+class {{ class }}(HasFactory, Model):
     """{{ class }} model."""
 
     fillable: tuple[str, ...] = ()

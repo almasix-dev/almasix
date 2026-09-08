@@ -1094,7 +1094,7 @@ def _as_pairs(ids: Any) -> dict[Any, dict[str, Any]]:
 
 
 def _as_keys(ids: Any) -> list[Any]:
-    if isinstance(ids, (list, tuple, set)):
+    if isinstance(ids, (list, tuple, set, Collection)):
         return [_key_of(item) for item in ids]
     return [_key_of(ids)]
 

@@ -104,6 +104,29 @@ class MakeSeederCommand(Generator):
     kind = "seeder"
 
 
+class MakeFactoryCommand(Generator):
+    signature = (
+        "make:factory {name : Class name, e.g. PostFactory} "
+        "{--model= : The model the factory builds, e.g. Post} "
+        "{--force : Overwrite an existing file}"
+    )
+    description = "Create a model factory in database/factories"
+    kind = "factory"
+
+    def stub(self) -> str:
+        return "factory.stub" if self.option("model") else "factory.plain.stub"
+
+    def replacements(self) -> dict[str, str]:
+        model = studly(str(self.option("model") or ""))
+        if not model:
+            return {}
+        return {
+            "model": model,
+            "modelVariable": snake(model),
+            "namespacedModel": f"app.models.{snake(model)}",
+        }
+
+
 class MakeCommandCommand(Generator):
     signature = (
         "make:command {name : Class name, e.g. SendEmails} {--force : Overwrite an existing file}"
@@ -116,6 +139,7 @@ class MakeModelCommand(Generator):
     signature = (
         "make:model {name : Class name, e.g. Post or Admin/Post} "
         "{--m|migration : Also create a migration} "
+        "{--f|factory : Also create a factory} "
         "{--force : Overwrite an existing file}"
     )
     description = "Create a model in app/models"
@@ -123,6 +147,8 @@ class MakeModelCommand(Generator):
 
     def handle(self) -> int:
         code = super().handle()
+        if code == self.SUCCESS and self.option("factory"):
+            code = self.write_factory()
         if code != self.SUCCESS or not self.option("migration"):
             return code
         root = self.root()
@@ -135,6 +161,27 @@ class MakeModelCommand(Generator):
             base_path=root,
         )
         self.success(f"Migration created: {path.relative_to(root)}")
+        return self.SUCCESS
+
+    def write_factory(self) -> int:
+        model = self.class_name()
+        try:
+            path = make(
+                "factory",
+                f"{model}Factory",
+                base_path=self.root(),
+                force=bool(self.option("force")),
+                stub="factory.stub",
+                replacements={
+                    "model": model,
+                    "modelVariable": snake(model),
+                    "namespacedModel": f"app.models.{snake(model)}",
+                },
+            )
+        except MakeError as exc:
+            self.error(str(exc))
+            return self.FAILURE
+        self.success(f"Factory created: {path.relative_to(self.root())}")
         return self.SUCCESS
 
 

@@ -250,8 +250,13 @@ def _milestones() -> list[dict]:
         {
             "id": "M24",
             "name": "Model factories",
-            "status": "planned",
-            "proof": ["Factory base", "states / sequences", "make:factory"],
+            "status": "complete",
+            "proof": [
+                "Factory base, states, sequences",
+                "has / for / has_attached / recycle",
+                "make:factory; DemoSeeder builds every row",
+                "progress:factories",
+            ],
         },
         {
             "id": "M25",

@@ -1,0 +1,21 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Factory
+
+from {{ namespacedModel }} import {{ model }}
+
+
+class {{ class }}(Factory):
+    """Builds {{ model }} rows for seeders and tests."""
+
+    model = {{ model }}
+
+    def definition(self) -> dict[str, Any]:
+        """The attributes a fresh {{ model }} starts from."""
+        return {
+            "name": self.fake.name(),
+        }

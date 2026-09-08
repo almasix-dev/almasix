@@ -55,7 +55,7 @@ class SoftDeletes:
         cls = type(self)
         stamp = self._fresh_timestamp()  # type: ignore[attr-defined]
         await (
-            cls.new_query()  # type: ignore[attr-defined]
+            self.instance_query()  # type: ignore[attr-defined]
             .without_global_scopes()
             .where(cls.primary_key, "=", self.get_key())  # type: ignore[attr-defined]
             .update({cls.deleted_at: stamp})
@@ -69,7 +69,7 @@ class SoftDeletes:
         if await self._fire_event("restoring") is False:  # type: ignore[attr-defined]
             return False
         await (
-            cls.new_query()  # type: ignore[attr-defined]
+            self.instance_query()  # type: ignore[attr-defined]
             .without_global_scopes()
             .where(cls.primary_key, "=", self.get_key())  # type: ignore[attr-defined]
             .update({cls.deleted_at: None})

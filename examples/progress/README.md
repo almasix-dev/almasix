@@ -168,18 +168,19 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M21** | `smith progress:process` — `Process` run / start / pool / pipe, timeouts, fakes |
 | **M22** | `smith progress:concurrency` — `Concurrency.run` / `defer` / `arun`, four drivers |
 | **M23** | `smith progress:resources` + `GET /api/resources` — `JsonResource`, conditionals, wrapping, pagination meta |
-| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 85 commands |
+| **M24** | `smith progress:factories` — factories, states, sequences, `has` / `for_`; `DemoSeeder` seeds through them |
+| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 86 commands |
 | **M31** | `smith progress:schedule` — frequencies, constraints, hooks, a tick; `smith schedule:list` / `test` / `interrupt` |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
-| **M24–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M25–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M23, M30, M31, M40, M41, M49, and M50 are closed; **M5** is partly done.
-Next is **M24 — Model factories**. The board on `/progress`
+M0–M24, M30, M31, M40, M41, M49, and M50 are closed; **M5** is partly done.
+Next is **M25 — Articulate NoSQL**. The board on `/progress`
 lists the full **M0–M51** roadmap with a status and proof for each milestone.
 ## CLI
 
@@ -200,6 +201,7 @@ smith progress:http
 smith progress:process
 smith progress:concurrency
 smith progress:resources
+smith progress:factories
 smith key:generate
 smith storage:link
 smith progress:schedule

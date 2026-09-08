@@ -152,6 +152,7 @@ export default defineConfig({
 						{ label: 'Pagination', slug: 'database/pagination' },
 						{ label: 'Migrations', slug: 'database/migrations' },
 						{ label: 'Seeding', slug: 'database/seeding' },
+						{ label: 'Factories', slug: 'database/factories' },
 					],
 				},
 				{

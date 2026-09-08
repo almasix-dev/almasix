@@ -283,3 +283,10 @@ async def test_soft_delete_force(memory_db) -> None:
     doc = await Doc.create(title="x")
     await doc.force_delete()
     assert await Doc.with_trashed().count() == 0
+
+    # An already-trashed row is still deletable: force_delete ignores the scope.
+    trashed = await Doc.create(title="y")
+    await trashed.delete()
+    assert await Doc.with_trashed().count() == 1
+    await trashed.force_delete()
+    assert await Doc.with_trashed().count() == 0

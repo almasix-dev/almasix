@@ -565,6 +565,28 @@ pytest -q tests/test_m23_*.py tests/smoke/test_m23_smoke.py
 
 ---
 
+## M24 — Model factories
+
+```bash
+pytest -q tests/test_m24_*.py tests/smoke/test_m24_smoke.py
+```
+
+### M24 exit criteria
+
+- [x] `Factory` with `definition()`, `configure()`, and an immutable builder: `count`, `state`, `set`, `trashed`, `connection`, `recycle`, `after_making` / `after_creating`
+- [x] States as dicts, callables (attributes, and attributes + parent), and coroutines; attributes passed to `make` / `create` apply last
+- [x] `sequence`, `for_each_sequence` (the sequence sets the count), `cross_join_sequence`, and sequence steps that read their own `index`
+- [x] `raw`, `make` / `make_one` / `make_many`, `create` / `create_one` / `create_many`, the `*_quietly` twins, and `lazy`
+- [x] `has` (has-many, has-one, morph-many, belongs-to-many), `has_attached` with a pivot dict or callable, `for_` (belongs-to and morph-to), and the `has_<relation>` / `for_<relation>` magic methods
+- [x] A batch shares one `for_()` parent; `recycle` reuses existing models rather than creating more; factory and model attribute values resolve to keys
+- [x] `HasFactory` → `Model.factory(count, state)`; resolution by `<Model>Factory`, then by importing `database.factories.<model>_factory`; `new_factory`, `guess_model_names_using`, `guess_factory_names_using`, `use_namespace`
+- [x] A seedable, dependency-free `Fake` with `unique()`, Laravel's camelCase spellings, and `Fake.resolve_using` to swap in Faker
+- [x] `smith make:factory [--model]`, `make:model -f`, and `HasFactory` in the model stub
+- [x] The example `DemoSeeder` builds every row through a factory; living example `smith progress:factories`; the board marks M24 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.orm.factories`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash

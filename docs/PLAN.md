@@ -336,7 +336,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Eloquent: Mutators & Casting | `articulate/casts` | **Done (M40)** | Page published |
 | Eloquent: Serialization | `articulate/serialization` | **Done (M40)** | Page published; links out to API Resources |
 | Eloquent: API Resources | `api-resources` | **Done (M23)** | Page published |
-| Eloquent: Factories | `database/factories` | **M24** | Write when factories ship |
+| Eloquent: Factories | `database/factories` | **Done (M24)** | Page published |
 | MongoDB / NoSQL | `database/nosql` (+ Articulate pages) | **M25** | Write when document-store driver ships — core Articulate multi-store, not a satellite ORM |
 | Scout / Search | `scout` / `search` | **M27** | Write when search ships |
 | Queues | `queues` | **M11** | Write when queues ship |
@@ -1111,7 +1111,13 @@ Eloquent/Laravel Factory parity — primary consumer is **seeders**.
 
 **Depends on:** M5 seeders (done). Homes after Articulate is boring in real apps.
 
-**Gate:** factory → seeder path green in progress/example, docs published, coverage ≥ 98%.
+**Gate:** factory → seeder path green in progress/example, docs published, coverage ≥ 98%. **Met.**
+
+**Status (M24):** `Factory` with `definition()`, `configure()`, and Laravel's whole immutable builder — `count`, `state` (dict, callable, async callable), `set`, `sequence` / `for_each_sequence` / `cross_join_sequence`, `trashed`, `connection`, `recycle`, `after_making` / `after_creating`, `raw`, `make` / `make_one` / `make_many`, `create` / `create_one` / `create_many` and their quiet twins, `lazy`; relationships through `has`, `has_attached` (pivot dict or callable), `for_`, the `has_<relation>` / `for_<relation>` magic methods, and factory-or-model attribute values that resolve to a key; `HasFactory` giving `Model.factory(count, state)`, resolution by `<Model>Factory` name then by `database.factories` import, with `new_factory()`, `guess_model_names_using`, `guess_factory_names_using`, and `use_namespace` as the escape hatches; a dependency-free `Fake` generator (seedable, `unique()`, Laravel camelCase spellings, `Fake.resolve_using` to swap in Faker); `smith make:factory [--model]` and `make:model -f`; Starlight **Factories** + a factory section on **Seeding**; the progress app's `DemoSeeder` now builds every row through a factory, and `progress:factories` demonstrates the surface end to end.
+
+**Deliberate deviations (M24):** `make()` and `create()` are coroutines, because every write in Almasix is; `for_` and `has_attached` keep Python spellings (`for` is a keyword); factories fill past the mass assignment guard with `force_fill`, since Almasix models are guarded by default where Laravel's skeleton is not; fake data ships in-framework with a smaller provider list rather than depending on Faker, and `Fake.resolve_using` hands the whole job to the real thing; a created parent's relations are left unloaded, because this ORM has no lazy loading to fall back on.
+
+**Shipped alongside (ORM):** per-row connections (`Model.set_connection` / `get_connection_name` / `instance_query`, plus `Model.on`), which `Factory.connection()` needs; `force_delete` now ignores global scopes, so an already-trashed row really is deletable; `attach` accepts a `Collection`.
 
 ### M25 — Articulate NoSQL / document stores
 
@@ -1607,7 +1613,9 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **M23 API Resources gate met** — `JsonResource` and `ResourceCollection` with the whole conditional family, wrapping, pagination `meta` / `links`, `make:resource`, and controllers that return a resource straight from a route.
 
-**Milestones M24–M29** (Model factories → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M24 Model factories gate met** — the Laravel builder in full (states, sequences, `has` / `for_` / `has_attached` / `recycle`, hooks, quiet writes), `make:factory`, and a `DemoSeeder` that builds every row through a factory.
+
+**Milestones M25–M29** (Articulate NoSQL → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

@@ -163,6 +163,8 @@ class Model(metaclass=ModelMeta):
         self._relations: dict[str, Any] = {}
         self._exists = False
         self._extra: dict[str, Any] = {}
+        # None means "use the class connection" — set per row by factories.
+        self._connection: str | None = None
         # None means "use the class attribute" — overrides stay per instance.
         self._hidden: tuple[str, ...] | None = None
         self._visible: tuple[str, ...] | None = None
@@ -230,6 +232,23 @@ class Model(metaclass=ModelMeta):
     def new_query(cls) -> QueryBuilder:
         """Query without the model's default eager loads."""
         return QueryBuilder(model=cls, connection=cls.connection)
+
+    @classmethod
+    def on(cls, connection: str | None) -> QueryBuilder:
+        """Query this model on another connection — Laravel's `Model::on`."""
+        return QueryBuilder(model=cls, connection=connection)
+
+    def set_connection(self, connection: str | None) -> Model:
+        """Point this row's own writes at a connection, leaving the class alone."""
+        self._connection = connection
+        return self
+
+    def get_connection_name(self) -> str | None:
+        return self._connection if self._connection is not None else type(self).connection
+
+    def instance_query(self) -> QueryBuilder:
+        """The builder this row writes through — its connection, not the class's."""
+        return QueryBuilder(model=type(self), connection=self.get_connection_name())
 
     @classmethod
     def where(cls, *args: Any, **kwargs: Any) -> QueryBuilder:
@@ -773,7 +792,7 @@ class Model(metaclass=ModelMeta):
         if cls.incrementing and payload.get(cls.primary_key) is None:  # pragma: no branch
             payload.pop(cls.primary_key, None)
 
-        builder = cls.new_query()
+        builder = self.instance_query()
         key = await builder.insert_get_id(payload)
         if cls.incrementing and key is not None:  # pragma: no branch
             self._attributes[cls.primary_key] = key
@@ -794,7 +813,7 @@ class Model(metaclass=ModelMeta):
         self._touch_timestamps(creating=False)
         dirty = self.get_dirty()
         cls = type(self)
-        await cls.new_query().where(cls.primary_key, "=", self.get_key()).update(dirty)
+        await self.instance_query().where(cls.primary_key, "=", self.get_key()).update(dirty)
 
         self._changes = dict(dirty)
         self.sync_original()
@@ -817,7 +836,7 @@ class Model(metaclass=ModelMeta):
         if getattr(self, "_soft_deletes", False):
             deleted = await self._perform_soft_delete()
         else:
-            await cls.new_query().where(cls.primary_key, "=", self.get_key()).delete()
+            await self.instance_query().where(cls.primary_key, "=", self.get_key()).delete()
             self._exists = False
             deleted = True
 
@@ -827,14 +846,19 @@ class Model(metaclass=ModelMeta):
 
     async def force_delete(self) -> bool:
         cls = type(self)
-        await cls.new_query().where(cls.primary_key, "=", self.get_key()).delete()
+        # Past every global scope: a soft-deleted row is still deletable.
+        await (
+            self.instance_query()
+            .without_global_scopes()
+            .where(cls.primary_key, "=", self.get_key())
+            .delete()
+        )
         self._exists = False
         await self._fire_event("deleted")
         return True
 
     async def refresh(self) -> Model:
-        cls = type(self)
-        fresh = await cls.new_query().without_global_scopes().where_key(self.get_key()).first()
+        fresh = await self.instance_query().without_global_scopes().where_key(self.get_key()).first()
         if fresh is not None:
             self._attributes = dict(fresh._attributes)
             self._relations.clear()
@@ -842,8 +866,7 @@ class Model(metaclass=ModelMeta):
         return self
 
     async def fresh(self) -> Any:
-        cls = type(self)
-        return await cls.new_query().without_global_scopes().where_key(self.get_key()).first()
+        return await self.instance_query().without_global_scopes().where_key(self.get_key()).first()
 
     def replicate(self, exclude: Iterable[str] | None = None) -> Model:
         cls = type(self)

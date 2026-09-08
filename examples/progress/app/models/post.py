@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from almasix.orm import Model, Prunable, SoftDeletes, relation
+from almasix.orm import HasFactory, Model, Prunable, SoftDeletes, relation
 
 
-class Post(Prunable, SoftDeletes, Model):
+class Post(HasFactory, Prunable, SoftDeletes, Model):
     fillable = ("title", "user_id", "published", "views")
     casts = {"published": "bool", "views": "int"}  # noqa: RUF012
 
