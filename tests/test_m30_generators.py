@@ -230,6 +230,19 @@ def test_a_generated_notification_goes_out_on_mail(
     assert notification.to_database(object()) == {}
 
 
+def test_a_markdown_view_that_exists_is_reported_not_clobbered(
+    kernel: ConsoleKernel, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    view = tmp_path / "resources" / "views" / "mail" / "invoice_paid.cal.html"
+    view.parent.mkdir(parents=True)
+    view.write_text("# mine\n", encoding="utf-8")
+
+    assert kernel.run_argv("make:mail", ["InvoicePaid", "--markdown", "mail.invoice-paid"]) == 1
+
+    assert "already exists" in capsys.readouterr().err
+    assert source(view) == "# mine\n"
+
+
 def test_a_markdown_notification_hands_the_mail_channel_a_mailable(
     kernel: ConsoleKernel, tmp_path: Path
 ) -> None:
@@ -501,6 +514,14 @@ def test_a_view_name_has_to_be_a_name(
     assert kernel.run_argv("make:view", ["posts.@index"]) == 1
 
     assert "Invalid name segment" in capsys.readouterr().err
+
+
+def test_a_view_needs_a_name(
+    kernel: ConsoleKernel, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert kernel.run_argv("make:view", ["..."]) == 1
+
+    assert "A view name is required." in capsys.readouterr().err
 
 
 def test_a_view_name_cannot_climb_out_of_the_views_directory(

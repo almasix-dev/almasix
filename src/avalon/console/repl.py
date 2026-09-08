@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import inspect
+import pkgutil
 import sys
 from typing import TYPE_CHECKING, Any
 
@@ -103,31 +104,42 @@ def build_namespace(app: Application) -> dict[str, Any]:
             ns["User"] = User
     except Exception:
         pass
-    # Discover other app models for convenience.
-    try:
-        import importlib
-        import pkgutil
-
-        models_pkg = importlib.import_module("app.models")
-        for info in pkgutil.iter_modules(models_pkg.__path__):
-            if info.name.startswith("_"):
-                continue
-            module = importlib.import_module(f"app.models.{info.name}")
-            for attr in dir(module):
-                obj = getattr(module, attr)
-                if (
-                    isinstance(obj, type)
-                    and attr not in ns
-                    and attr not in refused
-                    and attr[:1].isupper()
-                    and getattr(obj, "__module__", "").startswith("app.models")
-                ):
-                    ns[attr] = obj
-    except Exception:
-        pass
+    for name, discovered in discover_app_classes().items():
+        if name not in ns and name not in refused:
+            ns[name] = discovered
     _add_aliases(ns, refused)
     _add_commands(ns)
     return ns
+
+
+def discover_app_classes() -> dict[str, Any]:
+    """Classes the application declares under ``app.models``, by class name.
+
+    Fiddle has them waiting in the shell and ``model:show`` resolves a bare
+    model name through them, so both agree on what the application's models
+    are. A module that will not import costs its own classes and no others.
+    """
+    found: dict[str, Any] = {}
+    try:
+        package = importlib.import_module("app.models")
+    except Exception:
+        return found
+    for info in pkgutil.iter_modules(getattr(package, "__path__", [])):
+        if info.name.startswith("_"):
+            continue
+        try:
+            module = importlib.import_module(f"app.models.{info.name}")
+        except Exception:
+            continue
+        for attribute in dir(module):
+            value = getattr(module, attribute)
+            if (
+                isinstance(value, type)
+                and attribute[:1].isupper()
+                and getattr(value, "__module__", "").startswith("app.models")
+            ):
+                found.setdefault(attribute, value)
+    return found
 
 
 def _add_aliases(ns: dict[str, Any], refused: set[str]) -> None:

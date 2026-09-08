@@ -380,6 +380,32 @@ class Schema:
             return await conn.run_sync(inspect)
 
     @staticmethod
+    async def columns(table: str, connection: str | None = None) -> list[dict[str, Any]]:
+        """Reflected column metadata (Laravel ``Schema::getColumns``).
+
+        A table that does not exist has no columns, rather than raising: the
+        question "what does this table hold?" is answerable with "nothing yet".
+        """
+
+        def read(sync_conn: Any) -> list[dict[str, Any]]:
+            inspector = sa.inspect(sync_conn)
+            if not inspector.has_table(table):
+                return []
+            return [
+                {
+                    "name": column["name"],
+                    "type": str(column["type"]),
+                    "nullable": bool(column["nullable"]),
+                    "default": column.get("default"),
+                }
+                for column in inspector.get_columns(table)
+            ]
+
+        engine = get_manager().connection(connection).engine
+        async with engine.connect() as conn:
+            return await conn.run_sync(read)
+
+    @staticmethod
     async def table_names(connection: str | None = None) -> list[str]:
         engine = get_manager().connection(connection).engine
 
