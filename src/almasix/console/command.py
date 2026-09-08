@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import signal as signal_module
 from collections.abc import Callable, Iterable, Sequence
+from contextvars import ContextVar, Token
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from almasix.console.exceptions import CommandFailed
@@ -12,6 +13,20 @@ from almasix.console.output import Output
 
 if TYPE_CHECKING:
     from almasix.framework.application import Application
+
+#: Where a faked terminal takes over. `None` — the normal case — means the
+#: prompts run for real. `almasix.testing` installs a sink here so a test can
+#: answer a command's questions without a terminal.
+_answers: ContextVar[Any] = ContextVar("almasix_console_answers", default=None)
+
+
+def set_answer_sink(sink: Any, token: Token[Any] | None = None) -> Token[Any] | None:
+    """Install (or, with the token it returned, remove) a test's answers."""
+    if token is not None:
+        _answers.reset(token)
+        return None
+    return _answers.set(sink)
+
 
 _TOKEN_RE = re.compile(r"\{([^}]*)\}")
 _DESCRIPTION_RE = re.compile(r"\s+:\s+")
@@ -127,16 +142,25 @@ class Command:
     # --- interactive ----------------------------------------------------
 
     def confirm(self, question: str, default: bool = False) -> bool:
+        sink = _answers.get()
+        if sink is not None:
+            return bool(sink.answer(question, default))
         return self.output.confirm(question, default=default)
 
     def ask(self, question: str, default: str | None = None, *, required: bool = False) -> str:
         """Laravel ``$this->ask()`` — styled text prompt."""
+        sink = _answers.get()
+        if sink is not None:
+            return sink.answer(question, "" if default is None else default)
         from almasix.console.prompts import text
 
         return text(question, default="" if default is None else default, required=required)
 
     def secret(self, question: str, *, required: bool = False) -> str:
         """Laravel ``$this->secret()`` — hidden input."""
+        sink = _answers.get()
+        if sink is not None:
+            return sink.answer(question, "")
         from almasix.console.prompts import password
 
         return password(question, required=required)
@@ -150,6 +174,9 @@ class Command:
         multiple: bool = False,
     ) -> Any:
         """Laravel ``$this->choice()`` — arrow-key select (or multiselect)."""
+        sink = _answers.get()
+        if sink is not None:
+            return sink.answer(question, default)
         from almasix.console.prompts import multiselect, select
 
         if multiple:
@@ -164,6 +191,9 @@ class Command:
         default: str | None = None,
     ) -> str:
         """Laravel ``$this->anticipate()`` — text with suggestions."""
+        sink = _answers.get()
+        if sink is not None:
+            return sink.answer(question, "" if default is None else default)
         from almasix.console.prompts import suggest
 
         return suggest(question, options, default="" if default is None else default)

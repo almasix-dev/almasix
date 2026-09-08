@@ -141,8 +141,16 @@ class Application:
                 # Console schedule routes load via ConsoleKernel, not HTTP boot.
                 if file.name == "console.py":
                     continue
+                # Channels are authorization, not HTTP: the broadcasting
+                # provider loads them, so they exist in console runs too.
+                if file.name == "channels.py":
+                    continue
                 self._load_route_file(file)
         self._routes_loaded = True
+
+    def load_route_file(self, file: Path) -> None:
+        """Execute one route file — how a provider loads its own routes."""
+        self._load_route_file(file)
 
     def _load_route_file(self, file: Path) -> None:
         module_name = f"almasix_app_routes_{file.stem}_{abs(hash(file))}"

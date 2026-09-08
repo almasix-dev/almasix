@@ -505,6 +505,188 @@ pytest -q tests/test_m20_*.py tests/smoke/test_m20_smoke.py
 
 ---
 
+## M21 — Processes
+
+```bash
+pytest -q tests/test_m21_*.py tests/smoke/test_m21_smoke.py
+```
+
+### M21 exit criteria
+
+- [x] `Process.run` for string (shell) and list (no shell) commands; `ProcessResult` with `successful` / `failed` / `exit_code` / `output` / `error_output` / `see_in_output` / `see_in_error_output`
+- [x] `throw` / `throw_if` / `throw_unless` raising `ProcessFailedException`, which carries and proxies its result
+- [x] Options: `path`, `input`, `env` (merged into the inherited environment), `timeout` (60s default), `idle_timeout`, `forever`, `quietly`, `tty`, `options`, `when` / `unless`
+- [x] Real-time output callbacks receiving `("out" | "err", chunk)`; `ProcessTimedOutException` carries the partial result
+- [x] `Process.start` → `InvokedProcess` with `id`, `running`, `output` / `latest_output` pairs, `signal`, `stop` (terminate then kill), `wait(callback)`
+- [x] `Process.pool` / `concurrently` with `as_()` naming, results keyed by name *and* position, `running()` as a Collection, pool-wide `signal` / `stop`, keyed start callbacks
+- [x] `Process.pipe` for lists and callables, feeding output into input and short-circuiting on failure
+- [x] Fakes: command maps with real fall-through, `Process.result`, `Process.describe` lifecycles (`iterations` / `runs_for` / `replace_output`), `Process.sequence` raising when drained, `prevent_stray_processes`
+- [x] `recorded()` pairs and the `assert_ran` / `assert_didnt_run` / `assert_ran_times` / `assert_nothing_ran` / `assert_sequences_are_empty` family
+- [x] Living example: `smith progress:process`; the board marks M21 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.process`
+
+---
+
+## M22 — Concurrency
+
+```bash
+pytest -q tests/test_m22_*.py tests/smoke/test_m22_smoke.py
+```
+
+### M22 exit criteria
+
+- [x] `Concurrency.run` accepting one callable, a list, or a keyed map, returning results in the same shape and the task order
+- [x] Four drivers — `thread` (default), `fork`, `process`, `sync` — each resolved from `config/concurrency.py`, with `driver()`, `set_default_driver()`, `extend()`, and named entries that alias another driver
+- [x] A failing task raises only once every other task has settled; a child that dies without answering is reported rather than hanging
+- [x] The `process` driver rejects unpicklable tasks with an error that names the alternatives
+- [x] `Concurrency.defer` returning a waitable `DeferredTasks`; `Concurrency.arun` for coroutines under ASGI
+- [x] `config/concurrency.py` in the scaffold; living example `smith progress:concurrency`; the board marks M22 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.concurrency`
+
+---
+
+## M23 — API Resources + Serialization
+
+```bash
+pytest -q tests/test_m23_*.py tests/smoke/test_m23_smoke.py
+```
+
+### M23 exit criteria
+
+- [x] `JsonResource` proxying attributes to the wrapped model, `to_dict(request)`, `make`, `collection`, `with_`, `additional`, `response`
+- [x] The conditional family — `when` / `unless` (callable values and defaults), `merge_when` / `merge_unless`, `when_has`, `when_not_null`, `when_loaded`, `when_counted`, `when_aggregated`, `when_appended`, `when_pivot_loaded` / `when_pivot_loaded_as`
+- [x] Missing values disappear and merges splice at every level, including inside nested resources, which resolve with the same request
+- [x] `ResourceCollection` with `collects`, the `<Name>Resource` guess, `AnonymousResourceCollection` from `Resource.collection(...)`, `Collection` and paginator inputs
+- [x] Wrapping: the `wrap` key, `without_wrapping`, `wrap_with`, no double wrapping when the payload already owns the key
+- [x] Paginated collections add Laravel's `meta` (`current_page`, `per_page`, `from`, `to`, `last_page`, `total`) and `links`, with `SimplePaginator` degrading honestly
+- [x] Controllers may return a resource directly — `make_response` honors the `to_response()` protocol; dates, decimals, and UUIDs render
+- [x] `smith make:resource` with `--collection`; living example `smith progress:resources` and `GET /api/resources`; the board marks M23 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.http.resources`
+
+---
+
+## M24 — Model factories
+
+```bash
+pytest -q tests/test_m24_*.py tests/smoke/test_m24_smoke.py
+```
+
+### M24 exit criteria
+
+- [x] `Factory` with `definition()`, `configure()`, and an immutable builder: `count`, `state`, `set`, `trashed`, `connection`, `recycle`, `after_making` / `after_creating`
+- [x] States as dicts, callables (attributes, and attributes + parent), and coroutines; attributes passed to `make` / `create` apply last
+- [x] `sequence`, `for_each_sequence` (the sequence sets the count), `cross_join_sequence`, and sequence steps that read their own `index`
+- [x] `raw`, `make` / `make_one` / `make_many`, `create` / `create_one` / `create_many`, the `*_quietly` twins, and `lazy`
+- [x] `has` (has-many, has-one, morph-many, belongs-to-many), `has_attached` with a pivot dict or callable, `for_` (belongs-to and morph-to), and the `has_<relation>` / `for_<relation>` magic methods
+- [x] A batch shares one `for_()` parent; `recycle` reuses existing models rather than creating more; factory and model attribute values resolve to keys
+- [x] `HasFactory` → `Model.factory(count, state)`; resolution by `<Model>Factory`, then by importing `database.factories.<model>_factory`; `new_factory`, `guess_model_names_using`, `guess_factory_names_using`, `use_namespace`
+- [x] A seedable, dependency-free `Fake` with `unique()`, Laravel's camelCase spellings, and `Fake.resolve_using` to swap in Faker
+- [x] `smith make:factory [--model]`, `make:model -f`, and `HasFactory` in the model stub
+- [x] The example `DemoSeeder` builds every row through a factory; living example `smith progress:factories`; the board marks M24 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.orm.factories`
+
+---
+
+## M25 — Articulate NoSQL / document stores
+
+```bash
+pytest -q tests/test_m25_*.py tests/smoke/test_m25_smoke.py
+```
+
+### M25 exit criteria
+
+- [x] A store-agnostic query shape (`Query` / `Condition` / `Order`) and a `DocumentStore` contract every driver satisfies
+- [x] `MongoStore` over Motor (`almasix[mongodb]`): every operator translated to a Mongo filter, `and` / `or` precedence, sorts, windows, projections, `distinct`, `$inc`, index information, `raw_aggregate`
+- [x] `MemoryStore` with the same semantics in-process — unique indexes, dotted paths, `None`-safe sorting — so tests and demos need no server
+- [x] `DocumentBuilder`: the `where` family, dotted fields, ordering, windows, `select` / `distinct`, scopes, `when` / `unless` / `tap`, chunking, `lazy`, both paginators, `insert` / `update` / `upsert` / `increment` / `delete` / `truncate`
+- [x] Document-native filters — `where_regex`, `where_exists_field`, `where_all`, `where_size` — and `where_raw` taking an engine filter or a predicate
+- [x] SQL-only calls raise `UnsupportedQueryError` naming the alternative (`join`, `group_by`, `having`, `where_column`, `union`, raw SQL)
+- [x] `Document` keeps every `Model` behaviour — casts, accessors, events, observers, soft deletes, serialization, factories — with `_id` keys, collection naming, and per-instance connections
+- [x] `EmbeddedDocument` with `embeds_one` / `embeds_many`, write-back through the parent, in-memory filtering, and declared fields
+- [x] References load across stores, including document → SQL, with eager loading and a document-native `with_count`
+- [x] `DatabaseManager.store()` / `is_document()` / `document_connection_names()`; asking for a store as a connection (or the reverse) is refused by name
+- [x] `smith make:document [--factory|--embed]`, `documents:index [--pretend]`, `documents:show`; indexes declared on the model
+- [x] Living example: `Activity` on a document store, `smith progress:documents`, `GET /api/documents`; the board marks M25 complete
+- [x] Docs + smoke; SQL regressions green; 100% line and branch coverage on `almasix.orm.documents`
+
+---
+
+## M26 — Broadcasting
+
+```bash
+pytest -q tests/test_m26_*.py tests/smoke/test_m26_smoke.py
+```
+
+### M26 exit criteria
+
+- [x] `ShouldBroadcast`, `ShouldBroadcastNow`, `ShouldBroadcastAfterCommit`; `broadcast_on`, `broadcast_as`, `broadcast_with`, `broadcast_when`, and a payload reflected off the event when it declares none
+- [x] `Channel`, `PrivateChannel`, `PresenceChannel`, `EncryptedPrivateChannel` — names from strings, models, and channel objects, prefixed once
+- [x] `broadcast()` returning a `PendingBroadcast` that sends on `send()`, on `await`, or when it falls out of scope; `to_others()` excludes the caller's socket; `via()` picks the connection
+- [x] Drivers: `log` and `null`, an in-process `websocket` server, `redis` pub/sub, `pusher` over its signed REST API (chunking long channel lists), and `Broadcast.extend()` for a sixth
+- [x] `routes/channels.py` loaded by the provider so console and HTTP see the same channels; wildcard patterns, route-model binding from type hints, channel classes from the container, per-channel guards
+- [x] Presence channels return a member array; a refusal is a refusal (`False` / `None`) and answers 403
+- [x] `POST /broadcasting/auth` and `/broadcasting/user-auth` reply in Pusher's signed format; encrypted channels seal the payload with the application key
+- [x] `Route.websocket()` and kernel support; `/broadcasting/socket` speaks `subscribe`, `unsubscribe`, `ping`, `client-*`, and member added / removed
+- [x] Queued broadcasts travel as a `BroadcastEvent` job with a JSON payload; `ShouldBroadcastNow` skips the queue; `ShouldBroadcastAfterCommit` waits for `Connection.after_commit()`
+- [x] `BroadcastsEvents` / `BroadcastsEventsAfterCommit` on models — created, updated, trashed, restored, deleted — and the `broadcast` notification channel
+- [x] `Broadcast.fake()` with `assert_broadcast`, `assert_broadcast_on`, `assert_nothing_broadcast`, and the recorded frames
+- [x] `smith make:channel`, `channel:list`, and `config/broadcasting.py` + `routes/channels.py` in the scaffold
+- [x] Living example: `PostPublished`, a broadcasting `Comment`, `smith progress:broadcast`, `GET /api/broadcast`; the board marks M26 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.broadcasting`
+
+---
+
+## M27 — Search
+
+```bash
+pytest -q tests/test_m27_*.py tests/smoke/test_m27_smoke.py
+```
+
+### M27 exit criteria
+
+- [x] `Searchable` indexes on `saved`, removes on `deleted`, returns on `restored`; `should_be_searchable()` takes a row out and `search_index_should_be_updated()` skips a write that changes nothing indexed
+- [x] The model contract: `to_searchable_array`, `scout_metadata`, `searchable_as` (with the configured prefix), `get_scout_key` / `get_scout_key_name`, `searchable_using`
+- [x] `searchable()` / `unsearchable()` on a model, on a query, and on a `Collection`; `make_all_searchable` / `remove_all_from_search`; `make_all_searchable_using` to shape the import query
+- [x] `without_syncing_to_search()` as a context manager, and `disable_search_syncing()` / `enable_search_syncing()` as switches — a pause covers saves, deletes, and restores alike
+- [x] The builder: `where`, `where_in`, `where_not_in`, `order_by` / `latest` / `oldest`, `take`, `within`, `options`, `query_using`, `when` / `unless` / `tap`, `get` / `first` / `keys` / `raw` / `count` / `cursor`, `paginate` / `simple_paginate` and their `_raw` twins
+- [x] Engines: `database` (`LIKE`, prefix matching, and the dialect's own full text on PostgreSQL and MySQL), `collection` (filtered in Python), `meilisearch` (its REST API over the HTTP client), `null`; `Scout.extend()` registers a fifth and an unknown driver names the alternatives
+- [x] Queued indexing through `MakeSearchable` / `RemoveFromSearch` carrying keys, not models; without a queue configured the write still happens
+- [x] `after_commit` indexing on the back of `Connection.after_commit()`, with `flush_search()` for a test that is about to assert on the index
+- [x] Soft deletes: trashed rows leave the index by default, or stay flagged `__soft_deleted` when configured, and `with_trashed()` / `only_trashed()` find them
+- [x] `Scout.fake()` with `assert_synced`, `assert_removed`, `assert_flushed`, `assert_nothing_synced`, `assert_searched`, `assert_search_count`
+- [x] Eight commands — `scout:import`, `scout:queue-import`, `scout:flush`, `scout:index`, `scout:delete-index`, `scout:delete-all-indexes`, `scout:sync-index-settings`, `scout:status` — and `config/scout.py` in the scaffold
+- [x] Living example: a searchable `Post`, `smith progress:search`, `GET /api/search`; the board marks M27 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.scout`
+
+---
+
+## M28 — Testing toolkit
+
+```bash
+pytest -q tests/test_m28_testing.py tests/smoke/test_m28_smoke.py
+```
+
+### M28 exit criteria
+
+- [x] `TestCase` is a class pytest collects: an autouse lifecycle runs `setup()` / `teardown()` coroutines, `create_application()` runs the app's own `bootstrap/app.py` when there is one, and an `almasix_base_path` fixture decides the path when a fixture must
+- [x] `use_refresh_database` migrates a fresh database per test; `use_database_transactions` rolls each test back; both also exist as plain functions
+- [x] `TestClient` drives the ASGI app in-process over the real middleware stack — every verb and its `*_json` twin, form bodies, raw bodies, uploads, query params
+- [x] Headers, bearer and basic tokens, cookies that persist between requests, `with_session`, `acting_as` on any guard, `following_redirects`, `from_`
+- [x] Status assertions: `assert_ok` through `assert_server_error`, `assert_no_content` (status *and* an empty body), `assert_redirect` / `assert_location` / `assert_redirect_contains`; a failure quotes the body
+- [x] Headers, cookies, content type, and downloads; `assert_see` / `assert_see_text` / `assert_see_in_order` with HTML escaping, `assert_content`, `assert_streamed_content`
+- [x] JSON: `assert_json` (loose and strict), `assert_exact_json`, dotted `assert_json_path` with a value or a callback, `assert_json_missing_path`, fragments, counts, `*`-wildcard `assert_json_structure`, array / object shape
+- [x] Validation (`assert_valid` / `assert_invalid` by key, keys, or key → message), session assertions, and view assertions reading what Prism was given
+- [x] `artisan()` — `expects_question` / `expects_confirmation` / `expects_choice` / `expects_output` / `doesnt_expect_output` / `expects_table`, `assert_exit_code` / `assert_successful` / `assert_failed` / `assert_output_contains` / `assert_asked` / `assert_nothing_asked`; an unanswered question takes the command's default
+- [x] Database: `assert_database_has` / `missing` / `count` / `empty` (by table or model), `assert_model_exists` / `missing`, `assert_soft_deleted` / `not_soft_deleted`; a failure prints the rows the table holds
+- [x] `fake()` / `fakeable()` / `restore_fakes()` reach mail, queue, notification, storage, event, http, process, broadcast, and scout; `FakeQueue`, `FakeNotifications`, and `FakeDisk` are new here
+- [x] `without_middleware()` / `with_middleware()` by alias, by class, or all of it, on the back of `HttpKernel.skip_middleware()`
+- [x] `travel` / `travel_to` / `freeze_time` / `frozen_time` / `travel_back` move the clock `now()` and model timestamps read, and put it back
+- [x] `tests/` with a `conftest.py` and two example tests in the scaffold, `pytest` configured in its `pyproject.toml`, `smith make:test [--unit]`, and `smith test`
+- [x] Living example: the progress app's own suite runs green under `smith test`, `smith progress:testing` demonstrates the toolkit; the board marks M28 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.testing`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash
@@ -524,7 +706,7 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 - [x] Stub tree: every generator renders a `.stub`, `smith stub:publish` copies them into `stubs/`, and a published stub wins
 - [x] `ServiceProvider.publishes()` + `smith vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `almasix-stubs` and `almasix-lang`
 - [x] Loupe allow-list: `config/loupe.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
-- [x] The built-in catalogue — 84 commands, including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
+- [x] The built-in catalogue — 101 commands (84 at M30, plus what later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
 - [x] `console` rewritten in Laravel's Artisan section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
 - [x] Living example: `smith progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
 - [x] Deliberate deviations recorded in `docs/PLAN.md` with reasons — `config:cache` / `route:cache` / `event:cache` measured and declined, `view:cache` verifying rather than persisting, `db:show` without a size column, `db:wipe` refusing `--drop-views`
@@ -648,7 +830,7 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 ## Out of scope until later milestones
 
-- Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)
+- Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs versioning + Prologue (M39)
 - IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)

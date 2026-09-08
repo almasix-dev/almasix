@@ -1,0 +1,11 @@
+"""{{ class }} embedded document."""
+
+from __future__ import annotations
+
+from almasix.orm import EmbeddedDocument
+
+
+class {{ class }}(EmbeddedDocument):
+    """{{ class }} — stored inside its parent document, not in a collection."""
+
+    fields: tuple[str, ...] = ()

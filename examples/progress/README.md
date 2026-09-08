@@ -165,18 +165,26 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M18** | `smith progress:events` — Event.listen / dispatch / until |
 | **M19** | `smith progress:authorization` — Gate / Policy / authorize |
 | **M20** | `smith progress:http` — `Http` façade, fakes, retry, pool |
-| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 84 commands |
+| **M21** | `smith progress:process` — `Process` run / start / pool / pipe, timeouts, fakes |
+| **M22** | `smith progress:concurrency` — `Concurrency.run` / `defer` / `arun`, four drivers |
+| **M23** | `smith progress:resources` + `GET /api/resources` — `JsonResource`, conditionals, wrapping, pagination meta |
+| **M24** | `smith progress:factories` — factories, states, sequences, `has` / `for_`; `DemoSeeder` seeds through them |
+| **M25** | `smith progress:documents` + `GET /api/documents` — `Document` models, embeds, references, indexes, `documents:show` |
+| **M26** | `smith progress:broadcast` + `GET /api/broadcast` — `ShouldBroadcast`, channel auth, the websocket at `/broadcasting/socket`, `channel:list` |
+| **M27** | `smith progress:search` + `GET /api/search` — `Searchable` posts, the `database` and `collection` engines, `Scout.fake()`, `scout:status` |
+| **M28** | `smith progress:testing` + `smith test` — `tests/` drives the app in-process: HTTP and console assertions, database helpers, `fake()`, time travel |
+| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 125 commands |
 | **M31** | `smith progress:schedule` — frequencies, constraints, hooks, a tick; `smith schedule:list` / `test` / `interrupt` |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
-| **M21–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M29–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M20, M30, M31, M40, M41, M49, and M50 are closed; **M5** is partly done.
-Next is **M42 — query builder + database exhaust**. The board on `/progress`
+M0–M28, M30, M31, M40, M41, M49, and M50 are closed; **M5** is partly done.
+Next is **M29 — Package development**. The board on `/progress`
 lists the full **M0–M51** roadmap with a status and proof for each milestone.
 ## CLI
 
@@ -193,6 +201,17 @@ smith progress:redis
 smith progress:encryption
 smith progress:events
 smith progress:authorization
+smith progress:http
+smith progress:process
+smith progress:concurrency
+smith progress:resources
+smith progress:factories
+smith progress:documents
+smith progress:broadcast
+smith progress:search
+smith progress:testing
+smith test
+smith channel:list
 smith key:generate
 smith storage:link
 smith progress:schedule

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from almasix.orm import Model, relation
+from almasix.orm import HasFactory, Model, relation
 
 
-class Role(Model):
+class Role(HasFactory, Model):
     timestamps = False
     fillable = ("name",)
 

@@ -312,8 +312,17 @@ class QueryBuilder:
     def where_date(self, column: str, value: Any) -> QueryBuilder:
         return self._push_where("and", sa.func.date(self.column(column)) == value)
 
-    def where_raw(self, sql: str, boolean: str = "and") -> QueryBuilder:
-        return self._push_where(boolean, sa.text(sql))
+    def where_raw(
+        self,
+        sql: str,
+        boolean: str = "and",
+        bindings: Mapping[str, Any] | None = None,
+    ) -> QueryBuilder:
+        """Raw SQL, with `:name` placeholders bound rather than interpolated."""
+        clause = sa.text(sql)
+        if bindings:
+            clause = clause.bindparams(**dict(bindings))
+        return self._push_where(boolean, clause)
 
     def where_key(self, value: Any) -> QueryBuilder:
         if self.model is None:

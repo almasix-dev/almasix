@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from database.seeders.demo_seeder import DemoSeeder
-
 from almasix.orm import Seeder
+from database.seeders.demo_seeder import DemoSeeder
 
 
 class DatabaseSeeder(Seeder):

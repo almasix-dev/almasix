@@ -28,8 +28,12 @@ BLUEPRINTS: dict[str, Blueprint] = {
     "middleware": Blueprint(("app", "http", "middleware"), "middleware.stub"),
     "provider": Blueprint(("app", "providers"), "provider.stub"),
     "request": Blueprint(("app", "http", "requests"), "request.stub"),
+    "resource": Blueprint(("app", "http", "resources"), "resource.stub"),
     "model": Blueprint(("app", "models"), "model.stub"),
+    "document": Blueprint(("app", "models"), "document.stub"),
+    "channel": Blueprint(("app", "broadcasting"), "channel.stub"),
     "seeder": Blueprint(("database", "seeders"), "seeder.stub"),
+    "factory": Blueprint(("database", "factories"), "factory.plain.stub"),
     "command": Blueprint(("app", "console", "commands"), "command.stub"),
     "job": Blueprint(("app", "jobs"), "job.queued.stub"),
     "mail": Blueprint(("app", "mail"), "mail.stub"),
@@ -42,6 +46,8 @@ BLUEPRINTS: dict[str, Blueprint] = {
     "observer": Blueprint(("app", "observers"), "observer.plain.stub"),
     # A plain class lands wherever its name says: ``Services/Ledger`` →
     # ``app/services/ledger.py``.
+    "test": Blueprint(("tests", "feature"), "test.stub"),
+    "unit-test": Blueprint(("tests", "unit"), "test.unit.stub"),
     "class": Blueprint(("app",), "class.stub"),
 }
 

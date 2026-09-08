@@ -104,9 +104,9 @@ almasix/
     client/                    # M20 — outbound HTTP client (inbound HTTP stays in http/)
     process/                   # M21 — Laravel Processes parity
     concurrency/               # M22 — concurrent closures / pools
-    scout/                     # M27 — search (optional extra)
+    scout/                     # M27 — search (Scout parity)
     broadcasting/              # M26 — Echo-class fan-out
-    testing/                   # M28 — TestCase helpers beyond pytest baseline
+    testing/                   # M28 — TestCase, client, assertions, fakes, time
     installer/                 # almasix new …
     orm/                       # M5 (+ M24 factories, M25 NoSQL/document stores)
     prism/                  # M6 — optional for API apps
@@ -328,21 +328,21 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Redis | `redis` | **Done (M16)** | Redis page + Cache/Session/Queues updates |
 | Encryption | `encryption` | **M17** | `Crypt` façade, JSON-safe encrypt, `APP_PREVIOUS_KEYS`, `key:generate` |
 | Events | `events` | **M18** | Write when app event dispatcher ships (model events already in Articulate) |
-| Broadcasting | `broadcasting` | **M26** | Write when broadcasting ships |
+| Broadcasting | `broadcasting` | **M26** | Shipped |
 | Authorization | `authorization` | **M19** | Write when Gates/Policies ship |
 | HTTP Client | `http-client` | **M20** | Shipped |
 | Processes | `processes` | **M21** | Write when Processes ship |
 | Concurrency | `concurrency` | **M22** | Write when Concurrency ships |
 | Eloquent: Mutators & Casting | `articulate/casts` | **Done (M40)** | Page published |
-| Eloquent: Serialization | `articulate/serialization` | **Done (M40)** | Page published; API Resources stay M23 |
-| Eloquent: API Resources | `eloquent-resources` / `api-resources` | **M23** | Write when Resources ship |
-| Eloquent: Factories | `database/factories` | **M24** | Write when factories ship |
-| MongoDB / NoSQL | `database/nosql` (+ Articulate pages) | **M25** | Write when document-store driver ships — core Articulate multi-store, not a satellite ORM |
-| Scout / Search | `scout` / `search` | **M27** | Write when search ships |
+| Eloquent: Serialization | `articulate/serialization` | **Done (M40)** | Page published; links out to API Resources |
+| Eloquent: API Resources | `api-resources` | **Done (M23)** | Page published |
+| Eloquent: Factories | `database/factories` | **Done (M24)** | Page published |
+| MongoDB / NoSQL | `articulate/documents` (+ Database Getting Started) | **Done (M25)** | Page published — core Articulate multi-store, not a satellite ORM |
+| Scout / Search | `search` | **Done (M27)** | Page published |
 | Queues | `queues` | **M11** | Write when queues ship |
 | Mail | `mail` | **M12** | Write when mail ships |
 | Notifications | `notifications` | **M13** | Write when notifications ship |
-| Testing | `testing` (+ subpages) | **M28** | Write when testing toolkit expands |
+| Testing | `testing` (+ HTTP / Console / Database / Mocking subpages) | **Done (M28)** | Pages published |
 | Packages | `packages` | **M29** | Write package-dev guidelines when that milestone lands |
 
 Starlight **Digging Deeper** / **Security** / **Database** / **Packages** sidebars grow with those pages.
@@ -1019,7 +1019,7 @@ Laravel [Redis](https://laravel.com/docs/redis) connection manager and first-par
 
 ### M18 — Events (`almasix.events`)
 
-**Status (M18):** Ladder exhausted — `Event` / `event()` / `listen()`; dispatcher with wildcards + subscribers; queued listeners via `ShouldQueue` + `CallQueuedListener`; `ShouldBroadcast` stub (M26); `make:event` / `make:listener` / `event:list`; fakes; Starlight Events; progress `progress:events`.
+**Status (M18):** Ladder exhausted — `Event` / `event()` / `listen()`; dispatcher with wildcards + subscribers; queued listeners via `ShouldQueue` + `CallQueuedListener`; `ShouldBroadcast` (whole feature in M26); `make:event` / `make:listener` / `event:list`; fakes; Starlight Events; progress `progress:events`.
 
 ### M19 — Authorization (`almasix.auth` Gates / Policies)
 
@@ -1065,6 +1065,10 @@ Laravel [Processes](https://laravel.com/docs/processes) — first-class subproce
 
 **Gate:** claimed surface exhausted, fakes work, docs published.
 
+**Status (M21):** Ladder exhausted against every section of Laravel's Processes page — `Process.run` for shell strings and argument lists; `ProcessResult` (`successful` / `failed` / `exit_code` / `output` / `error_output` / `see_in_output` / `see_in_error_output` / `throw` / `throw_if` / `throw_unless`); options (`path`, `input`, `env` merged into the inherited environment, `timeout` defaulting to 60s, `idle_timeout`, `forever`, `quietly`, `tty`, `options`, `when` / `unless`); real-time output callbacks; `ProcessTimedOutException` carrying the partial result; `Process.start` → `InvokedProcess` (`id`, `running`, `output` / `error_output`, `latest_output` / `latest_error_output`, `signal`, `stop`, `wait(callback)`); `Process.pool` / `concurrently` with `as_()` naming, results keyed by name and position, `running()` as a Collection, pool-wide `signal` / `stop`, keyed start callbacks; `Process.pipe` for lists and callables; fakes — command maps with real fall-through, `Process.result`, `Process.describe` lifecycles, `Process.sequence`, `prevent_stray_processes`, `recorded()` and the `assert_ran*` family; `ProcessServiceProvider`; Starlight Processes; progress `progress:process`.
+
+**Deliberate deviations (M21):** fluent calls copy the pending process instead of mutating it, matching Almasix's HTTP client rather than Laravel's `PendingProcess`; `as_()` carries a trailing underscore because `as` is a Python keyword; `options()` takes `subprocess.Popen` keyword arguments where Laravel takes Symfony Process options; `described_command` is a property rather than a `command()` accessor, so it does not collide with the fluent `command()` setter; `quietly()` also silences the run callback, because Almasix captures output either way and the callback is the only thing left to silence; signals are the `signal` module's integers, with no cross-platform abstraction.
+
 ### M22 — Concurrency
 
 Laravel [Concurrency](https://laravel.com/docs/concurrency) — run closures concurrently and collect results.
@@ -1075,6 +1079,10 @@ Laravel [Concurrency](https://laravel.com/docs/concurrency) — run closures con
 **Depends on:** M21 Processes if process driver is claimed; otherwise asyncio-only driver first.
 
 **Gate:** documented drivers work; docs published.
+
+**Status (M22):** `Concurrency.run` taking one callable, a list, or a keyed map and returning results in the same shape and order; four drivers — `thread` (default, any callable, `max_workers`), `fork` (true parallelism, closures included, Unix), `process` (spawned interpreter, picklable tasks, honest error otherwise), `sync` (Laravel's debugging driver); a failing task raising only once the others have settled; `Concurrency.defer` returning a waitable `DeferredTasks`; `Concurrency.arun` for the ASGI path; `driver()` / `set_default_driver()` / `extend()` and named config entries that alias another driver; `config/concurrency.py` in the scaffold; `ConcurrencyServiceProvider`; Starlight Concurrency; progress `progress:concurrency`.
+
+**Deliberate deviations (M22):** the default driver is `thread`, not Laravel's `process` — Python has real threads, they accept any closure, and the work this page is for (queries, HTTP calls, file reads) releases the GIL; `arun()` is an addition with no Laravel counterpart, for async controllers; `defer()` runs on a background thread and returns a handle, the same deviation as `Batch.defer()` in M20, because Almasix has no post-response hook yet; the `process` driver rejects unpicklable tasks with a clear error rather than serializing closures, since `SerializableClosure` has no dependency-free Python equivalent.
 
 ### M23 — API Resources + Serialization
 
@@ -1087,7 +1095,11 @@ Laravel [Eloquent API Resources](https://laravel.com/docs/eloquent-resources) + 
 
 **Depends on:** M5 ORM (done); API route polarity (done).
 
-**Gate:** Resources usable on `routes/api.py`, docs published, coverage ≥ 98%.
+**Gate:** Resources usable on `routes/api.py`, docs published, coverage ≥ 98%. **Met.**
+
+**Status (M23):** `JsonResource` proxying the wrapped model, `to_dict(request)` with `make` / `collection` / `with_` / `additional` / `response`; the whole conditional family (`when`, `unless`, `merge_when`, `merge_unless`, `when_has`, `when_not_null`, `when_loaded`, `when_counted`, `when_aggregated`, `when_appended`, `when_pivot_loaded[_as]`) with callable values and defaults; recursive filtering that also resolves nested resources against the same request; `ResourceCollection` with `collects`, the `<Name>Resource` guess, and `AnonymousResourceCollection`; wrapping via `wrap` / `without_wrapping` / `wrap_with` with no double wrap; Laravel's `meta` + `links` for `Paginator` and an honest subset for `SimplePaginator`; `make_response` honoring a `to_response()` protocol so a controller can return a resource; `smith make:resource --collection`; Starlight **API Resources**; progress `progress:resources` and `GET /api/resources`.
+
+**Deliberate deviations (M23):** the response hook is duck-typed (`to_response()`) rather than a `Responsable` interface, so anything can opt in without importing a base class; `to_dict()` replaces Laravel's `toArray()` to match the ORM's own serialization name; the `pivot` lookup compares against the ORM's `get_pivot_table()` because Almasix's `Pivot` reports a generic `table`; there is no `preserveKeys`, since paginated and list payloads are lists in both frameworks and keyed output is available by returning a dict.
 
 ### M24 — Model factories
 
@@ -1099,7 +1111,13 @@ Eloquent/Laravel Factory parity — primary consumer is **seeders**.
 
 **Depends on:** M5 seeders (done). Homes after Articulate is boring in real apps.
 
-**Gate:** factory → seeder path green in progress/example, docs published, coverage ≥ 98%.
+**Gate:** factory → seeder path green in progress/example, docs published, coverage ≥ 98%. **Met.**
+
+**Status (M24):** `Factory` with `definition()`, `configure()`, and Laravel's whole immutable builder — `count`, `state` (dict, callable, async callable), `set`, `sequence` / `for_each_sequence` / `cross_join_sequence`, `trashed`, `connection`, `recycle`, `after_making` / `after_creating`, `raw`, `make` / `make_one` / `make_many`, `create` / `create_one` / `create_many` and their quiet twins, `lazy`; relationships through `has`, `has_attached` (pivot dict or callable), `for_`, the `has_<relation>` / `for_<relation>` magic methods, and factory-or-model attribute values that resolve to a key; `HasFactory` giving `Model.factory(count, state)`, resolution by `<Model>Factory` name then by `database.factories` import, with `new_factory()`, `guess_model_names_using`, `guess_factory_names_using`, and `use_namespace` as the escape hatches; a dependency-free `Fake` generator (seedable, `unique()`, Laravel camelCase spellings, `Fake.resolve_using` to swap in Faker); `smith make:factory [--model]` and `make:model -f`; Starlight **Factories** + a factory section on **Seeding**; the progress app's `DemoSeeder` now builds every row through a factory, and `progress:factories` demonstrates the surface end to end.
+
+**Deliberate deviations (M24):** `make()` and `create()` are coroutines, because every write in Almasix is; `for_` and `has_attached` keep Python spellings (`for` is a keyword); factories fill past the mass assignment guard with `force_fill`, since Almasix models are guarded by default where Laravel's skeleton is not; fake data ships in-framework with a smaller provider list rather than depending on Faker, and `Fake.resolve_using` hands the whole job to the real thing; a created parent's relations are left unloaded, because this ORM has no lazy loading to fall back on.
+
+**Shipped alongside (ORM):** per-row connections (`Model.set_connection` / `get_connection_name` / `instance_query`, plus `Model.on`), which `Factory.connection()` needs; `force_delete` now ignores global scopes, so an already-trashed row really is deletable; `attach` accepts a `Collection`.
 
 ### M25 — Articulate NoSQL / document stores
 
@@ -1116,7 +1134,11 @@ Bake **document stores into Articulate core** under the multi-store contract (se
 
 **Depends on:** M5 SQL Articulate (done). Prefer after **M24** factories so seed/factory demos can cover both stores; may start design seams earlier without claiming exhaust.
 
-**Gate:** Mongo driver exhausted end-to-end (config → model → query → tests → docs); SQL regressions still green; coverage ≥ 98% on new driver code (aim 100%). Other NoSQL engines are follow-on drivers under the same abstraction — not claimed unless exhausted here.
+**Gate:** Mongo driver exhausted end-to-end (config → model → query → tests → docs); SQL regressions still green; coverage ≥ 98% on new driver code (aim 100%). Other NoSQL engines are follow-on drivers under the same abstraction — not claimed unless exhausted here. **Met.**
+
+**Status (M25):** `almasix.orm.documents` — a store-agnostic `Query` / `Condition` / `Order` shape, a `DocumentStore` contract, and two drivers: `MongoStore` (Motor behind `almasix[mongodb]`, with the whole operator set translated to Mongo filters, `distinct`, `$inc`, index information, and `raw_aggregate` for native pipelines) and `MemoryStore` (in-process, same semantics, unique-index enforcement — the document answer to `:memory:` SQLite); `DocumentBuilder` spelling the SQL builder's surface for what a collection can answer (the `where` family, dotted paths, ordering, windows, `select` / `distinct`, scopes, `when` / `unless` / `tap`, chunking, `lazy`, both paginators, `insert` / `update` / `upsert` / `increment` / `delete` / `truncate`) plus four document-native filters (`where_regex`, `where_exists_field`, `where_all`, `where_size`) and `where_raw` taking either an engine filter or a predicate; `UnsupportedQueryError` naming the alternative for every SQL-only call rather than pretending; `Document` reusing all of `Model` (casts, accessors, events, observers, soft deletes, factories, serialization) with `_id` keys, collection naming, and declared `indexes`; `EmbeddedDocument` with `embeds_one` / `embeds_many`, write-back on `save()`, and in-memory filtering; references — including document → SQL — through the existing relations and eager loader, with a document-native `with_count`; `DatabaseManager.store()` / `is_document()` telling stores and databases apart and refusing the wrong one; `smith make:document [--factory|--embed]`, `documents:index [--pretend]`, `documents:show`; Starlight **Documents (NoSQL)** + a document section on Database Getting Started; the progress app's `Activity` document with `GET /api/documents` and `progress:documents`.
+
+**Deliberate deviations (M25):** Laravel ships no NoSQL, so parity here is measured against `mongodb/laravel-mongodb` — the model behaves like every other model, spelled Almasix's way. Transactions stay SQL-only, because Mongo needs a replica set and pretending otherwise would be a lie in the one place it hurts; `_id` is handed back as the store's own value rather than wrapped in an ObjectId type applications must then know about; embeds save through their parent, since an embedded document has no collection of its own; the `memory` driver is a first-class configured store rather than a test double, so the same code path runs in CI and on a laptop with no Mongo.
 
 ### M26 — Broadcasting
 
@@ -1128,7 +1150,11 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 **Depends on:** M18 Events; M16 Redis nice-to-have for Redis broadcaster.
 
-**Gate:** at least null/log + one real path; docs published. Horizon-class UI out of scope.
+**Gate:** at least null/log + one real path; docs published. Horizon-class UI out of scope. **Met.**
+
+**Status (M26):** `almasix.broadcasting` — `ShouldBroadcast` (plus `ShouldBroadcastNow` and `ShouldBroadcastAfterCommit`) with `broadcast_on` / `broadcast_as` / `broadcast_with` / `broadcast_when`, payloads reflected off the event's public attributes when it says nothing, and the `InteractsWithSockets` / `InteractsWithBroadcasting` mixins behind `to_others()` and `via()`; the `broadcast()` helper returning a `PendingBroadcast` that dispatches through the event bus on `send()`, on `await`, or when it falls out of scope; a `BroadcastManager` with five drivers — `log` and `null`, Almasix's own in-process `websocket` server, `redis` pub/sub, and `pusher` over its REST API — plus `Broadcast.extend()` for a sixth; `Channel` / `PrivateChannel` / `PresenceChannel` / `EncryptedPrivateChannel`, model channels, and payloads sealed with the application key on encrypted channels; `routes/channels.py` loaded by the provider (so console sees it too) with wildcard patterns, route-model binding from type hints, channel classes resolved from the container, per-channel guards, and presence rosters; `POST /broadcasting/auth` and `/broadcasting/user-auth` answering in Pusher's signed format; a websocket at `/broadcasting/socket` speaking a Pusher-shaped protocol (`subscribe`, `unsubscribe`, `ping`, `client-*`, member added/removed), reached through a new `Route.websocket()` and kernel support; queued broadcasts as a `BroadcastEvent` job whose payload is plain JSON; `BroadcastsEvents` / `BroadcastsEventsAfterCommit` for model writes, on the back of a new `Connection.after_commit()`; a `broadcast` notification channel; `Broadcast.fake()` with the assertion set; `smith make:channel` and `channel:list`; Starlight **Broadcasting**; the progress app's `PostPublished`, broadcasting `Comment`, `GET /api/broadcast`, and `progress:broadcast`.
+
+**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver where Laravel points at Reverb, Pusher, or Ably, and speaks Pusher's protocol so those stay available; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes.
 
 ### M27 — Search
 
@@ -1140,7 +1166,11 @@ Laravel Scout-class full-text search for Articulate models.
 
 **Depends on:** M5 ORM; M11 for queued syncing (optional); document models (**M25**) should be searchable under the same mixin when honest.
 
-**Gate:** one driver path + fakes; docs published. Heavy engines stay optional extras.
+**Gate:** one driver path + fakes; docs published. Heavy engines stay optional extras. **Met.**
+
+**Status (M27):** `almasix.scout` — a `Searchable` mixin that indexes on `saved`, leaves the index on `deleted`, and returns on `restored`, with `to_searchable_array` / `scout_metadata` / `should_be_searchable` / `search_index_should_be_updated` / `searchable_as` / `get_scout_key[_name]` as the whole of the model contract, plus `searchable()` / `unsearchable()` on the model, on a query, and on a `Collection`, `make_all_searchable` / `remove_all_from_search`, and `without_syncing_to_search()` as a context manager or a pair of switches; a `SearchBuilder` spelling Laravel's builder — `where`, `where_in`, `where_not_in`, `order_by` / `latest` / `oldest`, `take`, `within`, `options`, `query_using`, `when` / `unless` / `tap`, `with_trashed` / `only_trashed`, and `get` / `first` / `keys` / `raw` / `count` / `cursor` / `paginate` / `simple_paginate` and their `_raw` twins; four engines behind an `Engine` contract — `database` (SQL `LIKE`, prefix matching, and the dialect's own full text on PostgreSQL and MySQL), `collection` (filtered in Python, Laravel's driver for a laptop), `meilisearch` (its REST API over the M12 HTTP client, no SDK), and `null` — plus `Scout.extend()` for a fifth; queued indexing through `MakeSearchable` / `RemoveFromSearch` jobs carrying keys rather than models, and `after_commit` indexing on the back of `Connection.after_commit()` with `flush_search()` for tests; soft deletes indexed as `__soft_deleted` when configured; `Scout.fake()` with `assert_synced` / `assert_removed` / `assert_flushed` / `assert_nothing_synced` / `assert_searched` / `assert_search_count`; `config/scout.py` in the scaffold and a `ScoutServiceProvider`; eight commands — `scout:import`, `scout:queue-import`, `scout:flush`, `scout:index`, `scout:delete-index`, `scout:delete-all-indexes`, `scout:sync-index-settings`, and `scout:status`; Starlight **Search**; the progress app's searchable `Post`, `GET /api/search`, and `progress:search`.
+
+**Deliberate deviations (M27):** the default driver is `database`, not `algolia` — an application that has not chosen an engine should still be able to search, and Algolia has no dependency-free client; the search phrase is `.search("phrase")` while `query_using()` shapes the SQL behind the hits, because Laravel's `query()` would collide with the ORM's own; every engine method is a coroutine, so a custom engine is written `async`; `flush_search()` exists because a commit hands its index write to the loop and returns, and a test asserting on the index has to know the write landed; Meilisearch is spoken over its REST API through `almasix.client` rather than through the official SDK, which keeps search in core with no new dependency; `scout:status` is an addition — "which engine is this application actually using" is the first question every search bug asks.
 
 ### M28 — Testing toolkit
 
@@ -1154,7 +1184,11 @@ Expand beyond the current pytest + smoke/regression baseline toward Laravel’s 
 
 **Depends on:** surfaces being faked (M11–M13, M18, M20, M21). Can grow incrementally; this milestone exhausts the documented toolkit.
 
-**Gate:** HTTP + console helpers used by framework tests themselves; docs published.
+**Gate:** HTTP + console helpers used by framework tests themselves; docs published. **Met.**
+
+**Status (M28):** `almasix.testing` — a `TestCase` written for pytest, whose autouse lifecycle boots the application (through the app's own `bootstrap/app.py`, so a test drives the middleware a server would), migrates with `use_refresh_database`, wraps a test in `use_database_transactions`, and takes an `almasix_base_path` fixture when the path is a fixture's to decide, with `boot_application()` for the same outside a case; a `TestClient` driving the ASGI app in-process over `httpx.ASGITransport` — every verb and its `*_json` twin, headers, bearer and basic tokens, cookies that persist between requests, `with_session`, `acting_as`, `following_redirects`, and `from_`; a `TestResponse` with the Laravel assertion set in full — nineteen status assertions, headers, cookies, content type, downloads, `assert_see` / `assert_see_text` / `assert_see_in_order` with HTML escaping, ten JSON assertions including dotted `assert_json_path` and `*`-wildcard `assert_json_structure`, validation (`assert_valid` / `assert_invalid`), session, and view assertions reading what Prism was actually given; `artisan()` returning a `PendingCommand` with `expects_question` / `expects_confirmation` / `expects_choice` / `expects_output` / `doesnt_expect_output` / `expects_table` and `assert_exit_code` / `assert_successful` / `assert_failed` / `assert_output_contains` / `assert_asked`, answered through an `AnswerSink` the console's own prompts consult; database helpers — `assert_database_has` / `missing` / `count` / `empty`, `assert_model_exists` / `missing`, `assert_soft_deleted` / `not_soft_deleted`, `refresh_database()`, and `database_transactions()`; `fake()` / `fakeable()` / `restore_fakes()` as one door to nine fakes, three of them new (`FakeQueue`, `FakeNotifications`, `FakeDisk`); `without_middleware()` / `with_middleware()` on the back of `HttpKernel.skip_middleware()`; `travel` / `travel_to` / `freeze_time` / `frozen_time` moving the clock that `now()` and model timestamps read; `tests/` with a `conftest.py` and two example tests in the scaffold, `pytest` configured in its `pyproject.toml`, `smith make:test [--unit]`, and `smith test`; Starlight **Testing** with HTTP / Console / Database / Mocking subpages; the progress app's own suite and `progress:testing`.
+
+**Deliberate deviations (M28):** the toolkit is pytest's, not xUnit's — a `TestCase` is a class pytest collects, `setup()` / `teardown()` are coroutines run by an autouse fixture, and nothing here replaces `assert`, because a Python suite that fought pytest would be a worse suite; `RefreshDatabase` and `DatabaseTransactions` are class attributes rather than traits, and are also plain functions, since a test that is not a `TestCase` deserves them too; there is no browser-test surface — Playwright is a better Dusk than anything this framework should ship, and the honest answer is to point at it; `TestResponse` reads the session and the rendered views out of recorders the client installs, because a response object here is `httpx`'s and knows nothing of either; `boot_application()` is an addition, since Laravel's `createApplication` has a `bootstrap/app.php` to require and Python needs a loader for the same thing.
 
 ### M29 — Package development
 
@@ -1183,7 +1217,7 @@ Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the l
 - **Signal handling:** `trap(SIGTERM, …)` (single + multiple signals), honored by long-running commands (`queue:work`, `schedule:work`, `serve`)
 - **Events:** `CommandStarting` / `CommandFinished` (+ a startup event) through the M18 dispatcher
 - **Stub customization:** move generator stubs out of inline f-strings into a real stub set + `smith stub:publish`; app stubs override framework stubs
-- **Missing built-ins** (only where the underlying feature exists): `about`, `help`, `route:list`, `config:show`, `db:wipe`, `db:show`/`db:table`, `queue:restart` / `queue:clear` / `queue:monitor`, `env:encrypt` / `env:decrypt`, `optimize` / `optimize:clear` + `config:cache` / `view:cache` and their `:clear` pairs (cache targets may land with M31/M15 work), `vendor:publish`, and the `make:*` set for shipped features (`make:job`, `make:mail`, `make:notification`, `make:rule`, `make:cast`, `make:exception`, `make:view`, `make:class`, `make:enum`, `make:interface`, `make:observer`). Generators for unshipped features stay with their milestone (`make:factory` → M24, `make:test` → M28, `make:resource` → M23, `make:channel` → M26).
+- **Missing built-ins** (only where the underlying feature exists): `about`, `help`, `route:list`, `config:show`, `db:wipe`, `db:show`/`db:table`, `queue:restart` / `queue:clear` / `queue:monitor`, `env:encrypt` / `env:decrypt`, `optimize` / `optimize:clear` + `config:cache` / `view:cache` and their `:clear` pairs (cache targets may land with M31/M15 work), `vendor:publish`, and the `make:*` set for shipped features (`make:job`, `make:mail`, `make:notification`, `make:rule`, `make:cast`, `make:exception`, `make:view`, `make:class`, `make:enum`, `make:interface`, `make:observer`). Generators for unshipped features stay with their milestone (`make:test` → M28); `make:factory` (M24), `make:resource` (M23), `make:document` (M25), and `make:channel` (M26) shipped with theirs.
 - **Discovery is all-or-nothing:** one command file that fails to import aborts discovery for the whole directory, and the notice only prints on `smith list` — invoking a command shows "No such command" with no hint why. Report the failing module, keep the rest, and say so on every run
 - **Loupe allow-list:** Tinker-class `commands` / `dont_alias` configuration for the REPL
 - Docs: rewrite Starlight **Smith Console** to the Artisan section order; document every built-in command
@@ -1589,7 +1623,23 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **Now: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `almasix/smith/cli.py` vs `Command` classes in `almasix/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M32**, the interactive installer, which shares M30's stub tree.
 
-**Milestones M21–M29** (Processes → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M21 Processes gate met** — `Process.run` / `start` / `pool` / `concurrently` / `pipe`, both timeout flavours, real-time output callbacks, signals and stops, and the whole fake and assertion surface, exhausted against the Laravel page.
+
+**M22 Concurrency gate met** — `run` / `defer` / `arun` over four drivers, with the task shape (single, list, keyed map) preserved into the results.
+
+**M23 API Resources gate met** — `JsonResource` and `ResourceCollection` with the whole conditional family, wrapping, pagination `meta` / `links`, `make:resource`, and controllers that return a resource straight from a route.
+
+**M24 Model factories gate met** — the Laravel builder in full (states, sequences, `has` / `for_` / `has_attached` / `recycle`, hooks, quiet writes), `make:factory`, and a `DemoSeeder` that builds every row through a factory.
+
+**M25 Articulate NoSQL gate met** — a store abstraction with two drivers (MongoDB through Motor, and an in-process store with the same semantics), `Document` models that keep every Model behaviour, embedded documents, references that cross into SQL, declared indexes with `documents:index` / `documents:show`, and a builder that refuses SQL-only calls by name instead of pretending.
+
+**M26 Broadcasting gate met** — `ShouldBroadcast` events with the whole channel family, five drivers (`log`, `null`, Almasix's own websocket server, Redis pub/sub, Pusher), `routes/channels.py` authorization with model binding and presence rosters, the signed `/broadcasting/auth` endpoints, model broadcasting on the back of `after_commit`, a `broadcast` notification channel, and `Broadcast.fake()`.
+
+**M27 Search gate met** — a `Searchable` mixin that keeps the index in step with every write, the Scout builder in full, four engines (`database`, `collection`, `meilisearch`, `null`) behind a contract anyone can extend, queued and after-commit indexing, soft deletes, eight `scout:*` commands, and `Scout.fake()`.
+
+**M28 Testing toolkit gate met** — a pytest-shaped `TestCase` that boots the application through its own `bootstrap/app.py`, an in-process client over the real middleware stack, the Laravel response assertion set in full, console commands that answer their own prompts, database helpers and two ways to keep a database clean, one door to nine fakes, a clock a test can move, `tests/` in the scaffold with `make:test` and `smith test`, and four Starlight pages.
+
+**Milestone M29** (Package development) keeps its place in the roadmap and is unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

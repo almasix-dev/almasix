@@ -409,6 +409,15 @@ class AuthManager:
         return self.guard().via_remember()
 
 
+def session_payload_for(user: Any) -> dict[str, Any]:
+    """What a login writes to the session for this user.
+
+    Public because a test signs a user in by writing that key itself, rather
+    than by making a request to a login form (`TestClient.acting_as`).
+    """
+    return _session_payload(user)
+
+
 def _session_payload(user: Any) -> dict[str, Any]:
     if isinstance(user, dict):
         return {k: v for k, v in user.items() if k != "password"}

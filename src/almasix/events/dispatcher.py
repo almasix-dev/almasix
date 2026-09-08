@@ -69,6 +69,10 @@ class Dispatcher:
             self._fake_events.append(event)
             return None
 
+        # Laravel broadcasts before listeners run, so a slow listener cannot
+        # delay what the browser sees.
+        self._broadcast(event)
+
         name = self._event_name(event)
         responses: list[Any] = []
         for listener in self._collect(name):
@@ -79,6 +83,15 @@ class Dispatcher:
                 return response
             responses.append(response)
         return None if halt else responses
+
+    def _broadcast(self, event: Any) -> None:
+        """Send a `ShouldBroadcast` event on its way, if it is one."""
+        from almasix.broadcasting.events import is_broadcastable
+
+        if not isinstance(event, str) and is_broadcastable(event):
+            from almasix.broadcasting.jobs import queue_broadcast
+
+            queue_broadcast(event)
 
     def until(self, event: Any, payload: list[Any] | None = None) -> Any:
         return self.dispatch(event, payload, halt=True)

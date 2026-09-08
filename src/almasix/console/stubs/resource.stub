@@ -1,0 +1,16 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.http.resources import JsonResource
+
+
+class {{ class }}(JsonResource):
+    """Shape one record for the API."""
+
+    def to_dict(self, request: Any = None) -> dict[str, Any]:
+        return {
+            "id": self.id,
+        }

@@ -48,5 +48,4 @@ def test_m20_board_marks_http_client_complete(progress_cwd: Path) -> None:
 
     m20 = next(m for m in _milestones() if m["id"] == "M20")
     assert m20["status"] == "complete"
-    m21 = next(m for m in _milestones() if m["id"] == "M21")
-    assert m21["status"] in {"next", "planned"}
+    assert any("progress:http" in proof for proof in m20["proof"])

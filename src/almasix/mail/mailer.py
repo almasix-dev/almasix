@@ -32,6 +32,10 @@ class MailManager:
     def get_default_mailer(self) -> str:
         return str(self._config.get("default") or "log")
 
+    def set_default_mailer(self, name: str) -> None:
+        """Send through this mailer from here on (`Mail::fake()` uses it)."""
+        self._config = {**self._config, "default": name}
+
     def mailer(self, name: str | None = None) -> Mailer:
         key = name or self.get_default_mailer()
         if key not in self._mailers:
@@ -204,6 +208,25 @@ class Mail:
     @classmethod
     def queue(cls, mailable: Mailable) -> SentMessage | None:
         return cls.mailer().queue(mailable)
+
+    @classmethod
+    def fake(cls, name: str = "array") -> Any:
+        """Send to an array instead of anywhere (Laravel ``Mail::fake()``).
+
+        Returns the assertions — ``Mail.fake().assert_sent(WelcomeMail)`` —
+        and configures the mailer if the application has not.
+        """
+        from almasix.mail.testing import MailAssertions
+
+        manager = cls.manager()
+        mailers = dict(manager._config.get("mailers") or {})  # noqa: SLF001
+        if name not in mailers:
+            mailers[name] = {"transport": "array"}
+            manager.set_config({**manager._config, "mailers": mailers})  # noqa: SLF001
+        manager.set_default_mailer(name)
+        assertions = MailAssertions(name)
+        assertions.flush()
+        return assertions
 
 
 def _resolve_attachments(

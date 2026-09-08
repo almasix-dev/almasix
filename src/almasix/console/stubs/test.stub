@@ -1,0 +1,14 @@
+"""{{ class }} — a feature test: the application, through HTTP."""
+
+from __future__ import annotations
+
+from almasix.testing import TestCase
+
+
+class {{ class }}(TestCase):
+    """Exercise a route the way a browser would."""
+
+    async def test_it_answers(self) -> None:
+        response = await self.get("/")
+
+        response.assert_ok()

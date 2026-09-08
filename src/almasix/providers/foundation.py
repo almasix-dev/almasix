@@ -59,16 +59,26 @@ class FoundationServiceProvider(ServiceProvider):
 
         CacheServiceProvider(app).register()
         EncryptionServiceProvider(app).register()
+        from almasix.broadcasting.provider import BroadcastServiceProvider
         from almasix.client.provider import ClientServiceProvider
+        from almasix.concurrency.provider import ConcurrencyServiceProvider
         from almasix.events.provider import EventServiceProvider
+        from almasix.process.provider import ProcessServiceProvider
+        from almasix.scout.provider import ScoutServiceProvider
 
         EventServiceProvider(app).register()
         ClientServiceProvider(app).register()
+        ProcessServiceProvider(app).register()
+        ConcurrencyServiceProvider(app).register()
+        ScoutServiceProvider(app).register()
+        BroadcastServiceProvider(app).register()
 
     def boot(self) -> None:
         from almasix.auth.provider import AuthServiceProvider
+        from almasix.broadcasting.provider import BroadcastServiceProvider
         from almasix.cache.provider import CacheServiceProvider
         from almasix.client.provider import ClientServiceProvider
+        from almasix.concurrency.provider import ConcurrencyServiceProvider
         from almasix.console.provider import ConsoleServiceProvider
         from almasix.encryption.provider import EncryptionServiceProvider
         from almasix.events.provider import EventServiceProvider
@@ -79,8 +89,10 @@ class FoundationServiceProvider(ServiceProvider):
         from almasix.notifications.provider import NotificationServiceProvider
         from almasix.orm.provider import DatabaseServiceProvider
         from almasix.prism.provider import PrismServiceProvider
+        from almasix.process.provider import ProcessServiceProvider
         from almasix.queue.provider import QueueServiceProvider
         from almasix.redis.provider import RedisServiceProvider
+        from almasix.scout.provider import ScoutServiceProvider
         from almasix.translation.provider import TranslationServiceProvider
 
         set_repository(self.app.config)
@@ -100,3 +112,8 @@ class FoundationServiceProvider(ServiceProvider):
         EncryptionServiceProvider(self.app).boot()
         EventServiceProvider(self.app).boot()
         ClientServiceProvider(self.app).boot()
+        ProcessServiceProvider(self.app).boot()
+        ConcurrencyServiceProvider(self.app).boot()
+        ScoutServiceProvider(self.app).boot()
+        # Last: its routes must land on a router the rest of boot has finished with.
+        BroadcastServiceProvider(self.app).boot()

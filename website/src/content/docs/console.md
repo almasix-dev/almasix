@@ -322,7 +322,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 84 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 101 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -339,6 +339,7 @@ What the framework ships, 84 commands, as `smith list` groups them. An applicati
 | `migrate` | Run outstanding migrations |
 | `optimize` | Cache what Almasix can cache, and say what it deliberately does not |
 | `serve` | Serve the application with Uvicorn |
+| `test` | Run the application's tests through pytest |
 | `up` | Bring the application out of maintenance mode |
 | `version` | Show Almasix version |
 
@@ -348,6 +349,12 @@ What the framework ships, 84 commands, as `smith list` groups them. An applicati
 | --- | --- |
 | `cache:clear` | Flush the application cache |
 | `cache:forget` | Remove one item from the cache |
+
+### `channel`
+
+| Command | Description |
+| --- | --- |
+| `channel:list` | List the registered broadcast channels |
 
 ### `config`
 
@@ -364,6 +371,13 @@ What the framework ships, 84 commands, as `smith list` groups them. An applicati
 | `db:show` | Show information about a database connection and its tables |
 | `db:table` | Show information about the given database table |
 | `db:wipe` | Drop all tables from the database |
+
+### `documents`
+
+| Command | Description |
+| --- | --- |
+| `documents:index` | Create the indexes declared on document models |
+| `documents:show` | Show the collections in a document store |
 
 ### `env`
 
@@ -402,13 +416,16 @@ What the framework ships, 84 commands, as `smith list` groups them. An applicati
 | Command | Description |
 | --- | --- |
 | `make:cast` | Create an attribute cast in app/casts |
+| `make:channel` | Create a broadcast channel class in app/broadcasting |
 | `make:class` | Create a class in app, under the path its name gives |
 | `make:command` | Create a console command in app/console/commands |
 | `make:component` | Create an anonymous Prism component in resources/views/components |
 | `make:controller` | Create a controller in app/http/controllers |
+| `make:document` | Create a document model in app/models |
 | `make:enum` | Create an enum in app/enums |
 | `make:event` | Create a new event class |
 | `make:exception` | Create an exception in app/exceptions |
+| `make:factory` | Create a model factory in database/factories |
 | `make:interface` | Create a Protocol in app/contracts |
 | `make:job` | Create a queue job in app/jobs |
 | `make:lang` | Create an empty lang/<locale>/ tree |
@@ -422,8 +439,10 @@ What the framework ships, 84 commands, as `smith list` groups them. An applicati
 | `make:policy` | Create a new policy class |
 | `make:provider` | Create a service provider in app/providers |
 | `make:request` | Create a FormRequest in app/http/requests |
+| `make:resource` | Create an API resource in app/http/resources |
 | `make:rule` | Create a validation rule in app/rules |
 | `make:seeder` | Create a seeder in database/seeders |
+| `make:test` | Create a test in tests/feature (or tests/unit) |
 | `make:view` | Create a Prism view in resources/views |
 
 ### `migrate`
@@ -481,6 +500,19 @@ What the framework ships, 84 commands, as `smith list` groups them. An applicati
 | `schedule:run` | Run the tasks that are due (wire this to cron, every minute) |
 | `schedule:test` | Run one scheduled task now, whatever its frequency says |
 | `schedule:work` | Run the scheduler in the foreground, minute after minute |
+
+### `scout`
+
+| Command | Description |
+| --- | --- |
+| `scout:delete-all-indexes` | Delete all indexes from the search engine |
+| `scout:delete-index` | Delete an index from the search engine |
+| `scout:flush` | Flush all of the model's records from the index |
+| `scout:import` | Import the given model into the search index |
+| `scout:index` | Create an index on the search engine |
+| `scout:queue-import` | Import the given model into the search index using queued jobs |
+| `scout:status` | Show the search engine and the models it indexes |
+| `scout:sync-index-settings` | Sync the configured index settings with the search engine |
 
 ### `storage`
 

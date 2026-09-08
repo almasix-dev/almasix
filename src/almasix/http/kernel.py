@@ -10,13 +10,19 @@ from typing import TYPE_CHECKING, Any, get_type_hints
 
 from fastapi import FastAPI
 from fastapi import Request as FastAPIRequest
+from fastapi import WebSocket
 from starlette.responses import Response as StarletteResponse
 
 from almasix.http.exceptions import HttpException, NotFoundHttpException
 from almasix.http.middleware import Middleware
 from almasix.http.request import Request, reset_request, set_request
 from almasix.http.response import make_response
-from almasix.routing.router import Action, RouteDefinition, Router
+from almasix.routing.router import (
+    Action,
+    RouteDefinition,
+    Router,
+    WebSocketRouteDefinition,
+)
 
 if TYPE_CHECKING:
     from almasix.framework.application import Application
@@ -54,6 +60,22 @@ class HttpKernel:
         self.app = app
         self.router = router
         self._asgi: FastAPI | None = None
+        #: Middleware a test asked to stand down (`almasix.testing`). Empty in
+        #: every other run, and checked once per request when it is not.
+        self._skipped: set[Any] = set()
+        self._skip_all_middleware = False
+
+    def skip_middleware(self, middleware: Sequence[Any] | Any | None = None) -> None:
+        """Stop running this middleware — all of it, when given nothing."""
+        if middleware is None:
+            self._skip_all_middleware = True
+            return
+        wanted = middleware if isinstance(middleware, (list, tuple, set)) else [middleware]
+        self._skipped.update(wanted)
+
+    def restore_middleware(self) -> None:
+        self._skipped.clear()
+        self._skip_all_middleware = False
 
     def _api_prefix(self) -> str:
         return str(self.app.config.get("http.api_prefix", "/api") or "/api")
@@ -116,6 +138,9 @@ class HttpKernel:
 
         for route in self.router.routes:
             self._register_route(asgi, route)
+
+        for socket_route in self.router.websocket_routes:
+            self._register_websocket(asgi, socket_route)
 
         # Dev/DX: files under public/{css,js,images,fonts,build}/ map to /{dir}/…
         # Production may still front this with a CDN/proxy; Vite emits into public/build.
@@ -184,6 +209,21 @@ class HttpKernel:
             name=route.name,
         )
 
+    def _register_websocket(self, asgi: FastAPI, route: WebSocketRouteDefinition) -> None:
+        """Mount a websocket handler.
+
+        Middleware does not run here: Almasix's middleware contract is
+        request-in / response-out, and a socket has neither. A socket handler
+        authorizes each frame itself, which is what the broadcasting endpoint
+        does with its signed subscriptions.
+        """
+        action = self._resolve_action(route.action)
+
+        async def endpoint(websocket: WebSocket) -> None:
+            await action(websocket)
+
+        asgi.add_api_websocket_route(route.uri, endpoint, name=route.name)
+
     def _build_endpoint(
         self,
         route: RouteDefinition,
@@ -229,12 +269,32 @@ class HttpKernel:
         groups = self.app.config.get("http.middleware_groups", {}) or {}
         global_middleware = list(self.app.config.get("http.middleware", []) or [])
         chain_names = self._expand_groups([*global_middleware, *names], groups)
+        if self._skip_all_middleware:
+            return core
+        if self._skipped:
+            chain_names = [name for name in chain_names if not self._is_skipped(name, aliases)]
 
         pipeline = core
         for name in reversed(chain_names):
             middleware = self._resolve_middleware(name, aliases)
             pipeline = self._wrap_middleware(middleware, pipeline, polarity=polarity)
         return pipeline
+
+    def _is_skipped(self, name: Any, aliases: dict[str, Any]) -> bool:
+        """A test may name middleware by alias, by import path, or by class."""
+        if name in self._skipped:
+            return True
+        key = name.partition(":")[0] if isinstance(name, str) else name
+        if key in self._skipped:
+            return True
+        target = aliases.get(key, key) if isinstance(key, str) else key
+        if target in self._skipped:
+            return True
+        try:
+            cls = self._import_string(target) if isinstance(target, str) else target
+        except Exception:  # noqa: BLE001 — an unresolvable name is not the skip list's problem
+            return False
+        return cls in self._skipped
 
     def _expand_groups(
         self,

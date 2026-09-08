@@ -59,6 +59,28 @@ class Generator(Command):
         """Where the file lands: the working directory, as ``smith`` was run."""
         return Path.cwd()
 
+    def write_factory(self) -> int:
+        """The factory `--factory` asks for, bound to the class just written."""
+        model = self.class_name()
+        try:
+            path = make(
+                "factory",
+                f"{model}Factory",
+                base_path=self.root(),
+                force=bool(self.option("force")),
+                stub="factory.stub",
+                replacements={
+                    "model": model,
+                    "modelVariable": snake(model),
+                    "namespacedModel": f"app.models.{snake(model)}",
+                },
+            )
+        except MakeError as exc:
+            self.error(str(exc))
+            return self.FAILURE
+        self.success(f"Factory created: {path.relative_to(self.root())}")
+        return self.SUCCESS
+
 
 class MakeControllerCommand(Generator):
     signature = (
@@ -104,6 +126,29 @@ class MakeSeederCommand(Generator):
     kind = "seeder"
 
 
+class MakeFactoryCommand(Generator):
+    signature = (
+        "make:factory {name : Class name, e.g. PostFactory} "
+        "{--model= : The model the factory builds, e.g. Post} "
+        "{--force : Overwrite an existing file}"
+    )
+    description = "Create a model factory in database/factories"
+    kind = "factory"
+
+    def stub(self) -> str:
+        return "factory.stub" if self.option("model") else "factory.plain.stub"
+
+    def replacements(self) -> dict[str, str]:
+        model = studly(str(self.option("model") or ""))
+        if not model:
+            return {}
+        return {
+            "model": model,
+            "modelVariable": snake(model),
+            "namespacedModel": f"app.models.{snake(model)}",
+        }
+
+
 class MakeCommandCommand(Generator):
     signature = (
         "make:command {name : Class name, e.g. SendEmails} {--force : Overwrite an existing file}"
@@ -116,6 +161,7 @@ class MakeModelCommand(Generator):
     signature = (
         "make:model {name : Class name, e.g. Post or Admin/Post} "
         "{--m|migration : Also create a migration} "
+        "{--f|factory : Also create a factory} "
         "{--force : Overwrite an existing file}"
     )
     description = "Create a model in app/models"
@@ -123,6 +169,8 @@ class MakeModelCommand(Generator):
 
     def handle(self) -> int:
         code = super().handle()
+        if code == self.SUCCESS and self.option("factory"):
+            code = self.write_factory()
         if code != self.SUCCESS or not self.option("migration"):
             return code
         root = self.root()
@@ -138,6 +186,42 @@ class MakeModelCommand(Generator):
         return self.SUCCESS
 
 
+class MakeDocumentCommand(Generator):
+    """A document model — a collection instead of a table, no migration."""
+
+    signature = (
+        "make:document {name : Class name, e.g. Article or Blog/Article} "
+        "{--f|factory : Also create a factory} "
+        "{--e|embed : An embedded document rather than a collection-backed one} "
+        "{--force : Overwrite an existing file}"
+    )
+    description = "Create a document model in app/models"
+    kind = "document"
+
+    def stub(self) -> str:
+        return "embed.stub" if self.option("embed") else "document.stub"
+
+    def handle(self) -> int:
+        code = super().handle()
+        if code != self.SUCCESS or not self.option("factory"):
+            return code
+        return self.write_factory()
+
+
+class MakeResourceCommand(Generator):
+    signature = (
+        "make:resource {name : Class name, e.g. UserResource or Api/UserResource} "
+        "{--collection : A resource collection rather than a single resource} "
+        "{--force : Overwrite an existing file}"
+    )
+    description = "Create an API resource in app/http/resources"
+    kind = "resource"
+
+    def stub(self) -> str:
+        collection = bool(self.option("collection")) or self.class_name().endswith("Collection")
+        return "resource.collection.stub" if collection else "resource.stub"
+
+
 class MakeJobCommand(Generator):
     signature = (
         "make:job {name : Class name, e.g. SendDigest or Mail/SendDigest} "
@@ -149,6 +233,25 @@ class MakeJobCommand(Generator):
 
     def stub(self) -> str:
         return "job.stub" if self.option("sync") else "job.queued.stub"
+
+
+class MakeTestCommand(Generator):
+    signature = (
+        "make:test {name : Class name, e.g. PostTest} "
+        "{--unit : A unit test, with no application booted} "
+        "{--force : Overwrite an existing file}"
+    )
+    description = "Create a test in tests/feature (or tests/unit)"
+    kind = "test"
+
+    def write(self) -> Path:
+        return make(
+            "unit-test" if self.option("unit") else "test",
+            self.argument("name"),
+            base_path=self.root(),
+            force=bool(self.option("force")),
+            replacements=self.replacements(),
+        )
 
 
 class MarkdownGenerator(Generator):

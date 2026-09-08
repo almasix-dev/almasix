@@ -100,6 +100,7 @@ export default defineConfig({
 						{ label: 'Controllers', slug: 'controllers' },
 						{ label: 'Requests', slug: 'requests' },
 						{ label: 'Responses', slug: 'responses' },
+						{ label: 'API Resources', slug: 'api-resources' },
 						{ label: 'Views (Prism)', slug: 'views' },
 						{ label: 'Asset Bundling', slug: 'asset-bundling' },
 						{ label: 'URL Generation', slug: 'urls' },
@@ -126,7 +127,11 @@ export default defineConfig({
 						{ label: 'Cache', slug: 'cache' },
 						{ label: 'Redis', slug: 'redis' },
 						{ label: 'Events', slug: 'events' },
+						{ label: 'Broadcasting', slug: 'broadcasting' },
 						{ label: 'HTTP Client', slug: 'http-client' },
+						{ label: 'Processes', slug: 'processes' },
+						{ label: 'Concurrency', slug: 'concurrency' },
+						{ label: 'Search', slug: 'search' },
 					],
 				},
 				{
@@ -149,6 +154,7 @@ export default defineConfig({
 						{ label: 'Pagination', slug: 'database/pagination' },
 						{ label: 'Migrations', slug: 'database/migrations' },
 						{ label: 'Seeding', slug: 'database/seeding' },
+						{ label: 'Factories', slug: 'database/factories' },
 					],
 				},
 				{
@@ -161,6 +167,7 @@ export default defineConfig({
 						{ label: 'Serialization', slug: 'articulate/serialization' },
 						{ label: 'Collections', slug: 'articulate/collections' },
 						{ label: 'Soft Deletes & Events', slug: 'articulate/events' },
+						{ label: 'Documents (NoSQL)', slug: 'articulate/documents' },
 					],
 				},
 				{
@@ -174,6 +181,17 @@ export default defineConfig({
 						{ label: 'Control Structures', slug: 'prism/control' },
 						{ label: 'Including Subviews', slug: 'prism/includes' },
 						{ label: 'Stacks & Directives', slug: 'prism/stacks' },
+					],
+				},
+				{
+					label: 'Testing',
+					collapsed: true,
+					items: [
+						{ label: 'Testing: Getting Started', slug: 'testing' },
+						{ label: 'HTTP Tests', slug: 'testing/http-tests' },
+						{ label: 'Console Tests', slug: 'testing/console-tests' },
+						{ label: 'Database Testing', slug: 'testing/database' },
+						{ label: 'Mocking', slug: 'testing/mocking' },
 					],
 				},
 			],

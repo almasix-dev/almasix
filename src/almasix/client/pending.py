@@ -12,7 +12,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import httpx
 
-from almasix.client.arity import accepts_two_arguments
+from almasix.support.arity import accepts_two_arguments
 from almasix.client.events import ConnectionFailed, RequestSending, ResponseReceived
 from almasix.client.exceptions import (
     ConnectionException,

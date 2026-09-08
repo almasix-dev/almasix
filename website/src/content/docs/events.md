@@ -99,10 +99,20 @@ smith make:listener SendShipmentNotification --event=OrderShipped --queued
 smith event:list
 ```
 
-## Broadcasting (M26)
+## Broadcasting
 
-`ShouldBroadcast` is a marker protocol today. Annotate events early; channel
-broadcasting ships with M26.
+An event that inherits `ShouldBroadcast` also leaves the server: dispatch puts
+it on the channels it names, before your listeners run, and the browser hears
+about it over a websocket. See [Broadcasting](/broadcasting/).
+
+```python
+from almasix.broadcasting import PrivateChannel, ShouldBroadcast
+
+
+class OrderShipped(ShouldBroadcast):
+    def broadcast_on(self):
+        return [PrivateChannel(f"orders.{self.order_id}")]
+```
 
 ## Testing
 

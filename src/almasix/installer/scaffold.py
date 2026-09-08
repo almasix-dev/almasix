@@ -65,6 +65,9 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "config/mail.py": _config_mail(),
         "config/notifications.py": _config_notifications(),
         "config/cache.py": _config_cache(),
+        "config/concurrency.py": _config_concurrency(),
+        "config/broadcasting.py": _config_broadcasting(),
+        "config/scout.py": _config_scout(),
         "config/redis.py": _config_redis(),
         "config/loupe.py": _config_loupe(),
         "app/models/__init__.py": "",
@@ -72,6 +75,12 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "app/console/commands/__init__.py": "",
         "app/exceptions/__init__.py": "",
         "app/exceptions/handler.py": _exception_handler(),
+        "tests/__init__.py": "",
+        "tests/conftest.py": _tests_conftest(),
+        "tests/feature/__init__.py": "",
+        "tests/feature/example_test.py": _tests_feature_example(),
+        "tests/unit/__init__.py": "",
+        "tests/unit/example_test.py": _tests_unit_example(),
         "database/__init__.py": "",
         "database/migrations/.gitkeep": "",
         "database/seeders/__init__.py": "",
@@ -80,6 +89,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "routes/api.py": _routes_api(),
         "routes/web.py": _routes_web(),
         "routes/console.py": _routes_console(),
+        "routes/channels.py": _routes_channels(),
         "lang/en/messages.py": _lang_messages_en(),
         "lang/en/validation.py": _lang_validation_stub(),
         "lang/en.json": '{}\n',
@@ -287,14 +297,87 @@ dependencies = [
 [project.scripts]
 smith = "almasix.smith.cli:app"
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["app", "bootstrap", "config", "routes"]
+
+[tool.pytest.ini_options]
+# ``smith test`` runs this. Async tests need no decorator, and a test class may
+# be named either ``TestPost`` or ``PostTest`` — ``smith make:test`` writes the
+# second, the way Laravel does.
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Test"]
 
 [tool.pylint.basic]
 # Model meta (`fillable`, `casts`) is snake_case by design, not UPPER_CASE.
 class-attribute-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"
 attr-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"
 """
+
+
+def _tests_conftest() -> str:
+    return '''"""Shared test setup — one application, and fakes that clean up."""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+
+import pytest
+
+from almasix.testing import restore_fakes
+
+
+@pytest.fixture(autouse=True)
+def _no_fake_outlives_its_test() -> Iterator[None]:
+    """A faked mailer or queue must not still be installed for the next test."""
+    yield
+    restore_fakes()
+'''
+
+
+def _tests_feature_example() -> str:
+    return '''"""The application answers, end to end."""
+
+from __future__ import annotations
+
+from almasix.testing import TestCase
+
+
+class ExampleTest(TestCase):
+    """A feature test drives real routes through the real middleware."""
+
+    async def test_the_home_page_answers(self) -> None:
+        response = await self.get("/")
+
+        response.assert_ok()
+
+    async def test_the_health_endpoint_reports_ok(self) -> None:
+        response = await self.get_json("/api/health")
+
+        response.assert_ok().assert_json({"status": "ok"})
+'''
+
+
+def _tests_unit_example() -> str:
+    return '''"""A unit test — no application, no database, no HTTP."""
+
+from __future__ import annotations
+
+from almasix.support import Str
+
+
+class ExampleTest:
+    def test_a_slug_is_a_slug(self) -> None:
+        assert Str.slug("Hello There") == "hello-there"
+'''
 
 
 def _bootstrap_app() -> str:
@@ -513,6 +596,20 @@ config = {
             "username": env("DB_USERNAME", "almasix"),
             "password": env("DB_PASSWORD", ""),
         },
+        # Document stores. Articulate reaches these through Document models;
+        # "memory" keeps documents in the process, which is what tests want.
+        "mongodb": {
+            "driver": "mongodb",
+            "dsn": env("MONGODB_DSN", ""),
+            "host": env("MONGODB_HOST", "127.0.0.1"),
+            "port": env("MONGODB_PORT", 27017),
+            "database": env("MONGODB_DATABASE", "almasix"),
+            "username": env("MONGODB_USERNAME", ""),
+            "password": env("MONGODB_PASSWORD", ""),
+        },
+        "memory": {
+            "driver": "memory",
+        },
     },
 }
 '''
@@ -711,6 +808,116 @@ config = {
         "null": {"driver": "null"},
     },
 }
+'''
+
+
+def _config_concurrency() -> str:
+    return '''"""Concurrency drivers."""
+
+from almasix.config import env
+
+config = {
+    # "thread" runs any callable and suits I/O-bound work; "fork" gives real
+    # parallelism on Unix; "process" needs picklable tasks; "sync" is serial.
+    "default": env("CONCURRENCY_DRIVER", "thread"),
+    "drivers": {
+        "thread": {
+            "driver": "thread",
+            "max_workers": int(env("CONCURRENCY_MAX_WORKERS", 16) or 16),
+        },
+        "fork": {"driver": "fork"},
+        "process": {"driver": "process"},
+        "sync": {"driver": "sync"},
+    },
+}
+'''
+
+
+def _config_broadcasting() -> str:
+    return '''"""Broadcasting connections."""
+
+from almasix.config import env
+
+config = {
+    # "log" writes broadcasts to the log and sends nothing, which is the
+    # right default until you have decided how they reach a browser.
+    # "websocket" runs Almasix's own socket server at the path below.
+    "default": env("BROADCAST_CONNECTION", "log"),
+    "connections": {
+        "websocket": {
+            "driver": "websocket",
+            "key": env("BROADCAST_KEY", "almasix"),
+            # Signing falls back to APP_KEY when this is unset.
+            "secret": env("BROADCAST_SECRET"),
+            "path": env("BROADCAST_PATH", "/broadcasting/socket"),
+            # Let browsers send `client-*` events to each other.
+            "client_events": bool(env("BROADCAST_CLIENT_EVENTS", False)),
+        },
+        "pusher": {
+            "driver": "pusher",
+            "key": env("PUSHER_APP_KEY"),
+            "secret": env("PUSHER_APP_SECRET"),
+            "app_id": env("PUSHER_APP_ID"),
+            "cluster": env("PUSHER_APP_CLUSTER", "mt1"),
+            "host": env("PUSHER_HOST"),
+            "port": env("PUSHER_PORT"),
+            "scheme": env("PUSHER_SCHEME", "https"),
+        },
+        "redis": {
+            "driver": "redis",
+            "connection": env("BROADCAST_REDIS_CONNECTION", "default"),
+            "prefix": env("BROADCAST_REDIS_PREFIX", ""),
+        },
+        "log": {"driver": "log"},
+        "null": {"driver": "null"},
+    },
+    # Middleware on /broadcasting/auth. Sessions live in the web group.
+    "middleware": ["web"],
+}
+'''
+
+
+def _config_scout() -> str:
+    return '''"""Search — which engine finds your models."""
+
+from almasix.config import env
+
+config = {
+    # "database" searches the tables you already have, and needs nothing
+    # installed. "collection" filters rows in Python, "meilisearch" talks to
+    # a real index, and "null" finds nothing.
+    "driver": env("SCOUT_DRIVER", "database"),
+    # Prepended to every index name: one search service, several apps.
+    "prefix": env("SCOUT_PREFIX", ""),
+    # True, or {"connection": ..., "queue": ...}, to index on the queue.
+    "queue": bool(env("SCOUT_QUEUE", False)),
+    # Wait for the surrounding transaction before touching the index.
+    "after_commit": False,
+    "chunk": {"searchable": 500, "unsearchable": 500},
+    # Keep trashed rows in the index behind a `__soft_deleted` flag.
+    "soft_delete": False,
+    "identify": bool(env("SCOUT_IDENTIFY", False)),
+    "meilisearch": {
+        "host": env("MEILISEARCH_HOST", "http://localhost:7700"),
+        "key": env("MEILISEARCH_KEY"),
+        # Per-index settings, pushed by `smith scout:sync-index-settings`:
+        # "posts": {"filterableAttributes": ["author_id"]},
+        "index-settings": {},
+    },
+}
+'''
+
+
+def _routes_channels() -> str:
+    return '''"""Broadcast channels — who may listen to what."""
+
+from almasix.broadcasting import Broadcast
+
+
+@Broadcast.channel("users.{user_id}")
+def user_channel(user, user_id):
+    """A user may listen to their own channel, and nobody else's."""
+    return str(user.get_key()) == str(user_id)
 '''
 
 

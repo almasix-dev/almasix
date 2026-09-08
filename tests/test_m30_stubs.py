@@ -56,7 +56,7 @@ def test_render_fills_the_placeholders() -> None:
     body = render("model.stub", {"class": "Post"})
 
     assert '"""Post model."""' in body
-    assert "class Post(Model):" in body
+    assert "class Post(HasFactory, Model):" in body
     assert "{{" not in body
 
 

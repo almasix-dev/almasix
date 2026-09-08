@@ -1,0 +1,21 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Factory
+
+
+class {{ class }}(Factory):
+    """One row's worth of plausible data.
+
+    Set ``model`` to the model this builds, or let it be guessed from the
+    class name: ``PostFactory`` looks for a model named ``Post``.
+    """
+
+    def definition(self) -> dict[str, Any]:
+        """The attributes a fresh row starts from."""
+        return {
+            "name": self.fake.name(),
+        }

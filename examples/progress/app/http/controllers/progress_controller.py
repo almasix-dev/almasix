@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from almasix import __version__
-from almasix.prism import view
 from almasix.config import config
 from almasix.http import Controller, Response
+from almasix.prism import view
 from almasix.routing import url
 
 
@@ -219,50 +219,100 @@ def _milestones() -> list[dict]:
         {
             "id": "M21",
             "name": "Processes",
-            "status": "planned",
-            "proof": ["Process::run / pool", "subprocess fakes"],
+            "status": "complete",
+            "proof": [
+                "Process.run / start / pool / pipe",
+                "timeouts, streaming, fakes, assertions",
+                "progress:process",
+            ],
         },
         {
             "id": "M22",
             "name": "Concurrency",
-            "status": "planned",
-            "proof": ["Concurrency::run", "async / process drivers"],
+            "status": "complete",
+            "proof": [
+                "Concurrency.run / defer / arun",
+                "thread / fork / process / sync drivers",
+                "progress:concurrency",
+            ],
         },
         {
             "id": "M23",
             "name": "API Resources",
-            "status": "planned",
-            "proof": ["JsonResource / ResourceCollection", "make:resource"],
+            "status": "complete",
+            "proof": [
+                "JsonResource / ResourceCollection",
+                "conditionals, wrapping, pagination meta",
+                "GET /api/resources",
+                "progress:resources",
+            ],
         },
         {
             "id": "M24",
             "name": "Model factories",
-            "status": "planned",
-            "proof": ["Factory base", "states / sequences", "make:factory"],
+            "status": "complete",
+            "proof": [
+                "Factory base, states, sequences",
+                "has / for / has_attached / recycle",
+                "make:factory; DemoSeeder builds every row",
+                "progress:factories",
+            ],
         },
         {
             "id": "M25",
             "name": "Articulate NoSQL",
-            "status": "planned",
-            "proof": ["Mongo document models", "multi-store Articulate"],
+            "status": "complete",
+            "proof": [
+                "Document models over Mongo and a memory store",
+                "embeds, references, indexes, factories, soft deletes",
+                "make:document; documents:index; documents:show",
+                "GET /api/documents",
+                "progress:documents",
+            ],
         },
         {
             "id": "M26",
             "name": "Broadcasting",
-            "status": "planned",
-            "proof": ["ShouldBroadcast", "channel auth", "Redis / websocket"],
+            "status": "complete",
+            "proof": [
+                "ShouldBroadcast events, queued or now, over log/websocket/redis/pusher",
+                "routes/channels.py auth with model binding; presence rosters",
+                "/broadcasting/auth and a websocket at /broadcasting/socket",
+                "BroadcastsEvents models; broadcast notification channel",
+                "make:channel; channel:list",
+                "GET /api/broadcast",
+                "progress:broadcast",
+            ],
         },
         {
             "id": "M27",
             "name": "Search",
-            "status": "planned",
-            "proof": ["Searchable models", "Scout-class drivers"],
+            "status": "complete",
+            "proof": [
+                "Searchable models — index kept in step by model events",
+                "database / collection / meilisearch / null engines + Scout.extend()",
+                "where, order_by, pagination, keys, cursor; query_using()",
+                "queued indexing, after-commit indexing, soft-delete flags",
+                "scout:import / flush / index / sync-index-settings / status",
+                "GET /api/search",
+                "progress:search",
+            ],
         },
         {
             "id": "M28",
             "name": "Testing toolkit",
-            "status": "planned",
-            "proof": ["HTTP / console assertions", "façade fakes"],
+            "status": "complete",
+            "proof": [
+                "TestCase + in-process TestClient over the real middleware",
+                "TestResponse — status, headers, JSON, session, view assertions",
+                "artisan() — expects_question / expects_output / assert_exit_code",
+                "assert_database_has, refresh_database, database_transactions",
+                "fake() — mail, queue, notification, storage, event, http, "
+                "process, broadcast, scout",
+                "travel / freeze_time; without_middleware",
+                "tests/ in the scaffold; make:test; smith test",
+                "progress:testing",
+            ],
         },
         {
             "id": "M29",
@@ -275,7 +325,7 @@ def _milestones() -> list[dict]:
             "name": "Smith Console exhaust",
             "status": "complete",
             "proof": [
-                "84 commands, every one a Command class",
+                "101 commands, every one a Command class",
                 "full signature parser + option shortcuts",
                 "Artisan.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",

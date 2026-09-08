@@ -5,8 +5,9 @@ description: Seed your database with test data using Almasix seeders.
 
 Almasix includes a simple method of seeding your database with test data using seed classes. All seeders live in `database/seeders`.
 
-:::note
-Model factories are not available yet. Seed with `Model.create` / the query builder until factories ship.
+:::tip
+[Model factories](/database/factories/) are the usual source of seed rows:
+`await User.factory().count(10).create()`.
 :::
 
 
@@ -43,6 +44,27 @@ class UserSeeder(Seeder):
 
         for i in range(count):
             await User.create(email=f"u{i}@example.com", name=f"User {i}")
+```
+
+## Seeding with factories
+
+Writing rows out by hand gets old at the third one. A
+[factory](/database/factories/) describes the row once and a seeder asks for
+as many as it wants, pinning only the columns that matter:
+
+```python
+# database/seeders/demo_seeder.py
+from almasix.orm import Seeder
+
+from app.models.post import Post
+from app.models.user import User
+
+
+class DemoSeeder(Seeder):
+    async def run(self) -> None:
+        ada = await User.factory().create({"email": "ada@almasix.dev", "name": "Ada"})
+        await Post.factory().count(3).for_(ada, "author").create()
+        await User.factory().count(10).has(Post.factory().count(2), "posts").create()
 ```
 
 ## Suppressing model events
