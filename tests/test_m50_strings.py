@@ -263,3 +263,14 @@ def test_the_three_unported_fluent_methods_are_absent_on_purpose() -> None:
     """`scan` is a PHP builtin; the other two return Laravel-only types."""
     for name in ("scan", "to_html_string", "to_uri"):
         assert not hasattr(Stringable, name), name
+
+
+def test_a_stringable_hashes_and_compares_as_its_string() -> None:
+    wrapped = str_("ada")
+
+    assert wrapped == "ada"
+    assert wrapped == str_("ada")
+    assert hash(wrapped) == hash("ada")
+    assert {wrapped: 1}["ada"] == 1
+    assert {"ada": 1}[wrapped] == 1
+    assert len({wrapped, "ada"}) == 1

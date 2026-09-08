@@ -739,6 +739,10 @@ class Stringable:
             return self._value == other._value
         return self._value == other
 
+    def __hash__(self) -> int:
+        """Hash as the string does, so either can key the same dict entry."""
+        return hash(self._value)
+
     def _new(self, value: Any) -> Self:
         """A new instance, because a fluent call must not alter its subject."""
         return type(self)(value)

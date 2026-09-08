@@ -24,6 +24,15 @@ def gate() -> AccessGate:
     return Gate.get_gate()
 
 
+def policy(model: Any) -> Any:
+    """Return the policy registered for ``model`` (Laravel ``policy``)."""
+    instance = Gate.get_policy_for(model)
+    if instance is None:
+        name = getattr(model, "__name__", type(model).__name__)
+        raise LookupError(f"No policy is registered for {name}.")
+    return instance
+
+
 def authorize(ability: str, arguments: Any = None) -> AuthorizationResponse:
     return Gate.authorize(ability, arguments)
 

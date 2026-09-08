@@ -7,9 +7,9 @@ from avalon.auth.access.exceptions import AuthorizationException
 from avalon.auth.access.facade import Gate
 from avalon.auth.access.gate import CONTROLLER_RESOURCE_ABILITIES, RESOURCE_ABILITIES, Gate as AccessGate
 from avalon.auth.access.handles import HandlesAuthorization
-from avalon.auth.access.helpers import authorize, gate, gate_allows, gate_any
+from avalon.auth.access.helpers import authorize, gate, gate_allows, gate_any, policy
 from avalon.auth.access.middleware import Authorize
-from avalon.auth.access.policy import Policy
+from avalon.auth.access.policies import Policy
 from avalon.auth.access.requests import AuthorizesRequests
 from avalon.auth.access.response import AuthorizationResponse
 
@@ -29,4 +29,5 @@ __all__ = [
     "gate",
     "gate_allows",
     "gate_any",
+    "policy",
 ]

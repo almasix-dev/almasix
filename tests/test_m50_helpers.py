@@ -477,6 +477,37 @@ def test_validator_insists_on_a_schema_it_understands() -> None:
         validator({}, dict)  # type: ignore[arg-type]
 
 
+# --- policy() -----------------------------------------------------------------
+
+
+def test_policy_returns_the_policy_registered_for_a_model() -> None:
+    from avalon.auth.access import Gate, Policy, policy
+
+    class Post:
+        pass
+
+    class PostPolicy(Policy):
+        def view(self, user: Any, post: Any = None) -> bool:
+            return True
+
+    Gate.policy(Post, PostPolicy)
+    try:
+        assert isinstance(policy(Post), PostPolicy)
+        assert isinstance(policy(Post()), PostPolicy)
+    finally:
+        Gate.get_gate().flush()
+
+
+def test_policy_says_when_a_model_has_none() -> None:
+    from avalon.auth.access import policy
+
+    class Unguarded:
+        pass
+
+    with pytest.raises(LookupError, match="No policy is registered for Unguarded"):
+        policy(Unguarded)
+
+
 # --- report() -----------------------------------------------------------------
 
 

@@ -756,7 +756,7 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
         _resolve_callback(["no.such.Class", "handle"], container=None)
     with pytest.raises(TypeError):
         _resolve_callback([HandleAbility, "missing"], container=None)
-    assert callable(_resolve_callback(["avalon.auth.access.policy.Policy", "allow"], container=None))
+    assert callable(_resolve_callback(["avalon.auth.access.policies.Policy", "allow"], container=None))
     assert callable(_resolve_callback(f"{path}@handle", container=None))
 
     class OkContainer:
@@ -791,7 +791,7 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
     import sys
 
     gmod = sys.modules[AccessGate.__module__]
-    monkeypatch.setattr(gmod, "_default_policy_paths", lambda cls: ["avalon.auth.access.policy.Policy"])
+    monkeypatch.setattr(gmod, "_default_policy_paths", lambda cls: ["avalon.auth.access.policies.Policy"])
     Gate.flush()
     assert isinstance(Gate.get_policy_for(Post), Policy)
     monkeypatch.setattr(inspect, "isclass", lambda _m: True)
