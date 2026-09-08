@@ -67,12 +67,12 @@ def _milestones() -> list[dict]:
         {
             "id": "M5",
             "name": "Articulate ORM",
-            "status": "partial",
+            "status": "complete",
             "proof": [
                 "GET /api/orm feature tour",
                 "eager load / soft deletes / pivot / morphs",
                 "smith migrate / make:model",
-                "ladder shipped — query builder + schema owed by M42/M43",
+                "query builder exhausted in M42, schema and pagination in M43",
             ],
         },
         {
@@ -325,7 +325,7 @@ def _milestones() -> list[dict]:
             "name": "Smith Console exhaust",
             "status": "complete",
             "proof": [
-                "101 commands, every one a Command class",
+                "102 commands, every one a Command class",
                 "full signature parser + option shortcuts",
                 "Artisan.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",
@@ -421,18 +421,26 @@ def _milestones() -> list[dict]:
         {
             "id": "M42",
             "name": "Query builder + database exhaust",
-            "status": "next",
+            "status": "complete",
             "proof": [
-                "unions · locking · JSON wheres",
-                "read/write connections · DB.listen",
-                "db:show / db:table / db:monitor",
+                "smith progress:queries",
+                "JSON wheres + JSON updates · unions · locking",
+                "join_sub / join_lateral · sole · implode",
+                "read/write + sticky · DB.listen · DB.pretend",
+                "smith db · db:show / db:table / db:monitor",
             ],
         },
         {
             "id": "M43",
             "name": "Schema, migrations, pagination",
-            "status": "planned",
-            "proof": ["column alteration", "cursor pagination", "migrate:refresh"],
+            "status": "complete",
+            "proof": [
+                "smith progress:schema",
+                "the column catalogue · change() · drops · Schema.rename",
+                "get_indexes / get_foreign_keys · without_foreign_key_constraints",
+                "migrate --pretend / --step / --path · schema:dump",
+                "cursor_paginate · URL-aware links() through Prism",
+            ],
         },
         {
             "id": "M44",

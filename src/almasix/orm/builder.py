@@ -3,18 +3,41 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime
 import functools
 import inspect
+import json
+import re
 from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 import sqlalchemy as sa
-from sqlalchemy.sql import ClauseElement
+from sqlalchemy.sql import ClauseElement, operators
 from sqlalchemy.sql.elements import ColumnClause
 from sqlalchemy.sql.selectable import TableClause
 
 from almasix.orm.collection import Collection
-from almasix.orm.pagination import Paginator, SimplePaginator
+from almasix.orm.dialects import quote_ident
+from almasix.orm.grammar import (
+    CaseSensitiveLike,
+    FullText,
+    JsonContains,
+    JsonContainsKey,
+    JsonLength,
+    JsonSet,
+    UnsupportedByDialectError,
+    VectorDistance,
+    is_json_path,
+    json_value,
+    split_json_path,
+)
+from almasix.orm.pagination import (
+    Cursor,
+    CursorPaginator,
+    Paginator,
+    SimplePaginator,
+    resolve_page,
+)
 from almasix.support.lazy import AsyncLazyCollection
 
 if TYPE_CHECKING:
@@ -39,6 +62,17 @@ _OPERATORS = {
 
 _JOIN_TYPES = {"inner", "left", "right", "cross"}
 
+#: SQLite keeps autoincrement counters here — but only once one has been used.
+_SQLITE_SEQUENCE = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sqlite_sequence'"
+
+#: One clause object per table name, shared by every builder in the process.
+#
+# SQLAlchemy decides a subquery is correlated by comparing FROM objects by
+# identity, so a subquery that names the outer query's table has to be holding
+# the very same clause. Building `sa.table("users")` afresh per builder gives
+# two objects that look alike and correlate to nothing.
+_TABLE_CLAUSES: dict[str, TableClause] = {}
+
 
 class _Missing:
     """Sentinel so `where("a", None)` stays distinguishable from omission."""
@@ -60,6 +94,15 @@ class ModelNotFoundError(LookupError):
         self.identifier = identifier
         suffix = f" with key {identifier!r}" if identifier is not None else ""
         super().__init__(f"No query results for model [{model}]{suffix}.")
+
+
+class MultipleRecordsFoundError(LookupError):
+    """Raised by `sole` when the query it was promised was unique is not."""
+
+    def __init__(self, model: str, count: int) -> None:
+        self.model = model
+        self.count = count
+        super().__init__(f"{count} records were found for [{model}], not one.")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -127,7 +170,7 @@ class QueryBuilder:
         self.model = model
         self.table = table or (model.get_table() if model else "")
         self._connection_name = connection or (model.connection if model else None)
-        self._tables: dict[str, TableClause] = tables if tables is not None else {}
+        self._tables: dict[str, TableClause] = tables if tables is not None else _TABLE_CLAUSES
 
         self._wheres: list[tuple[str, ClauseElement]] = []
         self._havings: list[tuple[str, ClauseElement]] = []
@@ -143,6 +186,13 @@ class QueryBuilder:
         self._without_scopes: set[str] = set()
         self._all_scopes_disabled = False
         self._casts: dict[str, Any] = {}
+        # Subquery aliases belong to one builder, not to every builder that
+        # happens to use the same name for something else.
+        self._local_tables: dict[str, Any] = {}
+        self._from: Any = None
+        self._unions: list[tuple[bool, QueryBuilder]] = []
+        self._lock: str | None = None
+        self._pending_attributes: dict[str, Any] = {}
 
     # --- plumbing -----------------------------------------------------------
 
@@ -171,9 +221,16 @@ class QueryBuilder:
         clone._without_scopes = set(self._without_scopes)
         clone._all_scopes_disabled = self._all_scopes_disabled
         clone._casts = dict(self._casts)
+        clone._local_tables = dict(self._local_tables)
+        clone._from = self._from
+        clone._unions = list(self._unions)
+        clone._lock = self._lock
+        clone._pending_attributes = dict(self._pending_attributes)
         return clone
 
     def _table_clause(self, name: str) -> TableClause:
+        if name in self._local_tables:
+            return self._local_tables[name]
         if name not in self._tables:
             self._tables[name] = sa.table(name)
         return self._tables[name]
@@ -187,8 +244,12 @@ class QueryBuilder:
         else:
             table_name, column_name = self.table, reference
         clause = self._table_clause(table_name)
-        if column_name not in clause.c:
-            clause.append_column(sa.column(column_name))
+        if column_name in clause.c:
+            return clause.c[column_name]
+        if not hasattr(clause, "append_column"):
+            # A subquery alias is fixed once built; name its column directly.
+            return sa.literal_column(f"{table_name}.{column_name}")
+        clause.append_column(sa.column(column_name))
         return clause.c[column_name]
 
     def get_connection(self) -> Any:
@@ -216,12 +277,38 @@ class QueryBuilder:
             return "=", operator
         return operator, value
 
-    def _condition(self, column: Any, operator: Any, value: Any) -> ClauseElement:
-        operator, value = self._operator_and_value(operator, value)
+    def _comparable(self, reference: Any, sample: Any = None) -> Any:
+        """What a comparison reads: a column, a JSON path, or a subquery.
+
+        ``where("options->dining->meal", "salad")`` reaches inside a JSON
+        document; the value being compared decides the type it is read back
+        as, the way Laravel's JSON where clauses do.
+        """
+        if isinstance(reference, QueryBuilder):
+            return reference.to_select().scalar_subquery()
+        if is_json_path(reference):
+            name, path = split_json_path(reference)
+            return json_value(self.column(name), path, sample)
+        return self.column(reference)
+
+    @staticmethod
+    def _scalar(value: Any) -> Any:
+        """A builder handed in where a value belongs is a scalar subquery."""
+        if isinstance(value, QueryBuilder):
+            return value.to_select().scalar_subquery()
+        return value
+
+    @staticmethod
+    def _resolve_operator(operator: Any) -> Callable[[Any, Any], Any]:
         key = str(operator).strip().lower()
         if key not in _OPERATORS:
             raise ValueError(f"Unsupported operator: {operator!r}")
-        return _OPERATORS[key](self.column(column), value)
+        return _OPERATORS[key]
+
+    def _condition(self, column: Any, operator: Any, value: Any) -> ClauseElement:
+        operator, value = self._operator_and_value(operator, value)
+        apply = self._resolve_operator(operator)
+        return apply(self._comparable(column, value), self._scalar(value))
 
     def _nested(self, callback: Callable[[QueryBuilder], Any]) -> ClauseElement | None:
         nested = QueryBuilder(
@@ -235,15 +322,23 @@ class QueryBuilder:
 
     def where(
         self,
-        column: str | Callable[[QueryBuilder], Any],
+        column: Any,
         operator: Any = _MISSING,
         value: Any = _MISSING,
         boolean: str = "and",
     ) -> QueryBuilder:
-        """``where("col", "=", val)`` is canonical; ``where("col", val)`` assumes ``=``."""
-        if callable(column):
+        """``where("col", "=", val)`` is canonical; ``where("col", val)`` assumes ``=``.
+
+        A callable groups its clauses in parentheses, a mapping applies one
+        equality per key, and a sequence of triples applies each in turn.
+        """
+        if callable(column) and not isinstance(column, QueryBuilder):
             clause = self._nested(column)
             return self._push_where(boolean, clause) if clause is not None else self
+        if isinstance(column, Mapping):
+            return self.where(lambda query: [query.where(k, "=", v) for k, v in column.items()], boolean=boolean)
+        if isinstance(column, (list, tuple)) and column and isinstance(column[0], (list, tuple)):
+            return self.where(lambda query: [query.where(*entry) for entry in column], boolean=boolean)
         if operator is _MISSING:
             raise TypeError("where() requires where(column, value) or where(column, operator, value)")
         return self._push_where(boolean, self._condition(column, operator, value))
@@ -256,61 +351,551 @@ class QueryBuilder:
     ) -> QueryBuilder:
         return self.where(column, operator, value, boolean="or")
 
-    def where_in(self, column: str, values: Iterable[Any], boolean: str = "and") -> QueryBuilder:
-        return self._push_where(boolean, self.column(column).in_(list(values)))
+    def where_not(
+        self,
+        column: Any,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """Negate a group of constraints — Laravel's ``whereNot``."""
+        probe = QueryBuilder(
+            model=self.model,
+            table=self.table,
+            connection=self._connection_name,
+            tables=self._tables,
+        )
+        probe.where(column, operator, value)
+        clause = probe._compile_wheres()
+        return self._push_where(boolean, sa.not_(clause)) if clause is not None else self
 
-    def or_where_in(self, column: str, values: Iterable[Any]) -> QueryBuilder:
+    def or_where_not(
+        self,
+        column: Any,
+        operator: Any = _MISSING,
+        value: Any = _MISSING,
+    ) -> QueryBuilder:
+        return self.where_not(column, operator, value, boolean="or")
+
+    # --- the same constraint across several columns -------------------------
+
+    def _across(
+        self,
+        columns: Sequence[str],
+        operator: Any,
+        value: Any,
+        *,
+        combine: Callable[..., Any],
+        negate: bool,
+        boolean: str,
+    ) -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        clauses = [self._condition(column, operator, value) for column in columns]
+        if not clauses:
+            return self
+        clause = combine(*clauses)
+        return self._push_where(boolean, sa.not_(clause) if negate else clause)
+
+    def where_any(
+        self,
+        columns: Sequence[str],
+        operator: Any,
+        value: Any = _MISSING,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """True when *any* of the columns matches — Laravel's ``whereAny``."""
+        return self._across(columns, operator, value, combine=sa.or_, negate=False, boolean=boolean)
+
+    def or_where_any(self, columns: Sequence[str], operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self.where_any(columns, operator, value, boolean="or")
+
+    def where_all(
+        self,
+        columns: Sequence[str],
+        operator: Any,
+        value: Any = _MISSING,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """True when *every* column matches — Laravel's ``whereAll``."""
+        return self._across(columns, operator, value, combine=sa.and_, negate=False, boolean=boolean)
+
+    def or_where_all(self, columns: Sequence[str], operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self.where_all(columns, operator, value, boolean="or")
+
+    def where_none(
+        self,
+        columns: Sequence[str],
+        operator: Any,
+        value: Any = _MISSING,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """True when *no* column matches — Laravel's ``whereNone``."""
+        return self._across(columns, operator, value, combine=sa.or_, negate=True, boolean=boolean)
+
+    def or_where_none(self, columns: Sequence[str], operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self.where_none(columns, operator, value, boolean="or")
+
+    # --- membership ---------------------------------------------------------
+
+    def where_in(
+        self,
+        column: str,
+        values: Iterable[Any] | QueryBuilder,
+        boolean: str = "and",
+        negate: bool = False,
+    ) -> QueryBuilder:
+        """Membership in a list — or in another query's single selected column."""
+        target = self._comparable(column, _first_sample(values))
+        if isinstance(values, QueryBuilder):
+            clause = target.in_(values.to_select().scalar_subquery())
+        else:
+            clause = target.in_(list(values))
+        return self._push_where(boolean, ~clause if negate else clause)
+
+    def or_where_in(self, column: str, values: Iterable[Any] | QueryBuilder) -> QueryBuilder:
         return self.where_in(column, values, boolean="or")
 
-    def where_not_in(self, column: str, values: Iterable[Any]) -> QueryBuilder:
-        return self._push_where("and", ~self.column(column).in_(list(values)))
+    def where_not_in(
+        self,
+        column: str,
+        values: Iterable[Any] | QueryBuilder,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        return self.where_in(column, values, boolean=boolean, negate=True)
+
+    def or_where_not_in(self, column: str, values: Iterable[Any] | QueryBuilder) -> QueryBuilder:
+        return self.where_in(column, values, boolean="or", negate=True)
+
+    def where_integer_in_raw(
+        self,
+        column: str,
+        values: Iterable[Any],
+        boolean: str = "and",
+        negate: bool = False,
+    ) -> QueryBuilder:
+        """A large integer list inlined rather than bound, one parameter each.
+
+        Every value is cast to `int` first, so nothing but an integer can
+        reach the SQL — the same guarantee Laravel's `whereIntegerInRaw` makes.
+        """
+        inlined = ", ".join(str(int(value)) for value in values)
+        if not inlined:
+            return self._push_where(boolean, sa.true() if negate else sa.false())
+        operator = "not in" if negate else "in"
+        rendered = self.column(column).compile(compile_kwargs={"literal_binds": True})
+        return self._push_where(boolean, sa.text(f"{rendered} {operator} ({inlined})"))
+
+    def or_where_integer_in_raw(self, column: str, values: Iterable[Any]) -> QueryBuilder:
+        return self.where_integer_in_raw(column, values, boolean="or")
+
+    def where_integer_not_in_raw(self, column: str, values: Iterable[Any], boolean: str = "and") -> QueryBuilder:
+        return self.where_integer_in_raw(column, values, boolean=boolean, negate=True)
+
+    def or_where_integer_not_in_raw(self, column: str, values: Iterable[Any]) -> QueryBuilder:
+        return self.where_integer_in_raw(column, values, boolean="or", negate=True)
+
+    # --- null ---------------------------------------------------------------
 
     def where_null(self, column: str, boolean: str = "and") -> QueryBuilder:
-        return self._push_where(boolean, self.column(column).is_(None))
+        return self._push_where(boolean, self._comparable(column).is_(None))
 
     def or_where_null(self, column: str) -> QueryBuilder:
         return self.where_null(column, boolean="or")
 
     def where_not_null(self, column: str, boolean: str = "and") -> QueryBuilder:
-        return self._push_where(boolean, self.column(column).isnot(None))
+        return self._push_where(boolean, self._comparable(column).isnot(None))
 
     def or_where_not_null(self, column: str) -> QueryBuilder:
         return self.where_not_null(column, boolean="or")
 
-    def where_between(self, column: str, low: Any, high: Any) -> QueryBuilder:
-        return self._push_where("and", self.column(column).between(low, high))
+    def where_null_safe_equals(self, column: str, value: Any, boolean: str = "and") -> QueryBuilder:
+        """Equality that counts two NULLs as equal — Laravel's ``whereNullSafeEquals``."""
+        return self._push_where(boolean, self._comparable(column, value).is_not_distinct_from(value))
 
-    def where_not_between(self, column: str, low: Any, high: Any) -> QueryBuilder:
-        return self._push_where("and", ~self.column(column).between(low, high))
+    def or_where_null_safe_equals(self, column: str, value: Any) -> QueryBuilder:
+        return self.where_null_safe_equals(column, value, boolean="or")
+
+    # --- ranges -------------------------------------------------------------
+
+    def where_between(
+        self,
+        column: str,
+        low: Any,
+        high: Any = _MISSING,
+        boolean: str = "and",
+        negate: bool = False,
+    ) -> QueryBuilder:
+        """``where_between("votes", 1, 100)`` — or pass the pair as one argument."""
+        low, high = _pair(low, high)
+        clause = self._comparable(column, low).between(low, high)
+        return self._push_where(boolean, ~clause if negate else clause)
+
+    def or_where_between(self, column: str, low: Any, high: Any = _MISSING) -> QueryBuilder:
+        return self.where_between(column, low, high, boolean="or")
+
+    def where_not_between(
+        self,
+        column: str,
+        low: Any,
+        high: Any = _MISSING,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        return self.where_between(column, low, high, boolean=boolean, negate=True)
+
+    def or_where_not_between(self, column: str, low: Any, high: Any = _MISSING) -> QueryBuilder:
+        return self.where_between(column, low, high, boolean="or", negate=True)
+
+    def where_between_columns(
+        self,
+        column: str,
+        columns: Sequence[str],
+        boolean: str = "and",
+        negate: bool = False,
+    ) -> QueryBuilder:
+        """A column between two other columns of the same row."""
+        low, high = (self.column(name) for name in columns)
+        clause = self._comparable(column).between(low, high)
+        return self._push_where(boolean, ~clause if negate else clause)
+
+    def or_where_between_columns(self, column: str, columns: Sequence[str]) -> QueryBuilder:
+        return self.where_between_columns(column, columns, boolean="or")
+
+    def where_not_between_columns(self, column: str, columns: Sequence[str], boolean: str = "and") -> QueryBuilder:
+        return self.where_between_columns(column, columns, boolean=boolean, negate=True)
+
+    def or_where_not_between_columns(self, column: str, columns: Sequence[str]) -> QueryBuilder:
+        return self.where_between_columns(column, columns, boolean="or", negate=True)
+
+    def where_value_between(
+        self,
+        value: Any,
+        columns: Sequence[str],
+        boolean: str = "and",
+        negate: bool = False,
+    ) -> QueryBuilder:
+        """A value between two columns — ``where_value_between(100, ["min", "max"])``."""
+        low, high = (self.column(name) for name in columns)
+        clause = sa.literal(value).between(low, high)
+        return self._push_where(boolean, ~clause if negate else clause)
+
+    def or_where_value_between(self, value: Any, columns: Sequence[str]) -> QueryBuilder:
+        return self.where_value_between(value, columns, boolean="or")
+
+    def where_value_not_between(self, value: Any, columns: Sequence[str], boolean: str = "and") -> QueryBuilder:
+        return self.where_value_between(value, columns, boolean=boolean, negate=True)
+
+    def or_where_value_not_between(self, value: Any, columns: Sequence[str]) -> QueryBuilder:
+        return self.where_value_between(value, columns, boolean="or", negate=True)
+
+    # --- column to column ---------------------------------------------------
 
     def where_column(
         self,
         first: str,
         operator: Any,
         second: Any = _MISSING,
+        boolean: str = "and",
     ) -> QueryBuilder:
         operator, second = self._operator_and_value(operator, second)
-        key = str(operator).strip().lower()
-        return self._push_where("and", _OPERATORS[key](self.column(first), self.column(second)))
+        apply = self._resolve_operator(operator)
+        return self._push_where(boolean, apply(self.column(first), self.column(second)))
 
-    def where_like(self, column: str, pattern: str) -> QueryBuilder:
-        return self._push_where("and", self.column(column).like(pattern))
+    def or_where_column(self, first: str, operator: Any, second: Any = _MISSING) -> QueryBuilder:
+        return self.where_column(first, operator, second, boolean="or")
 
-    def _where_date_part(self, part: str, column: str, value: Any) -> QueryBuilder:
-        extracted = sa.extract(part, self.column(column))
-        return self._push_where("and", extracted == value)
+    # --- pattern matching ---------------------------------------------------
 
-    def where_year(self, column: str, value: Any) -> QueryBuilder:
-        return self._where_date_part("year", column, value)
+    def where_like(
+        self,
+        column: str,
+        pattern: str,
+        case_sensitive: bool = False,
+        boolean: str = "and",
+        negate: bool = False,
+    ) -> QueryBuilder:
+        """``LIKE`` that means the same thing on every engine.
 
-    def where_month(self, column: str, value: Any) -> QueryBuilder:
-        return self._where_date_part("month", column, value)
+        Laravel's default is case-insensitive, which is what most engines do
+        anyway and PostgreSQL does not; the insensitive form compiles to
+        ``ILIKE`` there and a lowered comparison elsewhere.
+        """
+        target = self._comparable(column, pattern)
+        if case_sensitive:
+            return self._push_where(boolean, CaseSensitiveLike(target, pattern, negate=negate))
+        clause = target.ilike(pattern)
+        return self._push_where(boolean, ~clause if negate else clause)
 
-    def where_day(self, column: str, value: Any) -> QueryBuilder:
-        return self._where_date_part("day", column, value)
+    def or_where_like(self, column: str, pattern: str, case_sensitive: bool = False) -> QueryBuilder:
+        return self.where_like(column, pattern, case_sensitive, boolean="or")
 
-    def where_date(self, column: str, value: Any) -> QueryBuilder:
-        return self._push_where("and", sa.func.date(self.column(column)) == value)
+    def where_not_like(
+        self,
+        column: str,
+        pattern: str,
+        case_sensitive: bool = False,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        return self.where_like(column, pattern, case_sensitive, boolean=boolean, negate=True)
+
+    def or_where_not_like(self, column: str, pattern: str, case_sensitive: bool = False) -> QueryBuilder:
+        return self.where_like(column, pattern, case_sensitive, boolean="or", negate=True)
+
+    # --- dates and times ----------------------------------------------------
+
+    def _where_date_part(
+        self,
+        part: str,
+        column: str,
+        operator: Any,
+        value: Any,
+        boolean: str,
+    ) -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        apply = self._resolve_operator(operator)
+        extracted = sa.extract(part, self._comparable(column))
+        return self._push_where(boolean, apply(extracted, value))
+
+    def where_year(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+        return self._where_date_part("year", column, operator, value, boolean)
+
+    def or_where_year(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self._where_date_part("year", column, operator, value, "or")
+
+    def where_month(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+        return self._where_date_part("month", column, operator, value, boolean)
+
+    def or_where_month(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self._where_date_part("month", column, operator, value, "or")
+
+    def where_day(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+        return self._where_date_part("day", column, operator, value, boolean)
+
+    def or_where_day(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self._where_date_part("day", column, operator, value, "or")
+
+    def where_date(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        apply = self._resolve_operator(operator)
+        target = sa.func.date(self._comparable(column))
+        return self._push_where(boolean, apply(target, _as_date_text(value)))
+
+    def or_where_date(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self.where_date(column, operator, value, boolean="or")
+
+    def where_time(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+        operator, value = self._operator_and_value(operator, value)
+        apply = self._resolve_operator(operator)
+        target = sa.func.time(self._comparable(column))
+        return self._push_where(boolean, apply(target, _as_time_text(value)))
+
+    def or_where_time(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self.where_time(column, operator, value, boolean="or")
+
+    def where_past(self, column: str, boolean: str = "and") -> QueryBuilder:
+        """A moment already gone — the column is before now."""
+        return self.where(column, "<", _clock_now(), boolean=boolean)
+
+    def or_where_past(self, column: str) -> QueryBuilder:
+        return self.where_past(column, boolean="or")
+
+    def where_future(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where(column, ">", _clock_now(), boolean=boolean)
+
+    def or_where_future(self, column: str) -> QueryBuilder:
+        return self.where_future(column, boolean="or")
+
+    def where_now_or_past(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where(column, "<=", _clock_now(), boolean=boolean)
+
+    def or_where_now_or_past(self, column: str) -> QueryBuilder:
+        return self.where_now_or_past(column, boolean="or")
+
+    def where_now_or_future(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where(column, ">=", _clock_now(), boolean=boolean)
+
+    def or_where_now_or_future(self, column: str) -> QueryBuilder:
+        return self.where_now_or_future(column, boolean="or")
+
+    def where_today(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where_date(column, "=", _clock_today(), boolean=boolean)
+
+    def or_where_today(self, column: str) -> QueryBuilder:
+        return self.where_today(column, boolean="or")
+
+    def where_before_today(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where_date(column, "<", _clock_today(), boolean=boolean)
+
+    def or_where_before_today(self, column: str) -> QueryBuilder:
+        return self.where_before_today(column, boolean="or")
+
+    def where_after_today(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where_date(column, ">", _clock_today(), boolean=boolean)
+
+    def or_where_after_today(self, column: str) -> QueryBuilder:
+        return self.where_after_today(column, boolean="or")
+
+    def where_today_or_before(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where_date(column, "<=", _clock_today(), boolean=boolean)
+
+    def or_where_today_or_before(self, column: str) -> QueryBuilder:
+        return self.where_today_or_before(column, boolean="or")
+
+    def where_today_or_after(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where_date(column, ">=", _clock_today(), boolean=boolean)
+
+    def or_where_today_or_after(self, column: str) -> QueryBuilder:
+        return self.where_today_or_after(column, boolean="or")
+
+    # --- existence ----------------------------------------------------------
+
+    def where_exists(
+        self,
+        query: QueryBuilder | Any,
+        boolean: str = "and",
+        negate: bool = False,
+    ) -> QueryBuilder:
+        """Correlate against another query — Laravel's ``whereExists``.
+
+        Laravel hands a closure a table-less builder that has to call `from`
+        anyway; Almasix takes the built query, so `DB.table("orders")…` is the
+        whole subquery and correlation is an ordinary `where_column`.
+        """
+        statement = query.to_select() if isinstance(query, QueryBuilder) else query
+        clause = sa.exists(statement)
+        return self._push_where(boolean, ~clause if negate else clause)
+
+    def or_where_exists(self, query: QueryBuilder | Any) -> QueryBuilder:
+        return self.where_exists(query, boolean="or")
+
+    def where_not_exists(self, query: QueryBuilder | Any, boolean: str = "and") -> QueryBuilder:
+        return self.where_exists(query, boolean=boolean, negate=True)
+
+    def or_where_not_exists(self, query: QueryBuilder | Any) -> QueryBuilder:
+        return self.where_exists(query, boolean="or", negate=True)
+
+    # --- JSON ---------------------------------------------------------------
+
+    def where_json_contains(
+        self,
+        column: str,
+        value: Any,
+        boolean: str = "and",
+        negate: bool = False,
+    ) -> QueryBuilder:
+        """Is this value in the JSON array at ``column``?"""
+        name, path = split_json_path(column)
+        clause = JsonContains(self.column(name), value, path)
+        return self._push_where(boolean, sa.not_(clause) if negate else clause)
+
+    def or_where_json_contains(self, column: str, value: Any) -> QueryBuilder:
+        return self.where_json_contains(column, value, boolean="or")
+
+    def where_json_doesnt_contain(self, column: str, value: Any, boolean: str = "and") -> QueryBuilder:
+        return self.where_json_contains(column, value, boolean=boolean, negate=True)
+
+    def or_where_json_doesnt_contain(self, column: str, value: Any) -> QueryBuilder:
+        return self.where_json_contains(column, value, boolean="or", negate=True)
+
+    def where_json_contains_key(self, column: str, boolean: str = "and", negate: bool = False) -> QueryBuilder:
+        """Does the document have this key, whatever its value?"""
+        name, path = split_json_path(column)
+        clause = JsonContainsKey(self.column(name), path)
+        return self._push_where(boolean, sa.not_(clause) if negate else clause)
+
+    def or_where_json_contains_key(self, column: str) -> QueryBuilder:
+        return self.where_json_contains_key(column, boolean="or")
+
+    def where_json_doesnt_contain_key(self, column: str, boolean: str = "and") -> QueryBuilder:
+        return self.where_json_contains_key(column, boolean=boolean, negate=True)
+
+    def or_where_json_doesnt_contain_key(self, column: str) -> QueryBuilder:
+        return self.where_json_contains_key(column, boolean="or", negate=True)
+
+    def where_json_length(
+        self,
+        column: str,
+        operator: Any,
+        value: Any = _MISSING,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """How many entries the JSON array holds."""
+        operator, value = self._operator_and_value(operator, value)
+        apply = self._resolve_operator(operator)
+        name, path = split_json_path(column)
+        return self._push_where(boolean, apply(JsonLength(self.column(name), path), value))
+
+    def or_where_json_length(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
+        return self.where_json_length(column, operator, value, boolean="or")
+
+    # --- full text ----------------------------------------------------------
+
+    def where_full_text(
+        self,
+        columns: str | Sequence[str],
+        value: str,
+        mode: str = "natural",
+        language: str = "english",
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """A match against a full-text index — MySQL/MariaDB and PostgreSQL."""
+        names = [columns] if isinstance(columns, str) else list(columns)
+        clause = FullText([self.column(name) for name in names], value, mode, language)
+        return self._push_where(boolean, clause)
+
+    def or_where_full_text(
+        self,
+        columns: str | Sequence[str],
+        value: str,
+        mode: str = "natural",
+        language: str = "english",
+    ) -> QueryBuilder:
+        return self.where_full_text(columns, value, mode, language, boolean="or")
+
+    # --- vector similarity --------------------------------------------------
+
+    def where_vector_similar_to(
+        self,
+        column: str,
+        vector: Any,
+        min_similarity: float = 0.0,
+        order: bool = True,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        """Rows whose vector is close to ``vector`` — pgvector and MariaDB.
+
+        ``min_similarity`` runs 0.0 to 1.0, where 1.0 is identical. Results
+        are ordered most-similar-first unless ``order=False``.
+
+        Almasix takes a vector, never a phrase: Laravel embeds a plain string
+        through its AI SDK, and Almasix has no equivalent to embed with.
+        """
+        distance = VectorDistance(self.column(column), vector)
+        self._push_where(boolean, distance <= (1.0 - min_similarity))
+        if order:
+            self._orders.append(distance.asc())
+        return self
+
+    def select_vector_distance(self, column: str, vector: Any, alias: str = "distance") -> QueryBuilder:
+        """Add the cosine distance to the selected columns."""
+        self._selects.append(VectorDistance(self.column(column), vector).label(alias))
+        return self
+
+    def where_vector_distance_less_than(
+        self,
+        column: str,
+        vector: Any,
+        max_distance: float,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        distance = VectorDistance(self.column(column), vector)
+        return self._push_where(boolean, distance < max_distance)
+
+    def order_by_vector_distance(self, column: str, vector: Any, direction: str = "asc") -> QueryBuilder:
+        distance = VectorDistance(self.column(column), vector)
+        self._orders.append(distance.desc() if direction.lower() == "desc" else distance.asc())
+        return self
+
+    # --- raw ----------------------------------------------------------------
 
     def where_raw(
         self,
@@ -323,6 +908,9 @@ class QueryBuilder:
         if bindings:
             clause = clause.bindparams(**dict(bindings))
         return self._push_where(boolean, clause)
+
+    def or_where_raw(self, sql: str, bindings: Mapping[str, Any] | None = None) -> QueryBuilder:
+        return self.where_raw(sql, boolean="or", bindings=bindings)
 
     def where_key(self, value: Any) -> QueryBuilder:
         if self.model is None:
@@ -345,20 +933,53 @@ class QueryBuilder:
         return self
 
     def select_raw(self, sql: str) -> QueryBuilder:
-        self._selects.append(sa.literal_column(sql))
+        """Raw SQL as a selected column; a trailing ``as name`` names the result."""
+        expression, alias = _split_select_alias(sql)
+        column = sa.literal_column(expression)
+        self._selects.append(column.label(alias) if alias else column)
         return self
 
     def distinct(self, value: bool = True) -> QueryBuilder:
         self._distinct = value
         return self
 
+    def select_sub(self, query: QueryBuilder | Any, alias: str) -> QueryBuilder:
+        """Add a subquery as a selected column — Laravel's ``selectSub``."""
+        statement = query.to_select() if isinstance(query, QueryBuilder) else query
+        self._selects.append(statement.scalar_subquery().label(alias))
+        return self
+
+    def add_select_sub(self, query: QueryBuilder | Any, alias: str) -> QueryBuilder:
+        return self.select_sub(query, alias)
+
     def order_by(self, column: Any, direction: str = "asc") -> QueryBuilder:
-        target = self.column(column)
+        target = self._orderable(column)
         self._orders.append(target.desc() if direction.lower() == "desc" else target.asc())
         return self
 
+    def _orderable(self, column: Any) -> Any:
+        """What an ordering reads — a column, a JSON path, or a subquery."""
+        if isinstance(column, QueryBuilder):
+            return column.to_select().scalar_subquery()
+        if is_json_path(column):
+            name, path = split_json_path(column)
+            return json_value(self.column(name), path, None)
+        return self.column(column)
+
     def order_by_desc(self, column: Any) -> QueryBuilder:
         return self.order_by(column, "desc")
+
+    def order_by_sub(self, query: QueryBuilder | Any, direction: str = "asc") -> QueryBuilder:
+        """Order by what a correlated subquery returns."""
+        return self.order_by(query, direction)
+
+    def order_by_raw(self, sql: str) -> QueryBuilder:
+        self._orders.append(sa.text(sql))
+        return self
+
+    def group_by_raw(self, sql: str) -> QueryBuilder:
+        self._groups.append(sa.text(sql))
+        return self
 
     def latest(self, column: str | None = None) -> QueryBuilder:
         return self.order_by(column or self._timestamp_column(), "desc")
@@ -374,32 +995,69 @@ class QueryBuilder:
         self._orders = []
         return self.order_by(column, direction) if column is not None else self
 
+    def reorder_desc(self, column: Any) -> QueryBuilder:
+        return self.reorder(column, "desc")
+
     def group_by(self, *columns: Any) -> QueryBuilder:
         self._groups.extend(
             self.column(item) if isinstance(item, str) else item for item in columns
         )
         return self
 
+    def _having_column(self, column: str) -> Any:
+        """A `having` usually names an aggregate this query gave a name to."""
+        for selected in self._selects:
+            if isinstance(selected, sa.Label) and selected.name == column:
+                return selected.element
+        return self.column(column)
+
     def having(
         self,
         column: Any,
         operator: Any = _MISSING,
         value: Any = _MISSING,
+        boolean: str = "and",
     ) -> QueryBuilder:
         if not isinstance(column, str):
-            self._havings.append(("and", column))
+            self._havings.append((boolean, column))
             return self
         if operator is _MISSING:
             raise TypeError("having() requires having(column, value) or having(column, operator, value)")
         operator, value = self._operator_and_value(operator, value)
-        key = str(operator).strip().lower()
-        if key not in _OPERATORS:
-            raise ValueError(f"Unsupported operator: {operator!r}")
-        self._havings.append(("and", _OPERATORS[key](self.column(column), value)))
+        apply = self._resolve_operator(operator)
+        self._havings.append((boolean, apply(self._having_column(column), value)))
         return self
 
-    def having_raw(self, sql: str) -> QueryBuilder:
-        self._havings.append(("and", sa.text(sql)))
+    def or_having(self, column: Any, operator: Any = _MISSING, value: Any = _MISSING) -> QueryBuilder:
+        return self.having(column, operator, value, boolean="or")
+
+    def having_between(
+        self,
+        column: str,
+        low: Any,
+        high: Any = _MISSING,
+        boolean: str = "and",
+    ) -> QueryBuilder:
+        low, high = _pair(low, high)
+        self._havings.append((boolean, self._having_column(column).between(low, high)))
+        return self
+
+    def or_having_between(self, column: str, low: Any, high: Any = _MISSING) -> QueryBuilder:
+        return self.having_between(column, low, high, boolean="or")
+
+    def having_raw(self, sql: str, boolean: str = "and") -> QueryBuilder:
+        self._havings.append((boolean, sa.text(sql)))
+        return self
+
+    def or_having_raw(self, sql: str) -> QueryBuilder:
+        return self.having_raw(sql, boolean="or")
+
+    def having_null(self, column: str, boolean: str = "and") -> QueryBuilder:
+        self._havings.append((boolean, self._having_column(column).is_(None)))
+        return self
+
+    def having_not_null(self, column: str, boolean: str = "and") -> QueryBuilder:
+        self._havings.append((boolean, self._having_column(column).isnot(None)))
         return self
 
     def limit(self, count: int) -> QueryBuilder:
@@ -421,29 +1079,45 @@ class QueryBuilder:
     def join(
         self,
         table: str,
-        first: str,
+        first: str | Callable[[JoinClause], Any] = "",
         operator: Any = _MISSING,
         second: Any = _MISSING,
         kind: str = "inner",
     ) -> QueryBuilder:
+        """Join a table on one condition, or on a clause a callable builds.
+
+        ``join("contacts", "users.id", "=", "contacts.user_id")`` is the short
+        form; pass a callable instead and it receives a :class:`JoinClause`
+        that takes `on` / `or_on` and the whole `where` family, the way
+        Laravel's advanced join clauses do.
+        """
         if kind not in _JOIN_TYPES:
             raise ValueError(f"Unsupported join type: {kind!r}")
         self._table_clause(table)
         if kind == "cross":
             self._joins.append((kind, table, None))
             return self
-        operator, second = self._operator_and_value(operator, second)
-        key = str(operator).strip().lower()
-        if key not in _OPERATORS:
-            raise ValueError(f"Unsupported operator: {operator!r}")
-        onclause = _OPERATORS[key](self.column(first), self.column(second))
+        if callable(first):
+            clause = JoinClause(
+                table=table,
+                connection=self._connection_name,
+                tables=self._tables,
+            )
+            clause._local_tables = self._local_tables
+            first(clause)
+            onclause = clause._compile_wheres()
+            if onclause is None:
+                raise ValueError(f"The join on {table!r} has no condition.")
+        else:
+            operator, second = self._operator_and_value(operator, second)
+            onclause = self._resolve_operator(operator)(self.column(first), self.column(second))
         self._joins.append((kind, table, onclause))
         return self
 
     def left_join(
         self,
         table: str,
-        first: str,
+        first: str | Callable[[JoinClause], Any] = "",
         operator: Any = _MISSING,
         second: Any = _MISSING,
     ) -> QueryBuilder:
@@ -452,7 +1126,7 @@ class QueryBuilder:
     def right_join(
         self,
         table: str,
-        first: str,
+        first: str | Callable[[JoinClause], Any] = "",
         operator: Any = _MISSING,
         second: Any = _MISSING,
     ) -> QueryBuilder:
@@ -460,6 +1134,110 @@ class QueryBuilder:
 
     def cross_join(self, table: str) -> QueryBuilder:
         return self.join(table, "", kind="cross")
+
+    # --- subquery and lateral joins ------------------------------------------
+
+    def _alias_subquery(self, query: QueryBuilder | Any, alias: str) -> Any:
+        """Name a subquery so its columns can be reached as ``alias.column``."""
+        statement = query.to_select() if isinstance(query, QueryBuilder) else query
+        aliased = statement.subquery(alias)
+        self._local_tables[alias] = aliased
+        return aliased
+
+    def join_sub(
+        self,
+        query: QueryBuilder | Any,
+        alias: str,
+        first: str | Callable[[JoinClause], Any] = "",
+        operator: Any = _MISSING,
+        second: Any = _MISSING,
+        kind: str = "inner",
+    ) -> QueryBuilder:
+        """Join a subquery under a name — Laravel's ``joinSub``."""
+        self._alias_subquery(query, alias)
+        return self.join(alias, first, operator, second, kind=kind)
+
+    def left_join_sub(
+        self,
+        query: QueryBuilder | Any,
+        alias: str,
+        first: str | Callable[[JoinClause], Any] = "",
+        operator: Any = _MISSING,
+        second: Any = _MISSING,
+    ) -> QueryBuilder:
+        return self.join_sub(query, alias, first, operator, second, kind="left")
+
+    def right_join_sub(
+        self,
+        query: QueryBuilder | Any,
+        alias: str,
+        first: str | Callable[[JoinClause], Any] = "",
+        operator: Any = _MISSING,
+        second: Any = _MISSING,
+    ) -> QueryBuilder:
+        return self.join_sub(query, alias, first, operator, second, kind="right")
+
+    def cross_join_sub(self, query: QueryBuilder | Any, alias: str) -> QueryBuilder:
+        self._alias_subquery(query, alias)
+        return self.join(alias, "", kind="cross")
+
+    def join_lateral(
+        self,
+        query: QueryBuilder | Any,
+        alias: str,
+        kind: str = "inner",
+    ) -> QueryBuilder:
+        """Join a subquery that may read the outer row — ``joinLateral``.
+
+        A lateral join carries no `on` clause of its own; the subquery says
+        what it correlates with, so the join condition is simply true.
+        """
+        statement = query.to_select() if isinstance(query, QueryBuilder) else query
+        lateral = statement.lateral(alias)
+        self._local_tables[alias] = lateral
+        self._joins.append((kind, alias, sa.true()))
+        return self
+
+    def left_join_lateral(self, query: QueryBuilder | Any, alias: str) -> QueryBuilder:
+        return self.join_lateral(query, alias, kind="left")
+
+    def from_sub(self, query: QueryBuilder | Any, alias: str) -> QueryBuilder:
+        """Select from a subquery instead of a table — Laravel's ``fromSub``."""
+        self._from = self._alias_subquery(query, alias)
+        self.table = alias
+        return self
+
+    # --- unions ---------------------------------------------------------------
+
+    def union(self, query: QueryBuilder, all_rows: bool = False) -> QueryBuilder:
+        """Append another query's rows — duplicates dropped unless ``all_rows``."""
+        self._unions.append((all_rows, query))
+        return self
+
+    def union_all(self, query: QueryBuilder) -> QueryBuilder:
+        return self.union(query, all_rows=True)
+
+    # --- pessimistic locking --------------------------------------------------
+
+    def lock_for_update(self) -> QueryBuilder:
+        """Hold the selected rows against other writers until this commits."""
+        self._lock = "update"
+        return self
+
+    def shared_lock(self) -> QueryBuilder:
+        """Hold the selected rows against other writers' updates, not reads."""
+        self._lock = "share"
+        return self
+
+    def lock(self, value: bool | str = True) -> QueryBuilder:
+        """``lock(True)`` is `for update`, ``lock(False)`` releases the intent."""
+        if value is True:
+            return self.lock_for_update()
+        if value is False:
+            self._lock = None
+            return self
+        self._lock = str(value)
+        return self
 
     # --- conditional --------------------------------------------------------
 
@@ -484,8 +1262,38 @@ class QueryBuilder:
         return self.when(not condition, callback, default)
 
     def tap(self, callback: Callable[[QueryBuilder], Any]) -> QueryBuilder:
+        """Apply reusable query logic and keep building — Laravel's ``tap``."""
         callback(self)
         return self
+
+    def with_attributes(
+        self,
+        values: Mapping[str, Any],
+        as_conditions: bool = True,
+    ) -> QueryBuilder:
+        """Constrain on attributes *and* seed them on anything this query creates.
+
+        Laravel's ``withAttributes`` is what makes a scoped relationship whole:
+        a query that only finds published posts should also produce published
+        posts. Pass ``as_conditions=False`` to seed without filtering.
+        """
+        self._pending_attributes.update(values)
+        if as_conditions:
+            for key, value in values.items():
+                self.where(key, "=", value)
+        return self
+
+    def pending_attributes(self) -> dict[str, Any]:
+        """The attributes this query seeds onto models it creates."""
+        return dict(self._pending_attributes)
+
+    def pipe(self, callback: Callable[[QueryBuilder], Any]) -> Any:
+        """Hand the query to something that returns a result of its own.
+
+        Where `tap` always gives the builder back, `pipe` gives back whatever
+        the callable returns — a paginator, a count, a coroutine to await.
+        """
+        return callback(self)
 
     # --- scopes -------------------------------------------------------------
 
@@ -879,16 +1687,18 @@ class QueryBuilder:
         if not selected:
             star = f"{self.table}.*" if self._joins else "*"
             selected = [sa.literal_column(star)]
-        statement = sa.select(*selected).select_from(self._table_clause(self.table))
-
+        source = self._from if self._from is not None else self._table_clause(self.table)
         for kind, table_name, onclause in self._joins:
             target = self._table_clause(table_name)
             if kind == "cross":
-                statement = statement.join(target, sa.literal(True))
-            elif kind == "left":
-                statement = statement.outerjoin(target, onclause)
+                source = sa.join(source, target, sa.literal(True))
+            elif kind == "right":
+                # SQLAlchemy has no right join, and none is needed: the same
+                # rows come back from a left join with the sides swapped.
+                source = sa.join(target, source, onclause, isouter=True)
             else:
-                statement = statement.join(target, onclause, isouter=(kind == "right"))
+                source = sa.join(source, target, onclause, isouter=(kind == "left"))
+        statement = sa.select(*selected).select_from(source)
 
         clause = self._compile_wheres()
         if clause is not None:
@@ -906,25 +1716,76 @@ class QueryBuilder:
         builder = self.clone()
         self._apply_global_scopes(builder)
         statement = builder._base_select()
-        for order in builder._orders:
+        orders = builder._orders
+        if builder._unions:
+            # Ordering and paging belong to the combined result, not to the
+            # first query in it, which is where Laravel puts them too — and a
+            # combined result has no table names left to qualify columns with.
+            for all_rows, other in builder._unions:
+                combine = statement.union_all if all_rows else statement.union
+                statement = combine(other.to_select())
+            orders = [_unqualified(order) for order in orders]
+        for order in orders:
             statement = statement.order_by(order)
         if builder._limit is not None:
             statement = statement.limit(builder._limit)
         if builder._offset is not None:
             statement = statement.offset(builder._offset)
+        if builder._lock is not None:
+            statement = statement.with_for_update(read=builder._lock == "share")
         return statement
 
-    def to_sql(self) -> str:
-        statement = self.to_select()
+    def _dialect(self) -> Any:
+        """The dialect to compile for, or None before a connection exists."""
         try:
-            dialect = self.get_connection().engine.dialect
-        except Exception:  # noqa: BLE001 — to_sql must work without a connection
-            dialect = None
-        compiled = statement.compile(
-            dialect=dialect,
-            compile_kwargs={"literal_binds": True},
-        )
-        return str(compiled)
+            return self.get_connection().engine.dialect
+        except Exception:  # noqa: BLE001 — compiling must work without a connection
+            return None
+
+    def _compiled(self, *, literal: bool) -> Any:
+        kwargs = {"literal_binds": True} if literal else {}
+        return self.to_select().compile(dialect=self._dialect(), compile_kwargs=kwargs)
+
+    def to_sql(self) -> str:
+        """The SQL, with the values left as placeholders — Laravel's ``toSql``."""
+        return str(self._compiled(literal=False))
+
+    def to_raw_sql(self) -> str:
+        """The SQL with every value written in — Laravel's ``toRawSql``."""
+        return str(self._compiled(literal=True))
+
+    def get_bindings(self) -> list[Any]:
+        """The values the placeholders in :meth:`to_sql` stand for."""
+        compiled = self._compiled(literal=False)
+        return [compiled.params[key] for key in compiled.positiontup or compiled.params]
+
+    # --- debugging ----------------------------------------------------------
+
+    def dump(self) -> QueryBuilder:
+        """Print the SQL and its bindings, then carry on building."""
+        from almasix.debug import dump as debug_dump
+
+        debug_dump({"sql": self.to_sql(), "bindings": self.get_bindings()}, _depth=2)
+        return self
+
+    def dd(self) -> None:
+        """Print the SQL and its bindings, then stop."""
+        from almasix.debug import dd as debug_dd
+
+        debug_dd({"sql": self.to_sql(), "bindings": self.get_bindings()})
+
+    def dump_raw_sql(self) -> QueryBuilder:
+        """Print the SQL with its values written in, then carry on."""
+        from almasix.debug import dump as debug_dump
+
+        debug_dump(self.to_raw_sql(), _depth=2)
+        return self
+
+    def dd_raw_sql(self) -> None:
+        """Print the SQL with its values written in, then stop."""
+        from almasix.debug import dd as debug_dd
+
+        debug_dd(self.to_raw_sql())
 
     # --- reads --------------------------------------------------------------
 
@@ -966,6 +1827,20 @@ class QueryBuilder:
             raise ModelNotFoundError(self.model.__name__ if self.model else self.table)
         return found
 
+    async def sole(self) -> Any:
+        """The one matching row — anything else is a mistake worth raising.
+
+        Two rows mean the query was not as narrow as the caller believed, and
+        silently taking the first would hide that.
+        """
+        results = await self.clone().limit(2).get()
+        name = self.model.__name__ if self.model else self.table
+        if not len(results):
+            raise ModelNotFoundError(name)
+        if len(results) > 1:
+            raise MultipleRecordsFoundError(name, len(results))
+        return results.first()
+
     async def find(self, key: Any) -> Any:
         if isinstance(key, (list, tuple, set)):
             return await self.find_many(list(key))
@@ -1000,6 +1875,11 @@ class QueryBuilder:
         short_key = key.rpartition(".")[2]
         return {row.get(short_key): row.get(short) for row in rows}
 
+    async def implode(self, column: str, glue: str = "") -> str:
+        """Join one column's values into a string — Laravel's ``implode``."""
+        values = await self.pluck(column)
+        return glue.join("" if value is None else str(value) for value in values)
+
     async def exists(self) -> bool:
         statement = sa.select(sa.literal(1)).select_from(
             self.clone().limit(1).to_select().subquery()
@@ -1027,6 +1907,8 @@ class QueryBuilder:
 
     async def avg(self, column: str) -> Any:
         return await self._aggregate(sa.func.avg, column)
+
+    average = avg
 
     async def max(self, column: str) -> Any:
         return await self._aggregate(sa.func.max, column)
@@ -1173,22 +2055,122 @@ class QueryBuilder:
 
     # --- pagination ---------------------------------------------------------
 
-    async def paginate(self, per_page: int | None = None, page: int = 1) -> Paginator:
-        size = per_page or (self.model.per_page if self.model else 15)
-        total = await self.count()
-        items = await self.clone().for_page(page, size).get()
-        return Paginator(items, total, size, page)
+    async def paginate(
+        self,
+        per_page: int | None = None,
+        page: int | None = None,
+        *,
+        page_name: str = "page",
+        total: int | None = None,
+    ) -> Paginator:
+        """One page of results, and how many there are in all.
 
-    async def simple_paginate(self, per_page: int | None = None, page: int = 1) -> SimplePaginator:
+        ``page`` defaults to what the request asked for, so a controller that
+        wants Laravel's behaviour needs to say nothing at all.
+        """
         size = per_page or (self.model.per_page if self.model else 15)
-        results = await self.clone().for_page(page, size + 1).get()
+        current = resolve_page(page_name, page)
+        counted = await self.count() if total is None else int(total)
+        items = await self.clone().for_page(current, size).get()
+        return Paginator(items, counted, size, current, page_name=page_name)
+
+    async def simple_paginate(
+        self,
+        per_page: int | None = None,
+        page: int | None = None,
+        *,
+        page_name: str = "page",
+    ) -> SimplePaginator:
+        """One page, and whether there is another — no counting."""
+        size = per_page or (self.model.per_page if self.model else 15)
+        current = resolve_page(page_name, page)
+        results = await self.clone().for_page(current, size + 1).get()
         has_more = len(results) > size
-        return SimplePaginator(results.take(size), size, page, has_more)
+        return SimplePaginator(results.take(size), size, current, has_more, page_name=page_name)
+
+    async def cursor_paginate(
+        self,
+        per_page: int | None = None,
+        cursor: Cursor | str | None = None,
+        *,
+        cursor_name: str = "cursor",
+    ) -> CursorPaginator:
+        """One page defined by where the last one ended.
+
+        The query's ordering is what a cursor is made of, so an unordered
+        query says so rather than paging arbitrarily; Laravel raises there
+        too. Rows inserted while a reader pages through do not shift the
+        window, which an offset cannot promise.
+        """
+        size = per_page or (self.model.per_page if self.model else 15)
+        orders = self._cursor_orders()
+        active = _read_cursor(cursor, cursor_name)
+
+        builder = self.clone()
+        if active is not None:
+            builder._apply_cursor(active, orders)
+        if active is not None and not active.points_to_next_items:
+            builder = builder._reverse_orders(orders)
+
+        results = await builder.for_page(1, size + 1).get()
+        has_more = len(results) > size
+        items = results.take(size)
+        if active is not None and not active.points_to_next_items:
+            items = Collection(list(reversed(list(items))))
+        return CursorPaginator(
+            items,
+            size,
+            active,
+            has_more,
+            parameters=[column for column, _ in orders],
+            cursor_name=cursor_name,
+        )
+
+    def _cursor_orders(self) -> list[tuple[str, bool]]:
+        """The ordering a cursor is built from, as ``(column, descending)``."""
+        orders: list[tuple[str, bool]] = []
+        for order in self._orders:
+            element = getattr(order, "element", order)
+            column = getattr(element, "name", None) or str(element)
+            orders.append((str(column), str(order).upper().endswith(" DESC")))
+        if not orders:
+            raise ValueError(
+                "cursor_paginate() needs an order_by: a cursor is a position "
+                "in an ordering, and an unordered query has none."
+            )
+        return orders
+
+    def _apply_cursor(self, cursor: Cursor, orders: Sequence[tuple[str, bool]]) -> None:
+        """Where the next page starts — a lexicographic comparison, column by column."""
+        forwards = cursor.points_to_next_items
+        previous: list[tuple[str, Any]] = []
+        clauses: list[Any] = []
+        for column, descending in orders:
+            value = cursor.parameter(column)
+            # Reading forwards through a descending column means smaller
+            # values, and reading backwards flips it again.
+            backwards_of_here = descending == forwards
+            comparison = (
+                self.column(column) < value
+                if backwards_of_here
+                else self.column(column) > value
+            )
+            equals = [self.column(name) == held for name, held in previous]
+            clauses.append(sa.and_(*equals, comparison) if equals else comparison)
+            previous.append((column, value))
+        self._push_where("and", sa.or_(*clauses))
+
+    def _reverse_orders(self, orders: Sequence[tuple[str, bool]]) -> QueryBuilder:
+        """Read backwards from the cursor, for a page before this one."""
+        self._orders = []
+        for column, descending in orders:
+            self.order_by(column, "asc" if descending else "desc")
+        return self
 
     # --- writes -------------------------------------------------------------
 
     async def insert(self, values: Mapping[str, Any] | Sequence[Mapping[str, Any]]) -> int:
-        payload = [dict(values)] if isinstance(values, Mapping) else [dict(v) for v in values]
+        payload = _writable_rows(values)
         if not payload:
             return 0
         statement = sa.insert(self._table_clause(self.table))
@@ -1198,8 +2180,33 @@ class QueryBuilder:
         result = await self.get_connection().execute(statement, payload)
         return int(result.rowcount or 0)
 
+    async def insert_or_ignore(
+        self,
+        values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    ) -> int:
+        """Insert, letting rows that would collide fall on the floor."""
+        payload = _writable_rows(values)
+        if not payload:
+            return 0
+        for row in payload:
+            for key in row:
+                self.column(key)
+        statement = _ignoring_insert(self._table_clause(self.table), payload, self.get_connection().dialect)
+        result = await self.get_connection().execute(statement)
+        return int(result.rowcount or 0)
+
+    async def insert_using(self, columns: Sequence[str], query: QueryBuilder | Any) -> int:
+        """Fill a table from another query — ``INSERT INTO … SELECT …``."""
+        target = self._table_clause(self.table)
+        for name in columns:
+            self.column(name)
+        source = query.to_select() if isinstance(query, QueryBuilder) else query
+        statement = sa.insert(target).from_select([self.column(name) for name in columns], source)
+        result = await self.get_connection().execute(statement)
+        return int(result.rowcount or 0)
+
     async def insert_get_id(self, values: Mapping[str, Any]) -> Any:
-        row = dict(values)
+        row = _writable_rows(values)[0]
         for key in row:
             self.column(key)
         primary = self.model.primary_key if self.model else "id"
@@ -1223,7 +2230,17 @@ class QueryBuilder:
         return row.get(primary)
 
     async def update(self, values: Mapping[str, Any]) -> int:
-        payload = {key: value for key, value in values.items()}
+        """Update the matching rows; ``"options->key"`` writes inside a JSON column."""
+        payload: dict[str, Any] = {}
+        patches: dict[str, list[tuple[list[str], Any]]] = {}
+        for key, value in values.items():
+            if is_json_path(key):
+                name, path = split_json_path(key)
+                patches.setdefault(name, []).append((path, value))
+                continue
+            payload[key] = _writable_value(value)
+        for name, edits in patches.items():
+            payload[name] = _json_set(self.column(name), edits)
         for key in payload:
             self.column(key)
         builder = self.clone()
@@ -1235,8 +2252,35 @@ class QueryBuilder:
         result = await self.get_connection().execute(statement)
         return int(result.rowcount or 0)
 
-    async def delete(self) -> int:
+    async def update_or_insert(
+        self,
+        attributes: Mapping[str, Any],
+        values: Mapping[str, Any] | None = None,
+    ) -> bool:
+        """Update the row matching ``attributes``, or insert it — ``updateOrInsert``.
+
+        Returns True either way, as Laravel does; ask `exists` beforehand if
+        you need to know which of the two happened.
+        """
+        probe = self.clone()
+        for key, value in attributes.items():
+            probe.where(key, "=", value)
+        if not values:
+            if await probe.exists():
+                return True
+            await self.clone().insert(dict(attributes))
+            return True
+        if await probe.exists():
+            await probe.clone().update(dict(values))
+            return True
+        await self.clone().insert({**attributes, **values})
+        return True
+
+    async def delete(self, key: Any = _MISSING) -> int:
+        """Delete the matching rows, or the one row with this primary key."""
         builder = self.clone()
+        if key is not _MISSING:
+            builder.where(builder._key_column(), "=", key)
         self._apply_global_scopes(builder)
         statement = sa.delete(self._table_clause(self.table))
         clause = builder._compile_wheres()
@@ -1245,6 +2289,16 @@ class QueryBuilder:
         result = await self.get_connection().execute(statement)
         return int(result.rowcount or 0)
 
+    async def truncate(self) -> None:
+        """Empty the table and reset its auto-increment, where the engine can."""
+        connection = self.get_connection()
+        dialect = connection.engine.dialect
+        for sql in _truncate_sql(self.table, dialect):
+            await connection.execute(sql)
+        if dialect.name == "sqlite" and await connection.scalar(_SQLITE_SEQUENCE):
+            # The sequence table only exists once something has autoincremented.
+            await connection.execute(f"DELETE FROM sqlite_sequence WHERE name = '{self.table}'")
+
     async def increment(self, column: str, amount: int = 1, **extra: Any) -> int:
         target = self.column(column)
         return await self.update({column: target + amount, **extra})
@@ -1252,6 +2306,15 @@ class QueryBuilder:
     async def decrement(self, column: str, amount: int = 1, **extra: Any) -> int:
         target = self.column(column)
         return await self.update({column: target - amount, **extra})
+
+    async def increment_each(self, columns: Mapping[str, Any], **extra: Any) -> int:
+        """Raise several columns in one statement — ``incrementEach``."""
+        changes = {name: self.column(name) + amount for name, amount in columns.items()}
+        return await self.update({**changes, **extra})
+
+    async def decrement_each(self, columns: Mapping[str, Any], **extra: Any) -> int:
+        changes = {name: self.column(name) - amount for name, amount in columns.items()}
+        return await self.update({**changes, **extra})
 
     async def upsert(
         self,
@@ -1265,7 +2328,7 @@ class QueryBuilder:
         SQLite / PostgreSQL use ``ON CONFLICT … DO UPDATE``; MySQL uses
         ``ON DUPLICATE KEY UPDATE``. Other dialects fall back to probe-then-write.
         """
-        payload = [dict(values)] if isinstance(values, Mapping) else [dict(v) for v in values]
+        payload = _writable_rows(values)
         if not payload:
             return 0
         unique = list(unique_by)
@@ -1334,7 +2397,7 @@ class QueryBuilder:
             return found
         if self.model is None:
             raise RuntimeError("first_or_create() requires a model")
-        return await self.model.create({**attributes, **(values or {})})
+        return await self.model.create({**self._pending_attributes, **attributes, **(values or {})})
 
     async def first_or_new(
         self,
@@ -1350,7 +2413,7 @@ class QueryBuilder:
         if self.model is None:
             raise RuntimeError("first_or_new() requires a model")
         instance = self.model()
-        instance.force_fill({**attributes, **(values or {})})
+        instance.force_fill({**self._pending_attributes, **attributes, **(values or {})})
         return instance
 
     async def update_or_create(
@@ -1368,7 +2431,77 @@ class QueryBuilder:
             return found
         if self.model is None:
             raise RuntimeError("update_or_create() requires a model")
-        return await self.model.create({**attributes, **(values or {})})
+        return await self.model.create({**self._pending_attributes, **attributes, **(values or {})})
+
+
+class JoinClause(QueryBuilder):
+    """The builder a join callable receives — Laravel's ``JoinClause``.
+
+    It is a query builder bound to the joined table, so `where` and friends
+    all work; `on` is the column-to-column comparison a join usually wants.
+    """
+
+    def on(
+        self,
+        first: str | Callable[[JoinClause], Any],
+        operator: Any = _MISSING,
+        second: Any = _MISSING,
+        boolean: str = "and",
+    ) -> JoinClause:
+        if callable(first):
+            clause = self._nested(first)
+            if clause is not None:
+                self._push_where(boolean, clause)
+            return self
+        self.where_column(first, operator, second, boolean=boolean)
+        return self
+
+    def or_on(self, first: str, operator: Any = _MISSING, second: Any = _MISSING) -> JoinClause:
+        return self.on(first, operator, second, boolean="or")
+
+    def _nested(self, callback: Callable[[Any], Any]) -> ClauseElement | None:
+        nested = JoinClause(
+            model=self.model,
+            table=self.table,
+            connection=self._connection_name,
+            tables=self._tables,
+        )
+        nested._local_tables = self._local_tables
+        callback(nested)
+        return nested._compile_wheres()
+
+
+def _read_cursor(cursor: Cursor | str | None, cursor_name: str) -> Cursor | None:
+    """The cursor given, the one in the query string, or none at all."""
+    if isinstance(cursor, Cursor):
+        return cursor
+    if isinstance(cursor, str):
+        return Cursor.from_encoded(cursor)
+    from almasix.http.request import get_request
+
+    request = get_request()
+    if request is None:
+        return None
+    return Cursor.from_encoded(request.query(cursor_name))
+
+
+def _writable_rows(
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """One row or many, ready to be bound."""
+    rows = [values] if isinstance(values, Mapping) else values
+    return [{key: _writable_value(value) for key, value in dict(row).items()} for row in rows]
+
+
+def _writable_value(value: Any) -> Any:
+    """A list or dict headed for a JSON column becomes the document it describes.
+
+    The builder's table clauses carry no column types, so nothing downstream
+    would know to encode it; Laravel encodes here for the same reason.
+    """
+    if isinstance(value, (dict, list)):
+        return json.dumps(value)
+    return value
 
 
 def _native_upsert(
@@ -1407,6 +2540,46 @@ def _native_upsert(
     )
 
 
+def _ignoring_insert(table: TableClause, payload: Sequence[Mapping[str, Any]], dialect: str) -> Any:
+    """An insert that skips rows a constraint would reject."""
+    name = str(dialect).lower()
+    if name == "mysql":
+        from sqlalchemy.dialects.mysql import insert as dialect_insert
+
+        return dialect_insert(table).values(list(payload)).prefix_with("IGNORE")
+    if name == "sqlite":
+        from sqlalchemy.dialects.sqlite import insert as dialect_insert
+    elif name in {"postgresql", "postgres"}:
+        from sqlalchemy.dialects.postgresql import insert as dialect_insert
+    else:
+        raise UnsupportedByDialectError("insert-or-ignore", str(dialect))
+    return dialect_insert(table).values(list(payload)).on_conflict_do_nothing()
+
+
+def _truncate_sql(table: str, dialect: Any) -> list[str]:
+    """Emptying a table, spelled for the engine in front of us.
+
+    SQLite has no `TRUNCATE`; its delete is paired with a reset of the
+    sequence table, which is what makes the ids start over the way they do
+    elsewhere. That reset lives in `truncate` because the sequence table is
+    only there once something has autoincremented.
+    """
+    quoted = quote_ident(dialect, table)
+    if dialect.name == "sqlite":
+        return [f"DELETE FROM {quoted}"]
+    if dialect.name in {"postgresql", "mssql"}:
+        return [f"TRUNCATE TABLE {quoted}" + (" RESTART IDENTITY CASCADE" if dialect.name == "postgresql" else "")]
+    return [f"TRUNCATE TABLE {quoted}"]
+
+
+def _json_set(column: Any, edits: Sequence[tuple[list[str], Any]]) -> Any:
+    """Fold several edits to one JSON column into a single expression."""
+    document = column
+    for path, value in edits:
+        document = JsonSet(document, path, value)
+    return document
+
+
 def _invoke_scope(scope: Any, model: type, builder: QueryBuilder, args: tuple, kwargs: dict) -> Any:
     """Laravel local scopes: `scopeXxx($query, ...)` — query is the first argument.
 
@@ -1439,3 +2612,70 @@ def _value_of(row: Any, key: str) -> Any:
     if callable(getter):
         return getter(key)
     return row[key]
+
+
+_SELECT_ALIAS = re.compile(r"^(?P<expression>.+?)\s+as\s+(?P<alias>[A-Za-z_][A-Za-z0-9_]*)$", re.IGNORECASE)
+
+
+def _split_select_alias(sql: str) -> tuple[str, str | None]:
+    """Separate ``count(*) as total`` into the expression and the name."""
+    match = _SELECT_ALIAS.match(sql.strip())
+    if match is None:
+        return sql, None
+    return match.group("expression"), match.group("alias")
+
+
+def _unqualified(order: Any) -> Any:
+    """Strip the table off an ordering, for use over a union."""
+    element = getattr(order, "element", None)
+    name = getattr(element, "name", None)
+    if name is None:
+        return order
+    bare = sa.literal_column(str(name))
+    return bare.desc() if order.modifier is operators.desc_op else bare.asc()
+
+
+def _pair(low: Any, high: Any) -> tuple[Any, Any]:
+    """Accept ``(1, 100)`` or Laravel's ``[1, 100]`` for a range."""
+    if high is _MISSING:
+        first, second = low
+        return first, second
+    return low, high
+
+
+def _first_sample(values: Any) -> Any:
+    """One value from a list, to type a JSON comparison by."""
+    if isinstance(values, QueryBuilder):
+        return None
+    for value in values:
+        return value
+    return None
+
+
+def _clock_now() -> Any:
+    """The current moment, as the app's clock reports it."""
+    from almasix.support.helpers import now
+
+    return now().replace(tzinfo=None)
+
+
+def _clock_today() -> Any:
+    from almasix.support.helpers import today
+
+    return today()
+
+
+def _as_date_text(value: Any) -> Any:
+    """Dates compare against `date()` output, which is text."""
+    if isinstance(value, (datetime.datetime, datetime.date)):
+        return value.strftime("%Y-%m-%d")
+    return value
+
+
+def _as_time_text(value: Any) -> Any:
+    """Times compare against `time()` output, which is text."""
+    if isinstance(value, datetime.datetime):
+        return value.strftime("%H:%M:%S")
+    if isinstance(value, datetime.time):
+        return value.strftime("%H:%M:%S")
+    return value

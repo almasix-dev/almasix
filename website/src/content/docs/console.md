@@ -322,13 +322,14 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 101 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 103 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
 | Command | Description |
 | --- | --- |
 | `about` | Show a summary of the application's environment and drivers |
+| `db` | Start a new database CLI session |
 | `docs` | Open Almasix's documentation in a browser |
 | `down` | Put the application into maintenance mode (scheduled tasks stop) |
 | `env` | Display the current framework environment |
@@ -489,6 +490,12 @@ What the framework ships, 101 commands, as `smith list` groups them. An applicat
 | Command | Description |
 | --- | --- |
 | `route:list` | List the application's registered routes |
+
+### `schema`
+
+| Command | Description |
+| --- | --- |
+| `schema:dump` | Dump the current database schema to database/schema |
 
 ### `schedule`
 

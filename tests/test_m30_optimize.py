@@ -97,7 +97,9 @@ def test_view_cache_compiles_every_template(app: Any, capsys: pytest.CaptureFixt
     code, text = run(ViewCacheCommand, app, capsys)
 
     assert code == 0
-    assert "1 template(s) compiled" in text
+    # The application's one template, plus the pagination views the framework
+    # ships — which this proves compile.
+    assert "5 template(s) compiled" in text
 
 
 def test_view_cache_reports_a_template_that_will_not_compile(app: Any, capsys: pytest.CaptureFixture[str]) -> None:

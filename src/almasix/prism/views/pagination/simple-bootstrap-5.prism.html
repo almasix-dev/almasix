@@ -1,0 +1,17 @@
+@if(paginator.has_pages())
+<nav>
+  <ul class="pagination">
+    @if(paginator.on_first_page())
+      <li class="page-item disabled" aria-disabled="true"><span class="page-link">Previous</span></li>
+    @else
+      <li class="page-item"><a class="page-link" href="{{ paginator.previous_page_url() }}" rel="prev">Previous</a></li>
+    @endif
+
+    @if(paginator.has_more_pages())
+      <li class="page-item"><a class="page-link" href="{{ paginator.next_page_url() }}" rel="next">Next</a></li>
+    @else
+      <li class="page-item disabled" aria-disabled="true"><span class="page-link">Next</span></li>
+    @endif
+  </ul>
+</nav>
+@endif

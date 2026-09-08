@@ -173,18 +173,22 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M26** | `smith progress:broadcast` + `GET /api/broadcast` — `ShouldBroadcast`, channel auth, the websocket at `/broadcasting/socket`, `channel:list` |
 | **M27** | `smith progress:search` + `GET /api/search` — `Searchable` posts, the `database` and `collection` engines, `Scout.fake()`, `scout:status` |
 | **M28** | `smith progress:testing` + `smith test` — `tests/` drives the app in-process: HTTP and console assertions, database helpers, `fake()`, time travel |
-| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 125 commands |
+| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 126 commands |
 | **M31** | `smith progress:schedule` — frequencies, constraints, hooks, a tick; `smith schedule:list` / `test` / `interrupt` |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
+| **M42** | `smith progress:queries` — JSON wheres and updates, `join_sub`, unions, `having_between`, `sole`, locking, `DB.listen` / `pretend` / `after_commit`; `smith db` |
+| **M43** | `smith progress:schema` — the column catalogue, `change()` and the drops, `Schema.rename`, index and foreign-key inspection, `migrate --pretend` / `--step`, all three paginators |
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
-| **M29–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M29, M44–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M28, M30, M31, M40, M41, M49, and M50 are closed; **M5** is partly done.
-Next is **M29 — Package development**. The board on `/progress`
+M0–M28, M30, M31, M40–M43, M49, and M50 are closed — M5's query builder was
+exhausted in M42 and its schema layer in M43, so the whole ORM is done bar the
+engines it runs on. Next is **M44 — multi-engine database CI**, which runs the
+suite against PostgreSQL and MySQL as well as SQLite. The board on `/progress`
 lists the full **M0–M51** roadmap with a status and proof for each milestone.
 ## CLI
 
@@ -196,6 +200,8 @@ smith progress:prompts
 smith progress:demo
 smith progress:helpers
 smith progress:collections
+smith progress:queries
+smith progress:schema
 smith progress:cache
 smith progress:redis
 smith progress:encryption

@@ -1,303 +1,41 @@
-"""Schema builder — Laravel `Schema::create` / `Schema::table` / `Blueprint`."""
+"""Schema builder — Laravel `Schema::create` / `Schema::table` / `Blueprint`.
+
+The blueprint itself lives in :mod:`almasix.orm.blueprint`; this module is the
+façade that runs one against a connection, and the compiler that turns the
+alter path into the ALTER statements each engine understands.
+"""
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from typing import Any
 
 import sqlalchemy as sa
 
+from almasix.orm.blueprint import (
+    Blueprint,
+    Column,
+    ForeignKeyDefinition,
+    SchemaError,
+    _default_literal,
+    guess_foreign_table,
+)
 from almasix.orm.dialects import drop_table_sql, quote_ident, rename_column_sql
 from almasix.orm.facade import get_manager
-from almasix.orm.inflector import pluralize
+
+#: Laravel keeps this private name; Almasix's tests reach for it too.
+_guess_foreign_table = guess_foreign_table
 
 
-class SchemaError(RuntimeError):
-    """Raised when a schema operation is unsupported on the active dialect."""
+def _schema_connection(connection: str | None = None) -> Any:
+    """The connection schema work runs on.
 
-
-class ForeignKeyDefinition:
-    """Fluent foreign-key builder (Laravel ``foreign`` / ``constrained`` chain)."""
-
-    def __init__(
-        self,
-        blueprint: Blueprint,
-        columns: list[str],
-        *,
-        column: Column | None = None,
-        ref_table: str | None = None,
-        ref_column: str = "id",
-        name: str | None = None,
-    ) -> None:
-        self._blueprint = blueprint
-        self.columns = columns
-        self._column = column
-        self.ref_table = ref_table
-        self.ref_column = ref_column
-        self.name = name
-        self.on_delete: str | None = None
-        self.on_update: str | None = None
-        blueprint._foreign_keys.append(self)
-
-    def references(self, column: str) -> ForeignKeyDefinition:
-        self.ref_column = column
-        self._sync_column()
-        return self
-
-    def on(self, table: str) -> ForeignKeyDefinition:
-        self.ref_table = table
-        self._sync_column()
-        return self
-
-    def cascade_on_delete(self) -> ForeignKeyDefinition:
-        return self.on_delete_action("CASCADE")
-
-    def restrict_on_delete(self) -> ForeignKeyDefinition:
-        return self.on_delete_action("RESTRICT")
-
-    def null_on_delete(self) -> ForeignKeyDefinition:
-        return self.on_delete_action("SET NULL")
-
-    def no_action_on_delete(self) -> ForeignKeyDefinition:
-        return self.on_delete_action("NO ACTION")
-
-    def cascade_on_update(self) -> ForeignKeyDefinition:
-        return self.on_update_action("CASCADE")
-
-    def restrict_on_update(self) -> ForeignKeyDefinition:
-        return self.on_update_action("RESTRICT")
-
-    def null_on_update(self) -> ForeignKeyDefinition:
-        return self.on_update_action("SET NULL")
-
-    def no_action_on_update(self) -> ForeignKeyDefinition:
-        return self.on_update_action("NO ACTION")
-
-    def on_delete_action(self, action: str) -> ForeignKeyDefinition:
-        self.on_delete = action
-        self._sync_column()
-        return self
-
-    def on_update_action(self, action: str) -> ForeignKeyDefinition:
-        self.on_update = action
-        self._sync_column()
-        return self
-
-    def _sync_column(self) -> None:
-        if self._column is None or not self.ref_table:
-            return
-        self._column.options["references"] = f"{self.ref_table}.{self.ref_column}"
-        if self.on_delete:
-            self._column.options["on_delete"] = self.on_delete
-        if self.on_update:
-            self._column.options["on_update"] = self.on_update
-
-    def constraint_name(self) -> str:
-        if self.name:
-            return self.name
-        return f"{self._blueprint.table}_{'_'.join(self.columns)}_foreign"
-
-
-class Column:
-    """One column definition inside a `Blueprint`."""
-
-    def __init__(
-        self,
-        name: str,
-        type_: Any,
-        blueprint: Blueprint | None = None,
-        **options: Any,
-    ) -> None:
-        self.name = name
-        self.type = type_
-        self.options = options
-        self._blueprint = blueprint
-
-    def nullable(self, value: bool = True) -> Column:
-        self.options["nullable"] = value
-        return self
-
-    def default(self, value: Any) -> Column:
-        self.options["default"] = value
-        return self
-
-    def unique(self, value: bool = True) -> Column:
-        self.options["unique"] = value
-        return self
-
-    def index(self, value: bool = True) -> Column:
-        self.options["index"] = value
-        return self
-
-    def primary(self, value: bool = True) -> Column:
-        self.options["primary_key"] = value
-        return self
-
-    def after(self, column: str) -> Column:
-        """Place column after ``column`` (MySQL / MariaDB)."""
-        self.options["after"] = column
-        self.options.pop("before", None)
-        return self
-
-    def before(self, column: str) -> Column:
-        """Place column before ``column`` (MariaDB)."""
-        self.options["before"] = column
-        self.options.pop("after", None)
-        return self
-
-    def constrained(
-        self,
-        table: str | None = None,
-        column: str = "id",
-        index_name: str | None = None,
-    ) -> ForeignKeyDefinition:
-        """Attach a foreign key using naming conventions (Laravel ``constrained``)."""
-        if self._blueprint is None:
-            raise SchemaError("constrained() requires a Blueprint-owned column")
-        ref_table = table or _guess_foreign_table(self.name)
-        fk = ForeignKeyDefinition(
-            self._blueprint,
-            [self.name],
-            column=self,
-            ref_table=ref_table,
-            ref_column=column,
-            name=index_name,
-        )
-        fk._sync_column()
-        return fk
-
-    def to_sqlalchemy(self) -> sa.Column:
-        options = dict(self.options)
-        options.setdefault("nullable", not options.get("primary_key", False))
-        references = options.pop("references", None)
-        on_delete = options.pop("on_delete", None)
-        on_update = options.pop("on_update", None)
-        options.pop("after", None)
-        options.pop("before", None)
-        options.pop("index", None)
-        args: list[Any] = [self.name, self.type]
-        if references:
-            fk_kwargs: dict[str, Any] = {}
-            if on_delete:
-                fk_kwargs["ondelete"] = on_delete
-            if on_update:
-                fk_kwargs["onupdate"] = on_update
-            args.append(sa.ForeignKey(references, **fk_kwargs))
-        return sa.Column(*args, **options)
-
-
-class Blueprint:
-    """Fluent table definition."""
-
-    def __init__(self, table: str) -> None:
-        self.table = table
-        self.columns: list[Column] = []
-        self._indexes: list[tuple[str, list[str], bool]] = []
-        self._drop_columns: list[str] = []
-        self._renames: list[tuple[str, str]] = []
-        self._foreign_keys: list[ForeignKeyDefinition] = []
-
-    def _add(self, name: str, type_: Any, **options: Any) -> Column:
-        column = Column(name, type_, blueprint=self, **options)
-        self.columns.append(column)
-        return column
-
-    # --- column types -------------------------------------------------------
-
-    def id(self, name: str = "id") -> Column:
-        return self._add(name, sa.Integer, primary_key=True, autoincrement=True)
-
-    def big_increments(self, name: str = "id") -> Column:
-        return self._add(name, sa.BigInteger, primary_key=True, autoincrement=True)
-
-    def uuid(self, name: str = "uuid") -> Column:
-        return self._add(name, sa.String(36))
-
-    def string(self, name: str, length: int = 255) -> Column:
-        return self._add(name, sa.String(length))
-
-    def text(self, name: str) -> Column:
-        return self._add(name, sa.Text)
-
-    def integer(self, name: str) -> Column:
-        return self._add(name, sa.Integer)
-
-    def big_integer(self, name: str) -> Column:
-        return self._add(name, sa.BigInteger)
-
-    def float(self, name: str) -> Column:
-        return self._add(name, sa.Float)
-
-    def decimal(self, name: str, precision: int = 8, scale: int = 2) -> Column:
-        return self._add(name, sa.Numeric(precision, scale))
-
-    def boolean(self, name: str) -> Column:
-        return self._add(name, sa.Boolean)
-
-    def json(self, name: str) -> Column:
-        return self._add(name, sa.JSON)
-
-    def date(self, name: str) -> Column:
-        return self._add(name, sa.Date)
-
-    def date_time(self, name: str) -> Column:
-        return self._add(name, sa.DateTime)
-
-    def timestamp(self, name: str) -> Column:
-        return self._add(name, sa.DateTime)
-
-    def timestamps(self) -> None:
-        self._add("created_at", sa.DateTime, nullable=True)
-        self._add("updated_at", sa.DateTime, nullable=True)
-
-    def soft_deletes(self, name: str = "deleted_at") -> Column:
-        return self._add(name, sa.DateTime, nullable=True)
-
-    def foreign_id(self, name: str, references: str | None = None) -> Column:
-        """FK column helper (Laravel ``foreignId``). Almasix uses INTEGER."""
-        column = self._add(name, sa.Integer, nullable=True)
-        if references:
-            column.options["references"] = references
-        return column
-
-    def morphs(self, name: str) -> None:
-        self._add(f"{name}_id", sa.Integer, nullable=True)
-        self._add(f"{name}_type", sa.String(255), nullable=True)
-
-    def drop_column(self, *columns: str) -> None:
-        """Queue column drops for ``Schema.table`` (Laravel ``dropColumn``)."""
-        self._drop_columns.extend(columns)
-
-    def rename_column(self, from_name: str, to_name: str) -> None:
-        """Queue a column rename (Laravel ``renameColumn``)."""
-        self._renames.append((from_name, to_name))
-
-    def unique(self, columns: str | list[str], name: str | None = None) -> None:
-        """Add a unique index (Laravel ``$table->unique(...)``)."""
-        cols = [columns] if isinstance(columns, str) else list(columns)
-        self.unique_index(cols, name)
-
-    def unique_index(self, columns: list[str], name: str | None = None) -> None:
-        self._indexes.append((name or f"uq_{self.table}_{'_'.join(columns)}", columns, True))
-
-    def index(self, columns: str | list[str], name: str | None = None) -> None:
-        cols = [columns] if isinstance(columns, str) else list(columns)
-        self._indexes.append((name or f"ix_{self.table}_{'_'.join(cols)}", cols, False))
-
-    def foreign(self, *columns: str) -> ForeignKeyDefinition:
-        """Add a foreign key on existing column(s) (Laravel ``$table->foreign``)."""
-        return ForeignKeyDefinition(self, list(columns))
-
-    # --- compilation --------------------------------------------------------
-
-    def to_table(self, metadata: sa.MetaData) -> sa.Table:
-        table = sa.Table(
-            self.table,
-            metadata,
-            *[column.to_sqlalchemy() for column in self.columns],
-        )
-        for name, columns, unique in self._indexes:
-            sa.Index(name, *[table.c[column] for column in columns], unique=unique)
-        return table
+    A pooled PostgreSQL connection cannot hold the session state DDL needs,
+    so when one declares a `direct` twin, schema work goes there instead —
+    the same routing Laravel applies to migrations and the `db:*` commands.
+    """
+    manager = get_manager()
+    return manager.connection(manager.direct_name(connection))
 
 
 class Schema:
@@ -307,51 +45,68 @@ class Schema:
     async def create(table: str, callback: Any, connection: str | None = None) -> None:
         blueprint = Blueprint(table)
         callback(blueprint)
-        metadata = sa.MetaData()
-        engine = get_manager().connection(connection).engine
+        target = _schema_connection(connection)
+        await _run(target, compile_create_statements(blueprint, target.engine.dialect))
 
-        def reflect_and_create(sync_conn: Any) -> None:
-            # Load existing tables so ForeignKey("users.id") can resolve during CREATE.
-            metadata.reflect(bind=sync_conn)
-            sa_table = blueprint.to_table(metadata)
-            metadata.create_all(sync_conn, tables=[sa_table])
-
-        async with engine.begin() as conn:
-            await _enable_foreign_keys(conn, engine.dialect.name)
-            await conn.run_sync(reflect_and_create)
+    @staticmethod
+    async def create_if_not_exists(
+        table: str, callback: Any, connection: str | None = None
+    ) -> None:
+        """Create the table only when it is not already there."""
+        if await Schema.has_table(table, connection):
+            return
+        await Schema.create(table, callback, connection)
 
     @staticmethod
     async def table(table: str, callback: Any, connection: str | None = None) -> None:
         """Alter an existing table (Laravel ``Schema::table``)."""
         blueprint = Blueprint(table)
         callback(blueprint)
-        engine = get_manager().connection(connection).engine
-        dialect_name = engine.dialect.name
-        statements = compile_table_statements(blueprint, engine.dialect)
-        if not statements:
-            return
-        async with engine.begin() as conn:
-            await _enable_foreign_keys(conn, dialect_name)
-            for statement in statements:
-                await conn.execute(sa.text(statement))
+        target = _schema_connection(connection)
+        await _run(target, compile_table_statements(blueprint, target.engine.dialect))
+
+    @staticmethod
+    async def rename(from_table: str, to_table: str, connection: str | None = None) -> None:
+        """Rename a table (Laravel ``Schema::rename``)."""
+        engine = _schema_connection(connection).engine
+        await _schema_connection(connection).execute(
+            rename_table_sql(from_table, to_table, engine.dialect)
+        )
 
     @staticmethod
     async def drop(table: str, connection: str | None = None) -> None:
-        engine = get_manager().connection(connection).engine
-        await get_manager().connection(connection).execute(
+        engine = _schema_connection(connection).engine
+        await _schema_connection(connection).execute(
             drop_table_sql(table, engine.dialect, if_exists=False)
         )
 
     @staticmethod
     async def drop_if_exists(table: str, connection: str | None = None) -> None:
-        engine = get_manager().connection(connection).engine
-        await get_manager().connection(connection).execute(
+        engine = _schema_connection(connection).engine
+        await _schema_connection(connection).execute(
             drop_table_sql(table, engine.dialect, if_exists=True)
         )
 
     @staticmethod
+    async def drop_all_tables(connection: str | None = None) -> None:
+        """Empty the schema, foreign keys and all.
+
+        Constraints are switched off for the duration rather than the tables
+        sorted, because a cycle between two tables has no safe order.
+        """
+        engine = _schema_connection(connection).engine
+        tables = await Schema.table_names(connection)
+        if not tables:
+            return
+        async with Schema.without_foreign_key_constraints(connection):
+            for table in tables:
+                await _schema_connection(connection).execute(
+                    drop_table_sql(table, engine.dialect, if_exists=True)
+                )
+
+    @staticmethod
     async def has_table(table: str, connection: str | None = None) -> bool:
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
 
         def inspect(sync_conn: Any) -> bool:
             return sa.inspect(sync_conn).has_table(table)
@@ -361,7 +116,7 @@ class Schema:
 
     @staticmethod
     async def has_column(table: str, column: str, connection: str | None = None) -> bool:
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
 
         def inspect(sync_conn: Any) -> bool:
             return column in {col["name"] for col in sa.inspect(sync_conn).get_columns(table)}
@@ -370,14 +125,31 @@ class Schema:
             return await conn.run_sync(inspect)
 
     @staticmethod
-    async def has_index(table: str, name: str, connection: str | None = None) -> bool:
-        engine = get_manager().connection(connection).engine
+    async def has_columns(
+        table: str, columns: list[str], connection: str | None = None
+    ) -> bool:
+        present = {column["name"] for column in await Schema.columns(table, connection)}
+        return set(columns).issubset(present)
 
-        def inspect(sync_conn: Any) -> bool:
-            return any(index["name"] == name for index in sa.inspect(sync_conn).get_indexes(table))
-
-        async with engine.connect() as conn:
-            return await conn.run_sync(inspect)
+    @staticmethod
+    async def has_index(
+        table: str,
+        index: str | list[str],
+        connection: str | None = None,
+        *,
+        unique: bool | None = None,
+    ) -> bool:
+        """Whether an index exists, named or described by its columns."""
+        indexes = await Schema.get_indexes(table, connection)
+        for found in indexes:
+            if unique is not None and bool(found["unique"]) is not unique:
+                continue
+            if isinstance(index, str):
+                if found["name"] == index:
+                    return True
+            elif list(found["columns"]) == list(index):
+                return True
+        return False
 
     @staticmethod
     async def columns(table: str, connection: str | None = None) -> list[dict[str, Any]]:
@@ -401,13 +173,91 @@ class Schema:
                 for column in inspector.get_columns(table)
             ]
 
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
+        async with engine.connect() as conn:
+            return await conn.run_sync(read)
+
+    @staticmethod
+    async def column_type(table: str, column: str, connection: str | None = None) -> str:
+        """The type of one column (Laravel ``Schema::getColumnType``)."""
+        for found in await Schema.columns(table, connection):
+            if found["name"] == column:
+                return str(found["type"])
+        raise SchemaError(f"Table {table} has no column {column}.")
+
+    @staticmethod
+    async def get_indexes(table: str, connection: str | None = None) -> list[dict[str, Any]]:
+        """Every index on a table, primary key included."""
+
+        def read(sync_conn: Any) -> list[dict[str, Any]]:
+            inspector = sa.inspect(sync_conn)
+            if not inspector.has_table(table):
+                return []
+            found = [
+                {
+                    "name": index["name"],
+                    "columns": list(index["column_names"]),
+                    "unique": bool(index["unique"]),
+                    "primary": False,
+                }
+                for index in inspector.get_indexes(table)
+            ]
+            primary = inspector.get_pk_constraint(table)
+            if primary.get("constrained_columns"):
+                found.append(
+                    {
+                        "name": primary.get("name") or f"{table}_primary",
+                        "columns": list(primary["constrained_columns"]),
+                        "unique": True,
+                        "primary": True,
+                    }
+                )
+            return found
+
+        engine = _schema_connection(connection).engine
+        async with engine.connect() as conn:
+            return await conn.run_sync(read)
+
+    @staticmethod
+    async def get_foreign_keys(table: str, connection: str | None = None) -> list[dict[str, Any]]:
+        """Every foreign key on a table, with the actions it carries."""
+
+        def read(sync_conn: Any) -> list[dict[str, Any]]:
+            inspector = sa.inspect(sync_conn)
+            if not inspector.has_table(table):
+                return []
+            return [
+                {
+                    "name": key.get("name"),
+                    "columns": list(key["constrained_columns"]),
+                    "foreign_table": key["referred_table"],
+                    "foreign_columns": list(key["referred_columns"]),
+                    "on_delete": (key.get("options") or {}).get("ondelete"),
+                    "on_update": (key.get("options") or {}).get("onupdate"),
+                }
+                for key in inspector.get_foreign_keys(table)
+            ]
+
+        engine = _schema_connection(connection).engine
+        async with engine.connect() as conn:
+            return await conn.run_sync(read)
+
+    @staticmethod
+    async def get_views(connection: str | None = None) -> list[dict[str, Any]]:
+        def read(sync_conn: Any) -> list[dict[str, Any]]:
+            inspector = sa.inspect(sync_conn)
+            return [
+                {"name": name, "definition": inspector.get_view_definition(name) or ""}
+                for name in inspector.get_view_names()
+            ]
+
+        engine = _schema_connection(connection).engine
         async with engine.connect() as conn:
             return await conn.run_sync(read)
 
     @staticmethod
     async def table_names(connection: str | None = None) -> list[str]:
-        engine = get_manager().connection(connection).engine
+        engine = _schema_connection(connection).engine
 
         def names(sync_conn: Any) -> list[str]:
             return list(sa.inspect(sync_conn).get_table_names())
@@ -415,16 +265,114 @@ class Schema:
         async with engine.connect() as conn:
             return await conn.run_sync(names)
 
+    @staticmethod
+    async def when_table_has_column(
+        table: str, column: str, callback: Any, connection: str | None = None
+    ) -> None:
+        """Run the blueprint only if the column is there — Laravel's conditional."""
+        if await Schema.has_column(table, column, connection):
+            await Schema.table(table, callback, connection)
 
-def _guess_foreign_table(column: str) -> str:
-    """``user_id`` → ``users`` (Laravel constrained convention)."""
-    base = column[:-3] if column.endswith("_id") else column
-    return pluralize(base)
+    @staticmethod
+    async def when_table_doesnt_have_column(
+        table: str, column: str, callback: Any, connection: str | None = None
+    ) -> None:
+        if not await Schema.has_column(table, column, connection):
+            await Schema.table(table, callback, connection)
+
+    @staticmethod
+    async def disable_foreign_key_constraints(connection: str | None = None) -> None:
+        statement = _foreign_key_switch(_schema_connection(connection).engine.dialect, False)
+        if statement:
+            await _schema_connection(connection).execute(statement)
+
+    @staticmethod
+    async def enable_foreign_key_constraints(connection: str | None = None) -> None:
+        statement = _foreign_key_switch(_schema_connection(connection).engine.dialect, True)
+        if statement:
+            await _schema_connection(connection).execute(statement)
+
+    @staticmethod
+    @asynccontextmanager
+    async def without_foreign_key_constraints(connection: str | None = None) -> Any:
+        """Run a block with foreign keys switched off, then switch them back on."""
+        await Schema.disable_foreign_key_constraints(connection)
+        try:
+            yield
+        finally:
+            await Schema.enable_foreign_key_constraints(connection)
 
 
-async def _enable_foreign_keys(conn: Any, dialect_name: str) -> None:
-    if dialect_name == "sqlite":  # pragma: no branch
-        await conn.execute(sa.text("PRAGMA foreign_keys=ON"))
+def _foreign_key_switch(dialect: Any, enabled: bool) -> str | None:
+    """The statement that turns constraint checking off and on again."""
+    name = dialect.name
+    if name == "sqlite":
+        return f"PRAGMA foreign_keys={'ON' if enabled else 'OFF'}"
+    if name == "mysql":
+        return f"SET FOREIGN_KEY_CHECKS={1 if enabled else 0}"
+    if name == "postgresql":
+        return f"SET session_replication_role = {'origin' if enabled else 'replica'}"
+    return None
+
+
+def rename_table_sql(from_table: str, to_table: str, dialect: Any) -> str:
+    """``ALTER TABLE … RENAME``, in each engine's spelling."""
+    old = quote_ident(dialect, from_table)
+    if dialect.name == "mssql":
+        return f"EXEC sp_rename '{from_table}', '{to_table}'"
+    new = quote_ident(dialect, to_table)
+    if dialect.name == "mysql":
+        return f"RENAME TABLE {old} TO {new}"
+    return f"ALTER TABLE {old} RENAME TO {new}"
+
+
+async def _run(target: Any, statements: list[str]) -> None:
+    """Run compiled DDL through the connection, not around it.
+
+    Going through :class:`~almasix.orm.connection.Connection` is what lets a
+    migration join a transaction, be counted by a query listener, and be
+    printed rather than run under ``DB.pretend`` — none of which is possible
+    for DDL that opens its own engine-level transaction.
+    """
+    if not statements:
+        return
+    async with target.transaction():
+        for statement in statements:
+            await target.execute(statement)
+
+
+def compile_create_statements(blueprint: Blueprint, dialect: Any) -> list[str]:
+    """The ``CREATE TABLE`` and its indexes, as SQL this engine understands."""
+    metadata = sa.MetaData()
+    _stub_foreign_tables(blueprint, metadata)
+    table = blueprint.to_table(metadata, dialect)
+    statements = [str(sa.schema.CreateTable(table).compile(dialect=dialect)).strip()]
+    statements.extend(
+        str(sa.schema.CreateIndex(index).compile(dialect=dialect)).strip()
+        for index in sorted(table.indexes, key=lambda index: index.name or "")
+    )
+    return statements
+
+
+def _stub_foreign_tables(blueprint: Blueprint, metadata: sa.MetaData) -> None:
+    """Stand in for the tables this one points at.
+
+    A ``REFERENCES users (id)`` clause needs `users` to be in the metadata to
+    compile, but only its name and the column's — so a stub is enough, and it
+    saves reflecting the whole schema on every create.
+    """
+    for column in blueprint.columns:
+        reference = column.options.get("references")
+        if not reference:
+            continue
+        name, _, referenced = reference.partition(".")
+        if name == blueprint.table or name in metadata.tables:
+            continue
+        sa.Table(
+            name,
+            metadata,
+            sa.Column(referenced or "id", sa.BigInteger, primary_key=True),
+        )
 
 
 def compile_table_statements(blueprint: Blueprint, dialect: Any) -> list[str]:
@@ -437,47 +385,31 @@ def compile_table_statements(blueprint: Blueprint, dialect: Any) -> list[str]:
     for old, new in blueprint._renames:
         statements.append(rename_column_sql(table, old, new, dialect))
 
+    for old, new in blueprint._rename_indexes:
+        statements.append(_rename_index_sql(table, old, new, dialect))
+
+    statements.extend(_drop_constraint_statements(blueprint, dialect, qt))
+
     inline_fk_columns = {
-        column.name for column in blueprint.columns if column.options.get("references")
+        column.name
+        for column in blueprint.columns
+        if column.options.get("references") and not column.changing
     }
 
     for column in blueprint.columns:
-        # Compile the bare column, then append REFERENCES manually — SQLAlchemy's
-        # CreateColumn omits FK clauses on ALTER TABLE ADD COLUMN for SQLite.
-        options = dict(column.options)
-        references = options.pop("references", None)
-        on_delete = options.pop("on_delete", None)
-        on_update = options.pop("on_update", None)
-        after = options.pop("after", None)
-        before = options.pop("before", None)
-        options.pop("index", None)
-        bare = Column(column.name, column.type, **options)
-        sa_col = bare.to_sqlalchemy()
-        # mssql CreateColumn requires a Table-bound column.
-        if dialect_name in {"mssql", "oracle"}:
-            tmp = sa.Table("__almasix_alter__", sa.MetaData())
-            tmp.append_column(sa_col)
-        col_sql = str(sa.schema.CreateColumn(sa_col).compile(dialect=dialect))
-        if references:
-            ref_table, _, ref_column = references.partition(".")
-            col_sql += (
-                f" REFERENCES {quote_ident(dialect, ref_table)} "
-                f"({quote_ident(dialect, ref_column or 'id')})"
-            )
-            if on_delete:  # pragma: no branch
-                col_sql += f" ON DELETE {on_delete}"
-            if on_update:
-                col_sql += f" ON UPDATE {on_update}"
-        statement = f"ALTER TABLE {qt} ADD COLUMN {col_sql}"
-        if dialect_name == "mysql":
-            if after:
-                statement += f" AFTER {quote_ident(dialect, after)}"
-            elif before:
-                statement += f" BEFORE {quote_ident(dialect, before)}"
-        statements.append(statement)
+        if column.changing:
+            statements.extend(_change_statements(column, dialect, qt))
+            continue
+        statements.append(_add_column_sql(column, dialect, qt))
 
     for name in blueprint._drop_columns:
         statements.append(f"ALTER TABLE {qt} DROP COLUMN {quote_ident(dialect, name)}")
+
+    if blueprint._primary is not None:
+        columns, name = blueprint._primary
+        cols = ", ".join(quote_ident(dialect, column) for column in columns)
+        constraint = f"CONSTRAINT {quote_ident(dialect, name)} " if name else ""
+        statements.append(f"ALTER TABLE {qt} ADD {constraint}PRIMARY KEY ({cols})")
 
     for fk in blueprint._foreign_keys:
         if not fk.ref_table:
@@ -508,19 +440,23 @@ def compile_table_statements(blueprint: Blueprint, dialect: Any) -> list[str]:
         cols = ", ".join(quote_ident(dialect, column) for column in columns)
         unique_sql = "UNIQUE " if unique else ""
         statements.append(
-            f"CREATE {unique_sql}INDEX {quote_ident(dialect, index_name)} "
-            f"ON {qt} ({cols})"
+            f"CREATE {unique_sql}INDEX {quote_ident(dialect, index_name)} ON {qt} ({cols})"
         )
 
     for column in blueprint.columns:
-        if column.options.get("unique") and not column.options.get("primary_key"):
-            # UNIQUE may already be inline on ADD COLUMN for SQLite/Postgres.
-            if dialect_name not in {"sqlite", "postgresql"}:
-                name = f"uq_{table}_{column.name}"
-                statements.append(
-                    f"CREATE UNIQUE INDEX {quote_ident(dialect, name)} "
-                    f"ON {qt} ({quote_ident(dialect, column.name)})"
-                )
+        if column.changing:
+            continue
+        # UNIQUE may already be inline on ADD COLUMN for SQLite/Postgres.
+        if (
+            column.options.get("unique")
+            and not column.options.get("primary_key")
+            and dialect_name not in {"sqlite", "postgresql"}
+        ):
+            name = f"uq_{table}_{column.name}"
+            statements.append(
+                f"CREATE UNIQUE INDEX {quote_ident(dialect, name)} "
+                f"ON {qt} ({quote_ident(dialect, column.name)})"
+            )
         if column.options.get("index"):
             name = f"ix_{table}_{column.name}"
             statements.append(
@@ -529,3 +465,164 @@ def compile_table_statements(blueprint: Blueprint, dialect: Any) -> list[str]:
             )
 
     return statements
+
+
+def _add_column_sql(column: Column, dialect: Any, qt: str) -> str:
+    """One ``ALTER TABLE … ADD COLUMN``, foreign key and placement included."""
+    # Compile the bare column, then append REFERENCES manually — SQLAlchemy's
+    # CreateColumn omits FK clauses on ALTER TABLE ADD COLUMN for SQLite.
+    col_sql = _column_definition(column, dialect)
+    references = column.options.get("references")
+    if references:
+        ref_table, _, ref_column = references.partition(".")
+        col_sql += (
+            f" REFERENCES {quote_ident(dialect, ref_table)} "
+            f"({quote_ident(dialect, ref_column or 'id')})"
+        )
+        if column.options.get("on_delete"):  # pragma: no branch
+            col_sql += f" ON DELETE {column.options['on_delete']}"
+        if column.options.get("on_update"):
+            col_sql += f" ON UPDATE {column.options['on_update']}"
+    statement = f"ALTER TABLE {qt} ADD COLUMN {col_sql}"
+    if dialect.name == "mysql":
+        if column.options.get("first"):
+            statement += " FIRST"
+        elif column.options.get("after"):
+            statement += f" AFTER {quote_ident(dialect, column.options['after'])}"
+        elif column.options.get("before"):
+            statement += f" BEFORE {quote_ident(dialect, column.options['before'])}"
+    return statement
+
+
+def _column_definition(column: Column, dialect: Any) -> str:
+    """``name TYPE NOT NULL DEFAULT …`` — the part every engine agrees on."""
+    options = {key: value for key, value in column.options.items() if key not in _ALTER_IGNORED}
+    bare = Column(column.name, column.type, **options)
+    sa_col = bare.to_sqlalchemy(dialect)
+    if dialect.name in {"mssql", "oracle"}:  # CreateColumn needs a Table-bound column.
+        sa.Table("__almasix_alter__", sa.MetaData()).append_column(sa_col)
+    definition = str(sa.schema.CreateColumn(sa_col).compile(dialect=dialect))
+    if dialect.name == "mysql":
+        if column.options.get("charset"):
+            definition += f" CHARACTER SET {column.options['charset']}"
+        if column.options.get("collation"):
+            definition += f" COLLATE {column.options['collation']}"
+        if column.options.get("invisible"):
+            definition += " INVISIBLE"
+        if column.options.get("comment"):
+            comment = str(column.options["comment"]).replace("'", "''")
+            definition += f" COMMENT '{comment}'"
+    return definition
+
+
+#: Modifiers the ALTER path writes itself rather than handing to SQLAlchemy.
+_ALTER_IGNORED = frozenset({"references", "on_delete", "on_update", "index", "comment"})
+
+
+def _change_statements(column: Column, dialect: Any, qt: str) -> list[str]:
+    """Restate an existing column — Laravel's ``change()``.
+
+    Every attribute is re-stated, so a modifier left out of the call is
+    dropped rather than kept; that is Laravel's rule, and the engines that
+    take a whole column definition enforce it for us.
+    """
+    name = dialect.name
+    quoted = quote_ident(dialect, column.name)
+    if name == "sqlite":
+        raise SchemaError(
+            "SQLite cannot change a column in place. Add the new column, copy the "
+            "values across, and drop the old one — or run the migration on "
+            "MySQL / MariaDB / PostgreSQL / SQL Server."
+        )
+    if name == "mysql":
+        return [f"ALTER TABLE {qt} MODIFY {_column_definition(column, dialect)}"]
+    if name == "oracle":
+        return [f"ALTER TABLE {qt} MODIFY ({_column_definition(column, dialect)})"]
+
+    type_sql = column.sa_type(dialect).compile(dialect=dialect)
+    if name == "mssql":
+        nullable = "NULL" if column.options.get("nullable", True) else "NOT NULL"
+        return [f"ALTER TABLE {qt} ALTER COLUMN {quoted} {type_sql} {nullable}"]
+
+    # PostgreSQL says one thing at a time.
+    statements = [
+        (f"ALTER TABLE {qt} ALTER COLUMN {quoted} TYPE {type_sql} USING {quoted}::{type_sql}")
+    ]
+    if column.options.get("nullable", True):
+        statements.append(f"ALTER TABLE {qt} ALTER COLUMN {quoted} DROP NOT NULL")
+    else:
+        statements.append(f"ALTER TABLE {qt} ALTER COLUMN {quoted} SET NOT NULL")
+    default = column.options.get("default")
+    if column.options.get("use_current"):
+        statements.append(
+            f"ALTER TABLE {qt} ALTER COLUMN {quoted} SET DEFAULT CURRENT_TIMESTAMP"
+        )
+    elif default is not None:
+        literal = _default_literal(default, dialect)
+        statements.append(f"ALTER TABLE {qt} ALTER COLUMN {quoted} SET DEFAULT {literal}")
+    else:
+        statements.append(f"ALTER TABLE {qt} ALTER COLUMN {quoted} DROP DEFAULT")
+    return statements
+
+
+def _drop_constraint_statements(blueprint: Blueprint, dialect: Any, qt: str) -> list[str]:
+    """Index, foreign-key, and primary-key drops, in each engine's spelling."""
+    name = dialect.name
+    statements: list[str] = []
+
+    for index_name, _kind in blueprint._drop_indexes:
+        quoted = quote_ident(dialect, index_name)
+        if name in {"mysql", "mssql"}:
+            statements.append(f"ALTER TABLE {qt} DROP INDEX {quoted}")
+        else:
+            statements.append(f"DROP INDEX {quoted}")
+
+    for key_name in blueprint._drop_foreign_keys:
+        quoted = quote_ident(dialect, key_name)
+        if name == "sqlite":
+            raise SchemaError(
+                "SQLite cannot drop a foreign key. Rebuild the table instead, "
+                "or run the migration on another engine."
+            )
+        keyword = "FOREIGN KEY" if name == "mysql" else "CONSTRAINT"
+        statements.append(f"ALTER TABLE {qt} DROP {keyword} {quoted}")
+
+    if blueprint._drop_primary:
+        if name == "mysql":
+            statements.append(f"ALTER TABLE {qt} DROP PRIMARY KEY")
+        elif name == "sqlite":
+            raise SchemaError(
+                "SQLite cannot drop a primary key. Rebuild the table instead."
+            )
+        else:
+            constraint = quote_ident(dialect, f"{blueprint.table}_pkey")
+            statements.append(f"ALTER TABLE {qt} DROP CONSTRAINT {constraint}")
+
+    return statements
+
+
+def _rename_index_sql(table: str, old: str, new: str, dialect: Any) -> str:
+    name = dialect.name
+    if name == "mysql":
+        return (
+            f"ALTER TABLE {quote_ident(dialect, table)} RENAME INDEX "
+            f"{quote_ident(dialect, old)} TO {quote_ident(dialect, new)}"
+        )
+    if name == "mssql":
+        return f"EXEC sp_rename '{table}.{old}', '{new}', 'INDEX'"
+    if name == "sqlite":
+        raise SchemaError(
+            "SQLite cannot rename an index. Drop it and create it under the new name."
+        )
+    return f"ALTER INDEX {quote_ident(dialect, old)} RENAME TO {quote_ident(dialect, new)}"
+
+
+__all__ = [
+    "Blueprint",
+    "Column",
+    "ForeignKeyDefinition",
+    "Schema",
+    "SchemaError",
+    "compile_table_statements",
+    "rename_table_sql",
+]

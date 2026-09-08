@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.2.0` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.3.0` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -706,7 +706,7 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 - [x] Stub tree: every generator renders a `.stub`, `smith stub:publish` copies them into `stubs/`, and a published stub wins
 - [x] `ServiceProvider.publishes()` + `smith vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `almasix-stubs` and `almasix-lang`
 - [x] Loupe allow-list: `config/loupe.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
-- [x] The built-in catalogue — 101 commands (84 at M30, plus what later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
+- [x] The built-in catalogue — 102 commands (84 at M30, plus what later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
 - [x] `console` rewritten in Laravel's Artisan section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
 - [x] Living example: `smith progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
 - [x] Deliberate deviations recorded in `docs/PLAN.md` with reasons — `config:cache` / `route:cache` / `event:cache` measured and declined, `view:cache` verifying rather than persisting, `db:show` without a size column, `db:wipe` refusing `--drop-views`
@@ -755,6 +755,64 @@ pytest -q tests/test_m41_*.py tests/smoke/test_m41_smoke.py
 - [x] Morph loading: `load_morph` / `load_morph_count` take a relation list per target class on both `Model` and `Collection`
 - [x] `articulate/relationships` rewritten in Laravel section order, with the N+1 deviation documented and the two unimplemented sections (`withAttributes`, `automaticallyEagerLoadRelationships`) named
 - [x] Living example: `/api/orm` relationship tour (pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates, existence queries); milestone board covers M0–M50 with `partial` statuses
+
+---
+
+## M42 — Query builder + database layer exhaust
+
+```bash
+pytest -q tests/test_m42_*.py tests/smoke/test_m42_smoke.py
+cd examples/progress && python smith progress:queries
+```
+
+### M42 exit criteria
+
+- [x] Where clauses: `where_not`, `where_any` / `where_all` / `where_none`, `where_in` with a subquery, `where_integer_in_raw`, `where_null_safe_equals`, `where_between_columns` / `where_value_between`, `where_column`, `where_like` with portable case sensitivity, and the `or_` twin of each
+- [x] Date helpers: `where_date` / `where_month` / `where_day` / `where_year` / `where_time`, and `where_past` / `where_future` / `where_now_or_*` / `where_today` / `where_before_today` / `where_after_today` / `where_today_or_*`
+- [x] JSON: reading with Laravel's arrow syntax, `where_json_contains` / `doesnt_contain`, `where_json_contains_key`, `where_json_length`, and updating a path without disturbing the rest of the document
+- [x] Existence and subqueries: `where_exists` / `where_not_exists`, a subquery on either side of a comparison, `select_sub` / `add_select_sub` / `order_by_sub`, and correlation against the outer table
+- [x] Engine-specific clauses in one grammar module: full text (MySQL/MariaDB `MATCH … AGAINST`, PostgreSQL `to_tsvector`), vector distance (pgvector `<=>`, MariaDB `VEC_DISTANCE_COSINE`), JSON containment three ways; an engine without the operation raises `UnsupportedByDialectError`
+- [x] Joins: closure join clauses with `on` / `or_on` and the where family, `join_sub` / `left_join_sub` / `right_join_sub` / `cross_join_sub`, `join_lateral` / `left_join_lateral`, `from_sub`; `right_join` compiles as the equivalent left join
+- [x] Unions, ordering and paging applied to the combined result, pessimistic locking (`lock_for_update` / `shared_lock` / `lock`), `order_by_raw` / `group_by_raw` / `having_raw` / `having_between`, `reorder_desc`
+- [x] Writes: `insert_or_ignore`, `insert_using`, `update_or_insert`, `increment_each` / `decrement_each`, `truncate` with the counter reset, `delete(key)`
+- [x] Reads and components: `sole` (with `MultipleRecordsFoundError`), `implode`, `average`, `pipe`, `tap`, `with_attributes` seeding what a scoped query creates
+- [x] Debugging: `to_sql` leaves placeholders, `to_raw_sql` writes values in, `get_bindings`, `dump` / `dump_raw_sql` / `dd` / `dd_raw_sql`
+- [x] Database layer: read/write connections with `sticky`, `DB.select` / `select_one` / `scalar` / `insert` / `update` / `delete` / `statement` / `unprepared`, `DB.listen`, `when_querying_for_longer_than` with `total_query_duration`, `DB.pretend`
+- [x] Transactions: the block form, the callable form with deadlock retries, manual `begin_transaction` / `commit` / `rollback` with SAVEPOINT nesting, `transaction_level`, and `after_commit` (which runs now outside a transaction and is discarded on rollback)
+- [x] Pooled connections: a `direct` block is used by schema work, `db:show` / `db:table` / `db:monitor`, and `db`
+- [x] `db` opens the engine's own client (`sqlite3`, `mysql`, `psql`, `sqlcmd`), takes `--read` / `--write` / `--pooled`, and says which client it looked for when one is missing
+- [x] `database/index` and `database/queries` rewritten in the Laravel section order
+- [x] Living example: `smith progress:queries`; the board marks M42 complete
+- [x] 100% line and branch coverage on `almasix.orm.builder`, `almasix.orm.connection`, `almasix.orm.facade`, `almasix.orm.grammar`, and `almasix.console.commands.db`
+
+---
+
+## M43 — Schema, migrations, and pagination exhaust
+
+```bash
+pytest -q tests/test_m43_*.py tests/smoke/test_m43_smoke.py
+cd examples/progress && python smith progress:schema
+```
+
+### M43 exit criteria
+
+- [x] The column catalogue: every width of integer and its `unsigned_` twin, `char` / the four text sizes, `double` / `real` / `unsigned_decimal`, `enum` and `set`, `json` / `jsonb`, the date family with its `*_tz` variants, `year` / `time`, `binary`, `uuid` / `ulid` / `ip_address` / `mac_address` / `remember_token`, the four `*morphs` pairs, `foreign_uuid` / `foreign_ulid` / `foreign_id_for`, `vector` / `geometry` / `geography`, and `raw_column`
+- [x] Each type lands in the engine's own words: `TINYINT` on MySQL, `JSONB` and native `UUID` on PostgreSQL, a check constraint where `enum` has no type, `INTEGER` keys on SQLite because that is the only width it counts up
+- [x] Modifiers: `unsigned`, `comment`, `charset` / `collation`, `first` / `after` / `before`, `invisible`, `use_current` / `use_current_on_update`, `virtual_as` / `stored_as`, `generated_as` / `always`, `auto_increment` / `start_from`; `default()` writes a **server** default, so a row inserted by anything else gets it
+- [x] `change()` restates a column, compiled for MySQL (`MODIFY`), PostgreSQL (a statement per part), SQL Server, and Oracle; SQLite raises rather than pretending
+- [x] Dropping: `drop_index` / `drop_unique` / `drop_primary` / `drop_foreign` / `drop_constrained_foreign_id`, `rename_index`, and the convenience pairs `drop_morphs` / `drop_timestamps` / `drop_soft_deletes` / `drop_remember_token`
+- [x] `Schema` gained `rename`, `create_if_not_exists`, `drop_all_tables` (with foreign keys off, so order does not matter), `has_columns`, `has_index` by column list, `column_type`, `get_indexes`, `get_foreign_keys`, `get_views`, `when_table_has_column` / `when_table_doesnt_have_column`, `disable` / `enable_foreign_key_constraints`, and `without_foreign_key_constraints`
+- [x] DDL runs through the connection rather than its own engine, so it joins the surrounding transaction and `DB.pretend` prints it
+- [x] Migrations: per-migration transactions where the engine rolls DDL back, `connection` and `within_transaction` and `should_run` on the base class, `MigrationStarted` / `MigrationEnded` / `NoPendingMigrations` on the event bus, millisecond timings, several migration directories, and quoting that works on MySQL
+- [x] Squashing: `schema:dump` writes `database/schema/{connection}-schema.sql` (read back through the inspector, so no client binary is needed), `--prune` removes what it stands in for, and `migrate --schema-path` replays it on an empty database
+- [x] Command flags: `migrate` takes `--step` / `--pretend` / `--path` (several) / `--database` / `--force` / `--graceful` / `--schema-path`; `migrate:rollback` takes `--step` (counting migrations, as Laravel does) / `--batch` / `--pretend`; `migrate:fresh` takes `--step`; `migrate:status` shows batches and filters with `--pending`
+- [x] The production guard asks only in production for `migrate` / `migrate:rollback` / `migrate:fresh`, and always for `migrate:reset` / `migrate:refresh`
+- [x] Pagination: `paginate` reads the page from the request and will take a total it already has, `simple_paginate` skips the count, and `cursor_paginate` compares the ordered columns lexicographically — several `order_by` clauses page correctly, and a write mid-read does not shift the window
+- [x] Paginators know their URL: `url`, `first` / `last` / `next` / `previous_page_url`, `get_url_range`, `appends`, `with_query_string`, `with_path`, `fragment`, `through`, `on_each_side`, and Laravel's JSON shape from `to_dict`
+- [x] `links()` renders through Prism; the Tailwind and Bootstrap 5 views ship with the framework, behind the application's view path so an app can replace them
+- [x] `database/migrations` and `database/pagination` rewritten in the Laravel section order
+- [x] Living example: `smith progress:schema`; the board marks M43 complete, and M5 with it
+- [x] 100% line and branch coverage on `almasix.orm.blueprint`, `almasix.orm.schema`, `almasix.orm.migration`, and `almasix.orm.pagination`
 
 ---
 

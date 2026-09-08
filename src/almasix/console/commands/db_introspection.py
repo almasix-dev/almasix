@@ -63,9 +63,14 @@ class DatabaseIntrospectionCommand(Command):
         return self.named_connection(str(given or "").strip() or None)
 
     def named_connection(self, name: str | None) -> Connection | int:
-        """One configured connection, or the exit code explaining its absence."""
+        """One configured connection, or the exit code explaining its absence.
+
+        Reading a schema goes to the direct connection when the named one is
+        pooled, because a transaction pooler cannot answer these questions.
+        """
+        manager = get_manager()
         try:
-            return get_manager().connection(name)
+            return manager.connection(manager.direct_name(name))
         except ConnectionError_ as exc:
             self.error(str(exc))
             return self.FAILURE

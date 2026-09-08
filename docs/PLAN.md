@@ -2,9 +2,9 @@
 
 > **Status:** Binding. This document is the source of truth for architecture and milestones.
 > Change it deliberately (PR / explicit decision), not casually mid-implementation.
-> Last aligned: 2026-09-08 (M0–M20 complete except **M5 Articulate ORM**, still partial;
-> exhaust milestones M30/M31, M40/M41 and M49/M50 landed; **M42 — Query builder + database
-> exhaust** is next).
+> Last aligned: 2026-09-08 (M0–M20 complete, **M5 Articulate ORM** included now that M42 and
+> M43 closed its query builder and schema layer; exhaust milestones M30/M31, M40–M43 and
+> M49/M50 landed; **M44 — multi-engine database CI** is next).
 
 ## Working identity
 
@@ -774,7 +774,11 @@ Eloquent-shaped Active Record on SQLAlchemy Core — see the ORM decision above 
 
 **Shipped since, by M40 (Articulate model exhaust):** modern casting (`Attribute` accessors, custom / inbound casts, `encrypted*`, `hashed`, enum collections, immutable-date aliases, per-attribute date formats, query-time casts); serialization controls (`append` / `merge_appends` / `set_appends` / `without_appends`, `merge_hidden` / `merge_visible`, `serialize_date`); Eloquent collection methods keyed by model (`find`, `fresh`, `to_query`, `only` / `except_` / `diff` / `intersect` / `unique`) and custom collection classes; UUID / ULID keys, strictness config, `unguarded`, `without_timestamps`, quiet writes, pruning + `model:prune`, streaming cursors and `lazy` / `chunk_by_id`.
 
-**Still not exhausted — owed by M42–M44** (M41 closed the relationship items): query builder gaps (unions, pessimistic locking, JSON wheres, `where_exists` / subquery wheres, `where_not`, `where_any/all/none`, `where_time`, full-text, join subqueries, raw ordering/grouping, `insert_or_ignore`, `update_or_insert`, `increment_each`, `truncate`, `dd` / `dump` debugging); database layer gaps (read/write connections + sticky, query event listening, cumulative query-time monitoring, `DB.insert/update/delete/unprepared/scalar/pretend`, manual transactions, deadlock retries, `after_commit`, `db:show` / `db:table` / `db:monitor` / `db:wipe`); schema gaps (column alteration, `Schema.rename`, dropping indexes / foreign keys, schema inspection, ~25 column types, ~10 modifiers, `migrate:reset` / `migrate:refresh`, `--pretend` / `--step` / `--path` / `--force`, squashing); and pagination gaps (cursor pagination, URL-aware paginators, rendered link views).
+**Shipped since, by M42 (Query builder + database exhaust):** the where families (JSON paths, dates, `where_not`, `where_any/all/none`, existence and subquery wheres, full text, vectors), joins through closures and subqueries and laterals, unions, pessimistic locking, raw ordering and grouping, `insert_or_ignore` / `insert_using` / `update_or_insert` / `increment_each` / `truncate` / JSON column updates, `sole` / `implode`, `pipe` and `with_attributes`, `to_sql` / `to_raw_sql` / `dump` / `dd`; and under them read/write connections with `sticky`, `DB.listen` and cumulative query-time monitoring, `DB.insert/update/delete/unprepared/scalar/pretend`, manual transactions with deadlock retries and `after_commit`, pooled connections with a direct twin, and the `db` CLI shell.
+
+**Shipped since, by M43 (Schema, migrations, and pagination exhaust):** the column catalogue and its modifiers, `change()` and the whole drop family, `Schema.rename` / `drop_all_tables` / foreign-key toggling / schema inspection, transactional and pretendable DDL, a migrator with steps, events, per-migration connections, `should_run`, and squashing, the `migrate*` flag set with production guards, and all three paginators with URL-aware links rendered through Prism.
+
+**Still owed by M44**: the engines themselves — the suite runs against SQLite, so PostgreSQL, MySQL/MariaDB, SQL Server, and Oracle are verified by compiled SQL rather than by execution.
 
 ### M6 — Prism (`almasix.prism`)
 
@@ -1422,29 +1426,33 @@ Laravel [Eloquent: Relationships](https://laravel.com/docs/eloquent-relationship
 
 Laravel [Database: Getting Started](https://laravel.com/docs/database) and [Query Builder](https://laravel.com/docs/queries).
 
-- **Query builder:** scoped relationships (`with_attributes`, inherited from M41); unions (`union` / `union_all`); pessimistic locking (`lock_for_update` / `shared_lock`); JSON where clauses; `where_exists` / subquery wheres; `where_not`; `where_any` / `where_all` / `where_none`; `where_time` and the date-helper family; full-text wheres; join subqueries and closure join clauses; `order_by_raw` / `group_by_raw` / `having_between`; `insert_or_ignore` / `insert_using`; `update_or_insert`; JSON column updates; `increment_each` / `decrement_each`; `truncate`; `lazy` / `lazy_by_id` / `chunk_by_id`; debugging (`dd` / `dump` / `dump_raw_sql`); reusable query components
-- **Database layer:** read / write connections with the `sticky` option; query event listening (`DB.listen`) and cumulative query-time monitoring; `DB.insert` / `update` / `delete` / `unprepared` / `scalar` / `pretend`; manual transactions (`begin` / `commit` / `rollback`), deadlock retries (`transaction(cb, attempts)`), and `after_commit`
-- **Commands:** `db:show`, `db:table`, `db:monitor`, `db:wipe`, and a `db` CLI shell (these are the database half of M30's built-in catalogue)
-- Docs: rewrite `database/index` and `database/queries` to the Laravel section order
+- ~~**Query builder:** scoped relationships (`with_attributes`, inherited from M41); unions (`union` / `union_all`); pessimistic locking (`lock_for_update` / `shared_lock`); JSON where clauses; `where_exists` / subquery wheres; `where_not`; `where_any` / `where_all` / `where_none`; `where_time` and the date-helper family; full-text wheres; join subqueries and closure join clauses; `order_by_raw` / `group_by_raw` / `having_between`; `insert_or_ignore` / `insert_using`; `update_or_insert`; JSON column updates; `increment_each` / `decrement_each`; `truncate`; `lazy` / `lazy_by_id` / `chunk_by_id`; debugging (`dd` / `dump` / `dump_raw_sql`); reusable query components~~ **shipped (parts 1–3)** — plus the pieces the page implies: `select_sub` / `order_by_sub`, lateral joins, `from_sub`, `sole`, `implode`, `pipe`, `where_like` with portable case sensitivity, and `to_sql` / `to_raw_sql` split the way Laravel splits them. Dialect-specific SQL (JSON containment, full text, vectors) lives in `almasix.orm.grammar`, one compiler per engine, and an engine that cannot do the work raises rather than compiling something that means something else
+- ~~**Database layer:** read / write connections with the `sticky` option; query event listening (`DB.listen`) and cumulative query-time monitoring; `DB.insert` / `update` / `delete` / `unprepared` / `scalar` / `pretend`; manual transactions (`begin` / `commit` / `rollback`), deadlock retries (`transaction(cb, attempts)`), and `after_commit`~~ **shipped (part 4)** — plus pooled connections with a `direct` twin, which schema work and the introspection commands use without being asked
+- ~~**Commands:** `db:show`, `db:table`, `db:monitor`, `db:wipe`, and a `db` CLI shell (these are the database half of M30's built-in catalogue)~~ **shipped (part 4)** — `db` hands you the engine's own client rather than reimplementing a SQL shell
+- ~~Docs: rewrite `database/index` and `database/queries` to the Laravel section order~~ **shipped (part 5)**
+
+**Named deviations:** SQLite has no row locks, so a lock clause is dropped rather than faked; full-text and vector clauses raise `UnsupportedByDialectError` on engines without them; `right_join` compiles as the left join that returns the same rows, which works on every engine including SQLite before 3.39.
 
 **Depends on:** M5, M30 (command surface for the `db:*` commands), M16 Redis nice-to-have for monitoring output.
 
-**Gate:** both pages exhausted or deviations named; docs published.
+**Gate met:** both pages exhausted or deviations named; docs published; `almasix.orm.builder`, `almasix.orm.connection`, `almasix.orm.facade`, `almasix.orm.grammar`, and the `db` command at 100% statements and branches; `smith progress:queries` demonstrates the surface.
 
 ### M43 — Schema, migrations, and pagination exhaust
 
 Laravel [Migrations](https://laravel.com/docs/migrations) (113 sections) and [Pagination](https://laravel.com/docs/pagination).
 
-- **Column catalogue:** the ~25 missing types (`char`, `tiny_integer` … `medium_integer`, `long_text` / `medium_text` / `tiny_text`, `binary`, `enum`, `set`, `year`, `time`, the `*_tz` variants, `ip_address`, `mac_address`, `ulid`, `uuid_morphs` / `ulid_morphs` / `nullable_morphs`, `remember_token`, spatial types, `vector`)
-- **Modifiers:** `unsigned`, `comment`, `use_current` / `use_current_on_update`, `charset` / `collation`, `virtual_as` / `stored_as` / `generated_as`, `invisible`, `auto_increment`
-- **Alteration:** `change()` (Almasix has **no column alteration today**), `Schema.rename`, `drop_index` / `drop_unique` / `drop_primary` / `drop_foreign` / `drop_constrained_foreign_id`, `rename_index`, foreign-key constraint toggling, and schema inspection (`get_tables` / `get_columns` / `get_indexes`)
-- **Commands and flags:** `migrate:reset`, `migrate:refresh`, `migrate:install`, plus `--pretend`, `--step`, `--path`, `--database`, `--force`; schema squashing (`schema:dump`)
-- **Pagination:** cursor pagination (`cursor_paginate` + `CursorPaginator`); URL-aware paginators (`url`, `next_page_url`, `previous_page_url`, `appends`, `with_query_string`, `path` / page-name customization, `on_each_side`, `through`, `first_item` / `last_item`); rendered link views in Prism for both the Tailwind and Bootstrap stacks (pairs with **M32**)
-- Docs: rewrite `database/migrations` and `database/pagination`
+- ~~**Column catalogue:** the ~25 missing types (`char`, `tiny_integer` … `medium_integer`, `long_text` / `medium_text` / `tiny_text`, `binary`, `enum`, `set`, `year`, `time`, the `*_tz` variants, `ip_address`, `mac_address`, `ulid`, `uuid_morphs` / `ulid_morphs` / `nullable_morphs`, `remember_token`, spatial types, `vector`)~~ **shipped (part 1)** — the blueprint moved out of `schema.py` into `almasix.orm.blueprint`, and each type maps to the engine's own spelling (`TINYINT` on MySQL, `JSONB` and native `UUID` on PostgreSQL, `INTEGER` keys on SQLite because that is the only width it counts up); `vector`, `geometry`, and `geography` join the M42 grammar
+- ~~**Modifiers:** `unsigned`, `comment`, `use_current` / `use_current_on_update`, `charset` / `collation`, `virtual_as` / `stored_as` / `generated_as`, `invisible`, `auto_increment`~~ **shipped (part 1)** — plus `first`, `start_from`, and `always`; `default()` became a **server** default, as Laravel's is, so a row written by anything else gets it too
+- ~~**Alteration:** `change()`, `Schema.rename`, `drop_index` / `drop_unique` / `drop_primary` / `drop_foreign` / `drop_constrained_foreign_id`, `rename_index`, foreign-key constraint toggling, and schema inspection~~ **shipped (part 1)** — `change()` restates the whole column, which is Laravel's rule because MySQL and Oracle enforce it; `Schema` gained `create_if_not_exists`, `drop_all_tables`, `has_columns`, `column_type`, `get_indexes`, `get_foreign_keys`, `get_views`, `when_table_has_column` / `when_table_doesnt_have_column`, and `without_foreign_key_constraints`. DDL now runs through the connection rather than its own engine, so it joins the surrounding transaction and `DB.pretend` can print it
+- ~~**Commands and flags:** `migrate:reset`, `migrate:refresh`, `migrate:install`, plus `--pretend`, `--step`, `--path`, `--database`, `--force`; schema squashing (`schema:dump`)~~ **shipped (part 2)** — `--step` now counts migrations as Laravel's does, `--path` takes several directories, `--graceful` and `--schema-path` landed with them, and the production guard only asks in production. The migrator gained per-migration transactions, `connection` and `within_transaction` and `should_run`, `MigrationStarted` / `MigrationEnded` / `NoPendingMigrations`, timings, batch-annotated status, and FK-safe `fresh()`
+- ~~**Pagination:** cursor pagination; URL-aware paginators; rendered link views in Prism for both the Tailwind and Bootstrap stacks~~ **shipped (part 3)** — `cursor_paginate` compares the ordered columns lexicographically, so several `order_by` clauses page correctly and a write mid-read does not shift the window; the three paginators share a base that knows its path, query string, page name, and fragment; `on_each_side` elides a long run; the four views ship with the framework, behind the application's own view path so an app can replace them
+- ~~Docs: rewrite `database/migrations` and `database/pagination`~~ **shipped (part 4)**
+
+**Named deviations:** SQLite cannot change a column in place, drop a foreign key or a primary key, or rename an index — each raises rather than pretending; its Python driver commits DDL as it runs, so a migration's schema changes are not rolled back there (its data is); `schema:dump` reads the schema back through the inspector instead of shelling out to `mysqldump` / `pg_dump`, so it needs no client binary and reads the same on every engine.
 
 **Depends on:** M5, M6 Prism (pagination views), M30 (commands), M32 (stack-aware link views).
 
-**Gate:** both pages exhausted or deviations named; column alteration proven on SQLite plus one server engine; docs published.
+**Gate met:** both pages exhausted or deviations named; column alteration compiled for MySQL, PostgreSQL, SQL Server, and Oracle and refused honestly on SQLite; `almasix.orm.blueprint`, `almasix.orm.schema`, `almasix.orm.migration`, and `almasix.orm.pagination` at 100% statements and branches; docs published; `smith progress:schema` demonstrates the surface.
 
 ### M44 — Multi-engine database CI
 
@@ -1620,6 +1628,8 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 **M40 Articulate model exhaust gate met** — casting overhaul, serialization controls, Eloquent collections, UUID/ULID keys, strictness, quiet writes, pruning, and cursor/chunk iteration.
 
 **M41 Relationship exhaust gate met** — one-of-many, default models, chaperone, the existence-query family including morph variants, aggregates and their deferred twins, pivot models with `using` / `as_` / timestamps / filtering, morph maps, `touches`, and the relation write helpers. All five parts have shipped: one-of-many and default models, existence queries, aggregates, pivots and morph maps and `touches`, and the docs rewrite that closed the page with `push`, `where_belongs_to`, dynamic relations, and `load_morph`. The two sections Almasix does not implement are named in the docs.
+
+**M42 Query builder + database exhaust gate met** — the where families down to JSON paths and date helpers, joins through closures and subqueries and laterals, unions, pessimistic locking, the write family (`insert_or_ignore`, `insert_using`, `update_or_insert`, `increment_each`, `truncate`, JSON column updates), `sole` / `implode` / `pipe` / `with_attributes`, and the debugging pair. Underneath: read/write connections with `sticky`, `DB.listen` and a cumulative query-time budget, pretend mode, manual transactions with deadlock retries and `after_commit`, pooled connections with a direct twin, and `db`, which opens the engine's own client. What each engine spells differently lives in one grammar module, and an engine that cannot do the work says so.
 
 **Now: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `almasix/smith/cli.py` vs `Command` classes in `almasix/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M32**, the interactive installer, which shares M30's stub tree.
 
