@@ -6,6 +6,7 @@ import dataclasses
 import datetime
 import functools
 import inspect
+import json
 import re
 from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
@@ -2063,7 +2064,7 @@ class QueryBuilder:
     # --- writes -------------------------------------------------------------
 
     async def insert(self, values: Mapping[str, Any] | Sequence[Mapping[str, Any]]) -> int:
-        payload = [dict(values)] if isinstance(values, Mapping) else [dict(v) for v in values]
+        payload = _writable_rows(values)
         if not payload:
             return 0
         statement = sa.insert(self._table_clause(self.table))
@@ -2078,7 +2079,7 @@ class QueryBuilder:
         values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     ) -> int:
         """Insert, letting rows that would collide fall on the floor."""
-        payload = [dict(values)] if isinstance(values, Mapping) else [dict(v) for v in values]
+        payload = _writable_rows(values)
         if not payload:
             return 0
         for row in payload:
@@ -2099,7 +2100,7 @@ class QueryBuilder:
         return int(result.rowcount or 0)
 
     async def insert_get_id(self, values: Mapping[str, Any]) -> Any:
-        row = dict(values)
+        row = _writable_rows(values)[0]
         for key in row:
             self.column(key)
         primary = self.model.primary_key if self.model else "id"
@@ -2131,7 +2132,7 @@ class QueryBuilder:
                 name, path = split_json_path(key)
                 patches.setdefault(name, []).append((path, value))
                 continue
-            payload[key] = value
+            payload[key] = _writable_value(value)
         for name, edits in patches.items():
             payload[name] = _json_set(self.column(name), edits)
         for key in payload:
@@ -2221,7 +2222,7 @@ class QueryBuilder:
         SQLite / PostgreSQL use ``ON CONFLICT … DO UPDATE``; MySQL uses
         ``ON DUPLICATE KEY UPDATE``. Other dialects fall back to probe-then-write.
         """
-        payload = [dict(values)] if isinstance(values, Mapping) else [dict(v) for v in values]
+        payload = _writable_rows(values)
         if not payload:
             return 0
         unique = list(unique_by)
@@ -2362,6 +2363,25 @@ class JoinClause(QueryBuilder):
         nested._local_tables = self._local_tables
         callback(nested)
         return nested._compile_wheres()
+
+
+def _writable_rows(
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """One row or many, ready to be bound."""
+    rows = [values] if isinstance(values, Mapping) else values
+    return [{key: _writable_value(value) for key, value in dict(row).items()} for row in rows]
+
+
+def _writable_value(value: Any) -> Any:
+    """A list or dict headed for a JSON column becomes the document it describes.
+
+    The builder's table clauses carry no column types, so nothing downstream
+    would know to encode it; Laravel encodes here for the same reason.
+    """
+    if isinstance(value, (dict, list)):
+        return json.dumps(value)
+    return value
 
 
 def _native_upsert(

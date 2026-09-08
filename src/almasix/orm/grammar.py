@@ -354,6 +354,82 @@ def _vector_unsupported(element: VectorDistance, compiler: Any, **kw: Any) -> st
     raise UnsupportedByDialectError("vector distance", compiler.dialect.name)
 
 
+class Vector(sa.types.UserDefinedType[Any]):
+    """A fixed-width embedding — pgvector's ``VECTOR(n)``, MariaDB's ``VECTOR(n)``.
+
+    SQLite and SQL Server have nothing to store one in, so a blueprint that
+    asks for a vector column says so when it is compiled rather than quietly
+    creating text.
+    """
+
+    cache_ok = True
+
+    def __init__(self, dimensions: int) -> None:
+        self.dimensions = int(dimensions)
+
+    def get_col_spec(self, **_: Any) -> str:
+        return f"VECTOR({self.dimensions})"
+
+
+@compiles(Vector, "sqlite")
+@compiles(Vector, "mssql")
+@compiles(Vector, "oracle")
+def _vector_type_unsupported(element: Vector, compiler: Any, **kw: Any) -> str:
+    raise UnsupportedByDialectError("vector columns", compiler.dialect.name)
+
+
+class Geometry(sa.types.UserDefinedType[Any]):
+    """A shape on a plane — ``GEOMETRY``, or ``POINT``/``POLYGON`` when narrowed."""
+
+    cache_ok = True
+    keyword = "GEOMETRY"
+
+    def __init__(self, subtype: str | None = None, srid: int = 0) -> None:
+        self.subtype = subtype
+        self.srid = srid
+
+    def get_col_spec(self, **_: Any) -> str:
+        return (self.subtype or self.keyword).upper()
+
+
+@compiles(Geometry, "postgresql")
+def _geometry_postgresql(element: Geometry, compiler: Any, **kw: Any) -> str:
+    """PostGIS carries the shape and the reference system in the type itself."""
+    inner = (element.subtype or element.keyword).upper()
+    if element.srid:
+        return f"GEOMETRY({inner},{element.srid})"
+    return f"GEOMETRY({inner})"
+
+
+@compiles(Geometry, "sqlite")
+def _geometry_sqlite(element: Geometry, compiler: Any, **kw: Any) -> str:
+    """SpatiaLite is an extension; plain SQLite keeps the well-known binary."""
+    return "BLOB"
+
+
+class Geography(Geometry):
+    """A shape on the globe — PostGIS ``GEOGRAPHY``, MySQL's SRID-4326 geometry."""
+
+    keyword = "GEOGRAPHY"
+
+
+@compiles(Geography, "postgresql")
+def _geography_postgresql(element: Geography, compiler: Any, **kw: Any) -> str:
+    inner = (element.subtype or "GEOMETRY").upper()
+    return f"GEOGRAPHY({inner},{element.srid or 4326})"
+
+
+@compiles(Geography, "mysql")
+def _geography_mysql(element: Geography, compiler: Any, **kw: Any) -> str:
+    """MySQL has one spatial type; a geography is it, pinned to WGS 84."""
+    return (element.subtype or "GEOMETRY").upper() + f" SRID {element.srid or 4326}"
+
+
+@compiles(Geography, "sqlite")
+def _geography_sqlite(element: Geography, compiler: Any, **kw: Any) -> str:
+    return "BLOB"
+
+
 def json_value(column: Any, path: list[str], sample: Any) -> Any:
     """A JSON path read, typed to compare against ``sample``.
 

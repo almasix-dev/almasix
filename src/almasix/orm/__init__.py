@@ -64,7 +64,7 @@ from almasix.orm.relations import (
     MorphToMany,
     Relation,
 )
-from almasix.orm.schema import Blueprint, Schema, SchemaError
+from almasix.orm.schema import Blueprint, Column, ForeignKeyDefinition, Schema, SchemaError
 from almasix.orm.seeder import (
     Seeder,
     SeederError,
@@ -89,7 +89,9 @@ __all__ = [
     "CastsAttributes",
     "CastsInboundAttributes",
     "Collection",
+    "Column",
     "Connection",
+    "ForeignKeyDefinition",
     "CrossJoinSequence",
     "DatabaseManager",
     "DatabaseServiceProvider",
