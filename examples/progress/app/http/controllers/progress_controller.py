@@ -219,8 +219,12 @@ def _milestones() -> list[dict]:
         {
             "id": "M21",
             "name": "Processes",
-            "status": "planned",
-            "proof": ["Process::run / pool", "subprocess fakes"],
+            "status": "complete",
+            "proof": [
+                "Process.run / start / pool / pipe",
+                "timeouts, streaming, fakes, assertions",
+                "progress:process",
+            ],
         },
         {
             "id": "M22",

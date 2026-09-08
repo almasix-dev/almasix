@@ -127,6 +127,7 @@ export default defineConfig({
 						{ label: 'Redis', slug: 'redis' },
 						{ label: 'Events', slug: 'events' },
 						{ label: 'HTTP Client', slug: 'http-client' },
+						{ label: 'Processes', slug: 'processes' },
 					],
 				},
 				{

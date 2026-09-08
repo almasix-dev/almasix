@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import urlsplit
 
-from almasix.client.arity import accepts_two_arguments
+from almasix.support.arity import accepts_two_arguments
 from almasix.client.exceptions import OutOfFakeResponses
 from almasix.client.pending import PendingRequest
 from almasix.client.request import RecordedRequest

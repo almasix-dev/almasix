@@ -61,9 +61,11 @@ class FoundationServiceProvider(ServiceProvider):
         EncryptionServiceProvider(app).register()
         from almasix.client.provider import ClientServiceProvider
         from almasix.events.provider import EventServiceProvider
+        from almasix.process.provider import ProcessServiceProvider
 
         EventServiceProvider(app).register()
         ClientServiceProvider(app).register()
+        ProcessServiceProvider(app).register()
 
     def boot(self) -> None:
         from almasix.auth.provider import AuthServiceProvider
@@ -79,6 +81,7 @@ class FoundationServiceProvider(ServiceProvider):
         from almasix.notifications.provider import NotificationServiceProvider
         from almasix.orm.provider import DatabaseServiceProvider
         from almasix.prism.provider import PrismServiceProvider
+        from almasix.process.provider import ProcessServiceProvider
         from almasix.queue.provider import QueueServiceProvider
         from almasix.redis.provider import RedisServiceProvider
         from almasix.translation.provider import TranslationServiceProvider
@@ -100,3 +103,4 @@ class FoundationServiceProvider(ServiceProvider):
         EncryptionServiceProvider(self.app).boot()
         EventServiceProvider(self.app).boot()
         ClientServiceProvider(self.app).boot()
+        ProcessServiceProvider(self.app).boot()

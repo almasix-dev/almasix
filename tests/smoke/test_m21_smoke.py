@@ -1,4 +1,4 @@
-"""M20 smoke — HTTP Client docs, progress command, board."""
+"""M21 smoke — Processes docs, progress command, board."""
 
 from __future__ import annotations
 
@@ -29,23 +29,25 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
     return PROGRESS
 
 
-def test_m20_docs_and_sidebar_exist() -> None:
-    assert (ROOT / "website" / "src" / "content" / "docs" / "http-client.md").is_file()
+def test_m21_docs_and_sidebar_exist() -> None:
+    assert (ROOT / "website" / "src" / "content" / "docs" / "processes.md").is_file()
     sidebar = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
-    assert "http-client" in sidebar
+    assert "processes" in sidebar
 
 
-def test_m20_progress_http_command(progress_cwd: Path) -> None:
+def test_m21_progress_process_command(progress_cwd: Path) -> None:
     del progress_cwd
-    result = runner.invoke(smith_app, ["progress:http"])
-    assert result.exit_code == 0, result.stdout + result.stderr
-    assert "http client demo ok" in (result.stdout + result.stderr).lower()
+    result = runner.invoke(smith_app, ["progress:process"])
+    output = (result.stdout + result.stderr).lower()
+    assert result.exit_code == 0, output
+    assert "process demo ok" in output
+    assert "pipe -> almasix pipes" in output
 
 
-def test_m20_board_marks_http_client_complete(progress_cwd: Path) -> None:
+def test_m21_board_marks_processes_complete(progress_cwd: Path) -> None:
     del progress_cwd
     from app.http.controllers.progress_controller import _milestones
 
-    m20 = next(m for m in _milestones() if m["id"] == "M20")
-    assert m20["status"] == "complete"
-    assert any("progress:http" in proof for proof in m20["proof"])
+    m21 = next(m for m in _milestones() if m["id"] == "M21")
+    assert m21["status"] == "complete"
+    assert any("progress:process" in proof for proof in m21["proof"])

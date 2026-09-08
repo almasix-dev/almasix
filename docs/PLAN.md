@@ -1065,6 +1065,10 @@ Laravel [Processes](https://laravel.com/docs/processes) — first-class subproce
 
 **Gate:** claimed surface exhausted, fakes work, docs published.
 
+**Status (M21):** Ladder exhausted against every section of Laravel's Processes page — `Process.run` for shell strings and argument lists; `ProcessResult` (`successful` / `failed` / `exit_code` / `output` / `error_output` / `see_in_output` / `see_in_error_output` / `throw` / `throw_if` / `throw_unless`); options (`path`, `input`, `env` merged into the inherited environment, `timeout` defaulting to 60s, `idle_timeout`, `forever`, `quietly`, `tty`, `options`, `when` / `unless`); real-time output callbacks; `ProcessTimedOutException` carrying the partial result; `Process.start` → `InvokedProcess` (`id`, `running`, `output` / `error_output`, `latest_output` / `latest_error_output`, `signal`, `stop`, `wait(callback)`); `Process.pool` / `concurrently` with `as_()` naming, results keyed by name and position, `running()` as a Collection, pool-wide `signal` / `stop`, keyed start callbacks; `Process.pipe` for lists and callables; fakes — command maps with real fall-through, `Process.result`, `Process.describe` lifecycles, `Process.sequence`, `prevent_stray_processes`, `recorded()` and the `assert_ran*` family; `ProcessServiceProvider`; Starlight Processes; progress `progress:process`.
+
+**Deliberate deviations (M21):** fluent calls copy the pending process instead of mutating it, matching Almasix's HTTP client rather than Laravel's `PendingProcess`; `as_()` carries a trailing underscore because `as` is a Python keyword; `options()` takes `subprocess.Popen` keyword arguments where Laravel takes Symfony Process options; `described_command` is a property rather than a `command()` accessor, so it does not collide with the fluent `command()` setter; `quietly()` also silences the run callback, because Almasix captures output either way and the callback is the only thing left to silence; signals are the `signal` module's integers, with no cross-platform abstraction.
+
 ### M22 — Concurrency
 
 Laravel [Concurrency](https://laravel.com/docs/concurrency) — run closures concurrently and collect results.
@@ -1589,7 +1593,9 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **Now: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `almasix/smith/cli.py` vs `Command` classes in `almasix/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M32**, the interactive installer, which shares M30's stub tree.
 
-**Milestones M21–M29** (Processes → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M21 Processes gate met** — `Process.run` / `start` / `pool` / `concurrently` / `pipe`, both timeout flavours, real-time output callbacks, signals and stops, and the whole fake and assertion surface, exhausted against the Laravel page.
+
+**Milestones M22–M29** (Concurrency → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

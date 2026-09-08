@@ -505,6 +505,28 @@ pytest -q tests/test_m20_*.py tests/smoke/test_m20_smoke.py
 
 ---
 
+## M21 — Processes
+
+```bash
+pytest -q tests/test_m21_*.py tests/smoke/test_m21_smoke.py
+```
+
+### M21 exit criteria
+
+- [x] `Process.run` for string (shell) and list (no shell) commands; `ProcessResult` with `successful` / `failed` / `exit_code` / `output` / `error_output` / `see_in_output` / `see_in_error_output`
+- [x] `throw` / `throw_if` / `throw_unless` raising `ProcessFailedException`, which carries and proxies its result
+- [x] Options: `path`, `input`, `env` (merged into the inherited environment), `timeout` (60s default), `idle_timeout`, `forever`, `quietly`, `tty`, `options`, `when` / `unless`
+- [x] Real-time output callbacks receiving `("out" | "err", chunk)`; `ProcessTimedOutException` carries the partial result
+- [x] `Process.start` → `InvokedProcess` with `id`, `running`, `output` / `latest_output` pairs, `signal`, `stop` (terminate then kill), `wait(callback)`
+- [x] `Process.pool` / `concurrently` with `as_()` naming, results keyed by name *and* position, `running()` as a Collection, pool-wide `signal` / `stop`, keyed start callbacks
+- [x] `Process.pipe` for lists and callables, feeding output into input and short-circuiting on failure
+- [x] Fakes: command maps with real fall-through, `Process.result`, `Process.describe` lifecycles (`iterations` / `runs_for` / `replace_output`), `Process.sequence` raising when drained, `prevent_stray_processes`
+- [x] `recorded()` pairs and the `assert_ran` / `assert_didnt_run` / `assert_ran_times` / `assert_nothing_ran` / `assert_sequences_are_empty` family
+- [x] Living example: `smith progress:process`; the board marks M21 complete
+- [x] Docs + smoke; 100% line and branch coverage on `almasix.process`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash
