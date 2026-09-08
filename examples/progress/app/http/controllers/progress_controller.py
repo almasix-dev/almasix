@@ -67,12 +67,12 @@ def _milestones() -> list[dict]:
         {
             "id": "M5",
             "name": "Articulate ORM",
-            "status": "partial",
+            "status": "complete",
             "proof": [
                 "GET /api/orm feature tour",
                 "eager load / soft deletes / pivot / morphs",
                 "smith migrate / make:model",
-                "query builder exhausted in M42 — schema owed by M43",
+                "query builder exhausted in M42, schema and pagination in M43",
             ],
         },
         {
@@ -433,8 +433,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M43",
             "name": "Schema, migrations, pagination",
-            "status": "planned",
-            "proof": ["column alteration", "cursor pagination", "migrate:refresh"],
+            "status": "complete",
+            "proof": [
+                "smith progress:schema",
+                "the column catalogue · change() · drops · Schema.rename",
+                "get_indexes / get_foreign_keys · without_foreign_key_constraints",
+                "migrate --pretend / --step / --path · schema:dump",
+                "cursor_paginate · URL-aware links() through Prism",
+            ],
         },
         {
             "id": "M44",

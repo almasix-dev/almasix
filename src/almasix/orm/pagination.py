@@ -48,7 +48,7 @@ def _resolve_page(page_name: str) -> int:
         page = int(str(request.query(page_name, 1)))
     except (TypeError, ValueError):
         return 1
-    return page if page >= 1 else 1
+    return max(page, 1)
 
 
 def resolve_page(page_name: str = "page", page: int | None = None) -> int:
@@ -110,6 +110,20 @@ class AbstractPaginator:
     #: What ``links()`` renders with, when the application has not said otherwise.
     default_view = "pagination.tailwind"
     default_simple_view = "pagination.simple-tailwind"
+
+    @classmethod
+    def use_tailwind(cls) -> None:
+        """Render every paginator with the Tailwind views (the default)."""
+        AbstractPaginator.default_view = "pagination.tailwind"
+        AbstractPaginator.default_simple_view = "pagination.simple-tailwind"
+        SimplePaginator.default_view = "pagination.simple-tailwind"
+
+    @classmethod
+    def use_bootstrap_five(cls) -> None:
+        """Render every paginator with the Bootstrap 5 views."""
+        AbstractPaginator.default_view = "pagination.bootstrap-5"
+        AbstractPaginator.default_simple_view = "pagination.simple-bootstrap-5"
+        SimplePaginator.default_view = "pagination.simple-bootstrap-5"
 
     def __init__(
         self,
@@ -271,6 +285,7 @@ class Paginator(AbstractPaginator):
         )
         self.total = total
         self.last_page = max(math.ceil(total / self.per_page), 1) if total else 1
+        self._on_each_side = 3
 
     @property
     def from_(self) -> int | None:
@@ -306,8 +321,27 @@ class Paginator(AbstractPaginator):
         """The URLs of a run of pages — what a numbered link bar is built from."""
         return {page: self.url(page) for page in range(start, end + 1)}
 
+    def on_each_side(self, count: int) -> Paginator:
+        """How many page numbers sit either side of the current one."""
+        self._on_each_side = max(int(count), 0)
+        return self
+
+    def _window(self) -> list[int | None]:
+        """The pages a link bar shows, with ``None`` where it elides a run."""
+        side = self._on_each_side
+        if self.last_page < side * 2 + 8:
+            return list(range(1, self.last_page + 1))
+        if self.current_page <= side * 2:
+            head = list(range(1, side * 2 + 3))
+            return [*head, None, self.last_page - 1, self.last_page]
+        if self.current_page > self.last_page - side * 2:
+            tail = list(range(self.last_page - (side * 2 + 2), self.last_page + 1))
+            return [1, 2, None, *tail]
+        middle = list(range(self.current_page - side, self.current_page + side + 1))
+        return [1, 2, None, *middle, None, self.last_page - 1, self.last_page]
+
     def link_collection(self) -> list[dict[str, Any]]:
-        """Previous, every page, and next — the shape Laravel's JSON uses."""
+        """Previous, the pages worth showing, and next — Laravel's JSON shape."""
         links: list[dict[str, Any]] = [
             {
                 "url": self.previous_page_url(),
@@ -315,7 +349,10 @@ class Paginator(AbstractPaginator):
                 "active": False,
             }
         ]
-        for page in range(1, self.last_page + 1):
+        for page in self._window():
+            if page is None:
+                links.append({"url": None, "label": "...", "active": False})
+                continue
             links.append(
                 {"url": self.url(page), "label": str(page), "active": page == self.current_page}
             )

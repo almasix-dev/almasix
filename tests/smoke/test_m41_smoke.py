@@ -99,9 +99,9 @@ def test_m41_board_is_honest_about_partial_milestones(progress_client: TestClien
     board = progress_client.get("/api/progress").json()
     by_id = {m["id"]: m for m in board["milestones"]}
 
-    # M5's ladder shipped, but its pages are not exhausted until M42.
-    assert by_id["M5"]["status"] == "partial"
-    assert board["in_progress"] == 1
+    # M5's ladder shipped; M42 and M43 exhausted its pages, so nothing is partial now.
+    assert by_id["M5"]["status"] == "complete"
+    assert board["in_progress"] == 0
 
 
 def test_m41_board_page_renders_the_new_rows(progress_client: TestClient) -> None:

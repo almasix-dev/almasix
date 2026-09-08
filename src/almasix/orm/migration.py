@@ -7,9 +7,9 @@ import re
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import sqlalchemy as sa
 
@@ -103,7 +103,7 @@ class MigrationResult(str):
         elapsed: float = 0.0,
         queries: list[Any] | None = None,
         skipped: bool = False,
-    ) -> MigrationResult:
+    ) -> Self:
         result = super().__new__(cls, migration)
         result.elapsed = elapsed
         result.queries = queries or []
@@ -411,7 +411,7 @@ class Migrator:
         dialect = get_manager().connection(self.connection).engine.dialect
         lines = [
             "-- Almasix schema dump",
-            f"-- Written {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} UTC",
+            f"-- Written {datetime.now(UTC):%Y-%m-%d %H:%M:%S} UTC",
             "",
         ]
         for name in await Schema.table_names(connection=self.connection):
@@ -518,7 +518,7 @@ def make_migration(
     slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
     if not slug:
         raise MigrationError("A migration name is required.")
-    stamp = datetime.now(timezone.utc).strftime("%Y_%m_%d_%H%M%S")
+    stamp = datetime.now(UTC).strftime("%Y_%m_%d_%H%M%S")
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f"{stamp}_{slug}.py"
 

@@ -1,0 +1,43 @@
+@if(paginator.has_pages())
+<nav class="d-flex justify-items-center justify-content-between">
+  <div class="d-flex justify-content-between flex-fill d-sm-none">
+    <ul class="pagination">
+      @if(paginator.on_first_page())
+        <li class="page-item disabled" aria-disabled="true"><span class="page-link">Previous</span></li>
+      @else
+        <li class="page-item"><a class="page-link" href="{{ paginator.previous_page_url() }}" rel="prev">Previous</a></li>
+      @endif
+
+      @if(paginator.has_more_pages())
+        <li class="page-item"><a class="page-link" href="{{ paginator.next_page_url() }}" rel="next">Next</a></li>
+      @else
+        <li class="page-item disabled" aria-disabled="true"><span class="page-link">Next</span></li>
+      @endif
+    </ul>
+  </div>
+
+  <div class="d-none flex-sm-fill d-sm-flex align-items-sm-center justify-content-sm-between">
+    <div>
+      <p class="small text-muted">
+        Showing <span class="fw-semibold">{{ paginator.from_ or 0 }}</span>
+        to <span class="fw-semibold">{{ paginator.to or 0 }}</span>
+        of <span class="fw-semibold">{{ paginator.total }}</span> results
+      </p>
+    </div>
+
+    <div>
+      <ul class="pagination">
+        @foreach(paginator.link_collection() as link)
+          @if(link['url'] is None)
+            <li class="page-item disabled" aria-disabled="true"><span class="page-link">{!! link['label'] !!}</span></li>
+          @elseif(link['active'])
+            <li class="page-item active" aria-current="page"><span class="page-link">{!! link['label'] !!}</span></li>
+          @else
+            <li class="page-item"><a class="page-link" href="{{ link['url'] }}">{!! link['label'] !!}</a></li>
+          @endif
+        @endforeach
+      </ul>
+    </div>
+  </div>
+</nav>
+@endif

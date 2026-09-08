@@ -787,6 +787,35 @@ cd examples/progress && python smith progress:queries
 
 ---
 
+## M43 — Schema, migrations, and pagination exhaust
+
+```bash
+pytest -q tests/test_m43_*.py tests/smoke/test_m43_smoke.py
+cd examples/progress && python smith progress:schema
+```
+
+### M43 exit criteria
+
+- [x] The column catalogue: every width of integer and its `unsigned_` twin, `char` / the four text sizes, `double` / `real` / `unsigned_decimal`, `enum` and `set`, `json` / `jsonb`, the date family with its `*_tz` variants, `year` / `time`, `binary`, `uuid` / `ulid` / `ip_address` / `mac_address` / `remember_token`, the four `*morphs` pairs, `foreign_uuid` / `foreign_ulid` / `foreign_id_for`, `vector` / `geometry` / `geography`, and `raw_column`
+- [x] Each type lands in the engine's own words: `TINYINT` on MySQL, `JSONB` and native `UUID` on PostgreSQL, a check constraint where `enum` has no type, `INTEGER` keys on SQLite because that is the only width it counts up
+- [x] Modifiers: `unsigned`, `comment`, `charset` / `collation`, `first` / `after` / `before`, `invisible`, `use_current` / `use_current_on_update`, `virtual_as` / `stored_as`, `generated_as` / `always`, `auto_increment` / `start_from`; `default()` writes a **server** default, so a row inserted by anything else gets it
+- [x] `change()` restates a column, compiled for MySQL (`MODIFY`), PostgreSQL (a statement per part), SQL Server, and Oracle; SQLite raises rather than pretending
+- [x] Dropping: `drop_index` / `drop_unique` / `drop_primary` / `drop_foreign` / `drop_constrained_foreign_id`, `rename_index`, and the convenience pairs `drop_morphs` / `drop_timestamps` / `drop_soft_deletes` / `drop_remember_token`
+- [x] `Schema` gained `rename`, `create_if_not_exists`, `drop_all_tables` (with foreign keys off, so order does not matter), `has_columns`, `has_index` by column list, `column_type`, `get_indexes`, `get_foreign_keys`, `get_views`, `when_table_has_column` / `when_table_doesnt_have_column`, `disable` / `enable_foreign_key_constraints`, and `without_foreign_key_constraints`
+- [x] DDL runs through the connection rather than its own engine, so it joins the surrounding transaction and `DB.pretend` prints it
+- [x] Migrations: per-migration transactions where the engine rolls DDL back, `connection` and `within_transaction` and `should_run` on the base class, `MigrationStarted` / `MigrationEnded` / `NoPendingMigrations` on the event bus, millisecond timings, several migration directories, and quoting that works on MySQL
+- [x] Squashing: `schema:dump` writes `database/schema/{connection}-schema.sql` (read back through the inspector, so no client binary is needed), `--prune` removes what it stands in for, and `migrate --schema-path` replays it on an empty database
+- [x] Command flags: `migrate` takes `--step` / `--pretend` / `--path` (several) / `--database` / `--force` / `--graceful` / `--schema-path`; `migrate:rollback` takes `--step` (counting migrations, as Laravel does) / `--batch` / `--pretend`; `migrate:fresh` takes `--step`; `migrate:status` shows batches and filters with `--pending`
+- [x] The production guard asks only in production for `migrate` / `migrate:rollback` / `migrate:fresh`, and always for `migrate:reset` / `migrate:refresh`
+- [x] Pagination: `paginate` reads the page from the request and will take a total it already has, `simple_paginate` skips the count, and `cursor_paginate` compares the ordered columns lexicographically — several `order_by` clauses page correctly, and a write mid-read does not shift the window
+- [x] Paginators know their URL: `url`, `first` / `last` / `next` / `previous_page_url`, `get_url_range`, `appends`, `with_query_string`, `with_path`, `fragment`, `through`, `on_each_side`, and Laravel's JSON shape from `to_dict`
+- [x] `links()` renders through Prism; the Tailwind and Bootstrap 5 views ship with the framework, behind the application's view path so an app can replace them
+- [x] `database/migrations` and `database/pagination` rewritten in the Laravel section order
+- [x] Living example: `smith progress:schema`; the board marks M43 complete, and M5 with it
+- [x] 100% line and branch coverage on `almasix.orm.blueprint`, `almasix.orm.schema`, `almasix.orm.migration`, and `almasix.orm.pagination`
+
+---
+
 ## M49 — Support Collections exhaust
 
 ```bash

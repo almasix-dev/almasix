@@ -466,3 +466,20 @@ async def test_a_unique_column_is_unique_on_both_paths(memory_db) -> None:
     await DB.table("tags").insert({"name": "php"})
     with pytest.raises(Exception, match="UNIQUE"):
         await DB.table("tags").insert({"name": "php"})
+
+
+async def test_two_keys_to_one_table_and_a_key_to_this_one(memory_db) -> None:
+    """A stub is made once per referenced table, and never for this table."""
+    await Schema.create("people", lambda table: (table.id(), table.string("name")))
+    await Schema.create(
+        "threads",
+        lambda table: (
+            table.id(),
+            table.foreign_id("author_id").constrained("people"),
+            table.foreign_id("editor_id").constrained("people"),
+            table.foreign_id("parent_id").nullable().constrained("threads"),
+        ),
+    )
+
+    keys = await Schema.get_foreign_keys("threads")
+    assert sorted(key["foreign_table"] for key in keys) == ["people", "people", "threads"]

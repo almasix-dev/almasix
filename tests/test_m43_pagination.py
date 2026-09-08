@@ -201,6 +201,17 @@ def test_the_links_a_paginator_renders(tmp_path) -> None:
 
         # One page is no pages worth linking.
         assert Paginator(page_of(["a"]), 1, 15, 1, path="/u").render().strip() == ""
+
+        # The Bootstrap pair ships too, for an application on that stack.
+        Paginator.use_bootstrap_five()
+        try:
+            bootstrap = Paginator(page_of(["a"]), 4, 2, 1, path="/u").links()
+            assert 'class="page-link" href="/u?page=2"' in bootstrap
+            simple_bootstrap = SimplePaginator(page_of(["a"]), 2, 1, True, path="/u").links()
+            assert 'class="page-item disabled"' in simple_bootstrap
+            assert 'rel="next"' in simple_bootstrap
+        finally:
+            Paginator.use_tailwind()
     finally:
         set_engine(None)
 
@@ -417,3 +428,24 @@ async def test_a_count_that_has_already_been_taken(memory_db) -> None:
     page = await DB.table("posts").order_by("id").paginate(2, 1, total=99)
     assert page.total == 99
     assert page.last_page == 50
+
+
+def test_the_link_bar_elides_the_middle_of_a_long_run() -> None:
+    """Laravel shows the ends and a window around here, with ... between."""
+    page = Paginator(page_of(["a"]), total=400, per_page=10, current_page=20, path="/u")
+
+    labels = [link["label"] for link in page.link_collection()]
+    assert labels[:4] == ["&laquo; Previous", "1", "2", "..."]
+    assert labels[-4:] == ["...", "39", "40", "Next &raquo;"]
+    assert "20" in labels and labels.count("...") == 2
+
+    # Near either end there is only one gap, and a short run has none at all.
+    assert [link["label"] for link in page.on_each_side(1).link_collection()].count("...") == 2
+    front = Paginator(page_of(["a"]), 400, 10, 2, path="/u").link_collection()
+    assert [link["label"] for link in front].count("...") == 1
+    back = Paginator(page_of(["a"]), 400, 10, 39, path="/u").link_collection()
+    assert [link["label"] for link in back].count("...") == 1
+    short = Paginator(page_of(["a"]), 40, 10, 1, path="/u").link_collection()
+    assert [link["label"] for link in short] == [
+        "&laquo; Previous", "1", "2", "3", "4", "Next &raquo;"
+    ]

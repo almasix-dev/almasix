@@ -446,14 +446,17 @@ def compile_table_statements(blueprint: Blueprint, dialect: Any) -> list[str]:
     for column in blueprint.columns:
         if column.changing:
             continue
-        if column.options.get("unique") and not column.options.get("primary_key"):
-            # UNIQUE may already be inline on ADD COLUMN for SQLite/Postgres.
-            if dialect_name not in {"sqlite", "postgresql"}:
-                name = f"uq_{table}_{column.name}"
-                statements.append(
-                    f"CREATE UNIQUE INDEX {quote_ident(dialect, name)} "
-                    f"ON {qt} ({quote_ident(dialect, column.name)})"
-                )
+        # UNIQUE may already be inline on ADD COLUMN for SQLite/Postgres.
+        if (
+            column.options.get("unique")
+            and not column.options.get("primary_key")
+            and dialect_name not in {"sqlite", "postgresql"}
+        ):
+            name = f"uq_{table}_{column.name}"
+            statements.append(
+                f"CREATE UNIQUE INDEX {quote_ident(dialect, name)} "
+                f"ON {qt} ({quote_ident(dialect, column.name)})"
+            )
         if column.options.get("index"):
             name = f"ix_{table}_{column.name}"
             statements.append(

@@ -127,11 +127,8 @@ def test_m42_board_marks_the_query_builder_complete(progress_client: TestClient)
 
     assert by_id["M42"]["status"] == "complete"
     assert "smith progress:queries" in by_id["M42"]["proof"]
-    assert by_id["M43"]["status"] == "planned"
-
-    # M5's query builder is what M42 closed; its schema layer is still owed.
-    assert by_id["M5"]["status"] == "partial"
-    assert any("M43" in proof for proof in by_id["M5"]["proof"])
+    # M5's query builder is what M42 closed; M43 closed the schema layer after it.
+    assert any("M42" in proof for proof in by_id["M5"]["proof"])
 
 
 def test_m42_readme_points_at_the_demo(progress_client: TestClient) -> None:
@@ -139,4 +136,4 @@ def test_m42_readme_points_at_the_demo(progress_client: TestClient) -> None:
 
     assert "| **M42** | `smith progress:queries`" in readme
     assert "\nsmith progress:queries\n" in readme
-    assert "M0–M28, M30, M31, M40–M42, M49, and M50 are closed" in readme
+    assert "exhausted in M42" in readme

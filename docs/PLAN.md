@@ -2,9 +2,9 @@
 
 > **Status:** Binding. This document is the source of truth for architecture and milestones.
 > Change it deliberately (PR / explicit decision), not casually mid-implementation.
-> Last aligned: 2026-09-08 (M0–M20 complete except **M5 Articulate ORM**, still partial;
-> exhaust milestones M30/M31, M40–M42 and M49/M50 landed; **M43 — Schema, migrations, and
-> pagination exhaust** is next).
+> Last aligned: 2026-09-08 (M0–M20 complete, **M5 Articulate ORM** included now that M42 and
+> M43 closed its query builder and schema layer; exhaust milestones M30/M31, M40–M43 and
+> M49/M50 landed; **M44 — multi-engine database CI** is next).
 
 ## Working identity
 
@@ -776,7 +776,9 @@ Eloquent-shaped Active Record on SQLAlchemy Core — see the ORM decision above 
 
 **Shipped since, by M42 (Query builder + database exhaust):** the where families (JSON paths, dates, `where_not`, `where_any/all/none`, existence and subquery wheres, full text, vectors), joins through closures and subqueries and laterals, unions, pessimistic locking, raw ordering and grouping, `insert_or_ignore` / `insert_using` / `update_or_insert` / `increment_each` / `truncate` / JSON column updates, `sole` / `implode`, `pipe` and `with_attributes`, `to_sql` / `to_raw_sql` / `dump` / `dd`; and under them read/write connections with `sticky`, `DB.listen` and cumulative query-time monitoring, `DB.insert/update/delete/unprepared/scalar/pretend`, manual transactions with deadlock retries and `after_commit`, pooled connections with a direct twin, and the `db` CLI shell.
 
-**Still not exhausted — owed by M43–M44**: schema gaps (column alteration, `Schema.rename`, dropping indexes / foreign keys, schema inspection, ~25 column types, ~10 modifiers, `migrate:reset` / `migrate:refresh`, `--pretend` / `--step` / `--path` / `--force`, squashing); and pagination gaps (cursor pagination, URL-aware paginators, rendered link views).
+**Shipped since, by M43 (Schema, migrations, and pagination exhaust):** the column catalogue and its modifiers, `change()` and the whole drop family, `Schema.rename` / `drop_all_tables` / foreign-key toggling / schema inspection, transactional and pretendable DDL, a migrator with steps, events, per-migration connections, `should_run`, and squashing, the `migrate*` flag set with production guards, and all three paginators with URL-aware links rendered through Prism.
+
+**Still owed by M44**: the engines themselves — the suite runs against SQLite, so PostgreSQL, MySQL/MariaDB, SQL Server, and Oracle are verified by compiled SQL rather than by execution.
 
 ### M6 — Prism (`almasix.prism`)
 
@@ -1439,16 +1441,18 @@ Laravel [Database: Getting Started](https://laravel.com/docs/database) and [Quer
 
 Laravel [Migrations](https://laravel.com/docs/migrations) (113 sections) and [Pagination](https://laravel.com/docs/pagination).
 
-- **Column catalogue:** the ~25 missing types (`char`, `tiny_integer` … `medium_integer`, `long_text` / `medium_text` / `tiny_text`, `binary`, `enum`, `set`, `year`, `time`, the `*_tz` variants, `ip_address`, `mac_address`, `ulid`, `uuid_morphs` / `ulid_morphs` / `nullable_morphs`, `remember_token`, spatial types, `vector`)
-- **Modifiers:** `unsigned`, `comment`, `use_current` / `use_current_on_update`, `charset` / `collation`, `virtual_as` / `stored_as` / `generated_as`, `invisible`, `auto_increment`
-- **Alteration:** `change()` (Almasix has **no column alteration today**), `Schema.rename`, `drop_index` / `drop_unique` / `drop_primary` / `drop_foreign` / `drop_constrained_foreign_id`, `rename_index`, foreign-key constraint toggling, and schema inspection (`get_tables` / `get_columns` / `get_indexes`)
-- **Commands and flags:** `migrate:reset`, `migrate:refresh`, `migrate:install`, plus `--pretend`, `--step`, `--path`, `--database`, `--force`; schema squashing (`schema:dump`)
-- **Pagination:** cursor pagination (`cursor_paginate` + `CursorPaginator`); URL-aware paginators (`url`, `next_page_url`, `previous_page_url`, `appends`, `with_query_string`, `path` / page-name customization, `on_each_side`, `through`, `first_item` / `last_item`); rendered link views in Prism for both the Tailwind and Bootstrap stacks (pairs with **M32**)
-- Docs: rewrite `database/migrations` and `database/pagination`
+- ~~**Column catalogue:** the ~25 missing types (`char`, `tiny_integer` … `medium_integer`, `long_text` / `medium_text` / `tiny_text`, `binary`, `enum`, `set`, `year`, `time`, the `*_tz` variants, `ip_address`, `mac_address`, `ulid`, `uuid_morphs` / `ulid_morphs` / `nullable_morphs`, `remember_token`, spatial types, `vector`)~~ **shipped (part 1)** — the blueprint moved out of `schema.py` into `almasix.orm.blueprint`, and each type maps to the engine's own spelling (`TINYINT` on MySQL, `JSONB` and native `UUID` on PostgreSQL, `INTEGER` keys on SQLite because that is the only width it counts up); `vector`, `geometry`, and `geography` join the M42 grammar
+- ~~**Modifiers:** `unsigned`, `comment`, `use_current` / `use_current_on_update`, `charset` / `collation`, `virtual_as` / `stored_as` / `generated_as`, `invisible`, `auto_increment`~~ **shipped (part 1)** — plus `first`, `start_from`, and `always`; `default()` became a **server** default, as Laravel's is, so a row written by anything else gets it too
+- ~~**Alteration:** `change()`, `Schema.rename`, `drop_index` / `drop_unique` / `drop_primary` / `drop_foreign` / `drop_constrained_foreign_id`, `rename_index`, foreign-key constraint toggling, and schema inspection~~ **shipped (part 1)** — `change()` restates the whole column, which is Laravel's rule because MySQL and Oracle enforce it; `Schema` gained `create_if_not_exists`, `drop_all_tables`, `has_columns`, `column_type`, `get_indexes`, `get_foreign_keys`, `get_views`, `when_table_has_column` / `when_table_doesnt_have_column`, and `without_foreign_key_constraints`. DDL now runs through the connection rather than its own engine, so it joins the surrounding transaction and `DB.pretend` can print it
+- ~~**Commands and flags:** `migrate:reset`, `migrate:refresh`, `migrate:install`, plus `--pretend`, `--step`, `--path`, `--database`, `--force`; schema squashing (`schema:dump`)~~ **shipped (part 2)** — `--step` now counts migrations as Laravel's does, `--path` takes several directories, `--graceful` and `--schema-path` landed with them, and the production guard only asks in production. The migrator gained per-migration transactions, `connection` and `within_transaction` and `should_run`, `MigrationStarted` / `MigrationEnded` / `NoPendingMigrations`, timings, batch-annotated status, and FK-safe `fresh()`
+- ~~**Pagination:** cursor pagination; URL-aware paginators; rendered link views in Prism for both the Tailwind and Bootstrap stacks~~ **shipped (part 3)** — `cursor_paginate` compares the ordered columns lexicographically, so several `order_by` clauses page correctly and a write mid-read does not shift the window; the three paginators share a base that knows its path, query string, page name, and fragment; `on_each_side` elides a long run; the four views ship with the framework, behind the application's own view path so an app can replace them
+- ~~Docs: rewrite `database/migrations` and `database/pagination`~~ **shipped (part 4)**
+
+**Named deviations:** SQLite cannot change a column in place, drop a foreign key or a primary key, or rename an index — each raises rather than pretending; its Python driver commits DDL as it runs, so a migration's schema changes are not rolled back there (its data is); `schema:dump` reads the schema back through the inspector instead of shelling out to `mysqldump` / `pg_dump`, so it needs no client binary and reads the same on every engine.
 
 **Depends on:** M5, M6 Prism (pagination views), M30 (commands), M32 (stack-aware link views).
 
-**Gate:** both pages exhausted or deviations named; column alteration proven on SQLite plus one server engine; docs published.
+**Gate met:** both pages exhausted or deviations named; column alteration compiled for MySQL, PostgreSQL, SQL Server, and Oracle and refused honestly on SQLite; `almasix.orm.blueprint`, `almasix.orm.schema`, `almasix.orm.migration`, and `almasix.orm.pagination` at 100% statements and branches; docs published; `smith progress:schema` demonstrates the surface.
 
 ### M44 — Multi-engine database CI
 
