@@ -348,15 +348,53 @@ def test_importing_a_command_module_first_does_not_hide_its_commands() -> None:
     assert "ok" in result.stdout
 
 
-def test_a_module_discovered_mid_import_is_reported_not_skipped(tmp_path: Path) -> None:
+def test_the_lazy_grail_attribute_resolves_the_cli_and_nothing_else() -> None:
+    import avalon.grail
+    from avalon.grail.cli import app
+
+    assert avalon.grail.app is app
+    with pytest.raises(AttributeError, match="no attribute 'kernel'"):
+        avalon.grail.kernel
+
+
+CYCLE = """
+from avalon.console.kernel import ConsoleKernel
+
+# Discovery, from inside a module discovery is itself importing. The kernel
+# below re-enters this very module, which Python has not finished executing —
+# so the command underneath does not exist yet.
+inner = ConsoleKernel.for_cwd()
+inner._load_package("cyclepkg")
+failures = list(inner.failures)
+
+from avalon.console.command import Command
+
+
+class CycleCommand(Command):
+    signature = "probe:cycle"
+"""
+
+
+def test_a_module_discovered_mid_import_is_reported_not_skipped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A cycle that does slip through says so, rather than dropping commands."""
-    kernel = ConsoleKernel.for_cwd(tmp_path)
+    package = tmp_path / "cyclepkg"
+    package.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "cycle.py").write_text(CYCLE, encoding="utf-8")
+    monkeypatch.syspath_prepend(str(tmp_path))
 
-    class HalfImported:
-        __spec__ = type("Spec", (), {"_initializing": True})()
+    import importlib
 
-    assert kernel._half_imported(HalfImported()) is True
-    assert kernel._half_imported(object()) is False
+    module = importlib.import_module("cyclepkg.cycle")
+    monkeypatch.delitem(sys.modules, "cyclepkg.cycle", raising=False)
+    monkeypatch.delitem(sys.modules, "cyclepkg", raising=False)
+
+    assert [failure.module for failure in module.failures] == ["cyclepkg.cycle"]
+    assert "still importing" in module.failures[0].summary()
+    # Not that it matters to the user, but the outer import did finish.
+    assert module.CycleCommand.name() == "probe:cycle"
 
 
 def test_no_orm_module_imports_the_console_at_module_scope() -> None:

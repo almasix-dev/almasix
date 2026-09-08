@@ -14,15 +14,30 @@ grail inspire
 grail fiddle
 ```
 
-`fiddle` is Avalon’s interactive REPL. Familiar aliases work the same way:
+`grail list` prints every command Grail can reach, grouped by namespace, and `grail help <command>` describes one. [Command reference](#command-reference) lists what ships with the framework.
 
-```bash
-grail fiddle
-grail tinker
-grail repl
+Framework commands (`serve`, `migrate`, `make:*`, …) live on the same surface as the `Command` classes your application declares — there is no second kind of command, which is why `Artisan.call` and the scheduler reach all of them.
+
+## Fiddle REPL
+
+`grail fiddle` (or `tinker` / `repl`) boots the application and opens an interactive shell with helpers and models available.
+
+Articulate is **async**. Fiddle auto-resolves coroutine expression results, so these both work:
+
+```python
+User.all()
+await User.query().get()
+users = run(User.all())   # explicit sync bridge for assignments
 ```
 
-Framework commands (`serve`, `migrate`, `make:*`, …) live on the same surface as discovered app `Command` subclasses.
+Results render as **JSON key/value panels** (models, collections, dicts, lists). Helpers:
+
+```python
+dump(users)          # pretty dump, continue
+dd(users)            # dump and exit Fiddle
+to_json(users)       # JSON string
+serialize(users)     # plain Python dict/list
+```
 
 ## Writing commands
 
@@ -86,6 +101,30 @@ Artisan.command("report:daily {--format=text}", report)
 ```
 
 `purpose()` (aliased as `describe()`) sets the description shown by `grail list`. Without it, the callable's first docstring line is used.
+
+## Isolatable commands
+
+Mix in `Isolatable` and the command gains an `--isolated` flag. While one instance holds the lock, other invocations exit immediately instead of running concurrently:
+
+```python
+from avalon.console import Command, Isolatable
+
+class ImportOrders(Isolatable, Command):
+    signature = "orders:import"
+
+    def isolatable_id(self) -> str:
+        return f"orders:import:{self.option('tenant')}"
+
+    def isolation_lock_seconds(self) -> int:
+        return 300
+```
+
+```bash
+grail orders:import --isolated       # exits 0 when already running
+grail orders:import --isolated=12    # exits 12 instead
+```
+
+The lock uses the [cache](/cache/) when a store is configured, and falls back to a filesystem mutex under `storage/framework/schedule`.
 
 ## Defining input expectations
 
@@ -162,6 +201,26 @@ sent = self.with_progress_bar(users, lambda user: mailer.send(user))
 
 `ask`, `secret`, `confirm`, `anticipate`, and `choice` are the Laravel-shaped wrappers over [Prompts](/prompts/). `choice(..., multiple=True)` collects several answers.
 
+## Registering commands
+
+`ConsoleKernel` finds commands in four places, in order:
+
+1. Framework commands in `avalon.console.commands` (e.g. `inspire`)
+2. The application package `app.console.commands`
+3. Files under `app/console/commands/*.py`, when that directory is not an importable package
+4. Closure commands defined in `routes/console.py`
+
+There is no list to maintain: a `Command` subclass with a `signature` in one of those places is a command. Everything Grail can run is a `Command` class, which is why `Artisan.call`, the scheduler, and the CLI all reach exactly the same set.
+
+A command module that fails to import does not take the rest of the CLI down with it. Grail reports it and carries on:
+
+```
+Some commands could not be loaded:
+  app.console.commands.broken: ModuleNotFoundError: No module named 'nowhere'
+```
+
+Failed command *runs* report through the exception `Handler` before exiting.
+
 ## Programmatically executing commands
 
 The `Artisan` façade runs commands from anywhere — controllers, jobs, other commands:
@@ -190,30 +249,6 @@ def handle(self) -> int:
     return self.SUCCESS
 ```
 
-## Isolatable commands
-
-Mix in `Isolatable` and the command gains an `--isolated` flag. While one instance holds the lock, other invocations exit immediately instead of running concurrently:
-
-```python
-from avalon.console import Command, Isolatable
-
-class ImportOrders(Isolatable, Command):
-    signature = "orders:import"
-
-    def isolatable_id(self) -> str:
-        return f"orders:import:{self.option('tenant')}"
-
-    def isolation_lock_seconds(self) -> int:
-        return 300
-```
-
-```bash
-grail orders:import --isolated       # exits 0 when already running
-grail orders:import --isolated=12    # exits 12 instead
-```
-
-The lock uses the [cache](/cache/) when a store is configured, and falls back to a filesystem mutex under `storage/framework/schedule`.
-
 ## Signal handling
 
 `trap()` registers OS signal handlers for long-running commands:
@@ -225,23 +260,6 @@ def handle(self) -> int:
     while not self.stopping:
         self.work()
     return self.SUCCESS
-```
-
-## Events
-
-The console dispatches through the [event dispatcher](/events/):
-
-| Event | When |
-| --- | --- |
-| `ConsoleStarting` | The kernel finished discovering commands |
-| `CommandStarting` | Before `handle()` runs — carries name, arguments, options |
-| `CommandFinished` | After it returns — adds `exit_code` |
-
-```python
-from avalon.console import CommandFinished
-from avalon.events import Event
-
-Event.listen(CommandFinished, lambda event: log_duration(event.command, event.exit_code))
 ```
 
 ## Stub customization
@@ -285,47 +303,210 @@ grail vendor:publish --tag=courier-config --force     # overwrite what is there
 
 Declaring a path copies nothing on its own. Avalon publishes its own stubs and language files this way, under the `avalon-stubs` and `avalon-lang` tags.
 
-## Registering commands
+## Events
 
-`ConsoleKernel` finds commands in four places, in order:
+The console dispatches through the [event dispatcher](/events/):
 
-1. Framework commands in `avalon.console.commands` (e.g. `inspire`)
-2. The application package `app.console.commands`
-3. Files under `app/console/commands/*.py`, when that directory is not an importable package
-4. Closure commands defined in `routes/console.py`
-
-There is no list to maintain: a `Command` subclass with a `signature` in one of those places is a command. Everything Grail can run is a `Command` class, which is why `Artisan.call`, the scheduler, and the CLI all reach exactly the same set.
-
-A command module that fails to import does not take the rest of the CLI down with it. Grail reports it and carries on:
-
-```
-Some commands could not be loaded:
-  app.console.commands.broken: ModuleNotFoundError: No module named 'nowhere'
-```
-
-Failed command *runs* report through the exception `Handler` before exiting.
-
-## Fiddle REPL
-
-`grail fiddle` (or `tinker` / `repl`) boots the application and opens an interactive shell with helpers and models available.
-
-Articulate is **async**. Fiddle auto-resolves coroutine expression results, so these both work:
+| Event | When |
+| --- | --- |
+| `ConsoleStarting` | The kernel finished discovering commands |
+| `CommandStarting` | Before `handle()` runs — carries name, arguments, options |
+| `CommandFinished` | After it returns — adds `exit_code` |
 
 ```python
-User.all()
-await User.query().get()
-users = run(User.all())   # explicit sync bridge for assignments
+from avalon.console import CommandFinished
+from avalon.events import Event
+
+Event.listen(CommandFinished, lambda event: log_duration(event.command, event.exit_code))
 ```
 
-Results render as **JSON key/value panels** (models, collections, dicts, lists). Helpers:
+## Command reference
 
-```python
-dump(users)          # pretty dump, continue
-dd(users)            # dump and exit Fiddle
-to_json(users)       # JSON string
-serialize(users)     # plain Python dict/list
-```
+What the framework ships, 84 commands, as `grail list` groups them. An application's own commands appear alongside these.
 
+### Top level
+
+| Command | Description |
+| --- | --- |
+| `about` | Show a summary of the application's environment and drivers |
+| `docs` | Open Avalon's documentation in a browser |
+| `down` | Put the application into maintenance mode (scheduled tasks stop) |
+| `env` | Display the current framework environment |
+| `fiddle` | Interactive Avalon REPL *(also `tinker`, `repl`)* |
+| `help` | Describe a command — its usage, arguments, and options |
+| `inspire` | Display an inspiring quote |
+| `list` | List the commands available to Grail |
+| `migrate` | Run outstanding migrations |
+| `optimize` | Cache what Avalon can cache, and say what it deliberately does not |
+| `serve` | Serve the application with Uvicorn |
+| `up` | Bring the application out of maintenance mode |
+| `version` | Show Avalon version |
+
+### `cache`
+
+| Command | Description |
+| --- | --- |
+| `cache:clear` | Flush the application cache |
+| `cache:forget` | Remove one item from the cache |
+
+### `config`
+
+| Command | Description |
+| --- | --- |
+| `config:show` | Show a configuration value or namespace |
+
+### `db`
+
+| Command | Description |
+| --- | --- |
+| `db:monitor` | Monitor the number of connections on the specified database |
+| `db:seed` | Seed the database using DatabaseSeeder (or --class) |
+| `db:show` | Show information about a database connection and its tables |
+| `db:table` | Show information about the given database table |
+| `db:wipe` | Drop all tables from the database |
+
+### `env`
+
+| Command | Description |
+| --- | --- |
+| `env:decrypt` | Decrypt an encrypted environment file |
+| `env:encrypt` | Encrypt the environment file |
+
+### `errors`
+
+| Command | Description |
+| --- | --- |
+| `errors:publish` | Publish framework error views into resources/views/errors/ |
+
+### `event`
+
+| Command | Description |
+| --- | --- |
+| `event:list` | List registered event listeners |
+
+### `key`
+
+| Command | Description |
+| --- | --- |
+| `key:generate` | Set the application key (APP_KEY) in .env |
+
+### `lang`
+
+| Command | Description |
+| --- | --- |
+| `lang:missing` | List keys present in the fallback locale but missing in the target |
+| `lang:publish` | Publish framework language files into lang/ |
+
+### `make`
+
+| Command | Description |
+| --- | --- |
+| `make:cast` | Create an attribute cast in app/casts |
+| `make:class` | Create a class in app, under the path its name gives |
+| `make:command` | Create a console command in app/console/commands |
+| `make:component` | Create an anonymous Caliburn component in resources/views/components |
+| `make:controller` | Create a controller in app/http/controllers |
+| `make:enum` | Create an enum in app/enums |
+| `make:event` | Create a new event class |
+| `make:exception` | Create an exception in app/exceptions |
+| `make:interface` | Create a Protocol in app/contracts |
+| `make:job` | Create a queue job in app/jobs |
+| `make:lang` | Create an empty lang/<locale>/ tree |
+| `make:listener` | Create a new event listener class |
+| `make:mail` | Create a mailable in app/mail |
+| `make:middleware` | Create a middleware in app/http/middleware |
+| `make:migration` | Create a migration in database/migrations |
+| `make:model` | Create a model in app/models |
+| `make:notification` | Create a notification in app/notifications |
+| `make:observer` | Create a model observer in app/observers |
+| `make:policy` | Create a new policy class |
+| `make:provider` | Create a service provider in app/providers |
+| `make:request` | Create a FormRequest in app/http/requests |
+| `make:rule` | Create a validation rule in app/rules |
+| `make:seeder` | Create a seeder in database/seeders |
+| `make:view` | Create a Caliburn view in resources/views |
+
+### `migrate`
+
+| Command | Description |
+| --- | --- |
+| `migrate:fresh` | Drop all tables and re-run every migration |
+| `migrate:install` | Create the migration repository table |
+| `migrate:refresh` | Roll back every migration and run them again |
+| `migrate:reset` | Roll back every migration that has run |
+| `migrate:rollback` | Roll back the last migration batch |
+| `migrate:status` | Show which migrations have run |
+
+### `model`
+
+| Command | Description |
+| --- | --- |
+| `model:prune` | Prune models that are no longer needed |
+| `model:show` | Show a model's table, attributes, relationships, and events |
+
+### `optimize`
+
+| Command | Description |
+| --- | --- |
+| `optimize:clear` | Clear the application cache and the compiled templates |
+
+### `queue`
+
+| Command | Description |
+| --- | --- |
+| `queue:clear` | Delete all of the jobs waiting on a queue |
+| `queue:failed` | List failed queue jobs |
+| `queue:flush` | Delete all of the failed queue jobs |
+| `queue:forget` | Delete a failed queue job |
+| `queue:listen` | Listen to a given queue (continuous worker loop) |
+| `queue:monitor` | Show the size of each named queue, flagging the busy ones |
+| `queue:prune-failed` | Prune stale entries from the failed jobs table |
+| `queue:restart` | Ask every running worker to stop once it finishes its current job |
+| `queue:retry` | Retry a failed queue job |
+| `queue:work` | Process the next job on a queue |
+
+### `route`
+
+| Command | Description |
+| --- | --- |
+| `route:list` | List the application's registered routes |
+
+### `schedule`
+
+| Command | Description |
+| --- | --- |
+| `schedule:clear-cache` | Release without-overlapping locks left behind by a stuck task |
+| `schedule:interrupt` | Stop an in-progress schedule:run at the end of this second |
+| `schedule:list` | List the scheduled tasks and when each next runs |
+| `schedule:run` | Run the tasks that are due (wire this to cron, every minute) |
+| `schedule:test` | Run one scheduled task now, whatever its frequency says |
+| `schedule:work` | Run the scheduler in the foreground, minute after minute |
+
+### `storage`
+
+| Command | Description |
+| --- | --- |
+| `storage:link` | Create the symbolic links configured for the application |
+| `storage:unlink` | Delete the symbolic links configured for the application |
+
+### `stub`
+
+| Command | Description |
+| --- | --- |
+| `stub:publish` | Publish the generator stubs into stubs/ so they can be edited |
+
+### `vendor`
+
+| Command | Description |
+| --- | --- |
+| `vendor:publish` | Publish the files a package's provider offers |
+
+### `view`
+
+| Command | Description |
+| --- | --- |
+| `view:cache` | Compile every Caliburn template |
+| `view:clear` | Drop the compiled Caliburn templates |
 ## `dump()` / `dd()`
 
 Debug helpers live on the package root:

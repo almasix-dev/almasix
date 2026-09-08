@@ -57,12 +57,8 @@ def serialize(value: Any) -> Any:
     if is_model_collection(value) or is_paginator(value):
         return value.to_dict()
     if is_support_collection(value):
-        to_dict = getattr(value, "to_dict", None)
-        if callable(to_dict):
-            try:
-                return to_dict()
-            except TypeError:
-                pass
+        # A support collection is a sequence, not a record: the one that does
+        # carry a ``to_dict`` is Articulate's, and it was handled above.
         return [serialize(item) for item in value]
     if isinstance(value, dict):
         return {str(key): serialize(item) for key, item in value.items()}

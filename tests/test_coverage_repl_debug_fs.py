@@ -194,6 +194,25 @@ def test_configure_ptpython_wraps_eval() -> None:
     assert repl.eval("plain") == "plain"
 
 
+def test_configure_ptpython_leaves_a_private_eval_where_it_found_it() -> None:
+    """Older ptpython spells it ``_eval``; wrapping it is not ours to do."""
+    private = SimpleNamespace(
+        show_signature=False,
+        show_docstring=False,
+        highlight_matching_parenthesis=False,
+        color_depth="",
+        enable_syntax_highlighting=False,
+        prompt_style="",
+        show_line_numbers=True,
+        use_code_colorscheme=lambda _n: None,
+        _eval=lambda expr: expr,
+    )
+
+    _configure_ptpython(private)
+
+    assert not hasattr(private, "eval")
+
+
 def test_rich_console_runcode_paths(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

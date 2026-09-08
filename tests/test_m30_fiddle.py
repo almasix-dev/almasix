@@ -18,11 +18,22 @@ class Widget(Model):
     fillable = ("name",)
 '''
 
+#: Fiddle reaches for ``User`` by name before it discovers anything, the way
+#: Tinker does, so the refusal below has to be tested against a real one.
+USER = '''
+from avalon.orm import Model
+
+
+class User(Model):
+    fillable = ("email",)
+'''
+
 
 @pytest.fixture()
 def app_root(tmp_path: Path) -> Path:
     root = scaffold_app("fiddleapp", destination=tmp_path / "fiddleapp")
     (root / "app" / "models" / "widget.py").write_text(MODEL, encoding="utf-8")
+    (root / "app" / "models" / "user.py").write_text(USER, encoding="utf-8")
     return root
 
 
