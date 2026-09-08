@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from avalon.console.stub import render
 from avalon.orm.facade import DB
 from avalon.orm.inflector import studly
 from avalon.orm.schema import Schema
@@ -148,6 +147,30 @@ class Migrator:
             rolled.append(name)
         return rolled
 
+    async def install(self) -> bool:
+        """Create the repository table, reporting whether this call created it."""
+        if await Schema.has_table(self.table, connection=self.connection):
+            return False
+        await self._ensure_table()
+        return True
+
+    async def reset(self) -> list[str]:
+        """Roll back every migration that has run, newest first."""
+        batch = await self.current_batch()
+        if batch == 0:
+            return []
+        return await self.rollback(batch)
+
+    async def refresh(self, steps: int = 0) -> tuple[list[str], list[str]]:
+        """Roll back and run again, returning ``(rolled back, applied)``.
+
+        ``steps`` rolls back that many batches instead of all of them, so the
+        migrations below them stay applied — Laravel counts migrations there,
+        while ``rollback`` has always counted batches in Avalon.
+        """
+        rolled = await self.rollback(steps) if steps else await self.reset()
+        return rolled, await self.run()
+
     async def fresh(self) -> list[str]:
         names = await Schema.table_names(connection=self.connection)
         for name in names:
@@ -200,6 +223,10 @@ def make_migration(
     (``CreateUsersTable``, ``AddDescriptionColumnToPostsTable``).
     ``--create`` / ``--table`` (passed as ``create`` / ``table``) override inference.
     """
+    # Imported here, not at module scope: the console is a layer above the ORM,
+    # and importing down from up makes the two mutually importing.
+    from avalon.console.stub import render
+
     slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
     if not slug:
         raise MigrationError("A migration name is required.")

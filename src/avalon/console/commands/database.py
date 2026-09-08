@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from avalon.console.command import Command
+from avalon.console.confirmable import Confirmable
 from avalon.console.exceptions import CommandFailed
 from avalon.orm.migration import Migrator
 from avalon.orm.seeder import SeederError, resolve_seeder_class, run_seeder
@@ -28,8 +29,36 @@ class SeederOutput:
 class DatabaseCommand(Command):
     """Shared body: the migrator, the event loop, and the seeder run."""
 
-    def migrator(self) -> Migrator:
-        return Migrator(self.root() / "database" / "migrations")
+    def migrator(self, connection: str | None = None, path: str | Path | None = None) -> Migrator:
+        directory = Path(path) if path else self.root() / "database" / "migrations"
+        if not directory.is_absolute():
+            directory = self.root() / directory
+        return Migrator(directory, connection)
+
+    def resolve_migrator(self) -> Migrator | None:
+        """The migrator ``--database`` and ``--path`` ask for, or ``None``.
+
+        Names the option it could not read before returning ``None``, so the
+        caller only has to answer with ``INVALID``. Where Laravel's ``--path``
+        takes any number of directories, Avalon's takes one: a ``Migrator``
+        reads a single tree.
+        """
+        connection = self.option("database")
+        if connection is True:
+            self.error(
+                "Invalid value for '--database': provide a connection name, e.g. --database=sqlite."
+            )
+            return None
+        path = self.option("path")
+        if path is True:
+            self.error(
+                "Invalid value for '--path': provide a directory, e.g. --path=database/migrations."
+            )
+            return None
+        return self.migrator(
+            str(connection or "").strip() or None,
+            str(path or "").strip() or None,
+        )
 
     def root(self) -> Path:
         """The working directory, as ``grail`` was run.
@@ -79,7 +108,7 @@ class DatabaseCommand(Command):
 class MigrateCommand(DatabaseCommand):
     signature = (
         "migrate {--seed : Run DatabaseSeeder after migrating} "
-        "{--seeder= : Seeder class to run when --seed is set}"
+        "{--seeder= : Seeder class to run, which implies --seed}"
     )
     description = "Run outstanding migrations"
 
@@ -91,6 +120,31 @@ class MigrateCommand(DatabaseCommand):
             for name in applied:
                 self.success(f"Migrated: {name}")
         return self.seed_if_asked()
+
+
+class MigrateInstallCommand(DatabaseCommand):
+    """Create the table the migrator records its runs in.
+
+    Laravel's ``migrate:install`` fails on a second run; Avalon's says the
+    table is already there and succeeds, because every other migration command
+    creates it on demand and running this one twice is not a mistake.
+    """
+
+    signature = (
+        "migrate:install "
+        "{--database= : Connection to install on (default: the configured default)}"
+    )
+    description = "Create the migration repository table"
+
+    def handle(self) -> int:
+        migrator = self.resolve_migrator()
+        if migrator is None:
+            return self.INVALID
+        if self.run_async(migrator.install()):
+            self.success("Migration table created successfully.")
+        else:
+            self.line("Migration table already exists.")
+        return self.SUCCESS
 
 
 class MigrateRollbackCommand(DatabaseCommand):
@@ -107,10 +161,92 @@ class MigrateRollbackCommand(DatabaseCommand):
         return self.SUCCESS
 
 
+class MigrateResetCommand(Confirmable, DatabaseCommand):
+    """Roll every migration back, newest first.
+
+    ``--pretend`` is not offered: Avalon's migrator runs schema changes rather
+    than compiling them to SQL, so there is nothing honest to print.
+    """
+
+    signature = (
+        "migrate:reset "
+        "{--database= : Connection to roll back (default: the configured default)} "
+        "{--path= : Directory to read migrations from (default: database/migrations)} "
+        "{--force : Roll back without asking, and allow it in production}"
+    )
+    description = "Roll back every migration that has run"
+
+    def handle(self) -> int:
+        migrator = self.resolve_migrator()
+        if migrator is None:
+            return self.INVALID
+        if not self.confirm_to_proceed("This rolls back every migration that has run."):
+            return self.FAILURE
+
+        rolled = self.run_async(migrator.reset())
+        if not rolled:
+            self.line("Nothing to roll back.")
+            return self.SUCCESS
+        for name in rolled:
+            self.warn(f"Rolled back: {name}")
+        self.success(f"Rolled back {len(rolled)} migration(s).")
+        return self.SUCCESS
+
+
+class MigrateRefreshCommand(Confirmable, DatabaseCommand):
+    """Roll the migrations back and run them again."""
+
+    signature = (
+        "migrate:refresh "
+        "{--step=0 : Batches to roll back and re-run instead of every one} "
+        "{--seed : Run DatabaseSeeder after migrating} "
+        "{--seeder= : Seeder class to run, which implies --seed} "
+        "{--database= : Connection to refresh (default: the configured default)} "
+        "{--path= : Directory to read migrations from (default: database/migrations)} "
+        "{--force : Refresh without asking, and allow it in production}"
+    )
+    description = "Roll back every migration and run them again"
+
+    def handle(self) -> int:
+        steps = self.steps()
+        if steps is None:
+            return self.INVALID
+        migrator = self.resolve_migrator()
+        if migrator is None:
+            return self.INVALID
+
+        scope = f"the last {steps} batch(es) of migrations" if steps else "every migration"
+        if not self.confirm_to_proceed(f"This rolls back and re-runs {scope}."):
+            return self.FAILURE
+
+        rolled, applied = self.run_async(migrator.refresh(steps))
+        for name in rolled:
+            self.warn(f"Rolled back: {name}")
+        if not applied:
+            self.line("Nothing to migrate.")
+        else:
+            for name in applied:
+                self.success(f"Migrated: {name}")
+        return self.seed_if_asked()
+
+    def steps(self) -> int | None:
+        """``--step`` as a batch count, or ``None`` once it has been refused."""
+        given = self.option("step")
+        try:
+            steps = 0 if given is None else int(str(given))
+        except ValueError:
+            self.error(f"Invalid value for '--step': {given!r} is not a valid integer.")
+            return None
+        if steps < 0:
+            self.error(f"Invalid value for '--step': {given!r} is not a number of batches.")
+            return None
+        return steps
+
+
 class MigrateFreshCommand(DatabaseCommand):
     signature = (
         "migrate:fresh {--seed : Run DatabaseSeeder after migrating} "
-        "{--seeder= : Seeder class to run when --seed is set}"
+        "{--seeder= : Seeder class to run, which implies --seed}"
     )
     description = "Drop all tables and re-run every migration"
 

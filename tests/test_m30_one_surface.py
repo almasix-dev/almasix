@@ -6,6 +6,7 @@ Grail used to have two consoles: hand-written Typer callbacks and discovered
 
 from __future__ import annotations
 
+import ast
 import subprocess
 import sys
 from pathlib import Path
@@ -356,3 +357,37 @@ def test_a_module_discovered_mid_import_is_reported_not_skipped(tmp_path: Path) 
 
     assert kernel._half_imported(HalfImported()) is True
     assert kernel._half_imported(object()) is False
+
+
+def test_no_orm_module_imports_the_console_at_module_scope() -> None:
+    """Layering: the console sits above the ORM, so the ORM must not need it first.
+
+    ``avalon.orm.migration`` imported ``avalon.console.stub`` at module scope
+    to render migration stubs. Importing down from up makes the two mutually
+    importing, and a command module that pulled the ORM in mid-import saw a
+    half-built module — once, as a ``NameError`` on ``render`` that then took
+    twenty runs to not reproduce. Inside a function the import happens after
+    both modules exist, which is why this checks module scope only.
+    """
+    offenders: list[str] = []
+    for path in sorted(Path("src/avalon/orm").glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in tree.body:
+            reference = ""
+            if isinstance(node, ast.ImportFrom):
+                reference = node.module or ""
+            elif isinstance(node, ast.Import):
+                reference = node.names[0].name
+            if reference.startswith("avalon.console"):
+                offenders.append(f"{path.name}:{node.lineno} imports {reference}")
+
+    assert offenders == [], offenders
+
+
+def test_making_a_migration_still_renders_its_stub(tmp_path: Path) -> None:
+    """The import moved into the function, so prove the function still has it."""
+    from avalon.orm.migration import make_migration
+
+    path = make_migration("create_users_table", tmp_path / "migrations")
+
+    assert "class CreateUsersTable" in path.read_text(encoding="utf-8")
