@@ -318,8 +318,8 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Avalon as fol
 | --- | --- | --- | --- |
 | Collections | `collections` | Support Collections, **M49** | **Done** — 155/155 methods, lazy collections, a section per method |
 | Localization | `localization` | **M4** (code **Done**) | **Docs gap** — write Starlight Localization page (code already exhausted) |
-| Helpers | `helpers` | **M14**, **M50** | Code short (`Arr` 42/57, `Number` 17/20); **docs gap** — no section per method |
-| Strings | `strings` | **M14**, **M50** | `Str` 80/87, `Stringable` 27/117; **docs gap** — no section per method |
+| Helpers | `helpers` | **M14**, **M50** | **Done** — `Arr` 59, `Number` 20, the global helpers, a section per method |
+| Strings | `strings` | **M14**, **M50** | **Done** — `Str` 91, `Stringable` 134 by delegation, a section per method |
 | Cache | `cache` | **M15** | Shipped |
 | Redis | `redis` | **Done (M16)** | Redis page + Cache/Session/Queues updates |
 | Encryption | `encryption` | **M17** | `Crypt` façade, JSON-safe encrypt, `APP_PREVIOUS_KEYS`, `key:generate` |
@@ -976,6 +976,8 @@ Laravel [Helpers](https://laravel.com/docs/helpers) + [Strings](https://laravel.
 
 **Correction (2026-09-08 audit):** "exhausted" was wrong — the ladder reaches every category, but no category is closed. Against the Laravel pages: `Str` has 80 of 87 methods, `Arr` 42 of 57, `Number` 17 of 20, and the fluent `Stringable` only 27 of 117, because it hand-writes its methods instead of delegating the whole `Str` surface. Of Laravel's ~65 global helpers, 37 exist somewhere in the package and 28 do not — some fairly (`broadcast`, `policy`, `context`, `fake` await their features) and some not (`request`, `response`, `session`, `cookie`, `logger`, `report`, `resolve`, `app`, `validator`, `old`, `back`, `bcrypt`, `method_field`, `csrf_field` all wrap surfaces that already ship). The URL family (`route`, `to_route`, `action`, `to_action`, `uri`, `secure_url`, `secure_asset`) belongs with named routes in **M33**. Docs are short the same way collections are: Laravel spends 3,787 lines on Helpers and 4,042 on Strings, a section per method; Avalon spends 154 and 180 on grouped tables. **M50** closes both.
 
+**Closed (2026-09-08, M50):** `Str` 91, `Arr` 59, `Number` 20, and `Stringable` 134 by delegating the static surface rather than hand-writing it — and immutable now, as Laravel's is. The global helpers that wrap shipped surfaces exist; `broadcast`, `context`, and `fake` remain honestly absent, and the URL family is still **M33**'s. The pages are 2,980 and 3,260 lines, 377 sections, every example run before it was published.
+
 ### M15 — Cache (`avalon.cache`)
 
 Laravel [Cache](https://laravel.com/docs/cache) store — first consumer of schedule mutex upgrades and queue unique locks.
@@ -1178,6 +1180,7 @@ Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the l
 - **Events:** `CommandStarting` / `CommandFinished` (+ a startup event) through the M18 dispatcher
 - **Stub customization:** move generator stubs out of inline f-strings into a real stub set + `grail stub:publish`; app stubs override framework stubs
 - **Missing built-ins** (only where the underlying feature exists): `about`, `help`, `route:list`, `config:show`, `db:wipe`, `db:show`/`db:table`, `queue:restart` / `queue:clear` / `queue:monitor`, `env:encrypt` / `env:decrypt`, `optimize` / `optimize:clear` + `config:cache` / `view:cache` and their `:clear` pairs (cache targets may land with M31/M15 work), `vendor:publish`, and the `make:*` set for shipped features (`make:job`, `make:mail`, `make:notification`, `make:rule`, `make:cast`, `make:exception`, `make:view`, `make:class`, `make:enum`, `make:interface`, `make:observer`). Generators for unshipped features stay with their milestone (`make:factory` → M24, `make:test` → M28, `make:resource` → M23, `make:channel` → M26).
+- **Discovery is all-or-nothing:** one command file that fails to import aborts discovery for the whole directory, and the notice only prints on `grail list` — invoking a command shows "No such command" with no hint why. Report the failing module, keep the rest, and say so on every run
 - **Fiddle allow-list:** Tinker-class `commands` / `dont_alias` configuration for the REPL
 - Docs: rewrite Starlight **Grail Console** to the Artisan section order; document every built-in command
 - Living example: progress app gains a closure command, an isolatable command, and a signal-trapping worker demo
@@ -1486,16 +1489,17 @@ Laravel [Collections](https://laravel.com/docs/collections) — 155 methods on t
 
 Laravel [Helpers](https://laravel.com/docs/helpers) + [Strings](https://laravel.com/docs/strings).
 
-- **`Str` (80/87):** `doesnt_end_with`, `doesnt_start_with`, `initials`, `is_match`, `match`, `match_all`, `ucwords`
-- **`Stringable` (27/117):** the fluent wrapper hand-writes a subset, so `Str.slug(value)` works while `str_(value).slug()` does not. Delegate the whole `Str` surface, then add the fluent-only methods — `pipe`, `scan`, `test`, `to_uri`, `to_html_string`, `new_line`, `strip_tags`, `hash`, `encrypt` / `decrypt`, `from_base` / `to_base`, and the `when_*` conditional family
-- **`Arr` (42/57):** typed getters `array` / `boolean` / `float` / `integer` / `string`, plus `every`, `some`, `sole`, `partition`, `push`, `select`, `from`, `has_all`, `only_values`, `except_values`. Several exist on `Collection` but not on `Arr`, where Laravel documents both
-- **`Number` (17/20):** `parse_int`, `parse_float`, `spell_ordinal`
-- **Global helpers:** the 28 absent ones, minus those honestly gated on unbuilt features (`broadcast`, `policy`, `context`, `fake`). The wrappers over surfaces that already ship — `request`, `response`, `session`, `cookie`, `logger`, `report`, `resolve`, `app`, `validator`, `old`, `back`, `bcrypt`, `method_field`, `csrf_field`, `trait_uses_recursive` — have no excuse. The URL family (`route`, `to_route`, `action`, `to_action`, `uri`, `secure_url`, `secure_asset`) lands with named routes in **M33** and is cross-referenced, not duplicated
-- **Docs:** rewrite `strings` and `helpers` to a section per method, in Laravel's order and grouping (Arrays & Objects, Numbers, Paths, URLs, Miscellaneous; then Strings, then Fluent Strings). Laravel also documents Other Utilities — Benchmarking, Dates, Deferred Functions, Lottery, Pipeline, Sleep, Timebox — which Avalon has not built; name them as deferred rather than leaving them unmentioned
+- ~~**`Str` (80/87):** `doesnt_end_with`, `doesnt_start_with`, `initials`, `is_match`, `match`, `match_all`, `ucwords`~~ **shipped (part 1)** — 91 methods now
+- ~~**`Stringable` (27/117):** the fluent wrapper hand-writes a subset~~ **shipped (part 1)** — the hand-written proxy list is gone; `Stringable` delegates the whole `Str` surface generically, binding the subject wherever it sits in the signature, so a new `Str` method is fluent the day it lands. The fluent-only methods came with it: `new_line`, `strip_tags`, `split`, `test`, `to_base` / `from_base`, `hash`, `encrypt` / `decrypt`, and the `when_*` conditional family. It was also **mutating in place** — a real parity bug, since Laravel's is immutable; every method now returns a new instance
+- ~~**`Arr` (42/57):** typed getters, `every`, `some`, `sole`, `partition`, `push`, `select`, `from`, `has_all`, `only_values`, `except_values`~~ **shipped (part 1)** — 59 methods now; Laravel's `from` is `from_`, because `from` is a Python keyword
+- ~~**`Number` (17/20):** `parse_int`, `parse_float`, `spell_ordinal`~~ **shipped (part 1)**
+- ~~**Global helpers:** the wrappers over surfaces that already ship~~ **shipped (part 2)** — `app`, `resolve`, `request`, `response`, `back`, `session`, `old`, `cookie`, `logger`, `info`, `report`, `bcrypt`, `csrf_field`, `method_field`, `validator`, `policy`. Several needed the plumbing under them first: a request `ContextVar` set by the kernel, a `ResponseFactory` and a `Redirect` that can flash input and errors, a cookie jar, and a global application accessor. `broadcast`, `context`, and `fake` stay honestly absent; the URL family still belongs to **M33**
+- ~~**Docs:** rewrite `strings` and `helpers` to a section per method~~ **shipped (part 3)** — 3,260 and 2,980 lines against the old 180 and 154, 377 sections in Laravel's grouping, with the same smoke contract collections got. Laravel's Other Utilities (Benchmarking, Dates, Deferred Functions, Lottery, Pipeline, Sleep, Timebox) are named as deferred rather than left unmentioned
+- ~~**Parity gaps the rewrite exposed**~~ **shipped (part 4)** — writing an example per method found five behaviours that quietly differed: `data_get` ignored `*` wildcards, `data_set` replaced a list with a dict keyed by the index as a string, `Arr.to_css_styles` did not read Laravel's switched-style shape, the pad family used only the first character of the pad string, and `Str.char_at` refused a negative index
 
 **Depends on:** M33 for the URL helper family only; everything else is standalone.
 
-**Gate:** both pages exhausted or deviations named; `Stringable` delegates every `Str` method with a test proving the fluent and static forms agree; every method has its own documented section with an example.
+**Gate met (2026-09-08):** both pages exhausted or deviations named; `Stringable` delegates every `Str` method, with a test proving the fluent and static forms agree; every method has its own documented section with a verified example.
 
 ### Docs track (may land anytime)
 
@@ -1544,8 +1548,10 @@ Scheduled on 2026-09-08: the support and reference-page exhaust track (**M49–M
 
 **M40–M44 (Articulate + Database exhaust) outrank M33–M39 in priority.** The 2026-09-08 audit found the ORM and database surface materially short of Laravel's Database and Eloquent sections, and every application touches it — so the ORM track should be sequenced ahead of routing sugar, starter kits, and deployment docs, whatever their numbers say.
 
+**M50 Helpers, `Str`, and `Stringable` exhaust gate met** — `Stringable` delegates the whole static surface instead of hand-writing a quarter of it, and is immutable like Laravel's; the `Arr`, `Number`, and `Str` gaps are closed; the global helpers that wrap shipped surfaces exist; and both pages document a method at a time with every example verified by running it. Writing those examples is what found the five behaviour gaps in part 4 — the argument for the format, not just the coverage.
+
 **M49 Support Collections exhaust gate met** — the Method Listing is closed, higher order messages answer both forms, lazy collections stream over sync and async sources and back the ORM's `cursor` / `lazy` reads, and the page documents all 155 methods a section at a time with a smoke contract keeping it that way.
 
-**M31 and M49–M50 came out of the 2026-09-08 reference-page audit.** Task scheduling is at 8 of 82 documented methods with a 55-line page against Laravel's 635 — the widest gap left in the framework. Collections are nearly complete in code (149/155) but documented as a table rather than 155 sections; helpers and strings are short on both counts (`Stringable` 27/117 is the worst of it). Sequence M49 and M50 opportunistically — they need no predecessors — and M31 after M30, which owns the command surface it registers into.
+**M31 is what remains of the 2026-09-08 reference-page audit.** Task scheduling is at 8 of 82 documented methods with a 55-line page against Laravel's 635 — now the widest gap left in the framework, with M49 and M50 shipped. Sequence it after M30, which owns the command surface it registers into.
 
 **Docs (anytime):** see the Docs track above — Localization page (M4 code done); `@vite` directive (M6 partial). The Mutators & Casts how-to shipped with M40.

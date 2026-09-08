@@ -9,6 +9,7 @@ from starlette.responses import HTMLResponse
 
 from avalon.caliburn.compiler import DirectiveHandler
 from avalon.caliburn.engine import ComposerCallback, Engine
+from avalon.caliburn.escape import HtmlString, e
 from avalon.http.response import html
 
 _engine: Engine | None = None
@@ -76,3 +77,19 @@ def view(
 def render(name: str, data: dict[str, Any] | None = None) -> str:
     """Render a Caliburn template to a string (no HTTP wrapper)."""
     return get_engine().render(name, data)
+
+
+def csrf_field() -> HtmlString:
+    """Return the hidden CSRF field a form needs (Laravel ``csrf_field``)."""
+    from avalon.session.csrf import csrf_token
+
+    return _hidden("_token", csrf_token())
+
+
+def method_field(method: str) -> HtmlString:
+    """Return the hidden field that spoofs ``method`` (Laravel ``method_field``)."""
+    return _hidden("_method", method.upper())
+
+
+def _hidden(name: str, value: str) -> HtmlString:
+    return HtmlString(f'<input type="hidden" name="{name}" value="{e(value)}">')

@@ -152,7 +152,7 @@ def _milestones() -> list[dict]:
             "proof": [
                 "Arr / Number / data_* helpers",
                 "Str / Stringable / str_()",
-                "progress:helpers",
+                "grail progress:helpers",
             ],
         },
         {
@@ -410,13 +410,23 @@ def _milestones() -> list[dict]:
             "id": "M49",
             "name": "Support Collections exhaust",
             "status": "complete",
-            "proof": ["LazyCollection + async twin", "higher-order messages", "155 documented methods"],
+            "proof": [
+                "grail progress:collections",
+                "LazyCollection + async twin (Model.cursor)",
+                "higher order messages",
+                "155 documented methods",
+            ],
         },
         {
             "id": "M50",
             "name": "Helpers + Str exhaust",
-            "status": "planned",
-            "proof": ["fluent Stringable", "Arr + Number gaps", "a section per method"],
+            "status": "complete",
+            "proof": [
+                "grail progress:helpers",
+                "Stringable delegates the Str surface",
+                "app / request / response / session / validator",
+                "377 documented methods",
+            ],
         },
     ]
 

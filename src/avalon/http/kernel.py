@@ -14,10 +14,9 @@ from starlette.responses import Response as StarletteResponse
 
 from avalon.http.exceptions import HttpException, NotFoundHttpException
 from avalon.http.middleware import Middleware
-from avalon.http.request import Request
+from avalon.http.request import Request, reset_request, set_request
 from avalon.http.response import make_response
 from avalon.routing.router import Action, RouteDefinition, Router
-from avalon.validation.form_request import FormRequest
 
 if TYPE_CHECKING:
     from avalon.framework.application import Application
@@ -211,7 +210,11 @@ class HttpKernel:
                 call_controller,
                 polarity=polarity,
             )
-            return await pipeline(avalon_request)
+            token = set_request(avalon_request)
+            try:
+                return await pipeline(avalon_request)
+            finally:
+                reset_request(token)
 
         return endpoint
 
@@ -345,7 +348,7 @@ class HttpKernel:
             if name == "self":
                 continue
             annotation = hints.get(name, param.annotation)
-            if isinstance(annotation, type) and issubclass(annotation, FormRequest):
+            if isinstance(annotation, type) and issubclass(annotation, _form_request()):
                 kwargs[name] = annotation.validate_request(request)
             elif annotation is Request or name in {"request", "req"}:
                 kwargs[name] = request
@@ -391,8 +394,8 @@ class HttpKernel:
         if not isinstance(model, type):
             return
         action = getattr(handler, "__name__", "")
-        from avalon.auth.access.gate import CONTROLLER_RESOURCE_ABILITIES
         from avalon.auth.access.facade import Gate
+        from avalon.auth.access.gate import CONTROLLER_RESOURCE_ABILITIES
         from avalon.orm.inflector import snake
 
         ability = CONTROLLER_RESOURCE_ABILITIES.get(action)
@@ -406,3 +409,10 @@ class HttpKernel:
         if argument is None:
             argument = request.path_params.get(name)
         Gate.authorize(ability, argument if argument is not None else model)
+
+
+def _form_request() -> type:
+    """Import ``FormRequest`` on demand — validation imports this package."""
+    from avalon.validation.form_request import FormRequest
+
+    return FormRequest

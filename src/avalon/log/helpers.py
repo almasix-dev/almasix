@@ -69,3 +69,16 @@ class LogWriter:
 def log(channel: str | None = None) -> LogWriter:
     """Return a log writer for ``channel`` (or the default channel)."""
     return LogWriter(channel)
+
+
+def logger(message: str | None = None, context: dict[str, Any] | None = None) -> LogWriter | None:
+    """Write a debug line, or return the writer when given no message (Laravel ``logger``)."""
+    if message is None:
+        return LogWriter()
+    LogWriter().debug(message, extra=context or {})
+    return None
+
+
+def info(message: str, context: dict[str, Any] | None = None) -> None:
+    """Write an informational line to the default channel (Laravel ``info``)."""
+    LogWriter().info(message, extra=context or {})

@@ -623,7 +623,7 @@ async def test_provider_password_helpers() -> None:
 
 @pytest.mark.asyncio
 async def test_start_auth_via_request_and_crypto_edges(monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.session.cookie import sign_payload, unsign_payload
+    from avalon.session.signing import sign_payload, unsign_payload
     from avalon.session.encrypt import decrypt_string, encrypt_string
 
     token = encrypt_string("hello", key="k")

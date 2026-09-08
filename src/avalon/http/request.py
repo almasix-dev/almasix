@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from contextvars import ContextVar, Token
 from typing import Any
 
 from starlette.datastructures import UploadFile
 from starlette.requests import Request as StarletteRequest
+
+_current: ContextVar[Request | None] = ContextVar("avalon_request", default=None)
 
 
 class UploadedFile:
@@ -399,6 +402,19 @@ class Request:
 
     def __repr__(self) -> str:
         return f"<Request {self.method} {self.path}>"
+
+
+def get_request() -> Request | None:
+    """Return the request being handled, or ``None`` outside a request."""
+    return _current.get()
+
+
+def set_request(request: Request | None) -> Token[Request | None]:
+    return _current.set(request)
+
+
+def reset_request(token: Token[Request | None]) -> None:
+    _current.reset(token)
 
 
 def _normalize_keys(keys: tuple[str | Iterable[str], ...]) -> list[str]:

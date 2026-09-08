@@ -247,6 +247,15 @@ class Engine:
             from avalon.caliburn.escape import e
 
             ctx["e"] = e
+        if "csrf_field" not in ctx:
+            from avalon.caliburn.helpers import csrf_field, method_field
+
+            ctx["csrf_field"] = csrf_field
+            ctx["method_field"] = method_field
+        if "old" not in ctx:
+            from avalon.session.helpers import old
+
+            ctx["old"] = old
         if "__" not in ctx:
             from avalon.translation import __, trans_choice
 

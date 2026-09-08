@@ -12,6 +12,7 @@ from typing import Any
 from avalon.config import ConfigRepository, load_environment, set_repository
 from avalon.framework.bootstrap import ApplicationBuilder, Middleware
 from avalon.framework.container import Container
+from avalon.framework.helpers import set_application
 from avalon.providers.provider import ServiceProvider
 from avalon.routing.router import Router, set_router
 
@@ -40,6 +41,7 @@ class Application:
         self.container.instance(HttpKernel, self.http_kernel)
         set_repository(self.config)
         set_router(self.router)
+        set_application(self)
         self._ensure_import_path()
 
     @classmethod

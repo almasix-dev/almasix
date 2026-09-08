@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import bcrypt
-
 from avalon.hashing.hasher import BcryptHasher, Hasher
 
 
@@ -131,5 +129,9 @@ class Hash:
         return get_hash_manager().driver(name)
 
 
-# Re-export bcrypt for tests that need low-level access without coupling.
-__all__ = ["Hash", "HashManager", "get_hash_manager", "set_hash_manager", "bcrypt"]
+def bcrypt(value: str, options: dict[str, Any] | None = None) -> str:
+    """Hash a value with bcrypt whatever the default driver is (Laravel ``bcrypt``)."""
+    return get_hash_manager().driver("bcrypt").make(value, options)
+
+
+__all__ = ["Hash", "HashManager", "bcrypt", "get_hash_manager", "set_hash_manager"]

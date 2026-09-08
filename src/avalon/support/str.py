@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import inspect
 import json
 import re
 import secrets
@@ -206,9 +207,10 @@ class Str:
 
     @staticmethod
     def char_at(subject: str, index: int) -> str | bool:
-        if index < 0 or index >= len(subject):
+        position = index if index >= 0 else len(subject) + index
+        if position < 0 or position >= len(subject):
             return False
-        return subject[index]
+        return subject[position]
 
     @staticmethod
     def chop_start(subject: str, needle: str | Iterable[str]) -> str:
@@ -385,15 +387,17 @@ class Str:
 
     @staticmethod
     def pad_both(value: str, length: int, pad: str = " ") -> str:
-        return value.center(length, pad[:1] if pad else " ")
+        short = max(0, length - len(value))
+        left = short // 2
+        return _fill(pad, left) + value + _fill(pad, short - left)
 
     @staticmethod
     def pad_left(value: str, length: int, pad: str = " ") -> str:
-        return value.rjust(length, pad[:1] if pad else " ")
+        return _fill(pad, max(0, length - len(value))) + value
 
     @staticmethod
     def pad_right(value: str, length: int, pad: str = " ") -> str:
-        return value.ljust(length, pad[:1] if pad else " ")
+        return value + _fill(pad, max(0, length - len(value)))
 
     @staticmethod
     def password(length: int = 32, letters: bool = True, numbers: bool = True, symbols: bool = True, spaces: bool = False) -> str:
@@ -425,7 +429,7 @@ class Str:
         for pattern, replacement in _PLURAL_RULES:
             if pattern.search(value):
                 return pattern.sub(replacement, value)
-        return value + "s"
+        return value + "s"  # pragma: no cover - the last rule matches anything
 
     @staticmethod
     def singular(value: str) -> str:
@@ -647,6 +651,59 @@ class Str:
         return "".join(chars)
 
     @staticmethod
+    def doesnt_start_with(haystack: str, needles: str | Iterable[str]) -> bool:
+        """Whether the string starts with none of the needles."""
+        return not Str.starts_with(haystack, needles)
+
+    @staticmethod
+    def doesnt_end_with(haystack: str, needles: str | Iterable[str]) -> bool:
+        """Whether the string ends with none of the needles."""
+        return not Str.ends_with(haystack, needles)
+
+    @staticmethod
+    def initials(value: str, separator: str = " ") -> str:
+        """The first letter of each word, as initials: ``Ada Lovelace`` -> ``A. L.``."""
+        words = [word for word in re.split(r"[\s]+", value.strip()) if word]
+        return separator.join(f"{word[0].upper()}." for word in words)
+
+    @staticmethod
+    def match(pattern: str, subject: str) -> str:
+        """The first match for the pattern, or the first capture group if there is one."""
+        found = re.search(pattern, subject)
+        if found is None:
+            return ""
+        return found.group(1) if found.groups() else found.group(0)
+
+    @staticmethod
+    def match_all(pattern: str, subject: str) -> list[str]:
+        """Every match for the pattern, or every first capture group."""
+        found = re.finditer(pattern, subject)
+        return [match.group(1) if match.groups() else match.group(0) for match in found]
+
+    @staticmethod
+    def is_match(pattern: str | Iterable[str], value: str) -> bool:
+        """Whether the string matches any of the given regular expressions."""
+        patterns = [pattern] if isinstance(pattern, str) else list(pattern)
+        return any(re.search(one, value) is not None for one in patterns)
+
+    @staticmethod
+    def ucwords(value: str, delimiters: str = " \t\r\n\f\v") -> str:
+        """Upper-case the first letter of every word, leaving the rest alone.
+
+        Unlike :meth:`title`, the remaining characters are untouched, so
+        ``McDonald`` survives.
+        """
+        result = list(value)
+        capitalise = True
+        for index, character in enumerate(result):
+            if capitalise and character not in delimiters:
+                result[index] = character.upper()
+                capitalise = False
+            elif character in delimiters:
+                capitalise = True
+        return "".join(result)
+
+    @staticmethod
     def markdown(value: str, *, options: dict[str, Any] | None = None) -> str:
         del options
         from avalon.mail.markdown import render_markdown_component
@@ -685,6 +742,14 @@ class Stringable:
             return self._value == other._value
         return self._value == other
 
+    def __hash__(self) -> int:
+        """Hash as the string does, so either can key the same dict entry."""
+        return hash(self._value)
+
+    def _new(self, value: Any) -> Self:
+        """A new instance, because a fluent call must not alter its subject."""
+        return type(self)(value)
+
     def value(self) -> str:
         return self._value
 
@@ -695,12 +760,10 @@ class Stringable:
         return self._value == str(value)
 
     def append(self, *values: str) -> Self:
-        self._value += "".join(values)
-        return self
+        return self._new(self._value + "".join(values))
 
     def prepend(self, *values: str) -> Self:
-        self._value = "".join(values) + self._value
-        return self
+        return self._new("".join(values) + self._value)
 
     def explode(self, delimiter: str) -> list[str]:
         return self._value.split(delimiter)
@@ -711,8 +774,7 @@ class Stringable:
         name = Path(self._value).name
         if suffix and name.endswith(suffix):
             name = name[: -len(suffix)]
-        self._value = name
-        return self
+        return self._new(name)
 
     def dirname(self, levels: int = 1) -> Self:
         from pathlib import Path
@@ -720,21 +782,22 @@ class Stringable:
         path = Path(self._value)
         for _ in range(max(1, levels)):
             path = path.parent
-        self._value = str(path)
-        return self
+        return self._new(str(path))
 
     def class_basename(self) -> Self:
         from avalon.support.helpers import class_basename
 
-        self._value = class_basename(self._value)
-        return self
+        return self._new(class_basename(self._value))
 
-    def when(self, condition: Any, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Self:
-        if condition:
-            callback(self)
-        elif default is not None:
-            default(self)
-        return self
+    def when(self, condition: Any, callback: Callable[[Self], Any] | None = None, default: Callable[[Self], Any] | None = None) -> Self:
+        """Apply a callback when the condition holds, otherwise the default."""
+        chosen = callback if condition else default
+        if chosen is None:
+            return self
+        result = chosen(self)
+        # A callback that returns nothing is treated as having done nothing,
+        # since a fluent call no longer alters its subject.
+        return result if result is not None else self
 
     def unless(self, condition: Any, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Self:
         return self.when(not condition, callback, default)
@@ -768,40 +831,31 @@ class Stringable:
         *,
         case_sensitive: bool = True,
     ) -> Self:
-        self._value = Str.replace(search, replace, self._value, case_sensitive=case_sensitive)
-        return self
+        return self._new(Str.replace(search, replace, self._value, case_sensitive=case_sensitive))
 
     def remove(self, search: str | Iterable[str], *, case_sensitive: bool = True) -> Self:
-        self._value = Str.remove(search, self._value, case_sensitive=case_sensitive)
-        return self
+        return self._new(Str.remove(search, self._value, case_sensitive=case_sensitive))
 
     def replace_array(self, search: str, replace: Sequence[str]) -> Self:
-        self._value = Str.replace_array(search, replace, self._value)
-        return self
+        return self._new(Str.replace_array(search, replace, self._value))
 
     def replace_first(self, search: str, replace: str) -> Self:
-        self._value = Str.replace_first(search, replace, self._value)
-        return self
+        return self._new(Str.replace_first(search, replace, self._value))
 
     def replace_last(self, search: str, replace: str) -> Self:
-        self._value = Str.replace_last(search, replace, self._value)
-        return self
+        return self._new(Str.replace_last(search, replace, self._value))
 
     def replace_start(self, search: str, replace: str) -> Self:
-        self._value = Str.replace_start(search, replace, self._value)
-        return self
+        return self._new(Str.replace_start(search, replace, self._value))
 
     def replace_end(self, search: str, replace: str) -> Self:
-        self._value = Str.replace_end(search, replace, self._value)
-        return self
+        return self._new(Str.replace_end(search, replace, self._value))
 
     def replace_matches(self, pattern: str, replace: str | Callable[[Any], str]) -> Self:
-        self._value = Str.replace_matches(pattern, replace, self._value)
-        return self
+        return self._new(Str.replace_matches(pattern, replace, self._value))
 
     def swap(self, map_: dict[str, str]) -> Self:
-        self._value = Str.swap(map_, self._value)
-        return self
+        return self._new(Str.swap(map_, self._value))
 
     def is_(self, pattern: str | Iterable[str]) -> bool:
         return Str.is_(pattern, self._value)
@@ -821,6 +875,60 @@ class Stringable:
     def ends_with(self, needles: str | Iterable[str]) -> bool:
         return Str.ends_with(self._value, needles)
 
+    def new_line(self, count: int = 1) -> Self:
+        """Append newlines."""
+        return self._new(self._value + "\n" * count)
+
+    def strip_tags(self, allowed: str = "") -> Self:
+        """Remove HTML and XML tags, keeping the text between them."""
+        import re as _re
+
+        keep = {tag.strip().lower() for tag in allowed.split(",") if tag.strip()}
+        if not keep:
+            return self._new(_re.sub(r"<[^>]*>", "", self._value))
+
+        def drop(match: _re.Match[str]) -> str:
+            name = _re.match(r"</?\s*([a-zA-Z0-9]+)", match.group(0))
+            return match.group(0) if name and name.group(1).lower() in keep else ""
+
+        return self._new(_re.sub(r"<[^>]*>", drop, self._value))
+
+    def split(self, pattern: str, limit: int = 0) -> list[str]:
+        """Split on a regular expression."""
+        import re as _re
+
+        return _re.split(pattern, self._value, maxsplit=limit)
+
+    def test(self, pattern: str) -> bool:
+        """Whether the string matches the regular expression."""
+        return Str.is_match(pattern, self._value)
+
+    def to_base(self) -> Self:
+        """Base64-encode the string."""
+        return self._new(Str.to_base64(self._value))
+
+    def from_base(self) -> Self:
+        """Base64-decode the string."""
+        return self._new(Str.from_base64(self._value))
+
+    def hash(self, driver: str | None = None) -> Self:
+        """Hash the string with the application's hasher."""
+        from avalon.hashing import Hash
+
+        return self._new(Hash.make(self._value) if driver is None else Hash.driver(driver).make(self._value))
+
+    def encrypt(self) -> Self:
+        """Encrypt the string with the application key."""
+        from avalon.encryption.facade import Crypt
+
+        return self._new(Crypt.encrypt_string(self._value))
+
+    def decrypt(self) -> Self:
+        """Decrypt a string encrypted with the application key."""
+        from avalon.encryption.facade import Crypt
+
+        return self._new(Crypt.decrypt_string(self._value))
+
     def dd(self) -> None:  # pragma: no cover - debug helper
         from avalon.debug import dd
 
@@ -833,109 +941,110 @@ class Stringable:
         return self
 
 
-def _proxy(name: str) -> Callable[..., Any]:
-    str_method = getattr(Str, name)
+#: Parameter names ``Str`` uses for the string being operated on. The subject is
+#: not always the first argument — ``Str.replace(search, replace, subject)`` —
+#: so delegation binds it by name rather than by position.
+_SUBJECT_PARAMETERS = frozenset(
+    {"value", "subject", "haystack", "title", "text", "string"}
+)
+
+#: The conditional shortcuts Laravel puts on ``Stringable``, as name -> test.
+_WHEN_TESTS: dict[str, Callable[[Stringable, tuple[Any, ...]], bool]] = {
+    "when_contains": lambda s, a: s.contains(*a),
+    "when_contains_all": lambda s, a: s.contains_all(*a),
+    "when_empty": lambda s, a: s.is_empty(),
+    "when_not_empty": lambda s, a: s.is_not_empty(),
+    "when_starts_with": lambda s, a: s.starts_with(*a),
+    "when_ends_with": lambda s, a: s.ends_with(*a),
+    "when_doesnt_start_with": lambda s, a: s.doesnt_start_with(*a),
+    "when_doesnt_end_with": lambda s, a: s.doesnt_end_with(*a),
+    "when_exactly": lambda s, a: s.exactly(*a),
+    "when_not_exactly": lambda s, a: not s.exactly(*a),
+    "when_is": lambda s, a: s.is_(*a),
+    "when_is_ascii": lambda s, a: s.is_ascii(),
+    "when_is_ulid": lambda s, a: s.is_ulid(),
+    "when_is_uuid": lambda s, a: s.is_uuid(),
+    "when_test": lambda s, a: s.test(*a),
+}
+
+
+def _delegate(name: str, str_method: Callable[..., Any]) -> Callable[..., Any]:
+    """Wrap a ``Str`` function as a fluent ``Stringable`` method."""
+    try:
+        parameters = inspect.signature(str_method).parameters
+    except (TypeError, ValueError):  # pragma: no cover - builtins only
+        parameters = {}
+    subject = next((n for n in parameters if n in _SUBJECT_PARAMETERS), None)
 
     def method(self: Stringable, *args: Any, **kwargs: Any) -> Any:
-        import inspect
-
-        try:
-            params = list(inspect.signature(str_method).parameters)
-        except (TypeError, ValueError):  # pragma: no cover
-            params = []
-        subject_first = bool(params) and params[0] in {
-            "value",
-            "subject",
-            "haystack",
-            "title",
-            "text",
-            "array",
-        }
-        if subject_first:
-            result = str_method(self._value, *args, **kwargs)
-        elif not params:  # pragma: no cover
-            result = str_method()
-        else:  # pragma: no cover
+        if subject is None:  # pragma: no cover - constructors like `uuid`
             result = str_method(*args, **kwargs)
-        if isinstance(result, str):
-            self._value = result
-            return self
-        return result  # pragma: no cover
+        else:
+            call = {subject: self._value}
+            positional = [
+                n
+                for n, p in parameters.items()
+                if n != subject and p.kind is not inspect.Parameter.KEYWORD_ONLY
+            ]
+            call.update(dict(zip(positional, args, strict=False)))
+            call.update(kwargs)
+            result = str_method(**call)
+        return self._new(result) if isinstance(result, str) else result
 
     method.__name__ = name
+    method.__doc__ = str_method.__doc__
     return method
 
 
-for _name in (
-    "after",
-    "after_last",
-    "apa",
-    "ascii",
-    "before",
-    "before_last",
-    "between",
-    "between_first",
-    "camel",
-    "char_at",
-    "chop_end",
-    "chop_start",
-    "deduplicate",
-    "excerpt",
-    "finish",
-    "headline",
-    "inline_markdown",
-    "is_ascii",
-    "is_json",
-    "is_ulid",
-    "is_url",
-    "is_uuid",
-    "kebab",
-    "lcfirst",
-    "length",
-    "limit",
-    "lower",
-    "ltrim",
-    "markdown",
-    "mask",
-    "pad_both",
-    "pad_left",
-    "pad_right",
-    "plural",
-    "plural_studly",
-    "position",
-    "repeat",
-    "reverse",
-    "rtrim",
-    "singular",
-    "slug",
-    "snake",
-    "squish",
-    "start",
-    "studly",
-    "substr",
-    "substr_count",
-    "substr_replace",
-    "take",
-    "title",
-    "to_base64",
-    "transliterate",
-    "trim",
-    "ucfirst",
-    "ucsplit",
-    "unwrap",
-    "upper",
-    "word_count",
-    "word_wrap",
-    "words",
-    "wrap",
-):
-    if not hasattr(Stringable, _name):
-        setattr(Stringable, _name, _proxy(_name))
+def _install_delegates() -> None:
+    """Give ``Stringable`` every ``Str`` method it does not define itself.
+
+    Laravel's fluent strings are the same surface as the static ones, so listing
+    them by hand only creates a way for the two to drift.
+    """
+    for name in dir(Str):
+        if name.startswith("_") or hasattr(Stringable, name):
+            continue
+        member = inspect.getattr_static(Str, name)
+        if isinstance(member, staticmethod):
+            setattr(Stringable, name, _delegate(name, getattr(Str, name)))
+
+
+def _install_when_tests() -> None:
+    """Install the ``when_*`` conditional shortcuts."""
+    for name, test in _WHEN_TESTS.items():
+
+        def shortcut(
+            self: Stringable,
+            *args: Any,
+            _test: Callable[..., bool] = test,
+            **kwargs: Any,
+        ) -> Any:
+            callback = kwargs.pop("callback", None)
+            default = kwargs.pop("default", None)
+            arguments = list(args)
+            # The callback is the last positional argument; whatever precedes it
+            # belongs to the test.
+            if callback is None and arguments and callable(arguments[-1]):
+                callback = arguments.pop()
+            if default is None and arguments and callable(arguments[-1]):
+                callback, default = arguments.pop(), callback
+            return self.when(_test(self, tuple(arguments)), callback, default)
+
+        shortcut.__name__ = name
+        setattr(Stringable, name, shortcut)
 
 
 def str_(value: Any = "") -> Stringable:
     """Laravel ``str()`` helper."""
     return Str.of(value)
+
+
+def _fill(pad: str, width: int) -> str:
+    """``width`` characters of ``pad``, repeating and then cutting it short."""
+    if width <= 0 or not pad:
+        return ""
+    return (pad * (width // len(pad) + 1))[:width]
 
 
 def _match_case(source: str, target: str) -> str:
@@ -980,5 +1089,14 @@ Str.fromBase64 = Str.from_base64  # type: ignore[attr-defined]
 Str.wordCount = Str.word_count  # type: ignore[attr-defined]
 Str.wordWrap = Str.word_wrap  # type: ignore[attr-defined]
 Str.inlineMarkdown = Str.inline_markdown  # type: ignore[attr-defined]
+Str.doesntStartWith = Str.doesnt_start_with  # type: ignore[attr-defined]
+Str.doesntEndWith = Str.doesnt_end_with  # type: ignore[attr-defined]
+Str.matchAll = Str.match_all  # type: ignore[attr-defined]
+Str.isMatch = Str.is_match  # type: ignore[attr-defined]
 # ``is`` is reserved in Python — expose Laravel name via getattr-friendly alias.
 setattr(Str, "is", Str.is_)
+
+# Installed last, so the camelCase aliases above are already in place and get
+# skipped: the fluent surface uses Python names only.
+_install_delegates()
+_install_when_tests()

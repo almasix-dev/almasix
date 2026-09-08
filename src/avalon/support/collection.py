@@ -15,11 +15,14 @@ _macros: dict[str, Callable[..., Any]] = {}
 
 
 def data_get(target: Any, key: str | None, default: Any = None) -> Any:
-    """Dot-notation get (Laravel ``data_get`` subset used by collections)."""
+    """Dot-notation get, including ``*`` wildcards (Laravel ``data_get``)."""
     if key is None:
         return target
+    segments = str(key).split(".")
+    if "*" in segments:
+        return _data_get_wildcard(target, segments, default)
     current = target
-    for segment in str(key).split("."):
+    for segment in segments:
         if current is None:
             return default
         if isinstance(current, Mapping):
@@ -40,6 +43,28 @@ def data_get(target: Any, key: str | None, default: Any = None) -> Any:
             else:
                 return default
     return current
+
+
+def _data_get_wildcard(target: Any, segments: list[str], default: Any) -> Any:
+    """Collect every branch a ``*`` segment fans out to."""
+    star = segments.index("*")
+    before, after = segments[:star], segments[star + 1 :]
+    branch = data_get(target, ".".join(before), None) if before else target
+    if isinstance(branch, Mapping):
+        items: Any = list(branch.values())
+    elif isinstance(branch, Sequence) and not isinstance(branch, (str, bytes)):
+        items = list(branch)
+    else:
+        return default
+    if not after:
+        return items
+    collected = [data_get(item, ".".join(after), None) for item in items]
+    collected = [item for item in collected if item is not None]
+    if "*" not in after:
+        return collected
+    # A second wildcard collapses one level, as Laravel's does; every branch
+    # reached past a wildcard is itself a list.
+    return [inner for branch_items in collected for inner in branch_items]
 
 
 def value_get(item: Any, key: str | Callable[[Any], Any] | None) -> Any:

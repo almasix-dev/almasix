@@ -266,20 +266,44 @@ def rescue(
         return value(rescue_with, exc) if callable(rescue_with) else rescue_with
 
 
-def report_exception(exc: BaseException) -> None:
+def report(exc: BaseException) -> None:
+    """Report an exception through the handler without raising (Laravel ``report``)."""
+    handler = _exception_handler()
+    if handler is not None:
+        handler.report(exc)
+        return
+
     import sys
 
     print(f"[report] {type(exc).__name__}: {exc}", file=sys.stderr)
 
 
+def _exception_handler() -> Any:
+    """Return the application's exception handler, or ``None`` when unbooted."""
+    from avalon.framework.helpers import current_application
+
+    application = current_application()
+    if application is None:
+        return None
+    from avalon.exceptions.handler import Handler
+
+    if application.container.bound(Handler):
+        return application.make(Handler)
+    return Handler(application)
+
+
+# Laravel names the helper ``report``; the older name stays as an alias.
+report_exception = report
+
+
 def report_if(condition: Any, exc: BaseException) -> None:
     if condition:
-        report_exception(exc)
+        report(exc)
 
 
 def report_unless(condition: Any, exc: BaseException) -> None:
     if not condition:
-        report_exception(exc)
+        report(exc)
 
 
 def class_basename(class_or_object: Any) -> str:
@@ -398,4 +422,9 @@ def storage_path(*paths: str) -> str:
 def _app_base() -> str:
     from pathlib import Path
 
+    from avalon.framework.helpers import current_application
+
+    application = current_application()
+    if application is not None:
+        return str(application.base_path)
     return str(Path.cwd())
