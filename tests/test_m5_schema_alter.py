@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 from sqlalchemy.dialects import mysql, postgresql
 
-from avalon.orm import Schema, SchemaError
-from avalon.orm.facade import DB
-from avalon.orm.schema import Blueprint, compile_table_statements
+from almasix.orm import Schema, SchemaError
+from almasix.orm.facade import DB
+from almasix.orm.schema import Blueprint, compile_table_statements
 from tests.orm_support import memory_db  # noqa: F401
 
 pytestmark = pytest.mark.asyncio

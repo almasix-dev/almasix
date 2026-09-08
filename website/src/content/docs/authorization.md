@@ -6,15 +6,15 @@ description: Gates, policies, auto-discovery, custom abilities, @can, and the ca
 ## Introduction
 
 Authentication answers *who* the user is. **Authorization** answers *what they
-may do*. Avalon ships Laravel-shaped Gates and Policies on `avalon.auth`:
+may do*. Almasix ships Laravel-shaped Gates and Policies on `almasix.auth`:
 
 ```python
-from avalon.auth import Gate, Policy, authorize
+from almasix.auth import Gate, Policy, authorize
 ```
 
 Register abilities in a provider `boot()` method (typically
 `app/providers/app_service_provider.py`) after the kernel boots. Checks are
-synchronous so they work in controllers, Form Requests, and Caliburn templates.
+synchronous so they work in controllers, Form Requests, and Prism templates.
 
 ## Where the files live
 
@@ -22,12 +22,12 @@ synchronous so they work in controllers, Form Requests, and Caliburn templates.
 | --- | --- |
 | Register gates / policies | `app/providers/app_service_provider.py` (`boot()`) |
 | User model (`can` / `cannot`) | `app/models/user.py` — `AuthenticatableMixin` already includes `Authorizable` |
-| Policy classes | `app/policies/<model>_policy.py` (created by `grail make:policy`) |
+| Policy classes | `app/policies/<model>_policy.py` (created by `smith make:policy`) |
 | Models | `app/models/<model>.py` |
 | Controllers | `app/http/controllers/…` |
 | Form requests | `app/http/requests/…` |
 | Route `can` middleware | `routes/web.py` / `routes/api.py` |
-| Caliburn `@can` | `resources/views/….cal.html` |
+| Prism `@can` | `resources/views/….prism.html` |
 | Alias `can` | `bootstrap/app.py` (installer wires `can` → `Authorize`) |
 
 ## Gates
@@ -37,8 +37,8 @@ a model module — so the bound `Gate` façade exists:
 
 ```python
 # app/providers/app_service_provider.py
-from avalon.auth import Gate
-from avalon.providers.provider import ServiceProvider
+from almasix.auth import Gate
+from almasix.providers.provider import ServiceProvider
 
 class AppServiceProvider(ServiceProvider):
     def boot(self) -> None:
@@ -122,7 +122,7 @@ request user.
 Policies group abilities for a model. Generate a stub:
 
 ```bash
-grail make:policy PostPolicy --model=Post --resource
+smith make:policy PostPolicy --model=Post --resource
 # writes app/policies/post_policy.py
 ```
 
@@ -131,7 +131,7 @@ grail make:policy PostPolicy --model=Post --resource
 
 ```python
 # app/policies/post_policy.py
-from avalon.auth import Policy
+from almasix.auth import Policy
 from app.models.post import Post
 
 class PostPolicy(Policy):
@@ -161,7 +161,7 @@ class PostPolicy(Policy):
 
 ```python
 # app/providers/app_service_provider.py
-from avalon.auth import Gate
+from almasix.auth import Gate
 from app.models.post import Post
 from app.policies.post_policy import PostPolicy
 
@@ -176,7 +176,7 @@ class AppServiceProvider(ServiceProvider):
 
 ### Auto-discovery (if you skip `Gate.policy`)
 
-When Avalon authorizes against a model and no mapping exists, it **guesses** a
+When Almasix authorizes against a model and no mapping exists, it **guesses** a
 policy class, in order:
 
 1. The model's `policy` attribute, if it is a class:
@@ -311,7 +311,7 @@ Route.put("/posts/{post}", [PostController, "update"]).can("update", "post")
 
 Pass a class path for class-based abilities: `can:create,app.models.post.Post`.
 
-## Caliburn
+## Prism
 
 ```html
 @can('update', post)
@@ -334,7 +334,7 @@ Pass a class path for class-based abilities: `can:create,app.models.post.Post`.
 ## Testing
 
 ```python
-from avalon.auth import Gate, AuthorizationException
+from almasix.auth import Gate, AuthorizationException
 
 Gate.flush()
 Gate.define("ping", lambda user: True)

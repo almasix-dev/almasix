@@ -3,13 +3,13 @@ title: Articulate — Getting Started
 description: Define Active Record models and work with your database records.
 ---
 
-**Articulate** is Avalon's Active Record ORM. Each database table has a corresponding model used to query and persist rows, with first-class `async`/`await`.
+**Articulate** is Almasix's Active Record ORM. Each database table has a corresponding model used to query and persist rows, with first-class `async`/`await`.
 
-Every persistence and read method is **`await`ed** — Avalon is async-first for ASGI.
+Every persistence and read method is **`await`ed** — Almasix is async-first for ASGI.
 
 ```python
 # app/models/flight.py
-from avalon.orm import Model, relation
+from almasix.orm import Model, relation
 
 class Flight(Model):
     fillable = ("name", "airline_id")
@@ -22,11 +22,11 @@ class Flight(Model):
 flights = await Flight.query().with_("airline").where("active", True).get()
 ```
 
-Generate a model (and optionally a migration) with Grail:
+Generate a model (and optionally a migration) with Smith:
 
 ```bash
-grail make:model Flight
-grail make:model Flight -m
+smith make:model Flight
+smith make:model Flight -m
 ```
 
 ## Articulate model conventions
@@ -51,7 +51,7 @@ Mix in `HasUuids` for time-ordered (version 7) UUID keys, or `HasUlids` for 26-c
 
 ```python
 # app/models/article.py
-from avalon.orm import HasUuids, Model
+from almasix.orm import HasUuids, Model
 
 
 class Article(HasUuids, Model):
@@ -73,7 +73,7 @@ class Article(HasUuids, Model):
         return ("id", "public_id")
 ```
 
-`ordered_uuid()` and `ulid()` are also importable from `avalon.orm` if you need a value outside a model.
+`ordered_uuid()` and `ulid()` are also importable from `almasix.orm` if you need a value outside a model.
 
 ### Timestamps
 
@@ -132,7 +132,7 @@ Two checks are off by default because they are stricter than most apps want in p
 
 ```python
 # app/providers/app_service_provider.py
-from avalon.orm import Model
+from almasix.orm import Model
 
 
 class AppServiceProvider(ServiceProvider):
@@ -146,7 +146,7 @@ class AppServiceProvider(ServiceProvider):
 | `prevent_accessing_missing_attributes()` | Reading a column a persisted model never selected raises `MissingAttributeError` |
 | `should_be_strict()` | Both of the above |
 
-Lazy loading is already strict in Avalon: unloaded relation access raises unless you opt in, so there is no third switch.
+Lazy loading is already strict in Almasix: unloaded relation access raises unless you opt in, so there is no third switch.
 
 Missing-attribute checks apply only to models that came from the database — a model you are still building reads as `None`. Pass a default to opt out for one read: `user.get_attribute("bio", "")`.
 
@@ -166,7 +166,7 @@ Known cast names: `int`, `float`, `string`, `bool`, `decimal[:scale]`, `json` / 
 
 ```python
 # app/models/user.py
-from avalon.orm import Attribute
+from almasix.orm import Attribute
 
 class User(Model):
     name = Attribute(get=lambda value: value.title(), set=lambda value: value.strip())
@@ -204,11 +204,11 @@ Quiet writes are scoped to that one instance, so a concurrent request keeps its 
 
 ## Pruning models
 
-Mix in `Prunable` and declare which rows are stale. `grail model:prune` deletes them:
+Mix in `Prunable` and declare which rows are stale. `smith model:prune` deletes them:
 
 ```python
 # app/models/flight.py
-from avalon.orm import Model, Prunable
+from almasix.orm import Model, Prunable
 
 
 class Flight(Prunable, Model):
@@ -223,11 +223,11 @@ class Flight(Prunable, Model):
 `MassPrunable` deletes in bulk instead, which is far faster on large tables but skips `pruning()` since no models are loaded.
 
 ```bash
-grail model:prune
-grail model:prune --pretend            # report counts, delete nothing
-grail model:prune --model=Flight
-grail model:prune --except=Flight
-grail model:prune --chunk=500
+smith model:prune
+smith model:prune --pretend            # report counts, delete nothing
+smith model:prune --model=Flight
+smith model:prune --except=Flight
+smith model:prune --chunk=500
 ```
 
 Models are discovered from `app/models`. Schedule it in `routes/console.py` to run daily — see [Task Scheduling](/scheduling/).
@@ -272,7 +272,7 @@ Prefer the `*_by_id` variants when the callback updates the column being ordered
 | Relations | **Off by default** on attribute access. Unloaded `user.posts` raises. Opt in with `lazy_relations = True` so `await user.posts` loads; or use `with_` / `await user.posts().get()` |
 | `where` | `where("col", val)` or `where("col", ">", val)` — two-arg form is **only** the `=` shortcut |
 | Mass assignment | `MassAssignmentError` |
-| Migrations | `grail migrate` |
+| Migrations | `smith migrate` |
 
 :::tip[N+1 safety]
 Failing loud on unloaded relations is the default. Prefer `with_` / `load` on list

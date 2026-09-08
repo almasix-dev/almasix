@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from avalon.grail.make import BLUEPRINTS
-from avalon.http import redirect
-from avalon.installer.scaffold import scaffold_app
-from avalon.routing import UrlGenerator, asset, url
-from avalon.validation import Field, FormRequest, ValidationException
+from almasix.http import redirect
+from almasix.installer.scaffold import scaffold_app
+from almasix.routing import UrlGenerator, asset, url
+from almasix.smith.make import BLUEPRINTS
+from almasix.validation import Field, FormRequest, ValidationException
 
 pytestmark = [pytest.mark.regression]
 

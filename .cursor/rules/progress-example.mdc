@@ -5,18 +5,18 @@ alwaysApply: true
 
 # The progress example app is part of every feature
 
-`examples/progress` is Avalon's living proof. A feature is not finished until
+`examples/progress` is Almasix's living proof. A feature is not finished until
 the example app shows it. When you ship or extend a milestone, update all four:
 
 1. **The board** — `examples/progress/app/http/controllers/progress_controller.py`,
    in `_milestones()`. Set the `status` (`complete` / `partial` / `planned`) and
    write `proof` entries that name something a reader can actually run — a route
-   like `/api/orm` or a command like `grail progress:helpers`, not a claim.
-2. **The demonstration** — a `grail progress:*` command in
+   like `/api/orm` or a command like `smith progress:helpers`, not a claim.
+2. **The demonstration** — a `smith progress:*` command in
    `examples/progress/app/console/commands/`, or a route, that exercises the new
    surface. Extend the milestone's existing demo rather than adding a second one.
 3. **`examples/progress/README.md`** — the per-milestone proof table, the CLI
-   list, and the "Growing with Avalon" paragraph that says which milestones are
+   list, and the "Growing with Almasix" paragraph that says which milestones are
    closed.
 4. **A smoke test** — in `tests/smoke/test_m<NN>_smoke.py`: run the demo command
    and assert its output, and assert the board marks the milestone complete with

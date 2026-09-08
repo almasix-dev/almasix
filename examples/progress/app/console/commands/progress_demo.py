@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from avalon.console import Command
-from avalon.mail import Attachment, Content, Envelope, Mail, Mailable, ShouldQueue
-from avalon.notifications import MustVerifyEmail, Notifiable, ResetPasswordNotification
-from avalon.queue import Job, ShouldQueue as QueueShouldQueue, dispatch
+from almasix.console import Command
+from almasix.mail import Attachment, Content, Envelope, Mail, Mailable, ShouldQueue
+from almasix.notifications import MustVerifyEmail, Notifiable, ResetPasswordNotification
+from almasix.queue import Job, ShouldQueue as QueueShouldQueue, dispatch
 
 
 class ProgressDigestJob(QueueShouldQueue, Job):
-    """Demo job processed by ``python grail queue:work`` (database) or sync."""
+    """Demo job processed by ``python smith queue:work`` (database) or sync."""
 
     tries = 2
 
@@ -62,7 +62,7 @@ class ProgressDemoCommand(Command):
 
         asyncio.run(dispatch(ProgressDigestJob("progress:demo")))
         self.info("Dispatched ProgressDigestJob (sync connection runs immediately).")
-        self.comment("With QUEUE_CONNECTION=database: python grail queue:work --once")
+        self.comment("With QUEUE_CONNECTION=database: python smith queue:work --once")
 
     def _demo_mail(self) -> None:
         Mail.to("demo@progress.test").send(WelcomeMail("Progress"))

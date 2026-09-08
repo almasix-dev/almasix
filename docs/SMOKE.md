@@ -40,21 +40,21 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `avalon version` | Exit 0, `Avalon 0.1.0` |
-| S2 | `avalon new <app>` | Tree with `grail`, `bootstrap/app.py`, controllers |
+| S1 | `almasix version` | Exit 0, `Almasix 0.1.0` |
+| S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
-| S5 | Grail `version` | Exit 0 |
+| S5 | Smith `version` | Exit 0 |
 | S6 | `serve` without bootstrap | Exit 1 |
 | S7 | `serve` with scaffold | Calls Uvicorn `bootstrap.app:asgi` |
 
 ### Manual (once per M0 cut)
 
 ```bash
-avalon new smoke_blog --path /tmp
+almasix new smoke_blog --path /tmp
 cd /tmp/smoke_blog
-pip install -e /path/to/avalon && pip install -e .
-python grail serve
+pip install -e /path/to/almasix && pip install -e .
+python smith serve
 curl -s http://127.0.0.1:3000/
 rm -rf /tmp/smoke_blog
 ```
@@ -80,11 +80,11 @@ Automated: `tests/smoke/test_m1_smoke.py` + `tests/regression/test_m1_contracts.
 ### Manual (once per M1 cut)
 
 ```bash
-avalon new kernel_blog --path /tmp
+almasix new kernel_blog --path /tmp
 cd /tmp/kernel_blog
-pip install -e /path/to/avalon && pip install -e .
-python -c "from avalon.framework import Application; a=Application('.').bootstrap(); print(a.config.get('app.name'), a.is_booted)"
-python grail serve
+pip install -e /path/to/almasix && pip install -e .
+python -c "from almasix.framework import Application; a=Application('.').bootstrap(); print(a.config.get('app.name'), a.is_booted)"
+python smith serve
 curl -s http://127.0.0.1:3000/
 ```
 
@@ -105,7 +105,7 @@ Automated: `tests/smoke/test_m2_smoke.py` + `tests/regression/test_m2_contracts.
 | ID | Check | Expected |
 | --- | --- | --- |
 | H1 | Scaffold `routes/web.py` | Uses `Route.get`; bootstrap has `application.asgi`, no `fastapi` import |
-| H2 | Scaffolded app `GET /` | 200 **HTML** (`text/html`) via Avalon router/controllers |
+| H2 | Scaffolded app `GET /` | 200 **HTML** (`text/html`) via Almasix router/controllers |
 | H3 | Groups + middleware | Nested prefixes concatenate; middleware accumulates outer→inner |
 | H4 | `HttpException` (API) | JSON `{message, status}`, **with route middleware headers applied** |
 | H5 | `Request` bag | `all`/`input`/`query`/`post`/`only`/`except_`/`route`; body wins over query |
@@ -115,17 +115,17 @@ Automated: `tests/smoke/test_m2_smoke.py` + `tests/regression/test_m2_contracts.
 
 ### Manual (once per M2 cut)
 
-From `examples/progress` after `python grail serve` (see that app’s README for the full checklist):
+From `examples/progress` after `python smith serve` (see that app’s README for the full checklist):
 
 ```bash
 BASE=http://127.0.0.1:3000
 curl -si "$BASE/" | head -n 20                   # text/html
 curl -si "$BASE/progress" | head -n 20           # text/html
-curl -si "$BASE/api/health" | head -n 20         # application/json + X-Avalon-Demo
+curl -si "$BASE/api/health" | head -n 20         # application/json + X-Almasix-Demo
 curl -s "$BASE/api/items/42?q=hello" -H "Authorization: Bearer secret" | python -m json.tool
 curl -s -X POST "$BASE/api/bag?q=1" -H "Content-Type: application/json" -d '{"name":"bag","q":"body"}' | python -m json.tool
 curl -s "$BASE/api/di" | python -m json.tool
-curl -s -X POST "$BASE/api/items" -H "Content-Type: application/json" -d '{"name":"avalon"}' | python -m json.tool
+curl -s -X POST "$BASE/api/items" -H "Content-Type: application/json" -d '{"name":"almasix"}' | python -m json.tool
 curl -s -X POST "$BASE/api/items" -H "Content-Type: application/json" -d '{}'   # 422 JSON
 curl -s "$BASE/api/boom"                         # 418 JSON {message,status}
 ```
@@ -149,23 +149,23 @@ Automated: `tests/smoke/test_m3_smoke.py` + `tests/regression/test_m3_contracts.
 | V1 | `make:controller/middleware/provider/request` | Files land in Python snake_case dirs (`app/http/controllers/…`), importable (`__init__.py` created), `--force` + duplicate guard |
 | V2 | FormRequest injection | Validation runs before the action; the action never sees invalid input |
 | V3 | Failure envelope | 422 `{message: "The given data was invalid.", status, errors}` — the locked M2 shape |
-| V4 | Message wording | `required` / `min` / `max` / `boolean` / `array` use Avalon’s default copy; `attributes()` + `messages()` override |
+| V4 | Message wording | `required` / `min` / `max` / `boolean` / `array` use Almasix’s default copy; `attributes()` + `messages()` override |
 | V5 | `authorize()` false | 403 `{message: "This action is unauthorized.", status}` |
 | V6 | `url()` / `asset()` / `redirect()` | Every link carries `APP_BASE_PATH`; absolute URLs pass through untouched |
 | V7 | Generated app under a subpath | Welcome page emits `/apps/x/api/health`, never `/api/health` |
 
 ### Manual (once per M3 cut)
 
-From `examples/progress` after `python grail serve`:
+From `examples/progress` after `python smith serve`:
 
 ```bash
 BASE=http://127.0.0.1:3000
 curl -s -X POST "$BASE/api/items" -H 'Content-Type: application/json' \
-  -d '{"name":"avalon","count":"3","flag":"true"}' | python -m json.tool   # coerced types
+  -d '{"name":"almasix","count":"3","flag":"true"}' | python -m json.tool   # coerced types
 curl -s -X POST "$BASE/api/items" -H 'Content-Type: application/json' \
   -d '{"name":"a","count":0,"tags":"nope"}' | python -m json.tool          # 422 messages
 curl -s -X POST "$BASE/api/items" -H 'Content-Type: application/json' \
-  -H 'X-Demo-Forbid: 1' -d '{"name":"avalon"}' | python -m json.tool       # 403 authorize()
+  -H 'X-Demo-Forbid: 1' -d '{"name":"almasix"}' | python -m json.tool       # 403 authorize()
 
 # Subpath links: set APP_BASE_PATH=/apps/progress in .env, restart, then
 # open http://127.0.0.1:3000/apps/progress/ (site root redirects there).
@@ -174,7 +174,7 @@ curl -s -L "$BASE/" | grep -o 'href="[^"]*"'    # every link prefixed with /apps
 curl -si "$BASE/apps/progress/api/health" | head -n 15
 ```
 
-With `APP_BASE_PATH` set, `grail serve` mounts the app under that prefix and redirects `/` → `{base}/`.
+With `APP_BASE_PATH` set, `smith serve` mounts the app under that prefix and redirects `/` → `{base}/`.
 
 ### M3 exit criteria
 
@@ -200,9 +200,9 @@ Manual (from `examples/progress`):
 ```bash
 curl -sH 'Accept-Language: en' 'http://127.0.0.1:3000/api/locale?count=2'
 curl -sH 'Accept-Language: sw' 'http://127.0.0.1:3000/api/locale?count=1&name=Ada'
-python grail lang:publish
-python grail make:lang fr
-python grail lang:missing --locale fr
+python smith lang:publish
+python smith make:lang fr
+python smith lang:missing --locale fr
 ```
 
 ### M4 exit criteria
@@ -231,12 +231,12 @@ Manual (from `examples/progress`):
 curl -s http://127.0.0.1:3000/api/orm | python -m json.tool
 curl -s http://127.0.0.1:3000/api/posts
 curl -s http://127.0.0.1:3000/api/users
-python grail make:model Post -m
-python grail make:migration create_widgets_table
-python grail make:migration add_slug_to_posts_table
-python grail make:seeder UserSeeder
-python grail migrate --seed
-python grail db:seed
+python smith make:model Post -m
+python smith make:migration create_widgets_table
+python smith make:migration add_slug_to_posts_table
+python smith make:seeder UserSeeder
+python smith migrate --seed
+python smith db:seed
 ```
 
 ### M5 exit criteria
@@ -252,7 +252,7 @@ python grail db:seed
 
 ---
 
-## M6 — Caliburn
+## M6 — Prism
 
 Automated:
 
@@ -263,8 +263,8 @@ pytest -q tests/test_m6_*.py
 
 ### M6 exit criteria
 
-- [x] Caliburn full surface + progress Caliburn-first
-- [x] Coverage 100% on `avalon.caliburn`; suite ≥ 98%
+- [x] Prism full surface + progress Prism-first
+- [x] Coverage 100% on `almasix.prism`; suite ≥ 98%
 - [x] No M7 work until this gate passes
 
 ---
@@ -292,7 +292,7 @@ curl -sH 'Authorization: Bearer demo' http://127.0.0.1:3000/api/me
 - [x] Session + token guards: `attempt` / `login` / `logout` / remember-me Set-Cookie / rehash-on-login
 - [x] `auth` / `auth:guard` / `guest` / `password.confirm` / `auth.basic` / `auth.start`
 - [x] `Hash` (bcrypt + optional argon2id); `Password` broker; auth events; `Request.user()`
-- [x] Caliburn `@csrf` / `@auth` / `@guest` wired via AuthServiceProvider
+- [x] Prism `@csrf` / `@auth` / `@guest` wired via AuthServiceProvider
 - [x] Progress login demo + Authentication / Hashing / Passwords / Session / CSRF docs
 - [x] Coverage ≥ 98%
 - [x] No M8 work until this gate passes (gate now met — M8 unblocked)
@@ -307,7 +307,7 @@ curl -sH 'Authorization: Bearer demo' http://127.0.0.1:3000/api/me
 - [x] Unmatched routes: path polarity (`/api/*` JSON, else HTML 404)
 - [x] `errors:publish` + default/tailwind/bootstrap bundles (CDN-free); production error views
 - [x] `config/logging.py` + `log()` / `with_()` context; `report()` writes through channels
-- [x] Error catalog `lang/en/errors.py`; Caliburn-off HTML fallback
+- [x] Error catalog `lang/en/errors.py`; Prism-off HTML fallback
 - [x] Progress `/boom` (HTML) + `/api/explode` (JSON); Error Handling / Logging docs
 - [x] Smoke `tests/smoke/test_m8_smoke.py`; coverage ≥ 98% (exceptions + log aim 100%)
 - [x] No M9 work until this gate passes
@@ -326,22 +326,22 @@ make test-cov
 Manual (from `examples/progress`):
 
 ```bash
-grail progress:hello Avalon
-grail list
-grail schedule:run
-grail fiddle   # aliases: tinker, repl — interactive; Ctrl-D to exit
+smith progress:hello Almasix
+smith list
+smith schedule:run
+smith loupe   # aliases: tinker, repl — interactive; Ctrl-D to exit
 ```
 
 ### M9 exit criteria
 
-- [x] `Command` base + discovery; `grail list` / `make:command` / `inspire`
-- [x] Avalon Prompts (`text`/`select`/`confirm`/`spin`/`progress` + ask/choice)
+- [x] `Command` base + discovery; `smith list` / `make:command` / `inspire`
+- [x] Almasix Prompts (`text`/`select`/`confirm`/`spin`/`progress` + ask/choice)
 - [x] `dump()` / `dd()` (Rich CLI + web HTML / api JSON; `/dd` · `/api/dd`)
 - [x] Schedule DSL + `schedule:run` / `schedule:work` + filesystem mutex
 - [x] Console exceptions report through M8 Handler
-- [x] `grail fiddle` REPL (aliases: `tinker`, `repl`; IPython → ptpython → Rich fallback)
+- [x] `smith loupe` REPL (aliases: `tinker`, `repl`; IPython → ptpython → Rich fallback)
 - [x] Progress `progress:hello` / `progress:prompts` + `routes/console.py`; smoke
-- [x] Coverage ≥ 98% (`avalon.console` 100%)
+- [x] Coverage ≥ 98% (`almasix.console` 100%)
 - [x] No M10 work until this gate passes
 
 ---
@@ -439,7 +439,7 @@ pytest -q tests/test_m16_*.py tests/smoke/test_m16_smoke.py
 
 ### M16 exit criteria
 
-- [x] `Redis` façade + `config/redis.py` + `avalon[redis]`
+- [x] `Redis` façade + `config/redis.py` + `almasix[redis]`
 - [x] Cache / session / queue Redis drivers (FakeRedis in CI)
 - [x] Docs + smoke; no M17 until green
 
@@ -482,7 +482,7 @@ pytest -q tests/test_m19_*.py tests/smoke/test_m19_smoke.py
 ### M19 exit criteria
 
 - [x] `Gate` façade + Policies + `Authorizable` / `authorize`
-- [x] Caliburn `@can` / `@cannot` + `can` middleware + `make:policy`
+- [x] Prism `@can` / `@cannot` + `can` middleware + `make:policy`
 - [x] Docs + smoke; no M20 until green
 
 ---
@@ -505,7 +505,7 @@ pytest -q tests/test_m20_*.py tests/smoke/test_m20_smoke.py
 
 ---
 
-## M30 — Grail Console exhaust
+## M30 — Smith Console exhaust
 
 ```bash
 pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
@@ -521,14 +521,14 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 - [x] Discovery survives a broken command module, names it on every run rather than only on `list`, and reports a module discovered mid-import instead of dropping its commands
 - [x] `--help` is rendered from the signature — usage line, arguments, options, defaults, shortcuts, and aliases
 - [x] Generators run in a bare directory (`boots_application = False`); commands that need an application boot before `handle()`
-- [x] Stub tree: every generator renders a `.stub`, `grail stub:publish` copies them into `stubs/`, and a published stub wins
-- [x] `ServiceProvider.publishes()` + `grail vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `avalon-stubs` and `avalon-lang`
-- [x] Fiddle allow-list: `config/fiddle.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
+- [x] Stub tree: every generator renders a `.stub`, `smith stub:publish` copies them into `stubs/`, and a published stub wins
+- [x] `ServiceProvider.publishes()` + `smith vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `almasix-stubs` and `almasix-lang`
+- [x] Loupe allow-list: `config/loupe.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
 - [x] The built-in catalogue — 84 commands, including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
 - [x] `console` rewritten in Laravel's Artisan section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
-- [x] Living example: `grail progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
+- [x] Living example: `smith progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
 - [x] Deliberate deviations recorded in `docs/PLAN.md` with reasons — `config:cache` / `route:cache` / `event:cache` measured and declined, `view:cache` verifying rather than persisting, `db:show` without a size column, `db:wipe` refusing `--drop-views`
-- [x] 100% line and branch coverage on `avalon.console` and `avalon.grail`, the interactive prompt layer included: `tests/test_m9_prompts_driven.py` types into a real terminal over a pipe (arrows, space, Ctrl-C, corrections) instead of taking the non-interactive branch, and fails rather than hangs when a prompt is left waiting
+- [x] 100% line and branch coverage on `almasix.console` and `almasix.smith`, the interactive prompt layer included: `tests/test_m9_prompts_driven.py` types into a real terminal over a pipe (arrows, space, Ctrl-C, corrections) instead of taking the non-interactive branch, and fails rather than hangs when a prompt is left waiting
 
 ---
 
@@ -544,9 +544,9 @@ pytest -q tests/test_m40_*.py tests/smoke/test_m40_smoke.py
 - [x] Serialization: `append` family, `merge_hidden` / `merge_visible`, `to_json(**options)`, `visible` honored by appends and relations
 - [x] Collections: `find` / `fresh` / `to_query`, model-keyed `only` / `except_` / `diff` / `intersect` / `unique` / `contains`, custom `collection_class`
 - [x] Model surface: `HasUuids` / `HasUlids`, strictness switches, `unguarded`, `without_timestamps`, quiet writes, `without_events`
-- [x] Pruning: `Prunable` / `MassPrunable` + `grail model:prune` (`--model`, `--except`, `--chunk`, `--pretend`)
+- [x] Pruning: `Prunable` / `MassPrunable` + `smith model:prune` (`--model`, `--except`, `--chunk`, `--pretend`)
 - [x] Walking large sets: streaming `cursor()`, `lazy` / `lazy_by_id`, `chunk_by_id` / `each_by_id`
-- [x] Living example demonstrates appends + pruning; docs published; `avalon.orm` at 100%
+- [x] Living example demonstrates appends + pruning; docs published; `almasix.orm` at 100%
 
 ---
 
@@ -592,7 +592,7 @@ pytest -q tests/test_m49_*.py tests/smoke/test_m49_smoke.py
 - [x] Lazy-only methods: `take_until_timeout` (seconds or a datetime), `tap_each`, `throttle`, `with_heartbeat`; pauses honoured through later operations and in the pipeline tail
 - [x] Named deviation: operations needing every item (sorting, grouping) are absent from lazy collections; `collect()` materialises
 - [x] `collections` documented as a section per method, alphabetically, plus Keys / Creating / Extending / Higher order messages / Lazy collections. The smoke contract fails if a public method loses its section or a section names a method that does not exist
-- [x] 100% line and branch coverage on `avalon.support.collection` and `avalon.support.lazy`
+- [x] 100% line and branch coverage on `almasix.support.collection` and `almasix.support.lazy`
 
 
 ---
@@ -614,8 +614,8 @@ pytest -q tests/test_m50_*.py tests/smoke/test_m50_smoke.py
 - [x] Global helpers over surfaces that already ship: `app`, `resolve`, `request`, `response`, `back`, `session`, `old`, `cookie`, `logger`, `info`, `report`, `bcrypt`, `csrf_field`, `method_field`, `validator`, `policy` — with the request `ContextVar`, response factory, redirect flashing, and cookie jar under them
 - [x] Parity gaps the docs rewrite exposed are fixed: `data_get` wildcards, `data_set` writing into lists, `Arr.to_css_styles` reading Laravel's switched-style shape, the pad family repeating the pad string, `Str.char_at` counting back from the end
 - [x] `helpers` and `strings` documented a section per method (377), alphabetical within each group, in Laravel's grouping; the smoke contract fails if a public method loses its section or a section names a method that does not exist
-- [x] Living example: `grail progress:collections` (higher order messages, a lazy pipeline reading 12 of a million) and `grail progress:helpers` extended with the M50 surface; the board marks M49 and M50 complete with proof naming both commands
-- [x] Deviations named where Python differs: Pydantic rules for `validator`, `from_` for `from`, keyword-only flags, and the utilities Avalon has not built (Benchmarking, Dates, Deferred Functions, Lottery, Pipeline, Sleep, Timebox)
+- [x] Living example: `smith progress:collections` (higher order messages, a lazy pipeline reading 12 of a million) and `smith progress:helpers` extended with the M50 surface; the board marks M49 and M50 complete with proof naming both commands
+- [x] Deviations named where Python differs: Pydantic rules for `validator`, `from_` for `from`, keyword-only flags, and the utilities Almasix has not built (Benchmarking, Dates, Deferred Functions, Lottery, Pipeline, Sleep, Timebox)
 
 ---
 
@@ -633,16 +633,16 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 - [x] Constraints: `weekdays` / `weekends` / the seven named days / `days` / `days_of_month`, `between` and `unless_between` (including windows crossing midnight), `when` / `skip` taking a callable or a boolean, `environments`, `timezone`
 - [x] Locks: `without_overlapping(minutes)` over the cache with a filesystem fallback, `on_one_server` claiming per minute, `name()` required before a closure or job may claim, `use_cache` choosing the store, `schedule:clear-cache` releasing what a stuck task left
 - [x] `run_in_background` runs tasks simultaneously in a worker thread — the deviation named, since a thread cannot outlive its interpreter
-- [x] Maintenance mode: `grail down` / `grail up` and `even_in_maintenance_mode`; the HTTP half named as owed by M34
+- [x] Maintenance mode: `smith down` / `smith up` and `even_in_maintenance_mode`; the HTTP half named as owed by M34
 - [x] Groups hold attributes on the schedule and replay them onto every task defined inside, nesting included
 - [x] Hooks in Laravel's order, a hook taking a parameter handed the output as a `Stringable`, and the eight-method ping family over the M20 client
 - [x] Output to a file (replacing or appending) and to an inbox (always or only on failure), captured around every kind of task
-- [x] Tasks from a callback (sync or `async`), a Grail command, a queued job with its queue and connection, and a shell line; plus `Artisan.command(...).schedule([...])` and `Application.configure(...).with_schedule(...)`
+- [x] Tasks from a callback (sync or `async`), a Smith command, a queued job with its queue and connection, and a shell line; plus `Artisan.command(...).schedule([...])` and `Application.configure(...).with_schedule(...)`
 - [x] The five lifecycle events on the event bus, with `ScheduledTaskSkipped` carrying why
 - [x] Commands: `schedule:run` / `work` / `list` / `test` / `interrupt` / `clear-cache`, and loading `routes/console.py` twice no longer schedules everything twice
 - [x] `scheduling` rewritten to 640 lines in Laravel's section order; the smoke contract fails if a documented method loses its mention, a section disappears, or a command loses its registration
-- [x] Living example: `grail progress:schedule` (combining frequencies, a calendar-aware month end, a tick showing hooks, a skip reason, and shell output) and `grail schedule:list` over the app's own schedule; the board marks M31 complete with proof naming both
-- [x] 100% line and branch coverage on `avalon.console.scheduling`
+- [x] Living example: `smith progress:schedule` (combining frequencies, a calendar-aware month end, a tick showing hooks, a skip reason, and shell output) and `smith schedule:list` over the app's own schedule; the board marks M31 complete with proof naming both
+- [x] 100% line and branch coverage on `almasix.console.scheduling`
 
 ---
 
@@ -650,6 +650,6 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 - Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs versioning + Prologue (M39)
-- IDE and editor tooling (M45–M48): Caliburn grammars + formatter, `avalon-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
+- IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

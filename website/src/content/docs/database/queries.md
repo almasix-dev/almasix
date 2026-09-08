@@ -1,9 +1,9 @@
 ---
 title: Query Builder
-description: Build fluent, database-agnostic queries with Avalon's query builder.
+description: Build fluent, database-agnostic queries with Almasix's query builder.
 ---
 
-Avalon's database query builder provides a convenient, fluent interface for creating and running database queries. It can be used to perform most database operations in your application and works with every supported database driver.
+Almasix's database query builder provides a convenient, fluent interface for creating and running database queries. It can be used to perform most database operations in your application and works with every supported database driver.
 
 Start from a Articulate model (`User.query()`) or a table (`DB.table("users")`).
 

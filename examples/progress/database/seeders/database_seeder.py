@@ -1,10 +1,10 @@
-"""DatabaseSeeder — entry point for `python grail db:seed` / `migrate --seed`."""
+"""DatabaseSeeder — entry point for `python smith db:seed` / `migrate --seed`."""
 
 from __future__ import annotations
 
 from database.seeders.demo_seeder import DemoSeeder
 
-from avalon.orm import Seeder
+from almasix.orm import Seeder
 
 
 class DatabaseSeeder(Seeder):

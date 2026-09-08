@@ -13,7 +13,7 @@ Declare an accessor and its mutator together as an `Attribute`:
 
 ```python
 # app/models/user.py
-from avalon.orm import Attribute, Model
+from almasix.orm import Attribute, Model
 
 
 class User(Model):
@@ -44,7 +44,7 @@ email = Attribute(get=lambda value, attributes: f"{value} <{attributes['name']}>
 When the accessor needs more than a lambda, use `@attribute` on a method that returns an `Attribute`. This is the shape Laravel uses:
 
 ```python
-from avalon.orm import Attribute, Model, attribute
+from almasix.orm import Attribute, Model, attribute
 
 
 class User(Model):
@@ -177,7 +177,7 @@ class Event(Model):
 ```
 
 :::note
-Avalon uses Python `strftime` codes (`%Y-%m-%d`), not PHP's date format characters.
+Almasix uses Python `strftime` codes (`%Y-%m-%d`), not PHP's date format characters.
 :::
 
 ### Query-time casting
@@ -200,7 +200,7 @@ readings = await (
 Subclass `CastsAttributes` when a cast needs real logic. `get` transforms a stored value on read, `set` on write:
 
 ```python
-from avalon.orm import CastsAttributes
+from almasix.orm import CastsAttributes
 
 
 class AsJsonLines(CastsAttributes):
@@ -237,7 +237,7 @@ The attribute needs no column of its own.
 When a transform cannot be reversed, subclass `CastsInboundAttributes`. Reads pass the stored value through untouched:
 
 ```python
-from avalon.orm import CastsInboundAttributes
+from almasix.orm import CastsInboundAttributes
 
 
 class AsSlug(CastsInboundAttributes):

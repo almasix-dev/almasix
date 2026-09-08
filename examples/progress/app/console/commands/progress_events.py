@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from avalon.console.command import Command
-from avalon.events import Event
+from almasix.console.command import Command
+from almasix.events import Event
 
 
 class OrderShipped:

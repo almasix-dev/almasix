@@ -8,15 +8,15 @@ from unittest.mock import MagicMock
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.grail.ports import (
+from almasix.installer.scaffold import scaffold_app
+from almasix.smith.cli import app as smith_app
+from almasix.smith.ports import (
     DEFAULT_PORT,
     MAX_PORT,
     NoFreePortError,
     find_available_port,
     is_port_free,
 )
-from avalon.installer.scaffold import scaffold_app
 
 runner = CliRunner()
 
@@ -32,12 +32,12 @@ def test_find_available_port_skips_busy(monkeypatch: pytest.MonkeyPatch) -> None
     def fake_free(host: str, port: int) -> bool:
         return port not in busy
 
-    monkeypatch.setattr("avalon.grail.ports.is_port_free", fake_free)
+    monkeypatch.setattr("almasix.smith.ports.is_port_free", fake_free)
     assert find_available_port(start=3000, end=3099) == 3002
 
 
 def test_find_available_port_exhausted(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("avalon.grail.ports.is_port_free", lambda host, port: False)
+    monkeypatch.setattr("almasix.smith.ports.is_port_free", lambda host, port: False)
     with pytest.raises(NoFreePortError, match="No free port"):
         find_available_port(start=3000, end=3002)
 
@@ -59,11 +59,11 @@ def test_serve_auto_selects_next_port(tmp_path, monkeypatch: pytest.MonkeyPatch)
         assert end == MAX_PORT
         return 3003
 
-    monkeypatch.setattr("avalon.console.commands.runtime.find_available_port", fake_find)
+    monkeypatch.setattr("almasix.console.commands.runtime.find_available_port", fake_find)
     mock_run = MagicMock()
-    monkeypatch.setattr("avalon.console.commands.runtime.uvicorn.run", mock_run)
+    monkeypatch.setattr("almasix.console.commands.runtime.uvicorn.run", mock_run)
 
-    result = runner.invoke(grail_app, ["serve"])
+    result = runner.invoke(smith_app, ["serve"])
     assert result.exit_code == 0, result.stdout
     assert "http://127.0.0.1:3003" in result.stdout
     assert "3000 is in use" in result.stdout
@@ -77,13 +77,13 @@ def test_serve_uses_requested_port_when_free(
     root = scaffold_app("port_app2", destination=tmp_path / "port_app2")
     monkeypatch.chdir(root)
     monkeypatch.setattr(
-        "avalon.console.commands.runtime.find_available_port",
+        "almasix.console.commands.runtime.find_available_port",
         lambda host, start, end: start,
     )
     mock_run = MagicMock()
-    monkeypatch.setattr("avalon.console.commands.runtime.uvicorn.run", mock_run)
+    monkeypatch.setattr("almasix.console.commands.runtime.uvicorn.run", mock_run)
 
-    result = runner.invoke(grail_app, ["serve", "--port", "3010"])
+    result = runner.invoke(smith_app, ["serve", "--port", "3010"])
     assert result.exit_code == 0, result.stdout
     assert "3010 is in use" not in result.stdout
     assert mock_run.call_args.kwargs["port"] == 3010

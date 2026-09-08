@@ -1,4 +1,4 @@
-"""M3 — `python grail make:*` generators."""
+"""M3 — `python smith make:*` generators."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.grail.make import MakeError, make
+from almasix.smith.cli import app as smith_app
+from almasix.smith.make import MakeError, make
 from tests.support import purge_generated_app_modules
 
 runner = CliRunner()
@@ -29,7 +29,7 @@ def test_generators_write_importable_classes(
         ("make:provider", "RouteServiceProvider", "app/providers/route_service_provider.py"),
         ("make:request", "StorePostRequest", "app/http/requests/store_post_request.py"),
     ):
-        result = runner.invoke(grail_app, [command, name])
+        result = runner.invoke(smith_app, [command, name])
         assert result.exit_code == 0, result.stdout
         assert relative in result.stdout
         assert (tmp_path / relative).is_file()
@@ -43,9 +43,9 @@ def test_generators_write_importable_classes(
         from app.http.requests.store_post_request import StorePostRequest
         from app.providers.route_service_provider import RouteServiceProvider
 
-        from avalon.http import Controller, Middleware
-        from avalon.providers import ServiceProvider
-        from avalon.validation import FormRequest
+        from almasix.http import Controller, Middleware
+        from almasix.providers import ServiceProvider
+        from almasix.validation import FormRequest
 
         assert issubclass(PostController, Controller)
         assert issubclass(EnsureToken, Middleware)
@@ -61,17 +61,17 @@ def test_generators_write_importable_classes(
 def test_nested_namespace_and_force(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
 
-    assert runner.invoke(grail_app, ["make:controller", "Admin/UserController"]).exit_code == 0
+    assert runner.invoke(smith_app, ["make:controller", "Admin/UserController"]).exit_code == 0
     target = tmp_path / "app" / "http" / "controllers" / "admin" / "user_controller.py"
     assert target.is_file()
     assert (tmp_path / "app" / "http" / "controllers" / "admin" / "__init__.py").is_file()
 
-    duplicate = runner.invoke(grail_app, ["make:controller", "Admin/UserController"])
+    duplicate = runner.invoke(smith_app, ["make:controller", "Admin/UserController"])
     assert duplicate.exit_code == 1
     assert "already exists" in duplicate.stderr
 
     target.write_text("# edited\n", encoding="utf-8")
-    forced = runner.invoke(grail_app, ["make:controller", "Admin/UserController", "--force"])
+    forced = runner.invoke(smith_app, ["make:controller", "Admin/UserController", "--force"])
     assert forced.exit_code == 0
     assert "# edited" not in target.read_text(encoding="utf-8")
 
@@ -79,7 +79,7 @@ def test_nested_namespace_and_force(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 def test_invalid_names_are_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
 
-    bad = runner.invoke(grail_app, ["make:request", "9Bad"])
+    bad = runner.invoke(smith_app, ["make:request", "9Bad"])
     assert bad.exit_code == 1
     assert "Invalid name segment" in bad.stderr
 
@@ -92,27 +92,27 @@ def test_invalid_names_are_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 def test_make_component_writes_anonymous_view(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
 
-    result = runner.invoke(grail_app, ["make:component", "forms/Input"])
+    result = runner.invoke(smith_app, ["make:component", "forms/Input"])
     assert result.exit_code == 0, result.stdout
-    target = tmp_path / "resources" / "views" / "components" / "forms" / "input.cal.html"
+    target = tmp_path / "resources" / "views" / "components" / "forms" / "input.prism.html"
     assert target.is_file()
     body = target.read_text(encoding="utf-8")
     assert "@props" in body
     assert "{{ slot }}" in body
 
-    duplicate = runner.invoke(grail_app, ["make:component", "forms/Input"])
+    duplicate = runner.invoke(smith_app, ["make:component", "forms/Input"])
     assert duplicate.exit_code == 1
     assert "already exists" in duplicate.stderr
 
-    forced = runner.invoke(grail_app, ["make:component", "forms/Input", "--force"])
+    forced = runner.invoke(smith_app, ["make:component", "forms/Input", "--force"])
     assert forced.exit_code == 0
 
 
 def test_make_component_class_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
-    result = runner.invoke(grail_app, ["make:component", "Alert", "--class"])
+    result = runner.invoke(smith_app, ["make:component", "Alert", "--class"])
     assert result.exit_code == 0, result.stdout
-    assert (tmp_path / "resources" / "views" / "components" / "alert.cal.html").is_file()
+    assert (tmp_path / "resources" / "views" / "components" / "alert.prism.html").is_file()
     class_path = tmp_path / "app" / "view" / "components" / "alert.py"
     assert class_path.is_file()
     assert "class Alert(Component)" in class_path.read_text(encoding="utf-8")

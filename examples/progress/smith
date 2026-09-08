@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+"""Smith — Almasix in-application CLI (Laravel artisan equivalent).
+
+    python smith version
+    python smith serve
+"""
+
+from __future__ import annotations
+
+from almasix.smith.cli import app
+
+if __name__ == "__main__":
+    app()

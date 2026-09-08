@@ -8,11 +8,11 @@ from typing import Any
 
 import pytest
 
-from avalon.framework import Application
-from avalon.mail import Mail
-from avalon.mail.helpers import default_mail_config
-from avalon.mail.provider import MailServiceProvider
-from avalon.notifications import (
+from almasix.framework import Application
+from almasix.mail import Mail
+from almasix.mail.helpers import default_mail_config
+from almasix.mail.provider import MailServiceProvider
+from almasix.notifications import (
     ArrayChannel,
     MustVerifyEmail,
     Notifiable,
@@ -23,10 +23,10 @@ from avalon.notifications import (
     notify,
     notify_now,
 )
-from avalon.notifications.channels import DatabaseChannel, LogChannel, MailChannel
-from avalon.notifications.provider import NotificationServiceProvider
-from avalon.notifications.sender import NotificationSender
-from avalon.orm import DatabaseManager, set_manager
+from almasix.notifications.channels import DatabaseChannel, LogChannel, MailChannel
+from almasix.notifications.provider import NotificationServiceProvider
+from almasix.notifications.sender import NotificationSender
+from almasix.orm import DatabaseManager, set_manager
 from tests.orm_support import memory_db
 
 
@@ -157,7 +157,7 @@ async def test_reset_password_notification(mail_ready: Application) -> None:
 
 @pytest.mark.asyncio
 async def test_password_broker_uses_notification(mail_ready: Application) -> None:
-    from avalon.auth.passwords import PasswordBroker, get_password_manager
+    from almasix.auth.passwords import PasswordBroker, get_password_manager
 
     class Provider:
         async def retrieve_by_credentials(self, credentials: dict[str, Any]) -> FakeUser | None:

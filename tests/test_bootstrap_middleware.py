@@ -7,16 +7,16 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from avalon.framework import Application, Middleware
-from avalon.http import (
+from almasix.framework import Application, Middleware
+from almasix.http import (
     HEADER_X_FORWARDED_FOR,
     HEADER_X_FORWARDED_PROTO,
     Middleware as HttpMiddleware,
     Request,
 )
-from avalon.http.controller import Controller
-from avalon.installer.scaffold import scaffold_app
-from avalon.routing import Route
+from almasix.http.controller import Controller
+from almasix.installer.scaffold import scaffold_app
+from almasix.routing import Route
 from tests.support import purge_generated_app_modules, without_base_path
 
 
@@ -132,10 +132,10 @@ def test_trust_hosts_rejects_unknown_host(tmp_path: Path) -> None:
             return {"ok": "1"}
 
     def configure(middleware: Middleware) -> None:
-        middleware.trust_hosts(at=["app.test", "*.avalon.dev"])
+        middleware.trust_hosts(at=["app.test", "*.almasix.dev"])
 
     app = Application.configure(tmp_path).with_middleware(configure).create()
-    assert app.config.get("http.trusted_hosts") == ["app.test", "*.avalon.dev"]
+    assert app.config.get("http.trusted_hosts") == ["app.test", "*.almasix.dev"]
     assert "trust.hosts" in app.config.get("http.middleware")
 
     app.router.routes.clear()
@@ -147,7 +147,7 @@ def test_trust_hosts_rejects_unknown_host(tmp_path: Path) -> None:
     assert allowed.status_code == 200
     assert allowed.json() == {"ok": "1"}
 
-    wildcard = client.get("/", headers={"Host": "demo.avalon.dev"})
+    wildcard = client.get("/", headers={"Host": "demo.almasix.dev"})
     assert wildcard.status_code == 200
 
     denied = client.get("/", headers={"Host": "evil.example"})
@@ -173,9 +173,9 @@ def test_progress_fluent_middleware_still_tags_api(
         client = TestClient(module.asgi)
         health = client.get("/api/health")
         assert health.status_code == 200
-        assert health.headers.get("x-avalon-demo") == "m2"
+        assert health.headers.get("x-almasix-demo") == "m2"
         home = client.get("/")
         assert home.status_code == 200
-        assert "x-avalon-demo" not in {k.lower(): v for k, v in home.headers.items()}
+        assert "x-almasix-demo" not in {k.lower(): v for k, v in home.headers.items()}
     finally:
         purge_generated_app_modules()

@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from avalon.http.exceptions import HttpException
-from avalon.support import (
+from almasix.http.exceptions import HttpException
+from almasix.support import (
     Arr,
     Number,
     Str,
@@ -169,10 +169,10 @@ def test_str_and_stringable() -> None:
     assert Str.kebab("FooBar") == "foo-bar"
     assert Str.slug("Hello World!") == "hello-world"
     assert Str.limit("abcdef", 3) == "abc..."
-    assert Str.contains("Avalon", "val")
-    assert Str.contains_all("Avalon", ["Av", "lon"])
-    assert Str.starts_with("Avalon", "Ava")
-    assert Str.ends_with("Avalon", "lon")
+    assert Str.contains("Almasix", "mas")
+    assert Str.contains_all("Almasix", ["Al", "six"])
+    assert Str.starts_with("Almasix", "Alm")
+    assert Str.ends_with("Almasix", "six")
     assert Str.uuid().count("-") == 4
     assert Str.is_uuid(Str.uuid())
     assert len(Str.ulid()) == 26

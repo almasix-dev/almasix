@@ -13,8 +13,8 @@ from `auth.password_timeout` (default 3 hours).
 
 ```python
 # app/http/controllers/auth_controller.py
-from avalon.auth import Password
-from avalon.hashing import Hash
+from almasix.auth import Password
+from almasix.hashing import Hash
 
 status = await Password.send_reset_link({"email": email})
 # Password.RESET_LINK_SENT | INVALID_USER | RESET_THROTTLED
@@ -32,7 +32,7 @@ Override with ``Password.create_url_using(callback)`` when you need a custom pat
 
 ```python
 # app/providers/app_service_provider.py
-from avalon.auth.passwords import get_password_manager
+from almasix.auth.passwords import get_password_manager
 
 get_password_manager().create_url_using(lambda user, token: log_or_queue(user, token))
 ```

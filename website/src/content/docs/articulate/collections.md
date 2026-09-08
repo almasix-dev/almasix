@@ -3,11 +3,11 @@ title: Collections
 description: Work with Articulate collections returned from queries.
 ---
 
-All multi-result sets returned by Articulate are instances of `avalon.orm.Collection`, including results retrieved via the `get` method or accessed via a relationship. The Articulate collection object extends Python list semantics and provides many helpful methods for working with your results.
+All multi-result sets returned by Articulate are instances of `almasix.orm.Collection`, including results retrieved via the `get` method or accessed via a relationship. The Articulate collection object extends Python list semantics and provides many helpful methods for working with your results.
 
 ```python
 # app/http/controllers/example_controller.py
-from avalon.orm import Collection
+from almasix.orm import Collection
 
 users = await User.query().order_by("id").get()
 users.first()
@@ -72,7 +72,7 @@ It raises `ValueError` on an empty collection, since there would be nothing to c
 To return your own collection type from a model, set `collection_class`:
 
 ```python
-from avalon.orm import Collection, Model
+from almasix.orm import Collection, Model
 
 
 class UserCollection(Collection):

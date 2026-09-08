@@ -5,8 +5,8 @@ from __future__ import annotations
 from app.models.post import Post
 from app.models.role import Role
 from app.models.user import User
-from avalon.hashing import Hash
-from avalon.orm import Seeder
+from almasix.hashing import Hash
+from almasix.orm import Seeder
 
 
 class DemoSeeder(Seeder):
@@ -18,13 +18,13 @@ class DemoSeeder(Seeder):
 
         password = Hash.make("password")
         ada = await User.create(
-            email="ada@avalon.dev",
+            email="ada@almasix.dev",
             name="Ada",
             password=password,
             api_token="secret-token",
         )
         grace = await User.create(
-            email="grace@avalon.dev",
+            email="grace@almasix.dev",
             name="Grace",
             password=password,
         )

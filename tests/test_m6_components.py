@@ -1,4 +1,4 @@
-"""Caliburn component + slot exhaust tests."""
+"""Prism component + slot exhaust tests."""
 
 from __future__ import annotations
 
@@ -7,18 +7,18 @@ from pathlib import Path
 
 import pytest
 
-from avalon.caliburn.engine import Engine
-from avalon.caliburn.xtags import expand_x_tags
+from almasix.prism.engine import Engine
+from almasix.prism.xtags import expand_x_tags
 
 
 def test_component_directive(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "alert.cal.html").write_text(
+    (views / "components" / "alert.prism.html").write_text(
         '<div class="alert">{{ slot }}</div>',
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         "@component('alert')\nHello\n@endcomponent",
         encoding="utf-8",
     )
@@ -31,11 +31,11 @@ def test_component_directive(tmp_path: Path) -> None:
 def test_named_slot(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "card.cal.html").write_text(
+    (views / "components" / "card.prism.html").write_text(
         "<h2>{{ title }}</h2><div>{{ slot }}</div>",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @component('card')
 @slot('title')
@@ -56,11 +56,11 @@ Body
 def test_multiple_named_slots(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "panel.cal.html").write_text(
+    (views / "components" / "panel.prism.html").write_text(
         "<header>{{ header }}</header><main>{{ slot }}</main><footer>{{ footer }}</footer>",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @component('panel')
 @slot('header')H@endslot
@@ -79,11 +79,11 @@ BODY
 def test_x_tag_component(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "badge.cal.html").write_text(
+    (views / "components" / "badge.prism.html").write_text(
         "<span {{ attributes }}>{{ slot }}</span>",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         '<x-badge class="pill">OK</x-badge>',
         encoding="utf-8",
     )
@@ -96,11 +96,11 @@ def test_x_tag_component(tmp_path: Path) -> None:
 def test_x_slot_syntax(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "card.cal.html").write_text(
+    (views / "components" / "card.prism.html").write_text(
         "<h2>{{ title }}</h2><p>{{ slot }}</p>",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 <x-card>
   <x-slot:title>Hello</x-slot>
@@ -117,11 +117,11 @@ def test_x_slot_syntax(tmp_path: Path) -> None:
 def test_x_slot_name_attribute(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "card.cal.html").write_text(
+    (views / "components" / "card.prism.html").write_text(
         "<h2>{{ title }}</h2>{{ slot }}",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 <x-card>
   <x-slot name="title">T</x-slot>
@@ -138,15 +138,15 @@ def test_x_slot_name_attribute(tmp_path: Path) -> None:
 def test_nested_x_components(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "card.cal.html").write_text(
+    (views / "components" / "card.prism.html").write_text(
         '<div class="card">{{ slot }}</div>',
         encoding="utf-8",
     )
-    (views / "components" / "badge.cal.html").write_text(
+    (views / "components" / "badge.prism.html").write_text(
         "<span>{{ slot }}</span>",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         "<x-card>Hi <x-badge>new</x-badge></x-card>",
         encoding="utf-8",
     )
@@ -159,11 +159,11 @@ def test_nested_x_components(tmp_path: Path) -> None:
 def test_dynamic_x_attr_binding(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "link.cal.html").write_text(
+    (views / "components" / "link.prism.html").write_text(
         '@props({"href": "#"})\n<a href="{{ href }}">{{ slot }}</a>',
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         '<x-link :href="target">Go</x-link>',
         encoding="utf-8",
     )
@@ -175,14 +175,14 @@ def test_dynamic_x_attr_binding(tmp_path: Path) -> None:
 def test_aware_inherits_parent_component_data(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "form.cal.html").write_text(
+    (views / "components" / "form.prism.html").write_text(
         """
 @props({"method": "post"})
 <form method="{{ method }}">{{ slot }}</form>
 """.strip(),
         encoding="utf-8",
     )
-    (views / "components" / "input.cal.html").write_text(
+    (views / "components" / "input.prism.html").write_text(
         """
 @aware(["method"])
 @props({"name": "field"})
@@ -190,7 +190,7 @@ def test_aware_inherits_parent_component_data(tmp_path: Path) -> None:
 """.strip(),
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @component('form', {"method": "put"})
 @component('input', {"name": "email"})
@@ -208,15 +208,15 @@ def test_aware_inherits_parent_component_data(tmp_path: Path) -> None:
 def test_aware_explicit_child_attr_wins(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "form.cal.html").write_text(
+    (views / "components" / "form.prism.html").write_text(
         '@props({"method": "post"})\n<form>{{ slot }}</form>',
         encoding="utf-8",
     )
-    (views / "components" / "input.cal.html").write_text(
+    (views / "components" / "input.prism.html").write_text(
         '@aware(["method"])\n@props({"method": "get"})\n<span>{{ method }}</span>',
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @component('form', {"method": "put"})
 @component('input', {"method": "patch"})
@@ -232,7 +232,7 @@ def test_aware_explicit_child_attr_wins(tmp_path: Path) -> None:
 def test_class_based_component(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "alert.cal.html").write_text(
+    (views / "components" / "alert.prism.html").write_text(
         '<div class="alert-{{ type }}">{{ slot }}</div>',
         encoding="utf-8",
     )
@@ -244,7 +244,7 @@ def test_class_based_component(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     (pkg / "__init__.py").write_text("", encoding="utf-8")
     (pkg / "alert.py").write_text(
         """
-from avalon.caliburn import Component
+from almasix.prism import Component
 
 class Alert(Component):
     def __init__(self, type: str = "info") -> None:
@@ -260,7 +260,7 @@ class Alert(Component):
         if mod == "app" or mod.startswith("app."):
             sys.modules.pop(mod, None)
 
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         '<x-alert type="success">Saved</x-alert>',
         encoding="utf-8",
     )
@@ -277,11 +277,11 @@ class Alert(Component):
 def test_component_attrs_allow_parens_in_strings(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "label.cal.html").write_text(
+    (views / "components" / "label.prism.html").write_text(
         '@props({"text": ""})\n<span>{{ text }}</span>',
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         "@component('label', {'text': 'Hello (world)'})\n@endcomponent",
         encoding="utf-8",
     )

@@ -8,10 +8,10 @@ from typing import Any
 
 import pytest
 
-from avalon.cache import set_manager
-from avalon.cache.manager import CacheManager
-from avalon.console.mutex import Mutex
-from avalon.console.scheduling import (
+from almasix.cache import set_manager
+from almasix.cache.manager import CacheManager
+from almasix.console.mutex import Mutex
+from almasix.console.scheduling import (
     Event,
     Schedule,
     ScheduledBackgroundTaskFinished,
@@ -27,7 +27,7 @@ from avalon.console.scheduling import (
     run_schedule,
     run_task,
 )
-from avalon.console.scheduling.cron import cron_matches, field_matches, next_run_at
+from almasix.console.scheduling.cron import cron_matches, field_matches, next_run_at
 
 MONDAY = datetime(2026, 9, 7, 9, 0, 0)
 SATURDAY = datetime(2026, 9, 5, 9, 0, 0)
@@ -190,14 +190,14 @@ def test_when_and_skip_decide_outside_the_clock() -> None:
 
 
 def test_environments_limits_the_task_to_the_named_app_env(monkeypatch: Any) -> None:
-    monkeypatch.setattr("avalon.console.scheduling.event._environment", lambda: "staging")
+    monkeypatch.setattr("almasix.console.scheduling.event._environment", lambda: "staging")
 
     assert task().environments("staging", "production").filters_pass() is True
     assert task().environments(["local"]).filters_pass() is False
 
 
 def test_the_environment_reader_falls_back_when_no_app_is_booted() -> None:
-    from avalon.console.scheduling.event import _environment
+    from almasix.console.scheduling.event import _environment
 
     assert isinstance(_environment(), str)
 
@@ -274,7 +274,7 @@ def test_an_expression_nothing_matches_gives_the_moment_back(monkeypatch: Any) -
     assert next_run_at("0 0 30 2 *", MONDAY) == MONDAY
 
     # A constraint no minute can satisfy: the 15th is never the last of a month.
-    monkeypatch.setattr("avalon.console.scheduling.event._SCAN_LIMIT", 120)
+    monkeypatch.setattr("almasix.console.scheduling.event._SCAN_LIMIT", 120)
     impossible = task().last_day_of_month("15:00").days_of_month(15)
     assert impossible.next_run_at(MONDAY) == MONDAY
 
@@ -494,7 +494,7 @@ def test_without_overlapping_prefers_a_cache_lock(tmp_path: Path, array_cache: A
     assert run_event(event, base_path=tmp_path) == 0
     assert ran["n"] == 1
 
-    from avalon.cache.manager import Cache
+    from almasix.cache.manager import Cache
 
     lock = Cache.lock(f"schedule:{event.mutex_name()}", seconds=600)
     assert lock.get() is True
@@ -533,7 +533,7 @@ def test_the_overlapping_lock_expires_after_the_minutes_it_was_given(
         def __getattr__(self, name: str) -> Any:
             return getattr(array_cache.store(), name)
 
-    from avalon.console.scheduling import runner as runner_module
+    from almasix.console.scheduling import runner as runner_module
 
     original = runner_module._cache
     runner_module._cache = lambda store: Recorder()
@@ -582,7 +582,7 @@ def test_clear_cache_releases_the_locks_a_stuck_task_left(
     event = schedule.command("stuck").every_minute().without_overlapping()
     schedule.command("free").every_minute()
 
-    from avalon.cache.manager import Cache
+    from almasix.cache.manager import Cache
 
     lock = Cache.lock(f"schedule:{event.mutex_name()}", seconds=600)
     assert lock.get() is True
@@ -663,10 +663,10 @@ def test_the_ping_family_reaches_the_http_client(tmp_path: Path, no_cache: Any) 
         def get(url: str) -> None:
             pinged.append(url)
 
-    import avalon.client
+    import almasix.client
 
-    original = avalon.client.Http
-    avalon.client.Http = FakeHttp  # type: ignore[misc]
+    original = almasix.client.Http
+    almasix.client.Http = FakeHttp  # type: ignore[misc]
     try:
         event = (
             Event("pinged", shell="echo ok")
@@ -677,7 +677,7 @@ def test_the_ping_family_reaches_the_http_client(tmp_path: Path, no_cache: Any) 
         )
         run_event(event, base_path=tmp_path)
     finally:
-        avalon.client.Http = original  # type: ignore[misc]
+        almasix.client.Http = original  # type: ignore[misc]
 
     assert pinged == [
         "https://example.test/before",
@@ -735,7 +735,7 @@ def test_output_can_be_emailed_always_or_only_on_failure(
 ) -> None:
     sent: list[tuple[tuple[str, ...], str, int]] = []
 
-    from avalon.console.scheduling import runner as runner_module
+    from almasix.console.scheduling import runner as runner_module
 
     original = runner_module._mail_output
 
@@ -768,7 +768,7 @@ def test_output_can_be_emailed_always_or_only_on_failure(
 
 
 def test_the_output_mail_states_what_happened() -> None:
-    from avalon.console.scheduling.mail import ScheduledTaskOutput
+    from almasix.console.scheduling.mail import ScheduledTaskOutput
 
     ok = ScheduledTaskOutput("report:generate", "all good", 0)
     bad = ScheduledTaskOutput("report:generate", "", 3)
@@ -786,7 +786,7 @@ def test_mailing_output_goes_through_the_mailer(tmp_path: Path, no_cache: Any) -
         def send(self, mailable: Any) -> None:
             sent.append(mailable)
 
-    import avalon.mail.mailer as mailer_module
+    import almasix.mail.mailer as mailer_module
 
     original = mailer_module.Mail
     mailer_module.Mail = type("Mail", (), {"to": staticmethod(lambda *a: FakePending())})
@@ -803,7 +803,7 @@ def test_mailing_output_goes_through_the_mailer(tmp_path: Path, no_cache: Any) -
 
 
 def test_a_mailer_that_fails_does_not_fail_the_task(tmp_path: Path, no_cache: Any) -> None:
-    import avalon.mail.mailer as mailer_module
+    import almasix.mail.mailer as mailer_module
 
     original = mailer_module.Mail
 
@@ -965,7 +965,7 @@ def test_an_interrupt_is_recorded_and_read_back(tmp_path: Path, no_cache: Any) -
 def test_an_interrupt_goes_through_the_cache_when_there_is_one(
     tmp_path: Path, array_cache: Any
 ) -> None:
-    from avalon.console.scheduling.runner import INTERRUPT_KEY
+    from almasix.console.scheduling.runner import INTERRUPT_KEY
 
     minute = datetime.now().replace(second=0, microsecond=0)
     interrupt(base_path=tmp_path)
@@ -979,8 +979,8 @@ def test_an_interrupt_goes_through_the_cache_when_there_is_one(
 
 
 def test_the_lifecycle_events_are_dispatched(tmp_path: Path, no_cache: Any) -> None:
-    from avalon.events.dispatcher import Dispatcher
-    from avalon.events.facade import Event as Bus
+    from almasix.events.dispatcher import Dispatcher
+    from almasix.events.facade import Event as Bus
 
     seen: list[Any] = []
     Bus.set_dispatcher(Dispatcher())
@@ -1010,8 +1010,8 @@ def test_the_lifecycle_events_are_dispatched(tmp_path: Path, no_cache: Any) -> N
 
 
 def test_a_raising_task_dispatches_the_failure_event(tmp_path: Path, no_cache: Any) -> None:
-    from avalon.events.dispatcher import Dispatcher
-    from avalon.events.facade import Event as Bus
+    from almasix.events.dispatcher import Dispatcher
+    from almasix.events.facade import Event as Bus
 
     failures: list[Any] = []
     Bus.set_dispatcher(Dispatcher())
@@ -1028,7 +1028,7 @@ def test_a_raising_task_dispatches_the_failure_event(tmp_path: Path, no_cache: A
 
 
 def test_the_outcome_says_what_happened() -> None:
-    from avalon.console.scheduling.runner import Outcome
+    from almasix.console.scheduling.runner import Outcome
 
     event = Event("demo", command="demo:run")
 
@@ -1046,7 +1046,7 @@ def test_a_scheduled_job_is_dispatched(tmp_path: Path, no_cache: Any) -> None:
         queue: Any = False
         connection: Any = None
 
-    from avalon.queue import helpers
+    from almasix.queue import helpers
 
     original = helpers.dispatch
 
@@ -1116,7 +1116,7 @@ def test_a_job_without_a_queue_or_connection_keeps_its_own(
         queue: Any = "default"
         connection: Any = "sync"
 
-    from avalon.queue import helpers
+    from almasix.queue import helpers
 
     original = helpers.dispatch
 
@@ -1138,7 +1138,7 @@ def test_output_is_not_emailed_when_a_failure_only_task_succeeds(
 ) -> None:
     sent: list[Any] = []
 
-    import avalon.mail.mailer as mailer_module
+    import almasix.mail.mailer as mailer_module
 
     original = mailer_module.Mail
     mailer_module.Mail = type(
@@ -1159,7 +1159,7 @@ def test_output_is_not_emailed_when_a_failure_only_task_succeeds(
 
 
 def test_installing_the_camel_aliases_twice_changes_nothing() -> None:
-    from avalon.console.scheduling.event import install_camel_aliases
+    from almasix.console.scheduling.event import install_camel_aliases
 
     before = Event.everyFiveMinutes
     install_camel_aliases(Event)
@@ -1171,8 +1171,8 @@ def test_installing_the_camel_aliases_twice_changes_nothing() -> None:
 
 
 def test_a_closure_command_can_schedule_itself_with_arguments() -> None:
-    from avalon.console.facade import Artisan
-    from avalon.console.scheduling import schedule as task_schedule
+    from almasix.console.facade import Artisan
+    from almasix.console.scheduling import schedule as task_schedule
 
     task_schedule.clear()
     try:
@@ -1194,8 +1194,8 @@ def test_a_closure_command_can_schedule_itself_with_arguments() -> None:
 def test_the_application_builder_can_define_the_schedule(
     tmp_path: Path, monkeypatch: Any
 ) -> None:
-    from avalon.console.scheduling import schedule as task_schedule
-    from avalon.framework import Application
+    from almasix.console.scheduling import schedule as task_schedule
+    from almasix.framework import Application
 
     task_schedule.clear()
     monkeypatch.chdir(tmp_path)

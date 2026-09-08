@@ -1,4 +1,4 @@
-/* Avalon docs — brand #F1511B
+/* Almasix docs — brand #F1511B
  *
  * Starlight color semantics (important!):
  *   --sl-color-white  = primary TEXT color in both themes
@@ -10,10 +10,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-	--avalon-orange: #f1511b;
-	--avalon-orange-soft: #ff7a4d;
-	--avalon-orange-deep: #c43a0f;
-	--avalon-glow: rgba(241, 81, 27, 0.22);
+	--almasix-orange: #f1511b;
+	--almasix-orange-soft: #ff7a4d;
+	--almasix-orange-deep: #c43a0f;
+	--almasix-glow: rgba(241, 81, 27, 0.22);
 
 	--sl-font: 'Outfit', ui-sans-serif, system-ui, sans-serif;
 	--sl-font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -68,7 +68,7 @@
 /* Atmosphere — subtle, never overrides text contrast */
 body {
 	background-image:
-		radial-gradient(1100px 520px at 8% -12%, var(--avalon-glow), transparent 55%),
+		radial-gradient(1100px 520px at 8% -12%, var(--almasix-glow), transparent 55%),
 		radial-gradient(800px 420px at 100% 0%, rgba(241, 81, 27, 0.08), transparent 50%);
 	background-attachment: fixed;
 }
@@ -81,7 +81,7 @@ body {
 nav.sidebar a[aria-current='page'],
 .sidebar-content a[aria-current='page'] {
 	color: #ffffff !important;
-	background-color: var(--avalon-orange) !important;
+	background-color: var(--almasix-orange) !important;
 	font-weight: 600;
 	border-radius: 0.45rem;
 	box-shadow: 0 6px 16px rgba(241, 81, 27, 0.28);
@@ -113,7 +113,7 @@ nav.sidebar a[aria-current='page'],
 /* Primary CTA — solid brand button */
 .hero .actions a.sl-link-button:not([data-variant='minimal']),
 a.sl-link-button.primary {
-	background: linear-gradient(135deg, var(--avalon-orange) 0%, var(--avalon-orange-deep) 100%);
+	background: linear-gradient(135deg, var(--almasix-orange) 0%, var(--almasix-orange-deep) 100%);
 	color: #ffffff !important;
 	border: 1px solid transparent;
 	border-radius: 999px;
@@ -147,8 +147,8 @@ a.sl-link-button.primary:hover {
 }
 
 .hero .actions a.sl-link-button[data-variant='minimal']:hover {
-	border-color: var(--avalon-orange);
-	background: color-mix(in srgb, var(--avalon-orange) 12%, transparent);
+	border-color: var(--almasix-orange);
+	background: color-mix(in srgb, var(--almasix-orange) 12%, transparent);
 	transform: translateY(-1px);
 }
 
@@ -160,7 +160,7 @@ a.sl-link-button.primary:hover {
 
 .card:hover {
 	border-color: var(--sl-color-accent);
-	box-shadow: 0 14px 36px var(--avalon-glow);
+	box-shadow: 0 14px 36px var(--almasix-glow);
 	transform: translateY(-2px);
 }
 
@@ -228,7 +228,7 @@ header.header {
 }
 
 starlight-toc li a[aria-current='true'] {
-	color: var(--avalon-orange);
+	color: var(--almasix-orange);
 	font-weight: 600;
 }
 
@@ -239,7 +239,7 @@ starlight-toc li a[aria-current='true'] {
 
 .pagination-links a:hover {
 	border-color: var(--sl-color-accent);
-	box-shadow: 0 8px 24px var(--avalon-glow);
+	box-shadow: 0 8px 24px var(--almasix-glow);
 }
 
 a[class*='link-card'],

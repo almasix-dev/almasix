@@ -9,12 +9,12 @@ from fastapi.testclient import TestClient
 from starlette.datastructures import Headers, UploadFile
 from starlette.requests import Request as StarletteRequest
 
-from avalon.framework import Application
-from avalon.http import Request, UploadedFile
-from avalon.http.kernel import HttpKernel
-from avalon.http.request import _is_empty
-from avalon.routing import Router, set_router
-from avalon.routing import Route
+from almasix.framework import Application
+from almasix.http import Request, UploadedFile
+from almasix.http.kernel import HttpKernel
+from almasix.http.request import _is_empty
+from almasix.routing import Router, set_router
+from almasix.routing import Route
 from tests.support import purge_generated_app_modules
 from tests.test_m2_request import _receive, _starlette_request
 
@@ -184,9 +184,9 @@ async def test_urlencoded_form() -> None:
             "client": ("127.0.0.1", 1),
             "server": ("test", 80),
         },
-        receive=_receive(b"name=avalon&empty="),
+        receive=_receive(b"name=almasix&empty="),
     )
     request = await Request.create(raw)
-    assert request.post("name") == "avalon"
+    assert request.post("name") == "almasix"
     assert request.has("empty")
     assert not request.filled("empty")

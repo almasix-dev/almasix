@@ -14,17 +14,17 @@ from typing import Any, ClassVar
 
 import pytest
 
-from avalon.cache.helpers import get_manager as get_cache_manager
-from avalon.cache.helpers import set_manager as set_cache_manager
-from avalon.console.kernel import ConsoleKernel
-from avalon.console.output import Output
-from avalon.events.facade import Event
-from avalon.queue import Job, ShouldQueue, ensure_tables
-from avalon.queue.connections.redis import RedisQueue
-from avalon.queue.events import QueueBusy
-from avalon.queue.manager import QueueManager
-from avalon.queue.restart import RESTART_KEY, broadcast_restart, last_restart
-from avalon.queue.worker import Worker
+from almasix.cache.helpers import get_manager as get_cache_manager
+from almasix.cache.helpers import set_manager as set_cache_manager
+from almasix.console.kernel import ConsoleKernel
+from almasix.console.output import Output
+from almasix.events.facade import Event
+from almasix.queue import Job, ShouldQueue, ensure_tables
+from almasix.queue.connections.redis import RedisQueue
+from almasix.queue.events import QueueBusy
+from almasix.queue.manager import QueueManager
+from almasix.queue.restart import RESTART_KEY, broadcast_restart, last_restart
+from almasix.queue.worker import Worker
 from tests.support_redis import FakeRedis
 
 Build = Callable[..., ConsoleKernel]
@@ -186,7 +186,7 @@ def test_queue_work_stops_for_a_restart_that_lands_while_it_is_idle(
     """
     kernel = build()
     signals = iter([None, 1.0])  # what the worker booted with, then the deploy
-    monkeypatch.setattr("avalon.queue.worker.last_restart", lambda: next(signals))
+    monkeypatch.setattr("almasix.queue.worker.last_restart", lambda: next(signals))
 
     assert kernel.run_argv("queue:work", ["database", "--queue", "default", "--sleep", "0"]) == 0
 
@@ -334,7 +334,7 @@ def test_queue_clear_reports_a_connection_that_is_not_configured(
     assert "Queue connection [nope] is not configured." in capsys.readouterr().err
 
 
-def test_queue_clear_reports_a_driver_avalon_does_not_have(
+def test_queue_clear_reports_a_driver_almasix_does_not_have(
     build: Build, capsys: pytest.CaptureFixture[str]
 ) -> None:
     kernel = build()
@@ -416,9 +416,9 @@ def test_queue_clear_says_which_queue_name_it_could_not_read(
 def test_the_production_guard_assumes_the_worst_without_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from avalon.console.confirmable import current_environment
+    from almasix.console.confirmable import current_environment
 
-    monkeypatch.setattr("avalon.config._repository", None)
+    monkeypatch.setattr("almasix.config._repository", None)
 
     assert current_environment() == "production"
 
@@ -525,7 +525,7 @@ def test_queue_clear_reports_a_store_it_cannot_empty(
 
 
 async def _drop_jobs_table() -> None:
-    from avalon.orm.schema import Schema
+    from almasix.orm.schema import Schema
 
     await Schema.drop_if_exists("jobs")
 

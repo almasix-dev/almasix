@@ -1,6 +1,6 @@
 """Logging channels."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("LOG_CHANNEL", "stack"),
@@ -12,12 +12,12 @@ config = {
         },
         "single": {
             "driver": "single",
-            "path": "storage/logs/avalon.log",
+            "path": "storage/logs/almasix.log",
             "level": env("LOG_LEVEL", "debug"),
         },
         "daily": {
             "driver": "daily",
-            "path": "storage/logs/avalon.log",
+            "path": "storage/logs/almasix.log",
             "level": env("LOG_LEVEL", "debug"),
             "days": 14,
         },

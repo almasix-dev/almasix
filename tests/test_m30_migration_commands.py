@@ -1,7 +1,7 @@
 """M30 — ``migrate:install``, ``migrate:reset``, and ``migrate:refresh``.
 
-The three migration commands Laravel has and Grail was missing. Each one is
-driven through the kernel, the way ``grail`` reaches it, so the argv parsing
+The three migration commands Laravel has and Smith was missing. Each one is
+driven through the kernel, the way ``smith`` reaches it, so the argv parsing
 and the confirmation guard are exercised alongside the migrator.
 """
 
@@ -13,11 +13,11 @@ from pathlib import Path
 
 import pytest
 
-from avalon.cache.helpers import set_manager as set_cache_manager
-from avalon.console.kernel import ConsoleKernel
-from avalon.console.output import Output
-from avalon.orm.migration import Migrator
-from avalon.orm.schema import Schema
+from almasix.cache.helpers import set_manager as set_cache_manager
+from almasix.console.kernel import ConsoleKernel
+from almasix.console.output import Output
+from almasix.orm.migration import Migrator
+from almasix.orm.schema import Schema
 
 Build = Callable[..., ConsoleKernel]
 
@@ -53,7 +53,7 @@ def write_migration(
     directory.mkdir(parents=True, exist_ok=True)
     name = f"{stamp}_create_{table}_table"
     (directory / f"{name}.py").write_text(
-        "from avalon.orm import Migration, Schema\n"
+        "from almasix.orm import Migration, Schema\n"
         f"class Create{table.capitalize()}Table(Migration):\n"
         "    async def up(self):\n"
         f"        await Schema.create('{table}', lambda t: (t.id(), t.string('name')))\n"
@@ -68,7 +68,7 @@ def write_seeder(root: Path) -> None:
     directory = root / "database" / "seeders"
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "database_seeder.py").write_text(
-        "from avalon.orm import Seeder\n"
+        "from almasix.orm import Seeder\n"
         "class DatabaseSeeder(Seeder):\n"
         "    async def run(self):\n"
         "        pass\n",
@@ -117,7 +117,7 @@ def test_install_creates_the_migration_repository_table(
 def test_install_says_the_repository_table_is_already_there(
     build: Build, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Laravel fails a second install; Avalon reports it and succeeds."""
+    """Laravel fails a second install; Almasix reports it and succeeds."""
     kernel = build()
     assert kernel.run_argv("migrate:install", []) == 0
     capsys.readouterr()

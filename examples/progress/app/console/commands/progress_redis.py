@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from avalon.console.command import Command
+from almasix.console.command import Command
 
 
 class ProgressRedisCommand(Command):
@@ -11,7 +11,7 @@ class ProgressRedisCommand(Command):
 
     def handle(self) -> int:
         try:
-            from avalon.redis import Redis, require_redis
+            from almasix.redis import Redis, require_redis
 
             require_redis()
             Redis.set("progress:redis:ping", b"pong", ex=30)
@@ -19,7 +19,7 @@ class ProgressRedisCommand(Command):
             self.info(f"Redis.get → {value!r}")
             Redis.delete("progress:redis:ping")
 
-            from avalon.cache import Cache
+            from almasix.cache import Cache
 
             Cache.store("redis").put("progress:redis:cache", "ok", 30)
             cached = Cache.store("redis").get("progress:redis:cache")
@@ -27,7 +27,7 @@ class ProgressRedisCommand(Command):
             Cache.store("redis").forget("progress:redis:cache")
         except Exception as exc:
             self.warn(f"Redis unavailable ({exc}); skipping live demo")
-            self.comment("Install redis + avalon[redis], start a server, then retry.")
+            self.comment("Install redis + almasix[redis], start a server, then retry.")
             return 0
 
         self.success("redis demo ok")

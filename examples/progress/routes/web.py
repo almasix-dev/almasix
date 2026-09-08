@@ -6,7 +6,7 @@ from app.http.controllers.showcase_controller import ShowcaseController
 from app.http.controllers.verification_controller import VerificationController
 from app.http.controllers.welcome_controller import WelcomeController
 
-from avalon.routing import Route
+from almasix.routing import Route
 
 with Route.group(middleware=["web"]):
     Route.get("/", [WelcomeController, "index"])

@@ -1,6 +1,6 @@
 """M30 — the migrated commands, where the argv parser hands over a string.
 
-Typer used to coerce and validate option types at the door. Avalon's parser
+Typer used to coerce and validate option types at the door. Almasix's parser
 hands every option over as text, so each command owns the conversion — and the
 error when it fails.
 """
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console.kernel import ConsoleKernel
+from almasix.console.kernel import ConsoleKernel
 
 
 @pytest.fixture()
@@ -43,7 +43,7 @@ def test_the_schedule_worker_says_which_sleep_it_could_not_read(
 def test_lang_missing_asks_for_the_locale_it_needs(
     kernel: ConsoleKernel, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Avalon's signature language has no required option, so the command checks."""
+    """Almasix's signature language has no required option, so the command checks."""
     code = kernel.run_argv("lang:missing", [])
 
     assert code == 1
@@ -53,7 +53,7 @@ def test_lang_missing_asks_for_the_locale_it_needs(
 def test_migrate_reports_a_database_it_cannot_reach(
     kernel: ConsoleKernel, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from avalon.console.commands.database import DatabaseCommand
+    from almasix.console.commands.database import DatabaseCommand
 
     async def explode() -> None:
         raise RuntimeError("no such table: migrations")

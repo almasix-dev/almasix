@@ -1,6 +1,6 @@
 """Authentication defaults — guards, providers, password brokers."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "defaults": {

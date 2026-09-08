@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console.command import Command
-from avalon.console.kernel import ConsoleKernel
-from avalon.debug import DumpAndDie, Caller, dd, dump, render_dd_html, render_dump_html, serialize
-from avalon.exceptions.handler import Handler
-from avalon.framework import Application
+from almasix.console.command import Command
+from almasix.console.kernel import ConsoleKernel
+from almasix.debug import DumpAndDie, Caller, dd, dump, render_dd_html, render_dump_html, serialize
+from almasix.exceptions.handler import Handler
+from almasix.framework import Application
 from tests.support import purge_generated_app_modules
 
 
@@ -24,8 +24,8 @@ def test_dump_returns_values_and_continues(capsys: pytest.CaptureFixture[str]) -
 
 def test_dd_raises_dump_and_die() -> None:
     with pytest.raises(DumpAndDie) as caught:
-        dd({"hello": "avalon"})
-    assert caught.value.values == ({"hello": "avalon"},)
+        dd({"hello": "almasix"})
+    assert caught.value.values == ({"hello": "almasix"},)
     assert caught.value.caller is not None
     assert isinstance(caught.value.caller, Caller)
 
@@ -126,7 +126,7 @@ def test_console_kernel_dd_exits_zero(tmp_path: Path) -> None:
 
 def test_render_dump_html_inline() -> None:
     html = render_dump_html({"name": "Ada"}, source="welcome")
-    assert "avalon-dump" in html
+    assert "almasix-dump" in html
     assert "welcome" in html
     assert 'class="k"' in html
 

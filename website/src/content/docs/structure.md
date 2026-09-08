@@ -1,9 +1,9 @@
 ---
 title: Directory Structure
-description: How an Avalon application is organized on disk.
+description: How an Almasix application is organized on disk.
 ---
 
-The default Avalon application structure provides a sensible starting point for both small and large applications. Feel free to organize your application however you like — Avalon imposes almost no restrictions — but understanding the conventions will help you navigate quickly.
+The default Almasix application structure provides a sensible starting point for both small and large applications. Feel free to organize your application however you like — Almasix imposes almost no restrictions — but understanding the conventions will help you navigate quickly.
 
 ## The root directory
 
@@ -11,7 +11,7 @@ The default Avalon application structure provides a sensible starting point for 
 
 The core of your application lives here: HTTP controllers, middleware, models, policies, and service providers.
 
-Avalon uses **PascalCase** for class names and **snake_case** for Python packages and modules:
+Almasix uses **PascalCase** for class names and **snake_case** for Python packages and modules:
 
 | Layer | Convention | Example |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ Avalon uses **PascalCase** for class names and **snake_case** for Python package
 | Module files | snake_case | `post.py`, `post_controller.py` |
 | Imports | dotted snake_case | `from app.models.post import Post` |
 
-Generators follow the same rules. `grail make:model Post` writes `app/models/post.py` containing `class Post`. Nested namespaces snake-case as well: `Admin/UserController` → `app/http/controllers/admin/user_controller.py`. `grail make:policy PostPolicy --model=Post` writes `app/policies/post_policy.py`.
+Generators follow the same rules. `smith make:model Post` writes `app/models/post.py` containing `class Post`. Nested namespaces snake-case as well: `Admin/UserController` → `app/http/controllers/admin/user_controller.py`. `smith make:policy PostPolicy --model=Post` writes `app/policies/post_policy.py`.
 
 ### The `bootstrap` directory
 
@@ -40,26 +40,26 @@ Route definitions for your application. By convention:
 
 - `routes/web.py` — routes that return HTML
 - `routes/api.py` — routes that return JSON
-- `routes/console.py` — scheduled tasks (loaded by `grail schedule:run`, not the HTTP kernel)
+- `routes/console.py` — scheduled tasks (loaded by `smith schedule:run`, not the HTTP kernel)
 
 ### The `app/console` directory
 
-Console `Command` classes (`grail make:command …`). See [Grail Console](/console/) and [Task Scheduling](/scheduling/).
+Console `Command` classes (`smith make:command …`). See [Smith Console](/console/) and [Task Scheduling](/scheduling/).
 
 ### The `lang` directory
 
 Translation catalogs for localization (`lang/en/…`, `lang/en.json`, and so on).
 
-### The `grail` script
+### The `smith` script
 
-The entry point for Avalon's command-line interface. Generate code, run migrations, schedule work, and open Fiddle:
+The entry point for Almasix's command-line interface. Generate code, run migrations, schedule work, and open Loupe:
 
 ```bash
-grail make:controller PostController
-grail migrate
-grail schedule:run
-grail fiddle
-grail serve
+smith make:controller PostController
+smith migrate
+smith schedule:run
+smith loupe
+smith serve
 ```
 
 :::note

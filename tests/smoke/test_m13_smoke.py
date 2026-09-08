@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console.kernel import ConsoleKernel
-from avalon.mail import Mail
-from avalon.notifications import ResetPasswordNotification
+from almasix.console.kernel import ConsoleKernel
+from almasix.mail import Mail
+from almasix.notifications import ResetPasswordNotification
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
@@ -34,8 +34,8 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
 async def test_m13_user_notifiable(progress_cwd: Path) -> None:
     kernel = ConsoleKernel.from_cwd(progress_cwd)
     kernel.app.config.set("mail.default", "array")
-    from avalon.mail.provider import MailServiceProvider
-    from avalon.notifications.provider import NotificationServiceProvider
+    from almasix.mail.provider import MailServiceProvider
+    from almasix.notifications.provider import NotificationServiceProvider
 
     MailServiceProvider(kernel.app).register()
     MailServiceProvider(kernel.app).boot()
@@ -44,7 +44,7 @@ async def test_m13_user_notifiable(progress_cwd: Path) -> None:
 
     from app.models.user import User
 
-    assert issubclass(User, __import__("avalon.notifications", fromlist=["Notifiable"]).Notifiable)
+    assert issubclass(User, __import__("almasix.notifications", fromlist=["Notifiable"]).Notifiable)
     user = User(attributes={"email": "smoke@progress.test", "name": "Smoke"})
     await user.notify(ResetPasswordNotification("smoke-token"))
     transport = Mail.manager().array_transport()

@@ -6,8 +6,8 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.dialects import mysql, postgresql, sqlite
 
-from avalon.orm import Model, Schema
-from avalon.orm.builder import QueryBuilder, _native_upsert
+from almasix.orm import Model, Schema
+from almasix.orm.builder import QueryBuilder, _native_upsert
 
 pytest_plugins = ("tests.orm_support",)
 

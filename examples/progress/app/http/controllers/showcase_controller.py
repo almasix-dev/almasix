@@ -1,10 +1,10 @@
-"""Caliburn showcase — exhaust surface for the living example."""
+"""Prism showcase — exhaust surface for the living example."""
 
 from __future__ import annotations
 
-from avalon import __version__
-from avalon.caliburn import view
-from avalon.http import Controller, Response
+from almasix import __version__
+from almasix.prism import view
+from almasix.http import Controller, Response
 
 
 class ShowcaseController(Controller):

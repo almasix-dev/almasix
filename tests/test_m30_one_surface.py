@@ -1,6 +1,6 @@
 """M30 — one command surface: discovery, aliases, lazy boot, and signature help.
 
-Grail used to have two consoles: hand-written Typer callbacks and discovered
+Smith used to have two consoles: hand-written Typer callbacks and discovered
 ``Command`` classes. These tests hold the line that there is only one.
 """
 
@@ -15,21 +15,21 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from avalon.console.command import Command
-from avalon.console.front_door import FrontDoor, install, report_failures
-from avalon.console.help import arguments_of, help_text, metavar, options_of, usage
-from avalon.console.kernel import ConsoleKernel
-from avalon.installer.scaffold import scaffold_app
+from almasix.console.command import Command
+from almasix.console.front_door import FrontDoor, install, report_failures
+from almasix.console.help import arguments_of, help_text, metavar, options_of, usage
+from almasix.console.kernel import ConsoleKernel
+from almasix.installer.scaffold import scaffold_app
 
 runner = CliRunner()
 
 BROKEN = """
-from avalon.console.command import Command
-from avalon.nowhere import Missing  # noqa
+from almasix.console.command import Command
+from almasix.nowhere import Missing  # noqa
 """
 
 WORKS = '''
-from avalon.console.command import Command
+from almasix.console.command import Command
 
 
 class WorksCommand(Command):
@@ -56,7 +56,7 @@ def test_a_broken_command_module_does_not_hide_its_siblings(app_root: Path) -> N
 
     assert "probe:works" in kernel.commands
     assert [failure.module for failure in kernel.failures] == ["app.console.commands.broken"]
-    assert "No module named 'avalon.nowhere'" in kernel.failures[0].summary()
+    assert "No module named 'almasix.nowhere'" in kernel.failures[0].summary()
 
 
 def test_the_broken_module_is_named_on_every_run_not_only_on_list(
@@ -100,7 +100,7 @@ def test_the_directory_loader_keeps_the_files_it_can_read(tmp_path: Path) -> Non
 
     assert "probe:works" in kernel.commands
     assert [Path(failure.module).name for failure in kernel.failures] == ["broken.py"]
-    assert not [name for name in sys.modules if "avalon_app_command_broken" in name]
+    assert not [name for name in sys.modules if "almasix_app_command_broken" in name]
 
 
 def test_a_broken_file_is_reported_once_not_once_per_scan(app_root: Path) -> None:
@@ -294,11 +294,11 @@ def test_the_front_door_adds_the_applications_own_commands(app_root: Path) -> No
 def test_the_cli_module_declares_no_commands_of_its_own() -> None:
     """The M30 gate: nothing is reachable through Typer alone.
 
-    Grail's CLI module is the front door and nothing else — a hand-written
+    Smith's CLI module is the front door and nothing else — a hand-written
     ``@app.command`` there would be a command that ``Artisan.call`` and the
     scheduler cannot see, which is the split M30 closed.
     """
-    source = Path("src/avalon/grail/cli.py").read_text(encoding="utf-8")
+    source = Path("src/almasix/smith/cli.py").read_text(encoding="utf-8")
 
     assert "@app.command" not in source
     assert "install(app)" in source
@@ -311,33 +311,33 @@ def test_what_the_front_door_offers_is_exactly_what_the_kernel_knows(app_root: P
     offered = {command.name for command in front.registered_commands if command.name}
     assert offered, "the front door registered no commands"
     assert offered <= set(kernel.commands), sorted(offered - set(kernel.commands))
-    for name in ("version", "make:model", "migrate", "schedule:list", "serve", "list", "fiddle"):
+    for name in ("version", "make:model", "migrate", "schedule:list", "serve", "list", "loupe"):
         assert name in offered
 
 
 def test_importing_a_command_module_first_does_not_hide_its_commands() -> None:
     """Discovery must not depend on what the interpreter imported first.
 
-    ``avalon.grail`` used to import the CLI, which discovers every command
-    module. A command module that imported anything from ``avalon.grail``
+    ``almasix.smith`` used to import the CLI, which discovers every command
+    module. A command module that imported anything from ``almasix.smith``
     therefore triggered discovery of itself, mid-import, before its classes
     existed — and ``serve`` silently vanished from the CLI for the rest of
     the process, depending only on import order.
     """
     untouched = subprocess.run(
-        [sys.executable, "-c", "import sys, avalon.grail; print('avalon.grail.cli' in sys.modules)"],
+        [sys.executable, "-c", "import sys, almasix.smith; print('almasix.smith.cli' in sys.modules)"],
         capture_output=True,
         text=True,
         cwd=Path.cwd(),
     )
-    assert untouched.stdout.strip() == "False", "importing avalon.grail still builds the CLI"
+    assert untouched.stdout.strip() == "False", "importing almasix.smith still builds the CLI"
 
     script = (
-        "import avalon.console.commands.runtime\n"
-        "from avalon.grail.cli import app\n"
+        "import almasix.console.commands.runtime\n"
+        "from almasix.smith.cli import app\n"
         "names = [c.name for c in app.registered_commands]\n"
         "assert 'serve' in names, sorted(names)\n"
-        "from avalon.grail import app as lazy\n"
+        "from almasix.smith import app as lazy\n"
         "assert lazy is app\n"
         "print('ok')\n"
     )
@@ -348,17 +348,17 @@ def test_importing_a_command_module_first_does_not_hide_its_commands() -> None:
     assert "ok" in result.stdout
 
 
-def test_the_lazy_grail_attribute_resolves_the_cli_and_nothing_else() -> None:
-    import avalon.grail
-    from avalon.grail.cli import app
+def test_the_lazy_smith_attribute_resolves_the_cli_and_nothing_else() -> None:
+    import almasix.smith
+    from almasix.smith.cli import app
 
-    assert avalon.grail.app is app
+    assert almasix.smith.app is app
     with pytest.raises(AttributeError, match="no attribute 'kernel'"):
-        avalon.grail.kernel
+        almasix.smith.kernel
 
 
 CYCLE = """
-from avalon.console.kernel import ConsoleKernel
+from almasix.console.kernel import ConsoleKernel
 
 # Discovery, from inside a module discovery is itself importing. The kernel
 # below re-enters this very module, which Python has not finished executing —
@@ -367,7 +367,7 @@ inner = ConsoleKernel.for_cwd()
 inner._load_package("cyclepkg")
 failures = list(inner.failures)
 
-from avalon.console.command import Command
+from almasix.console.command import Command
 
 
 class CycleCommand(Command):
@@ -400,7 +400,7 @@ def test_a_module_discovered_mid_import_is_reported_not_skipped(
 def test_no_orm_module_imports_the_console_at_module_scope() -> None:
     """Layering: the console sits above the ORM, so the ORM must not need it first.
 
-    ``avalon.orm.migration`` imported ``avalon.console.stub`` at module scope
+    ``almasix.orm.migration`` imported ``almasix.console.stub`` at module scope
     to render migration stubs. Importing down from up makes the two mutually
     importing, and a command module that pulled the ORM in mid-import saw a
     half-built module — once, as a ``NameError`` on ``render`` that then took
@@ -408,7 +408,7 @@ def test_no_orm_module_imports_the_console_at_module_scope() -> None:
     both modules exist, which is why this checks module scope only.
     """
     offenders: list[str] = []
-    for path in sorted(Path("src/avalon/orm").glob("*.py")):
+    for path in sorted(Path("src/almasix/orm").glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in tree.body:
             reference = ""
@@ -416,7 +416,7 @@ def test_no_orm_module_imports_the_console_at_module_scope() -> None:
                 reference = node.module or ""
             elif isinstance(node, ast.Import):
                 reference = node.names[0].name
-            if reference.startswith("avalon.console"):
+            if reference.startswith("almasix.console"):
                 offenders.append(f"{path.name}:{node.lineno} imports {reference}")
 
     assert offenders == [], offenders
@@ -424,7 +424,7 @@ def test_no_orm_module_imports_the_console_at_module_scope() -> None:
 
 def test_making_a_migration_still_renders_its_stub(tmp_path: Path) -> None:
     """The import moved into the function, so prove the function still has it."""
-    from avalon.orm.migration import make_migration
+    from almasix.orm.migration import make_migration
 
     path = make_migration("create_users_table", tmp_path / "migrations")
 

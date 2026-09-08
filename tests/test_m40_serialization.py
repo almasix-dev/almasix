@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from avalon.orm import Collection, Model, Schema, relation
+from almasix.orm import Collection, Model, Schema, relation
 from tests.orm_support import memory_db  # noqa: F401
 
 pytestmark = pytest.mark.asyncio

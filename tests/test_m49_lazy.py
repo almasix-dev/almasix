@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from avalon.support import collect
-from avalon.support.lazy import AsyncLazyCollection, LazyCollection, lazy
-from avalon.support.collection import Collection
+from almasix.support import collect
+from almasix.support.lazy import AsyncLazyCollection, LazyCollection, lazy
+from almasix.support.collection import Collection
 from tests.orm_support import memory_db  # noqa: F401
 
 
@@ -413,7 +413,7 @@ async def test_async_take_until_timeout_stops() -> None:
 
 @pytest.mark.asyncio
 async def test_streaming_reads_return_chainable_lazy_collections(memory_db) -> None:
-    from avalon.orm import Model, Schema
+    from almasix.orm import Model, Schema
 
     class Reading(Model):
         table = "readings"

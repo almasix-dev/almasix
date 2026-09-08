@@ -9,30 +9,30 @@ from typing import Any, ClassVar
 
 import pytest
 
-from avalon.console.commands.queue_failed import QueueFailedCommand, QueueRetryCommand
-from avalon.console.commands.queue_work import QueueListenCommand, QueueWorkCommand
-from avalon.console.commands.storage_link import StorageLinkCommand
-from avalon.console.display import describe, serialize, to_json
-from avalon.console.repl import resolve_awaitable
-from avalon.debug import dump, render_dd_html, render_dump_html, serialize as debug_serialize
-from avalon.framework.application import Application
-from avalon.notifications.jobs import (
+from almasix.console.commands.queue_failed import QueueFailedCommand, QueueRetryCommand
+from almasix.console.commands.queue_work import QueueListenCommand, QueueWorkCommand
+from almasix.console.commands.storage_link import StorageLinkCommand
+from almasix.console.display import describe, serialize, to_json
+from almasix.console.repl import resolve_awaitable
+from almasix.debug import dump, render_dd_html, render_dump_html, serialize as debug_serialize
+from almasix.framework.application import Application
+from almasix.notifications.jobs import (
     SendQueuedNotification,
     resolve_notifiable,
     resolve_notification,
 )
-from avalon.notifications.verification import (
+from almasix.notifications.verification import (
     MustVerifyEmail,
     hash_email,
     mark_verified_from_request,
     sign_verification,
     verify_signature,
 )
-from avalon.queue import Job, ShouldQueue, ensure_tables
-from avalon.queue.helpers import default_queue_config, set_dispatcher, set_manager
-from avalon.queue.dispatcher import Dispatcher
-from avalon.queue.manager import QueueManager
-from avalon.support import collect
+from almasix.queue import Job, ShouldQueue, ensure_tables
+from almasix.queue.helpers import default_queue_config, set_dispatcher, set_manager
+from almasix.queue.dispatcher import Dispatcher
+from almasix.queue.manager import QueueManager
+from almasix.support import collect
 from tests.orm_support import memory_db
 
 
@@ -71,7 +71,7 @@ class _VerifyUser(MustVerifyEmail):
 
 @pytest.mark.asyncio
 async def test_verification_signature_and_mark_flow(monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.notifications import verification as ver
+    from almasix.notifications import verification as ver
 
     monkeypatch.setattr(ver, "_default_user_model", lambda: None)
     monkeypatch.setenv("APP_KEY", "test-secret-key")
@@ -182,17 +182,17 @@ async def test_verification_signature_and_mark_flow(monkeypatch: pytest.MonkeyPa
 
 
 def test_verification_app_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.notifications import verification as ver
+    from almasix.notifications import verification as ver
 
     monkeypatch.setattr(
-        "avalon.config.config",
+        "almasix.config.config",
         lambda key, default=None: (_ for _ in ()).throw(RuntimeError("boom")),
     )
     assert ver._app_url() == ""
-    assert ver._app_key_bytes() == b"avalon-dev-key"
+    assert ver._app_key_bytes() == b"almasix-dev-key"
 
     monkeypatch.setattr(
-        "avalon.config.config",
+        "almasix.config.config",
         lambda key, default=None: "base64:abc" if key == "app.key" else "http://x",
     )
     assert ver._app_url() == "http://x"
@@ -228,14 +228,14 @@ async def test_queue_failed_and_retry_commands(memory_db: Any) -> None:
     app = Application()
     app.container.instance(QueueManager, manager)
 
-    from avalon.queue.failed import FailedJobRepository
+    from almasix.queue.failed import FailedJobRepository
 
     repo = FailedJobRepository(manager.failed_config())
     assert await repo.all(limit=10) == []
 
     connection = manager.connection("database")
     await connection.push(_BoomJob())
-    from avalon.queue.worker import Worker
+    from almasix.queue.worker import Worker
 
     worker = Worker(manager)
     await worker.run_once("database")
@@ -379,7 +379,7 @@ class _PlainNotifiable:
 
 @pytest.mark.asyncio
 async def test_notification_job_resolve_helpers() -> None:
-    from avalon.notifications.channels import ArrayChannel
+    from almasix.notifications.channels import ArrayChannel
 
     ArrayChannel.clear()
     note = resolve_notification(f"{_Note.__module__}.{_Note.__qualname__}", {"x": 1})

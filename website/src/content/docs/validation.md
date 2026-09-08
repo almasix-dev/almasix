@@ -3,7 +3,7 @@ title: Validation
 description: Validate incoming data with FormRequest before controller actions run.
 ---
 
-Avalon validates HTTP input with **FormRequest** classes built on **Pydantic v2**. Invalid input never reaches the controller action.
+Almasix validates HTTP input with **FormRequest** classes built on **Pydantic v2**. Invalid input never reaches the controller action.
 
 ## Defining a form request
 
@@ -11,7 +11,7 @@ Avalon validates HTTP input with **FormRequest** classes built on **Pydantic v2*
 # app/http/requests/store_post_request.py
 from pydantic import Field
 
-from avalon.validation import FormRequest
+from almasix.validation import FormRequest
 
 
 class StorePostRequest(FormRequest):
@@ -25,7 +25,7 @@ class StorePostRequest(FormRequest):
 Generate a stub:
 
 ```bash
-grail make:request StorePostRequest
+smith make:request StorePostRequest
 ```
 
 ## Using it in a controller
@@ -67,7 +67,7 @@ Validation failures raise a **422** with the locked JSON shape:
 }
 ```
 
-Messages resolve through Avalon's translator (localized catalogs under `lang/`).
+Messages resolve through Almasix's translator (localized catalogs under `lang/`).
 
 ## Related
 

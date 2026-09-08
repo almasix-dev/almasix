@@ -1,4 +1,4 @@
-"""Exhaust remaining M6 Caliburn Blade-parity surfaces."""
+"""Exhaust remaining M6 Prism Blade-parity surfaces."""
 
 from __future__ import annotations
 
@@ -6,15 +6,15 @@ from pathlib import Path
 
 import pytest
 
-from avalon.caliburn.compiler import compile_template
-from avalon.caliburn.engine import Engine
+from almasix.prism.compiler import compile_template
+from almasix.prism.engine import Engine
 
 
 def test_include_with_data_dict(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "partial.cal.html").write_text("<em>{{ label }}</em>", encoding="utf-8")
-    (views / "page.cal.html").write_text(
+    (views / "partial.prism.html").write_text("<em>{{ label }}</em>", encoding="utf-8")
+    (views / "page.prism.html").write_text(
         "@include('partial', {'label': 'from-data'})",
         encoding="utf-8",
     )
@@ -25,8 +25,8 @@ def test_include_with_data_dict(tmp_path: Path) -> None:
 def test_include_if_missing_vs_present(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "ok.cal.html").write_text("OK", encoding="utf-8")
-    (views / "page.cal.html").write_text(
+    (views / "ok.prism.html").write_text("OK", encoding="utf-8")
+    (views / "page.prism.html").write_text(
         "A@includeIf('missing')B@includeIf('ok')C",
         encoding="utf-8",
     )
@@ -39,8 +39,8 @@ def test_include_if_missing_vs_present(tmp_path: Path) -> None:
 def test_include_when_and_unless(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "bit.cal.html").write_text("X", encoding="utf-8")
-    (views / "page.cal.html").write_text(
+    (views / "bit.prism.html").write_text("X", encoding="utf-8")
+    (views / "page.prism.html").write_text(
         "@includeWhen(show, 'bit')|@includeUnless(show, 'bit')",
         encoding="utf-8",
     )
@@ -52,9 +52,9 @@ def test_include_when_and_unless(tmp_path: Path) -> None:
 def test_each_with_items_and_empty_view(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "row.cal.html").write_text("[{{ item }}]", encoding="utf-8")
-    (views / "none.cal.html").write_text("empty", encoding="utf-8")
-    (views / "page.cal.html").write_text(
+    (views / "row.prism.html").write_text("[{{ item }}]", encoding="utf-8")
+    (views / "none.prism.html").write_text("empty", encoding="utf-8")
+    (views / "page.prism.html").write_text(
         "@each('row', items, 'item', 'none')",
         encoding="utf-8",
     )
@@ -88,12 +88,12 @@ def test_csrf_stub() -> None:
 
 
 def test_dump_and_dd_directives() -> None:
-    from avalon.debug import DumpAndDie
+    from almasix.debug import DumpAndDie
 
     dump_render = compile_template("before @dump(user) after", name="demo.dump")
     html = dump_render({"user": {"name": "Ada"}}, None)
     assert "before" in html and "after" in html
-    assert "avalon-dump" in html
+    assert "almasix-dump" in html
     assert "Ada" in html or "&quot;Ada&quot;" in html
     assert "demo.dump" in html
 
@@ -102,7 +102,7 @@ def test_dump_and_dd_directives() -> None:
     assert "#0" in multi_html and "#1" in multi_html
 
     bare = compile_template("@dump")
-    assert "avalon-dump" in bare({}, None)
+    assert "almasix-dump" in bare({}, None)
 
     dd_render = compile_template("@dd(user)")
     with pytest.raises(DumpAndDie) as caught:
@@ -135,7 +135,7 @@ def test_asset_directive() -> None:
 def test_custom_engine_directive(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "page.cal.html").write_text("@datetime('now')", encoding="utf-8")
+    (views / "page.prism.html").write_text("@datetime('now')", encoding="utf-8")
     engine = Engine(paths=[views])
     engine.directive("datetime", lambda expr: f"__w({expr})")
     assert engine.render("page") == "now"
@@ -144,7 +144,7 @@ def test_custom_engine_directive(tmp_path: Path) -> None:
 def test_composer_and_creator(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "profile").mkdir(parents=True)
-    (views / "profile" / "show.cal.html").write_text("{{ title }}", encoding="utf-8")
+    (views / "profile" / "show.prism.html").write_text("{{ title }}", encoding="utf-8")
     engine = Engine(paths=[views])
     created: list[str] = []
 
@@ -165,7 +165,7 @@ def test_composer_and_creator(tmp_path: Path) -> None:
 def test_fragment_cache(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         "@cache('frag'){{ n }}@endcache",
         encoding="utf-8",
     )
@@ -179,8 +179,8 @@ def test_fragment_cache(tmp_path: Path) -> None:
 def test_cache_views_and_clear_cache(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "mail").mkdir(parents=True)
-    (views / "a.cal.html").write_text("A", encoding="utf-8")
-    (views / "mail" / "b.cal.html").write_text("B", encoding="utf-8")
+    (views / "a.prism.html").write_text("A", encoding="utf-8")
+    (views / "mail" / "b.prism.html").write_text("B", encoding="utf-8")
     engine = Engine(paths=[views])
     assert engine.cache_views() == 2
     assert len(engine._cache) == 2

@@ -7,10 +7,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from avalon.framework import Application
-from avalon.http import Controller, ForbiddenHttpException, Request
-from avalon.routing import Route, set_router
-from avalon.validation import Field, FormRequest, ValidationException
+from almasix.framework import Application
+from almasix.http import Controller, ForbiddenHttpException, Request
+from almasix.routing import Route, set_router
+from almasix.validation import Field, FormRequest, ValidationException
 from tests.support import purge_generated_app_modules
 
 
@@ -40,19 +40,19 @@ class _Stub:
 
 
 def test_valid_input_is_coerced_and_exposed() -> None:
-    form = StoreRequest.validate_request(_Stub({"name": "avalon", "count": "3", "flag": "yes"}))
+    form = StoreRequest.validate_request(_Stub({"name": "almasix", "count": "3", "flag": "yes"}))
 
-    assert form.data.name == "avalon"
+    assert form.data.name == "almasix"
     assert form.data.count == 3
     assert form.data.flag is True
     assert form.validated() == {
-        "name": "avalon",
+        "name": "almasix",
         "count": 3,
         "flag": True,
         "tags": [],
         "note": None,
     }
-    assert form.validated("name", "count") == {"name": "avalon", "count": 3}
+    assert form.validated("name", "count") == {"name": "almasix", "count": 3}
     assert form.validated("missing") == {}
 
 
@@ -98,10 +98,10 @@ def test_size_messages_differ_for_strings_and_collections() -> None:
 
 
 def test_unmapped_errors_fall_back_to_pydantic_wording() -> None:
-    from avalon.validation.messages import humanize, message_for
+    from almasix.validation.messages import humanize, message_for
 
     assert humanize("first_name") == "first name"
-    # An error type Avalon does not map keeps Pydantic's own message.
+    # An error type Almasix does not map keeps Pydantic's own message.
     assert message_for({"type": "some_new_type", "loc": ("x",), "msg": "Odd failure"}) == (
         "x",
         "Odd failure",
@@ -208,18 +208,18 @@ def test_form_request_injects_into_controller_actions(
     app._routes_loaded = True
     client = TestClient(app.asgi, raise_server_exceptions=False)
 
-    ok = client.post("/items", json={"name": "avalon"})
+    ok = client.post("/items", json={"name": "almasix"})
     assert ok.status_code == 200
-    assert ok.json()["validated"]["name"] == "avalon"
+    assert ok.json()["validated"]["name"] == "almasix"
     # Query and body still merge, so the raw bag stays reachable.
-    assert client.post("/items?extra=1", json={"name": "avalon"}).json()["raw"]["extra"] == "1"
+    assert client.post("/items?extra=1", json={"name": "almasix"}).json()["raw"]["extra"] == "1"
 
     bad = client.post("/items", json={"name": ""})
     assert bad.status_code == 422
     assert bad.json()["errors"]["name"] == ["The name must be at least 2 characters."]
 
     # FormRequest injection must not shadow the M2 Request/route-param contract.
-    mixed = client.post("/mixed/7", json={"name": "avalon"})
-    assert mixed.json() == {"item": "7", "validated": "avalon", "path": "/mixed/7"}
+    mixed = client.post("/mixed/7", json={"name": "almasix"})
+    assert mixed.json() == {"item": "7", "validated": "almasix", "path": "/mixed/7"}
 
     purge_generated_app_modules()

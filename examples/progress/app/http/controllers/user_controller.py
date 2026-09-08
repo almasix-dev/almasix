@@ -5,9 +5,9 @@ from __future__ import annotations
 from app.models.role import Role
 from app.models.user import User
 from app.support.demo_db import ensure_demo_database
-from avalon.http import Controller, Request
-from avalon.http.exceptions import NotFoundHttpException
-from avalon.orm import ModelNotFoundError, RelationNotLoadedError
+from almasix.http import Controller, Request
+from almasix.http.exceptions import NotFoundHttpException
+from almasix.orm import ModelNotFoundError, RelationNotLoadedError
 
 
 class UserController(Controller):
@@ -62,7 +62,7 @@ class UserController(Controller):
     async def upsert(self, request: Request) -> dict:
         """Dialect-native upsert (unique on email)."""
         await ensure_demo_database()
-        email = str(request.input("email", "ada@avalon.dev"))
+        email = str(request.input("email", "ada@almasix.dev"))
         name = str(request.input("name", "Ada Lovelace"))
         await User.query().upsert(
             {"email": email, "name": name},

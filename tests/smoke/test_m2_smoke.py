@@ -1,4 +1,4 @@
-"""M2 smoke — Avalon Route DSL without FastAPI imports in app code."""
+"""M2 smoke — Almasix Route DSL without FastAPI imports in app code."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
-from avalon.installer.cli import app as avalon_app
-from avalon.installer.scaffold import scaffold_app
+from almasix.installer.cli import app as almasix_app
+from almasix.installer.scaffold import scaffold_app
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
@@ -19,7 +19,7 @@ runner = CliRunner()
 
 
 def test_m2_s1_scaffold_uses_route_dsl(tmp_path: Path) -> None:
-    result = runner.invoke(avalon_app, ["new", "route_app", "--path", str(tmp_path)])
+    result = runner.invoke(almasix_app, ["new", "route_app", "--path", str(tmp_path)])
     assert result.exit_code == 0, result.stdout
     root = tmp_path / "route_app"
     web = (root / "routes" / "web.py").read_text(encoding="utf-8")
@@ -62,7 +62,7 @@ def test_m2_s2_progress_routes_via_kernel(
         page = client.get("/")
         assert page.status_code == 200
         assert page.headers["content-type"].startswith("text/html")
-        assert "Welcome to Avalon" in page.text
+        assert "Welcome to Almasix" in page.text
 
         health = client.get("/api/health")
         assert health.status_code == 200
@@ -95,7 +95,7 @@ def test_m2_s3_progress_example_exhausts_http_surface(
         assert home.status_code == 200
         assert home.headers["content-type"].startswith("text/html")
         assert "<h1>Progress tracker</h1>" in home.text
-        assert "x-avalon-demo" not in home.headers
+        assert "x-almasix-demo" not in home.headers
 
         board = client.get("/progress")
         assert board.status_code == 200
@@ -110,13 +110,13 @@ def test_m2_s3_progress_example_exhausts_http_surface(
         assert health.headers["content-type"].startswith("application/json")
         assert health.json()["status"] == "ok"
         assert health.json()["app"] == "Progress"
-        assert health.headers.get("x-avalon-demo") == "m2"
-        assert health.headers.get("x-avalon-path") == "/api/health"
+        assert health.headers.get("x-almasix-demo") == "m2"
+        assert health.headers.get("x-almasix-path") == "/api/health"
 
         ping = client.get("/api/ping")
         assert ping.status_code == 200
         assert ping.json() == {"demo": "ping", "via": "controller"}
-        assert ping.headers.get("x-avalon-demo") == "m2"
+        assert ping.headers.get("x-almasix-demo") == "m2"
 
         data = client.get("/api/progress")
         assert data.headers["content-type"].startswith("application/json")
@@ -131,10 +131,10 @@ def test_m2_s3_progress_example_exhausts_http_surface(
         assert show.json()["bearer"] == "secret"
         assert show.json()["only_q"] == {"q": "hello"}
 
-        created = client.post("/api/items", json={"name": "avalon", "flag": True, "count": 2})
+        created = client.post("/api/items", json={"name": "almasix", "flag": True, "count": 2})
         assert created.status_code == 200
         assert created.json()["created"] is True
-        assert created.json()["name"] == "avalon"
+        assert created.json()["name"] == "almasix"
         assert created.json()["boolean_flag"] is True
         assert created.json()["integer_count"] == 2
 
@@ -166,7 +166,7 @@ def test_m2_s3_progress_example_exhausts_http_surface(
         boom = client.get("/api/boom")
         assert boom.status_code == 418
         assert boom.json() == {"message": "Intentional demo failure", "status": 418, "errors": {}}
-        assert boom.headers.get("x-avalon-demo") == "m2"
+        assert boom.headers.get("x-almasix-demo") == "m2"
 
         missing = client.get("/api/missing")
         assert missing.status_code == 404

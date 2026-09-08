@@ -1,4 +1,4 @@
-"""M50 part 2 — the global helpers that wrap surfaces Avalon already ships."""
+"""M50 part 2 — the global helpers that wrap surfaces Almasix already ships."""
 
 from __future__ import annotations
 
@@ -10,22 +10,22 @@ from typing import Any
 import pytest
 from starlette.requests import Request as StarletteRequest
 
-from avalon.framework import Application, Container
-from avalon.framework.helpers import (
+from almasix.framework import Application, Container
+from almasix.framework.helpers import (
     app,
     current_application,
     get_application,
     resolve,
     set_application,
 )
-from avalon.hashing import Hash, HashManager, bcrypt, set_hash_manager
-from avalon.http import Redirect, Request, back, request, response
-from avalon.http.request import reset_request, set_request
-from avalon.log import info, logger
-from avalon.session import cookie, cookie_jar, flash_input, old, session
-from avalon.session.store import Session, reset_session, set_session
-from avalon.support import base_path, report, report_if, report_unless, storage_path
-from avalon.validation import FormRequest, ValidationException, validator
+from almasix.hashing import Hash, HashManager, bcrypt, set_hash_manager
+from almasix.http import Redirect, Request, back, request, response
+from almasix.http.request import reset_request, set_request
+from almasix.log import info, logger
+from almasix.session import cookie, cookie_jar, flash_input, old, session
+from almasix.session.store import Session, reset_session, set_session
+from almasix.support import base_path, report, report_if, report_unless, storage_path
+from almasix.validation import FormRequest, ValidationException, validator
 
 
 @pytest.fixture(autouse=True)
@@ -147,13 +147,13 @@ def test_response_with_no_content_hands_back_the_factory() -> None:
 
 
 def test_the_factory_renders_views(tmp_path: Path) -> None:
-    from avalon.caliburn.engine import Engine
-    from avalon.caliburn.helpers import set_engine
-    from avalon.http import response_factory
+    from almasix.http import response_factory
+    from almasix.prism.engine import Engine
+    from almasix.prism.helpers import set_engine
 
     views = tmp_path / "views"
     views.mkdir()
-    (views / "welcome.cal.html").write_text("<h1>Hello {{ name }}</h1>")
+    (views / "welcome.prism.html").write_text("<h1>Hello {{ name }}</h1>")
     set_engine(Engine(paths=[views], cache_enabled=False))
     try:
         rendered = response_factory().view("welcome", {"name": "Ada"}, status=201)
@@ -329,7 +329,7 @@ def test_cookie_with_no_name_hands_back_the_jar() -> None:
 def test_the_jar_queues_cookies_onto_the_outgoing_response() -> None:
     from starlette.responses import Response as StarletteResponse
 
-    from avalon.auth.cookies import apply_queued_cookies, begin_cookie_queue, reset_cookie_queue
+    from almasix.auth.cookies import apply_queued_cookies, begin_cookie_queue, reset_cookie_queue
 
     token = begin_cookie_queue()
     try:
@@ -354,7 +354,7 @@ def test_the_jar_queues_cookies_onto_the_outgoing_response() -> None:
 def test_logger_and_info_write_to_the_default_channel(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    logging.getLogger("avalon").setLevel(logging.DEBUG)
+    logging.getLogger("almasix").setLevel(logging.DEBUG)
     info("Deploy finished")
     logger("Cache warm", {"keys": 12})
 
@@ -365,7 +365,7 @@ def test_logger_and_info_write_to_the_default_channel(
 
 
 def test_logger_with_no_message_hands_back_the_writer() -> None:
-    from avalon.log import LogWriter
+    from almasix.log import LogWriter
 
     assert isinstance(logger(), LogWriter)
 
@@ -389,8 +389,8 @@ def test_bcrypt_hashes_with_bcrypt_whatever_the_default_driver_is() -> None:
 
 
 def test_the_form_field_helpers_return_markup_the_view_will_not_escape() -> None:
-    from avalon.caliburn import csrf_field, method_field
-    from avalon.caliburn.escape import e
+    from almasix.prism import csrf_field, method_field
+    from almasix.prism.escape import e
 
     store = Session({"_csrf_token": "tok<en"})
     token = set_session(store)
@@ -405,11 +405,11 @@ def test_the_form_field_helpers_return_markup_the_view_will_not_escape() -> None
 
 
 def test_templates_can_call_the_form_helpers_and_old(tmp_path: Path) -> None:
-    from avalon.caliburn.engine import Engine
+    from almasix.prism.engine import Engine
 
     views = tmp_path / "views"
     views.mkdir()
-    (views / "form.cal.html").write_text(
+    (views / "form.prism.html").write_text(
         '<form>{!! csrf_field() !!}{!! method_field("put") !!}'
         '<input name="name" value="{{ old("name", "") }}"></form>'
     )
@@ -481,7 +481,7 @@ def test_validator_insists_on_a_schema_it_understands() -> None:
 
 
 def test_policy_returns_the_policy_registered_for_a_model() -> None:
-    from avalon.auth.access import Gate, Policy, policy
+    from almasix.auth.access import Gate, Policy, policy
 
     class Post:
         pass
@@ -499,7 +499,7 @@ def test_policy_returns_the_policy_registered_for_a_model() -> None:
 
 
 def test_policy_says_when_a_model_has_none() -> None:
-    from avalon.auth.access import policy
+    from almasix.auth.access import policy
 
     class Unguarded:
         pass
@@ -517,7 +517,7 @@ def test_report_routes_through_the_handler_once_an_application_exists(
 ) -> None:
     Application(tmp_path)
 
-    with caplog.at_level(logging.ERROR, logger="avalon"):
+    with caplog.at_level(logging.ERROR, logger="almasix"):
         report(ValueError("kaboom"))
         report_if(True, ValueError("conditional"))
         report_unless(False, ValueError("inverted"))
@@ -541,7 +541,7 @@ def test_report_falls_back_to_stderr_before_the_application_boots(
 
 
 def test_report_uses_the_bound_handler_when_the_container_has_one(tmp_path: Path) -> None:
-    from avalon.exceptions.handler import Handler
+    from almasix.exceptions.handler import Handler
 
     application = Application(tmp_path)
     seen: list[BaseException] = []

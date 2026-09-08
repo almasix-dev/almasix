@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from avalon.auth import auth
-from avalon.caliburn import view
-from avalon.http import Controller, Request, Response, redirect
-from avalon.notifications.verification import mark_verified_from_request
-from avalon.routing import url
+from almasix.auth import auth
+from almasix.prism import view
+from almasix.http import Controller, Request, Response, redirect
+from almasix.notifications.verification import mark_verified_from_request
+from almasix.routing import url
 
 
 class VerificationController(Controller):

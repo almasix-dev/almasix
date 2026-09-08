@@ -1,10 +1,10 @@
-"""Console schedule — loaded by ``python grail schedule:run``."""
+"""Console schedule — loaded by ``python smith schedule:run``."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from avalon.console import Artisan, schedule
+from almasix.console import Artisan, schedule
 
 
 def _greet(name: str, loud: bool, command) -> int:

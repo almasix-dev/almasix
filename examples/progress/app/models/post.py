@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from avalon.orm import Model, Prunable, SoftDeletes, relation
+from almasix.orm import Model, Prunable, SoftDeletes, relation
 
 
 class Post(Prunable, SoftDeletes, Model):
@@ -15,7 +15,7 @@ class Post(Prunable, SoftDeletes, Model):
         return query.where("published", True)
 
     def prunable(self):
-        """`grail model:prune` deletes posts trashed more than a week ago."""
+        """`smith model:prune` deletes posts trashed more than a week ago."""
         cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
         return self.only_trashed().where("deleted_at", "<", cutoff)
 

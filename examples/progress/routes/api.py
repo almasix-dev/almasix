@@ -2,7 +2,7 @@
 
 Exhausts the M2 HTTP surface: verbs, nested groups, Request bag, container DI,
 and HttpException shapes. The `api` middleware group carries `demo.tag`, so the
-`X-Avalon-Demo` header proves group expansion end to end.
+`X-Almasix-Demo` header proves group expansion end to end.
 
 M5 ORM demos live under `/api/posts`, `/api/users`, and `/api/orm`.
 """
@@ -15,7 +15,7 @@ from app.http.controllers.post_controller import PostController
 from app.http.controllers.progress_controller import ProgressController
 from app.http.controllers.user_controller import UserController
 
-from avalon.routing import Route
+from almasix.routing import Route
 
 with Route.group(prefix="/api", middleware=["api"]):
     Route.get("/health", [HealthController, "index"])

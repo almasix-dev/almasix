@@ -10,11 +10,11 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console.commands.env import KEY_VARIABLE
-from avalon.console.kernel import ConsoleKernel
+from almasix.console.commands.env import KEY_VARIABLE
+from almasix.console.kernel import ConsoleKernel
 
 PLAIN = """# Application
-APP_NAME="Avalon DEMO"
+APP_NAME="Almasix DEMO"
 APP_ENV=local
 
 # Database — the blank line above and this comment must survive

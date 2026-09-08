@@ -1,3 +1,3 @@
 import "../css/app.css";
 
-console.log("Avalon app.js ready");
+console.log("Almasix app.js ready");

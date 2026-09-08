@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from avalon.orm import Migration, Schema
+from almasix.orm import Migration, Schema
 
 
 class CreateDemoTables(Migration):

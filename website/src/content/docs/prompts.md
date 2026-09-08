@@ -1,14 +1,14 @@
 ---
 title: Prompts
-description: Beautiful interactive console prompts for Grail commands.
+description: Beautiful interactive console prompts for Smith commands.
 ---
 
 ## Introduction
 
-Avalon Prompts give Grail commands rich terminal UX: styled text fields, arrow-key selects, confirmations, spinners, and progress bars.
+Almasix Prompts give Smith commands rich terminal UX: styled text fields, arrow-key selects, confirmations, spinners, and progress bars.
 
 ```python
-from avalon.console.prompts import text, select, confirm, spin, progress, intro, outro
+from almasix.console.prompts import text, select, confirm, spin, progress, intro, outro
 
 intro("Create a user")
 name = text("Name", required=True, placeholder="Ada Lovelace")
@@ -55,7 +55,7 @@ Return an error string from `validate`, or `None` when valid.
 
 ## Non-interactive fallbacks
 
-When stdin/stdout are not a TTY, `CI=true`, or `AVALON_PROMPTS_INTERACTIVE=0`:
+When stdin/stdout are not a TTY, `CI=true`, or `ALMASIX_PROMPTS_INTERACTIVE=0`:
 
 - Prompts return `default` (or the first option for `select`)
 - `spin` / `progress` run without animation
@@ -67,10 +67,10 @@ That keeps CI and scripted runs deterministic.
 
 ```bash
 cd examples/progress
-grail progress:prompts
+smith progress:prompts
 ```
 
 ## Related
 
-- [Grail Console](/console/)
+- [Smith Console](/console/)
 - [Task Scheduling](/scheduling/)

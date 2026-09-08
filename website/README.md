@@ -1,4 +1,4 @@
-# Avalon docs site
+# Almasix docs site
 
 Application-developer documentation, built with [Astro Starlight](https://starlight.astro.build/).
 

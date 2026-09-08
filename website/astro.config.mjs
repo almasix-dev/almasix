@@ -4,17 +4,17 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://coolsam726.github.io/avalon',
+	site: 'https://almasix-dev.github.io/almasix',
 	// Astro's audit toolbar currently throws (M_ID) on these pages; docs don't need it.
 	devToolbar: { enabled: false },
 	integrations: [
 		starlight({
-			title: 'Avalon',
+			title: 'Almasix',
 			description:
-				'The elegant Python web framework with Articulate, Caliburn, and the Grail CLI.',
+				'The elegant Python web framework with Articulate, Prism, and the Smith CLI.',
 			logo: {
-				src: './src/assets/avalon-banner.svg',
-				alt: 'Avalon',
+				src: './src/assets/almasix-banner.svg',
+				alt: 'Almasix',
 				replacesTitle: true,
 			},
 			favicon: '/favicon.svg',
@@ -22,11 +22,11 @@ export default defineConfig({
 				{
 					icon: 'github',
 					label: 'GitHub',
-					href: 'https://github.com/coolsam726/avalon',
+					href: 'https://github.com/almasix-dev/almasix',
 				},
 			],
 			editLink: {
-				baseUrl: 'https://github.com/coolsam726/avalon/edit/main/website/',
+				baseUrl: 'https://github.com/almasix-dev/almasix/edit/main/website/',
 			},
 			customCss: ['./src/styles/custom.css'],
 			expressiveCode: {
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						{ label: 'Controllers', slug: 'controllers' },
 						{ label: 'Requests', slug: 'requests' },
 						{ label: 'Responses', slug: 'responses' },
-						{ label: 'Views (Caliburn)', slug: 'views' },
+						{ label: 'Views (Prism)', slug: 'views' },
 						{ label: 'Asset Bundling', slug: 'asset-bundling' },
 						{ label: 'URL Generation', slug: 'urls' },
 						{ label: 'Session', slug: 'session' },
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					label: 'Digging Deeper',
 					collapsed: true,
 					items: [
-						{ label: 'Grail Console', slug: 'console' },
+						{ label: 'Smith Console', slug: 'console' },
 						{ label: 'Prompts', slug: 'prompts' },
 						{ label: 'Task Scheduling', slug: 'scheduling' },
 						{ label: 'File Storage', slug: 'filesystem' },
@@ -164,16 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
 					],
 				},
 				{
-					label: 'Caliburn View Engine',
+					label: 'Prism View Engine',
 					collapsed: true,
 					items: [
-						{ label: 'Caliburn: Getting Started', slug: 'caliburn' },
-						{ label: 'Rendering Views', slug: 'caliburn/rendering' },
-						{ label: 'Layouts & Inheritance', slug: 'caliburn/layouts' },
-						{ label: 'Components & Slots', slug: 'caliburn/components' },
-						{ label: 'Control Structures', slug: 'caliburn/control' },
-						{ label: 'Including Subviews', slug: 'caliburn/includes' },
-						{ label: 'Stacks & Directives', slug: 'caliburn/stacks' },
+						{ label: 'Prism: Getting Started', slug: 'prism' },
+						{ label: 'Rendering Views', slug: 'prism/rendering' },
+						{ label: 'Layouts & Inheritance', slug: 'prism/layouts' },
+						{ label: 'Components & Slots', slug: 'prism/components' },
+						{ label: 'Control Structures', slug: 'prism/control' },
+						{ label: 'Including Subviews', slug: 'prism/includes' },
+						{ label: 'Stacks & Directives', slug: 'prism/stacks' },
 					],
 				},
 			],

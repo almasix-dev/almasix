@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from avalon.cache import Cache
-from avalon.console.command import Command
+from almasix.cache import Cache
+from almasix.console.command import Command
 
 
 class ProgressCacheCommand(Command):
@@ -11,7 +11,7 @@ class ProgressCacheCommand(Command):
     description = "Demo Cache get/put/remember/lock (M15)"
 
     def handle(self) -> int:
-        Cache.put("progress:hello", "avalon", 60)
+        Cache.put("progress:hello", "almasix", 60)
         self.info(f"get → {Cache.get('progress:hello')}")
         value = Cache.remember("progress:answer", 60, lambda: 42)
         self.info(f"remember → {value}")

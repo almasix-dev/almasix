@@ -9,7 +9,7 @@ from enum import Enum
 import pytest
 import sqlalchemy as sa
 
-from avalon.orm import (
+from almasix.orm import (
     DB,
     Collection,
     MassAssignmentError,
@@ -23,13 +23,13 @@ from avalon.orm import (
     relation,
     set_manager,
 )
-from avalon.orm.casts import CastError, cast_value, serialize_value, uncast_value
-from avalon.orm.connection import ConnectionError_, _normalize_url
-from avalon.orm.facade import raw
-from avalon.orm.inflector import pluralize, singularize
-from avalon.orm.migration import MigrationError, Migrator, make_migration
-from avalon.orm.pagination import Paginator, SimplePaginator
-from avalon.orm.schema import Blueprint
+from almasix.orm.casts import CastError, cast_value, serialize_value, uncast_value
+from almasix.orm.connection import ConnectionError_, _normalize_url
+from almasix.orm.facade import raw
+from almasix.orm.inflector import pluralize, singularize
+from almasix.orm.migration import MigrationError, Migrator, make_migration
+from almasix.orm.pagination import Paginator, SimplePaginator
+from almasix.orm.schema import Blueprint
 
 pytest_plugins = ("tests.orm_support",)
 
@@ -673,7 +673,7 @@ async def test_migrator_edges(memory_db, tmp_path) -> None:
     bad = tmp_path / "2020_01_01_000000_no_class.py"
     bad.write_text("x = 1\n", encoding="utf-8")
     with pytest.raises(MigrationError):
-        from avalon.orm.migration import _load
+        from almasix.orm.migration import _load
 
         _load(bad)
     applied = await migrator.run(steps=0)

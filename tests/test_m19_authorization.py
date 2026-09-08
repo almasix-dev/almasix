@@ -1,4 +1,4 @@
-"""M19 Authorization — gates, policies, Caliburn, make:policy, middleware."""
+"""M19 Authorization — gates, policies, Prism, make:policy, middleware."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any, ClassVar
 import pytest
 from typer.testing import CliRunner
 
-from avalon.auth import (
+from almasix.auth import (
     AccessGate,
     AuthenticatableMixin,
     AuthorizationException,
@@ -20,15 +20,15 @@ from avalon.auth import (
     authorize,
     gate,
 )
-from avalon.auth.access.helpers import gate_allows, gate_any
-from avalon.auth.provider import AuthServiceProvider
-from avalon.caliburn.compiler import compile_template
-from avalon.framework.application import Application
-from avalon.grail.cli import app as grail_app
-from avalon.http import Controller, ForbiddenHttpException
-from avalon.http.request import Request
-from avalon.routing.router import RouteDefinition
-from avalon.validation.form_request import FormRequest
+from almasix.auth.access.helpers import gate_allows, gate_any
+from almasix.auth.provider import AuthServiceProvider
+from almasix.framework.application import Application
+from almasix.http import Controller, ForbiddenHttpException
+from almasix.http.request import Request
+from almasix.prism.compiler import compile_template
+from almasix.routing.router import RouteDefinition
+from almasix.smith.cli import app as smith_app
+from almasix.validation.form_request import FormRequest
 
 
 class User(AuthenticatableMixin):
@@ -243,15 +243,15 @@ def test_string_and_class_callbacks() -> None:
         Gate.for_user(User(1)).allows("bad")
     with pytest.raises(TypeError):
         Gate.get_gate()._invoke_missing = None  # type: ignore[attr-defined]
-        from avalon.auth.access.gate import _resolve_callback
+        from almasix.auth.access.gate import _resolve_callback
 
         _resolve_callback(object(), container=None)
 
 
 def test_helpers_gate_resolution_and_payload_shapes() -> None:
-    from avalon.auth.access.helpers import gate as resolve_gate
-    from avalon.auth.access.helpers import gate_allows as allows
-    from avalon.auth.access.helpers import gate_any as any_
+    from almasix.auth.access.helpers import gate as resolve_gate
+    from almasix.auth.access.helpers import gate_allows as allows
+    from almasix.auth.access.helpers import gate_any as any_
 
     Gate.flush()
     Gate.set_gate(None)
@@ -402,7 +402,7 @@ def test_authorization_response_helpers() -> None:
     assert handles.deny_as_not_found().status() == 404
 
 
-def test_caliburn_can_cannot_canany() -> None:
+def test_prism_can_cannot_canany() -> None:
     Gate.define("edit", lambda user, post: user.id == post.user_id)
     Gate.define("other", lambda user, post: False)
     user = User(1)
@@ -450,7 +450,7 @@ async def test_authorize_middleware(monkeypatch: pytest.MonkeyPatch) -> None:
     request = type("R", (), {"path_params": {"post": "1"}})()
     await mw.handle(request, nxt)
 
-    mw = Authorize("create,avalon.auth.Policy")
+    mw = Authorize("create,almasix.auth.Policy")
     Gate.define("create", lambda user=None, cls=None: cls is Policy)
     await mw.handle(type("R", (), {"path_params": {}})(), nxt)
 
@@ -476,26 +476,26 @@ def test_make_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / "app").mkdir()
     runner = CliRunner()
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.kernel import ConsoleKernel
 
-    ConsoleKernel.from_cwd(tmp_path).register_on_typer(grail_app)
-    result = runner.invoke(grail_app, ["make:policy", "PostPolicy", "--model=Post", "--resource"])
+    ConsoleKernel.from_cwd(tmp_path).register_on_typer(smith_app)
+    result = runner.invoke(smith_app, ["make:policy", "PostPolicy", "--model=Post", "--resource"])
     assert result.exit_code == 0, result.stdout + result.stderr
     path = tmp_path / "app" / "policies" / "post_policy.py"
     assert path.is_file()
     text = path.read_text(encoding="utf-8")
     assert "class PostPolicy" in text
     assert "def update" in text
-    dup = runner.invoke(grail_app, ["make:policy", "PostPolicy"])
+    dup = runner.invoke(smith_app, ["make:policy", "PostPolicy"])
     assert dup.exit_code == 1
-    forced = runner.invoke(grail_app, ["make:policy", "PostPolicy", "--force"])
+    forced = runner.invoke(smith_app, ["make:policy", "PostPolicy", "--force"])
     assert forced.exit_code == 0
-    empty = runner.invoke(grail_app, ["make:policy", "Comment"])
+    empty = runner.invoke(smith_app, ["make:policy", "Comment"])
     assert empty.exit_code == 0
     assert (tmp_path / "app" / "policies" / "comment_policy.py").is_file()
-    nameless = runner.invoke(grail_app, ["make:policy", ""])
+    nameless = runner.invoke(smith_app, ["make:policy", ""])
     assert nameless.exit_code == 1
-    resource_only = runner.invoke(grail_app, ["make:policy", "Widget", "--resource"])
+    resource_only = runner.invoke(smith_app, ["make:policy", "Widget", "--resource"])
     assert resource_only.exit_code == 0
     widget = (tmp_path / "app" / "policies" / "widget_policy.py").read_text(encoding="utf-8")
     assert "def view_any" in widget
@@ -503,8 +503,8 @@ def test_make_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_kernel_resource_authorization() -> None:
-    from avalon.http.kernel import HttpKernel
-    from avalon.routing.router import Router
+    from almasix.http.kernel import HttpKernel
+    from almasix.routing.router import Router
 
     class PostController(Controller):
         authorizes_resource = Post
@@ -539,8 +539,8 @@ def test_kernel_resource_authorization() -> None:
 
 
 def test_kernel_resource_authorization_parameter_and_fallbacks() -> None:
-    from avalon.http.kernel import HttpKernel
-    from avalon.routing.router import Router
+    from almasix.http.kernel import HttpKernel
+    from almasix.routing.router import Router
 
     class PostController(Controller):
         authorizes_resource = (Post, "item")
@@ -586,8 +586,8 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
     from typing import Optional, Union
     from unittest.mock import Mock
 
-    from avalon.auth.access.exceptions import AuthorizationException
-    from avalon.auth.access.gate import (
+    from almasix.auth.access.exceptions import AuthorizationException
+    from almasix.auth.access.gate import (
         _call_after,
         _can_be_called_with_user,
         _default_policy_paths,
@@ -600,8 +600,8 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
         _user_parameter,
         _wrap_guess,
     )
-    from avalon.auth.access.helpers import resolve_gate
-    from avalon.auth.access.middleware import _import_string
+    from almasix.auth.access.helpers import resolve_gate
+    from almasix.auth.access.middleware import _import_string
 
     def first_param(fn: Any) -> inspect.Parameter:
         return next(iter(inspect.signature(fn).parameters.values()))
@@ -624,10 +624,10 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
 
     paths = _default_policy_paths(Nested)
     assert any(".policies." in p for p in paths)
-    assert _maybe_import("avalon.auth.Policy") is Policy
+    assert _maybe_import("almasix.auth.Policy") is Policy
     assert _maybe_import("Policy") is None
     assert _maybe_import("no.such.module.Thing") is None
-    assert _import_string("avalon.auth.Policy") is Policy
+    assert _import_string("almasix.auth.Policy") is Policy
     assert _import_string("Policy") is None
     assert _import_string("no.such.module.Thing") is None
 
@@ -756,7 +756,7 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
         _resolve_callback(["no.such.Class", "handle"], container=None)
     with pytest.raises(TypeError):
         _resolve_callback([HandleAbility, "missing"], container=None)
-    assert callable(_resolve_callback(["avalon.auth.access.policies.Policy", "allow"], container=None))
+    assert callable(_resolve_callback(["almasix.auth.access.policies.Policy", "allow"], container=None))
     assert callable(_resolve_callback(f"{path}@handle", container=None))
 
     class OkContainer:
@@ -791,7 +791,7 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
     import sys
 
     gmod = sys.modules[AccessGate.__module__]
-    monkeypatch.setattr(gmod, "_default_policy_paths", lambda cls: ["avalon.auth.access.policies.Policy"])
+    monkeypatch.setattr(gmod, "_default_policy_paths", lambda cls: ["almasix.auth.access.policies.Policy"])
     Gate.flush()
     assert isinstance(Gate.get_policy_for(Post), Policy)
     monkeypatch.setattr(inspect, "isclass", lambda _m: True)
@@ -823,7 +823,7 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
     assert Gate.none(["no"])
     assert not Gate.inspect("no").allowed()
 
-    import avalon.auth.guard as ag
+    import almasix.auth.guard as ag
 
     class FakeManager:
         def user(self) -> User:

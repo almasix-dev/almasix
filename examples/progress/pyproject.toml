@@ -5,10 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "progress"
 version = "0.1.0"
-description = "Progress — Avalon application"
+description = "Progress — Almasix application"
 requires-python = ">=3.11"
 dependencies = [
-    "avalon",
+    "almasix",
 ]
 
 [tool.hatch.build.targets.wheel]

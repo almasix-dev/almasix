@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.encryption import (
+from almasix.encryption import (
     Crypt,
     DecryptException,
     Encrypter,
@@ -20,11 +20,11 @@ from avalon.encryption import (
     generate_key,
     parse_previous_keys,
 )
-from avalon.encryption.cipher import decrypt_string as cipher_decrypt
-from avalon.encryption.cipher import encrypt_string as cipher_encrypt
-from avalon.encryption.helpers import get_encrypter, resolve_encrypter
-from avalon.framework.application import Application
-from avalon.grail.cli import app as grail_app
+from almasix.encryption.cipher import decrypt_string as cipher_decrypt
+from almasix.encryption.cipher import encrypt_string as cipher_encrypt
+from almasix.encryption.helpers import get_encrypter, resolve_encrypter
+from almasix.framework.application import Application
+from almasix.smith.cli import app as smith_app
 
 
 @pytest.fixture(autouse=True)
@@ -115,7 +115,7 @@ def test_cipher_non_utf8_plaintext() -> None:
     import hmac
     import os
 
-    from avalon.encryption import cipher as c
+    from almasix.encryption import cipher as c
 
     key = "k"
     raw_key = hashlib.sha256(key.encode("utf-8")).digest()
@@ -134,7 +134,7 @@ def test_resolve_encrypter_from_config(tmp_path: Path) -> None:
     app = Application.configure(tmp_path).create()
     app.config.set("app.key", "cfg-key")
     app.config.set("app.previous_keys", "prev-a,prev-b")
-    from avalon.config import set_repository
+    from almasix.config import set_repository
 
     set_repository(app.config)
     Crypt.set_encrypter(None)
@@ -147,7 +147,7 @@ def test_crypt_lazy_resolve_via_get_encrypter(tmp_path: Path) -> None:
     Crypt.set_encrypter(None)
     app = Application.configure(tmp_path).create()
     app.config.set("app.key", "lazy-key")
-    from avalon.config import set_repository
+    from almasix.config import set_repository
 
     set_repository(app.config)
     Crypt.set_encrypter(None)
@@ -163,9 +163,9 @@ def test_resolve_encrypter_fallback_when_config_raises(
     def raising_config(key: str, default=None):
         raise RuntimeError("boom")
 
-    monkeypatch.setattr("avalon.config.config", raising_config)
+    monkeypatch.setattr("almasix.config.config", raising_config)
     enc = resolve_encrypter()
-    assert enc.key == "avalon-insecure-dev-key-change-me"
+    assert enc.key == "almasix-insecure-dev-key-change-me"
     assert enc.previous_keys == []
 
 
@@ -181,7 +181,7 @@ def test_provider_binds_encrypter(tmp_path: Path) -> None:
 
 
 def test_provider_boot_noop_when_unbound() -> None:
-    from avalon.framework.container import Container
+    from almasix.framework.container import Container
 
     class MiniApp:
         def __init__(self) -> None:
@@ -194,18 +194,18 @@ def test_provider_boot_noop_when_unbound() -> None:
 def test_key_generate_creates_and_updates_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     runner = CliRunner()
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.kernel import ConsoleKernel
 
-    ConsoleKernel.from_cwd(tmp_path).register_on_typer(grail_app)
+    ConsoleKernel.from_cwd(tmp_path).register_on_typer(smith_app)
 
-    result = runner.invoke(grail_app, ["key:generate"])
+    result = runner.invoke(smith_app, ["key:generate"])
     assert result.exit_code == 0, result.stdout + result.stderr
     env_text = (tmp_path / ".env").read_text(encoding="utf-8")
     assert "APP_KEY=base64:" in env_text
     first = env_text.strip()
 
     # Update existing APP_KEY
-    result2 = runner.invoke(grail_app, ["key:generate"])
+    result2 = runner.invoke(smith_app, ["key:generate"])
     assert result2.exit_code == 0
     second = (tmp_path / ".env").read_text(encoding="utf-8").strip()
     assert second.startswith("APP_KEY=base64:")
@@ -213,7 +213,7 @@ def test_key_generate_creates_and_updates_env(tmp_path: Path, monkeypatch: pytes
 
     # Append when APP_KEY missing but .env exists
     (tmp_path / ".env").write_text("FOO=1", encoding="utf-8")
-    result3 = runner.invoke(grail_app, ["key:generate"])
+    result3 = runner.invoke(smith_app, ["key:generate"])
     assert result3.exit_code == 0
     assert "APP_KEY=base64:" in (tmp_path / ".env").read_text(encoding="utf-8")
 
@@ -222,29 +222,29 @@ def test_key_generate_appends_newline(tmp_path: Path, monkeypatch: pytest.Monkey
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text("FOO=1", encoding="utf-8")  # no trailing newline
     runner = CliRunner()
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.kernel import ConsoleKernel
 
-    ConsoleKernel.from_cwd(tmp_path).register_on_typer(grail_app)
-    assert runner.invoke(grail_app, ["key:generate"]).exit_code == 0
+    ConsoleKernel.from_cwd(tmp_path).register_on_typer(smith_app)
+    assert runner.invoke(smith_app, ["key:generate"]).exit_code == 0
     text = (tmp_path / ".env").read_text(encoding="utf-8")
     assert "FOO=1\nAPP_KEY=" in text
 
     # A file that already ends in a newline must not gain a blank line.
     (tmp_path / ".env").write_text("FOO=1\n", encoding="utf-8")
-    assert runner.invoke(grail_app, ["key:generate"]).exit_code == 0
+    assert runner.invoke(smith_app, ["key:generate"]).exit_code == 0
     assert (tmp_path / ".env").read_text(encoding="utf-8").startswith("FOO=1\nAPP_KEY=")
 
 
 def test_cookie_middleware_uses_previous_keys() -> None:
-    from avalon.session.encrypt import encrypt_string as session_encrypt
-    from avalon.session.encrypt_middleware import EncryptCookies
+    from almasix.session.encrypt import encrypt_string as session_encrypt
+    from almasix.session.encrypt_middleware import EncryptCookies
 
     old_token = session_encrypt("cookie-value", key="old")
     assert old_token.count(".") == 2
     mw = EncryptCookies()
     # Unit: decrypt path via Encrypter in handle is covered in integration;
     # verify shared cipher still re-exported
-    from avalon.session.encrypt import decrypt_string as session_decrypt
+    from almasix.session.encrypt import decrypt_string as session_decrypt
 
     assert session_decrypt(old_token, key="old") == "cookie-value"
     assert mw.except_cookies == frozenset()

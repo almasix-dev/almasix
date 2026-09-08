@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from avalon.providers import ServiceProvider
+from almasix.providers import ServiceProvider
 
 
 class AppServiceProvider(ServiceProvider):
@@ -16,6 +16,6 @@ class AppServiceProvider(ServiceProvider):
         from app.models.post import Post
         from app.policies.post_policy import PostPolicy
 
-        from avalon.auth import Gate
+        from almasix.auth import Gate
 
         Gate.policy(Post, PostPolicy)

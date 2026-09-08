@@ -6,7 +6,7 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from avalon.auth import (
+from almasix.auth import (
     Attempting,
     Failed,
     Login,
@@ -17,13 +17,13 @@ from avalon.auth import (
     pull_intended_url,
     store_intended_url,
 )
-from avalon.auth.cookies import apply_queued_cookies, begin_cookie_queue, reset_cookie_queue
-from avalon.auth.guard import AuthManager, SessionGuard, TokenGuard, reset_auth, set_auth
-from avalon.auth.middleware import Authenticate, StartAuth
-from avalon.auth.providers import MemoryUserProvider
-from avalon.hashing import Hash, HashManager, set_hash_manager
-from avalon.http.request import Request
-from avalon.session.store import Session, reset_session, set_session
+from almasix.auth.cookies import apply_queued_cookies, begin_cookie_queue, reset_cookie_queue
+from almasix.auth.guard import AuthManager, SessionGuard, TokenGuard, reset_auth, set_auth
+from almasix.auth.middleware import Authenticate, StartAuth
+from almasix.auth.providers import MemoryUserProvider
+from almasix.hashing import Hash, HashManager, set_hash_manager
+from almasix.http.request import Request
+from almasix.session.store import Session, reset_session, set_session
 
 
 @pytest.fixture(autouse=True)
@@ -112,7 +112,7 @@ async def test_remember_cookie_hydrates_across_requests() -> None:
         return Response("ok")
 
     # Direct hydrate path
-    from avalon.auth.middleware import _from_remember_cookie
+    from almasix.auth.middleware import _from_remember_cookie
 
     web = SessionGuard("web", provider)
     user = await _from_remember_cookie(request, web)
@@ -200,7 +200,7 @@ async def test_request_user_and_intended_url() -> None:
 
 @pytest.mark.asyncio
 async def test_authenticate_stores_intended_url() -> None:
-    from avalon.config import ConfigRepository, set_repository
+    from almasix.config import ConfigRepository, set_repository
 
     repo = ConfigRepository()
     repo.set("app.url", "http://localhost")
@@ -257,7 +257,7 @@ async def test_via_request_custom_guard() -> None:
 @pytest.mark.asyncio
 async def test_start_auth_applies_remember_cookie_from_login() -> None:
     provider = MemoryUserProvider(
-        [{"id": 7, "email": "ada@avalon.dev", "password": Hash.make("password")}]
+        [{"id": 7, "email": "ada@almasix.dev", "password": Hash.make("password")}]
     )
     session = Session()
     request = _req()
@@ -269,7 +269,7 @@ async def test_start_auth_applies_remember_cookie_from_login() -> None:
         web = SessionGuard("web", provider)
         manager._guards["web"] = web  # noqa: SLF001
         assert await web.attempt(
-            {"email": "ada@avalon.dev", "password": "password"},
+            {"email": "ada@almasix.dev", "password": "password"},
             remember=True,
         )
         return Response("logged-in")

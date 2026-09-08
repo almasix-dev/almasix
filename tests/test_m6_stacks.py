@@ -1,23 +1,23 @@
-"""Caliburn stacks, @parent, @lang, and @props tests."""
+"""Prism stacks, @parent, @lang, and @props tests."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from avalon.caliburn.compiler import compile_template
-from avalon.caliburn.engine import Engine
-from avalon.translation.helpers import set_translator
-from avalon.translation.translator import Translator
+from almasix.prism.compiler import compile_template
+from almasix.prism.engine import Engine
+from almasix.translation.helpers import set_translator
+from almasix.translation.translator import Translator
 
 
 def test_push_and_stack(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "layouts").mkdir(parents=True)
-    (views / "layouts" / "app.cal.html").write_text(
+    (views / "layouts" / "app.prism.html").write_text(
         "<head>@stack('scripts')</head><body>@yield('content')</body>",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @extends('layouts.app')
 @section('content')
@@ -38,11 +38,11 @@ Hi
 def test_stack_after_yield(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "layouts").mkdir(parents=True)
-    (views / "layouts" / "app.cal.html").write_text(
+    (views / "layouts" / "app.prism.html").write_text(
         "<body>@yield('content')@stack('scripts')</body>",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @extends('layouts.app')
 @section('content')
@@ -61,11 +61,11 @@ def test_parent_section(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "layouts").mkdir(parents=True)
     # Two-level: base defines section via child1... simpler: use nested extends
-    (views / "layouts" / "base.cal.html").write_text(
+    (views / "layouts" / "base.prism.html").write_text(
         "@yield('content')",
         encoding="utf-8",
     )
-    (views / "layouts" / "app.cal.html").write_text(
+    (views / "layouts" / "app.prism.html").write_text(
         """
 @extends('layouts.base')
 @section('content')
@@ -74,7 +74,7 @@ BASE
 """.strip(),
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @extends('layouts.app')
 @section('content')
@@ -110,14 +110,14 @@ def test_lang_directive(tmp_path: Path) -> None:
 def test_props_in_component(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "alert.cal.html").write_text(
+    (views / "components" / "alert.prism.html").write_text(
         """
 @props({'type': 'info'})
 <div class="{{ type }}">{{ slot }}</div>
 """.strip(),
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         '<x-alert type="success">Saved</x-alert>',
         encoding="utf-8",
     )

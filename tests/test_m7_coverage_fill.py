@@ -8,18 +8,18 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from avalon.auth.guard import AuthManager, Guard, auth, get_auth, reset_auth, set_auth
-from avalon.auth.middleware import Authenticate, RedirectIfAuthenticated, StartAuth
-from avalon.auth.provider import AuthServiceProvider
-from avalon.config import ConfigRepository, set_repository
-from avalon.framework import Application
-from avalon.http.request import Request
-from avalon.session.signing import sign_payload, unsign_payload
-from avalon.session.csrf import VerifyCsrfToken, csrf_token
-from avalon.session.encrypt import decrypt_string, encrypt_string
-from avalon.session.encrypt_middleware import EncryptCookies
-from avalon.session.middleware import StartSession
-from avalon.session.store import Session, get_session, reset_session, set_session
+from almasix.auth.guard import AuthManager, Guard, auth, get_auth, reset_auth, set_auth
+from almasix.auth.middleware import Authenticate, RedirectIfAuthenticated, StartAuth
+from almasix.auth.provider import AuthServiceProvider
+from almasix.config import ConfigRepository, set_repository
+from almasix.framework import Application
+from almasix.http.request import Request
+from almasix.session.signing import sign_payload, unsign_payload
+from almasix.session.csrf import VerifyCsrfToken, csrf_token
+from almasix.session.encrypt import decrypt_string, encrypt_string
+from almasix.session.encrypt_middleware import EncryptCookies
+from almasix.session.middleware import StartSession
+from almasix.session.store import Session, get_session, reset_session, set_session
 
 
 def _request(method: str = "GET", path: str = "/", *, cookies: dict | None = None) -> Request:
@@ -53,7 +53,7 @@ async def test_start_session_and_csrf_flow(tmp_path: Path, monkeypatch: pytest.M
     repo = ConfigRepository()
     repo.set("app.key", "test-key")
     repo.set("session.lifetime", 120)
-    repo.set("session.cookie", "avalon_session")
+    repo.set("session.cookie", "almasix_session")
     set_repository(repo)
 
     session_mw = StartSession()
@@ -75,7 +75,7 @@ async def test_start_session_and_csrf_flow(tmp_path: Path, monkeypatch: pytest.M
 
     response = await session_mw.handle(_request(), after_csrf)
     assert response.status_code == 200
-    assert "avalon_session" in (response.headers.get("set-cookie") or "")
+    assert "almasix_session" in (response.headers.get("set-cookie") or "")
 
 
 @pytest.mark.asyncio
@@ -127,7 +127,7 @@ def test_cookie_unsign_edges() -> None:
     import json
     import time
 
-    from avalon.session import signing
+    from almasix.session import signing
 
     body = signing._b64encode(json.dumps({"a": 1}).encode())  # noqa: SLF001
     msg = f"{body}.notint"
@@ -151,7 +151,7 @@ def test_cookie_unsign_edges() -> None:
 
 
 def test_encrypt_invalid_utf8_payload() -> None:
-    from avalon.session import encrypt as enc
+    from almasix.session import encrypt as enc
 
     key = "k"
     raw_key = __import__("hashlib").sha256(key.encode()).digest()
@@ -163,8 +163,8 @@ def test_encrypt_invalid_utf8_payload() -> None:
 
 
 def test_user_to_dict_variants_and_guest() -> None:
-    from avalon.auth import guest as guest_fn
-    from avalon.auth.guard import _user_to_dict
+    from almasix.auth import guest as guest_fn
+    from almasix.auth.guard import _user_to_dict
 
     class WithDict:
         def to_dict(self):

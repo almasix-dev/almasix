@@ -1,0 +1,37 @@
+"""{{ class }} validation rule."""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+class {{ class }}:
+    """A reusable validation rule that also runs on empty values.
+
+    Attach it to a FormRequest field with Pydantic's ``AfterValidator``::
+
+        from typing import Annotated
+
+        from pydantic import AfterValidator, Field
+
+        from almasix.validation import FormRequest
+
+
+        class StorePostRequest(FormRequest):
+            title: Annotated[str | None, AfterValidator({{ class }}())] = Field(
+                default=None, validate_default=True
+            )
+
+    Unlike a plain rule this one is *implicit*: it inspects ``None`` and empty
+    values instead of leaving them to ``required``. Add ``validate_default=True``
+    so it also runs when the field is absent from the payload.
+
+    Raise ``ValueError`` to fail the field; the message lands in the 422
+    envelope under that field's name.
+    """
+
+    message = "The given value is invalid."
+
+    def __call__(self, value: Any) -> Any:
+        """Return the value, or raise ``ValueError(self.message)`` to fail it."""
+        return value

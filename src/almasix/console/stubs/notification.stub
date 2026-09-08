@@ -1,0 +1,26 @@
+"""{{ class }} notification."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.notifications import Notification
+
+
+class {{ class }}(Notification):
+    """Send with ``await notify(notifiable, {{ class }}())``."""
+
+    def via(self, notifiable: Any) -> list[str]:
+        """The channels this notification goes out on."""
+        del notifiable
+        return ["mail"]
+
+    def to_mail(self, notifiable: Any) -> dict[str, Any]:
+        """The mail payload — a dict like this one, or a ``Mailable``."""
+        del notifiable
+        return {"subject": "{{ subject }}", "text": ""}
+
+    def to_database(self, notifiable: Any) -> dict[str, Any]:
+        """The JSON payload stored in the ``notifications`` table."""
+        del notifiable
+        return {}

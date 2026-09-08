@@ -15,11 +15,11 @@ from pathlib import Path
 
 import pytest
 
-from avalon.cache.helpers import set_manager as set_cache_manager
-from avalon.console.commands.db_introspection import _SESSION_COUNT_SQL, _custom_types
-from avalon.console.kernel import ConsoleKernel
-from avalon.orm.facade import DB, set_manager
-from avalon.orm.schema import Blueprint, Schema
+from almasix.cache.helpers import set_manager as set_cache_manager
+from almasix.console.commands.db_introspection import _SESSION_COUNT_SQL, _custom_types
+from almasix.console.kernel import ConsoleKernel
+from almasix.orm.facade import DB, set_manager
+from almasix.orm.schema import Blueprint, Schema
 
 Build = Callable[..., ConsoleKernel]
 
@@ -229,7 +229,7 @@ def test_db_show_lists_the_custom_types_a_postgres_inspector_reports(
 
     assert _custom_types(EnumInspector()) == ["post_status"]
     monkeypatch.setattr(
-        "avalon.console.commands.db_introspection._custom_types",
+        "almasix.console.commands.db_introspection._custom_types",
         lambda _inspector: _custom_types(EnumInspector()),
     )
 
@@ -365,7 +365,7 @@ def test_db_table_asks_which_table_to_inspect_when_none_is_named(
 ) -> None:
     asked: list[tuple[str, list[str]]] = []
     monkeypatch.setattr(
-        "avalon.console.prompts.select",
+        "almasix.console.prompts.select",
         lambda label, options, **kwargs: asked.append((label, list(options))) or "users",
     )
 
@@ -418,7 +418,7 @@ def test_db_table_reports_a_database_file_it_cannot_open(
 def test_db_monitor_says_sqlite_keeps_no_sessions_to_count(
     kernel: ConsoleKernel, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """There is no server behind a file, so the pool is all Avalon can see."""
+    """There is no server behind a file, so the pool is all Almasix can see."""
     assert kernel.run_argv("db:monitor", []) == 0
 
     out = capsys.readouterr().out
@@ -468,7 +468,7 @@ def test_db_monitor_reports_no_sessions_when_the_server_answers_with_no_rows(
 def test_db_monitor_fails_when_a_connection_is_above_the_maximum(
     kernel: ConsoleKernel, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """The exit code is the signal: Avalon has no ``DatabaseBusy`` event to fire."""
+    """The exit code is the signal: Almasix has no ``DatabaseBusy`` event to fire."""
     monkeypatch.setitem(_SESSION_COUNT_SQL, "sqlite", "SELECT count(*) FROM users")
 
     assert kernel.run_argv("db:monitor", ["--max", "1"]) == 1

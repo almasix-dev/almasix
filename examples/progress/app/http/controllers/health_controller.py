@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from avalon.config import config
-from avalon.http import Controller
+from almasix.config import config
+from almasix.http import Controller
 
 
 class HealthController(Controller):
@@ -12,12 +12,12 @@ class HealthController(Controller):
     async def index(self) -> dict[str, str]:
         return {
             "status": "ok",
-            "app": str(config("app.name", "Avalon")),
+            "app": str(config("app.name", "Almasix")),
             "env": str(config("app.env", "local")),
         }
 
     async def me(self) -> dict:
-        from avalon.auth import auth
+        from almasix.auth import auth
 
         user = auth().user()
         if user is None:

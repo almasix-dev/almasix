@@ -1,11 +1,11 @@
-"""Tests for Fiddle pretty display (models, collections, JSON)."""
+"""Tests for Loupe pretty display (models, collections, JSON)."""
 
 from __future__ import annotations
 
 from datetime import datetime
 from types import SimpleNamespace
 
-from avalon.console.display import (
+from almasix.console.display import (
     describe,
     dump,
     is_model,
@@ -84,15 +84,15 @@ def test_paginator_and_fallback_to_dict() -> None:
 
 
 class ToDictWantsArguments:
-    """A ``to_dict`` that is not the no-argument one Fiddle hopes for."""
+    """A ``to_dict`` that is not the no-argument one Loupe hopes for."""
 
     def to_dict(self, *, deep):  # noqa: ANN001 - the signature is the point
         raise AssertionError("never callable without arguments")
 
 
 def test_a_to_dict_that_takes_arguments_falls_back_instead_of_raising() -> None:
-    """Fiddle prints whatever it is handed; a hostile ``to_dict`` must not stop it."""
-    from avalon.support import Collection as SupportCollection
+    """Loupe prints whatever it is handed; a hostile ``to_dict`` must not stop it."""
+    from almasix.support import Collection as SupportCollection
 
     value = ToDictWantsArguments()
     assert serialize(value) is value

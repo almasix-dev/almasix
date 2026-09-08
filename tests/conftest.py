@@ -33,7 +33,7 @@ def clean_app_modules() -> Iterator[None]:
 @pytest.fixture
 def app_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_app_modules: None) -> Path:
     """Scaffold a disposable app and chdir into it with import path set."""
-    from avalon.installer.scaffold import scaffold_app
+    from almasix.installer.scaffold import scaffold_app
 
     root = scaffold_app("regress_app", destination=tmp_path / "regress_app")
     monkeypatch.chdir(root)

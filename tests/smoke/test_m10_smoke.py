@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from avalon.console.kernel import ConsoleKernel
-from avalon.filesystem import Storage
+from almasix.console.kernel import ConsoleKernel
+from almasix.filesystem import Storage
 from tests.support import purge_generated_app_modules, without_base_path
 
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]

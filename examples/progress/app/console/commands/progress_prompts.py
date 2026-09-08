@@ -1,11 +1,11 @@
-"""Demo Avalon Prompts — Laravel Prompts-shaped interactive UI."""
+"""Demo Almasix Prompts — Laravel Prompts-shaped interactive UI."""
 
 from __future__ import annotations
 
 import time
 
-from avalon.console import Command
-from avalon.console.prompts import (
+from almasix.console import Command
+from almasix.console.prompts import (
     confirm,
     intro,
     note,
@@ -19,16 +19,16 @@ from avalon.console.prompts import (
 
 class ProgressPromptsCommand(Command):
     signature = "progress:prompts"
-    description = "Demo Avalon Prompts (Laravel Prompts-class UI)"
+    description = "Demo Almasix Prompts (Laravel Prompts-class UI)"
 
     def handle(self) -> int:
-        intro("Avalon Prompts")
+        intro("Almasix Prompts")
         note("Arrow keys, styled panels, spin & progress — try it interactively.")
 
         name = text(
             "What should we call this demo?",
             placeholder="e.g. Excalibur",
-            default="Avalon",
+            default="Almasix",
             hint="Shown in the outro.",
         )
         flavor = select(
@@ -44,5 +44,5 @@ class ProgressPromptsCommand(Command):
                 lambda step: time.sleep(0.15),
             )
 
-        outro(f"Done — {name} ({flavor}). Run again anytime: python grail progress:prompts")
+        outro(f"Done — {name} ({flavor}). Run again anytime: python smith progress:prompts")
         return 0

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from avalon.caliburn import ViewFactory, render, view
-from avalon.framework import Application
+from almasix.framework import Application
+from almasix.prism import ViewFactory, render, view
 
 
 def test_view_helper_with_application(tmp_path: Path, monkeypatch) -> None:
@@ -26,7 +26,7 @@ def test_view_helper_with_application(tmp_path: Path, monkeypatch) -> None:
     )
     views = tmp_path / "resources" / "views"
     views.mkdir(parents=True)
-    (views / "hello.cal.html").write_text("<p>{{ name }}</p>", encoding="utf-8")
+    (views / "hello.prism.html").write_text("<p>{{ name }}</p>", encoding="utf-8")
     (tmp_path / "routes").mkdir()
     (tmp_path / "routes" / "web.py").write_text("", encoding="utf-8")
     (tmp_path / "routes" / "api.py").write_text("", encoding="utf-8")
@@ -36,7 +36,7 @@ def test_view_helper_with_application(tmp_path: Path, monkeypatch) -> None:
     (tmp_path / "app" / "providers").mkdir()
     (tmp_path / "app" / "providers" / "__init__.py").write_text("", encoding="utf-8")
     (tmp_path / "app" / "providers" / "app_service_provider.py").write_text(
-        "from avalon.providers import ServiceProvider\n"
+        "from almasix.providers import ServiceProvider\n"
         "class AppServiceProvider(ServiceProvider):\n"
         "    def register(self): pass\n"
         "    def boot(self): pass\n",

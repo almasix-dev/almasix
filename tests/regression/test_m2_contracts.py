@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from avalon.http import Controller, HttpKernel, Middleware, Request, UploadedFile, html, json
-from avalon.installer.scaffold import scaffold_app
-from avalon.routing import Route, Router
+from almasix.http import Controller, HttpKernel, Middleware, Request, UploadedFile, html, json
+from almasix.installer.scaffold import scaffold_app
+from almasix.routing import Route, Router
 
 pytestmark = [pytest.mark.regression]
 
@@ -88,7 +88,7 @@ def test_scaffolded_app_serves_via_route_dsl(
 
         page = client.get("/")
         assert page.headers["content-type"].startswith("text/html")
-        assert "Welcome to Avalon" in page.text
+        assert "Welcome to Almasix" in page.text
         assert "M2Serve" in page.text
 
         health = client.get("/api/health")

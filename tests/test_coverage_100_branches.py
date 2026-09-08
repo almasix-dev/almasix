@@ -10,26 +10,26 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from starlette.responses import Response
 
-from avalon.auth.cookies import (
+from almasix.auth.cookies import (
     apply_queued_cookies,
     begin_cookie_queue,
     queue_cookie,
     queue_forget_cookie,
     reset_cookie_queue,
 )
-from avalon.auth.guard import Guard, SessionGuard, _session_payload, reset_auth, set_auth, AuthManager
-from avalon.auth.middleware import RedirectIfAuthenticated, StartAuth
-from avalon.auth.passwords import DatabaseTokenRepository, PasswordBroker, Password
-from avalon.auth.providers import ArticulateUserProvider, MemoryUserProvider
-from avalon.config import ConfigRepository, env, set_repository
-from avalon.hashing import Hash, HashManager, set_hash_manager
-from avalon.orm.model import Model
-from avalon.session.store import Session, set_session
-from avalon.support.collection import Collection
-from avalon.translation.loader import FileLoader
-from avalon.translation.middleware import SetLocaleMiddleware
-from avalon.translation.translator import Translator
-from avalon.http.request import Request
+from almasix.auth.guard import Guard, SessionGuard, _session_payload, reset_auth, set_auth, AuthManager
+from almasix.auth.middleware import RedirectIfAuthenticated, StartAuth
+from almasix.auth.passwords import DatabaseTokenRepository, PasswordBroker, Password
+from almasix.auth.providers import ArticulateUserProvider, MemoryUserProvider
+from almasix.config import ConfigRepository, env, set_repository
+from almasix.hashing import Hash, HashManager, set_hash_manager
+from almasix.orm.model import Model
+from almasix.session.store import Session, set_session
+from almasix.support.collection import Collection
+from almasix.translation.loader import FileLoader
+from almasix.translation.middleware import SetLocaleMiddleware
+from almasix.translation.translator import Translator
+from almasix.http.request import Request
 from starlette.requests import Request as StarletteRequest
 
 
@@ -117,9 +117,9 @@ async def test_guard_logout_none_and_session_paths() -> None:
 
 def test_env_bool_default_non_bool_string(monkeypatch: pytest.MonkeyPatch) -> None:
     """Branch 41->44: bool default but value not a recognized true/false token."""
-    monkeypatch.setenv("AVALON_WEIRD_BOOL", "maybe")
+    monkeypatch.setenv("ALMASIX_WEIRD_BOOL", "maybe")
     # falls through bool branch into int/float/string
-    assert env("AVALON_WEIRD_BOOL", True) == "maybe"
+    assert env("ALMASIX_WEIRD_BOOL", True) == "maybe"
 
 
 @pytest.mark.asyncio
@@ -256,8 +256,8 @@ async def test_translation_fallback_and_missing_handler() -> None:
     t.handle_missing_keys_using(handler)
     assert t.get("still.missing") == "handled:still.missing"
 
-    from avalon.translation.locale import reset_locale_context
-    from avalon.translation.helpers import set_translator
+    from almasix.translation.locale import reset_locale_context
+    from almasix.translation.helpers import set_translator
 
     reset_locale_context()
     set_translator(t)
@@ -271,7 +271,7 @@ async def test_translation_fallback_and_missing_handler() -> None:
 
 
 def test_lang_cmd_force_json_and_loader_json_path(tmp_path) -> None:
-    from avalon.grail import lang_cmd
+    from almasix.smith import lang_cmd
 
     base = tmp_path / "app"
     base.mkdir()
@@ -293,7 +293,7 @@ def test_lang_cmd_force_json_and_loader_json_path(tmp_path) -> None:
 
 @pytest.mark.asyncio
 async def test_builder_model_none_getattr() -> None:
-    from avalon.orm.builder import QueryBuilder
+    from almasix.orm.builder import QueryBuilder
 
     bare = QueryBuilder(model=None, table="t")
     with pytest.raises(AttributeError):
@@ -302,7 +302,7 @@ async def test_builder_model_none_getattr() -> None:
 
 @pytest.mark.asyncio
 async def test_connection_mkdir_parent(tmp_path) -> None:
-    from avalon.orm.connection import Connection
+    from almasix.orm.connection import Connection
 
     nested = tmp_path / "deep" / "dir" / "db.sqlite"
     Connection("x", {"driver": "sqlite", "database": str(nested)})
@@ -319,14 +319,14 @@ async def test_password_send_without_callback() -> None:
 
 
 def test_eager_split_nested_then_bare() -> None:
-    from avalon.orm.eager import _split
+    from almasix.orm.eager import _split
 
     top, nested = _split({"posts.comments": None, "posts": None})
     assert "posts" in top and "posts" in nested
 
 
 def test_lang_json_list_and_force(tmp_path) -> None:
-    from avalon.grail import lang_cmd
+    from almasix.smith import lang_cmd
 
     base = tmp_path / "app2"
     base.mkdir()
@@ -339,7 +339,7 @@ def test_lang_json_list_and_force(tmp_path) -> None:
 
 @pytest.mark.asyncio
 async def test_hydrate_none_and_sync_via() -> None:
-    from avalon.auth.middleware import _hydrate_user
+    from almasix.auth.middleware import _hydrate_user
 
     class P:
         async def retrieve_by_id(self, i):

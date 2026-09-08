@@ -7,8 +7,8 @@ from typing import Any
 
 import pytest
 
-from avalon.console.commands.vendor import VendorPublishCommand
-from avalon.providers.provider import ServiceProvider
+from almasix.console.commands.vendor import VendorPublishCommand
+from almasix.providers.provider import ServiceProvider
 
 
 @pytest.fixture(autouse=True)
@@ -20,7 +20,7 @@ def forget_declarations() -> Any:
 
 @pytest.fixture
 def app(tmp_path: Path) -> Any:
-    from avalon.framework.application import Application
+    from almasix.framework.application import Application
 
     return Application(tmp_path)
 
@@ -263,7 +263,7 @@ def test_a_command_without_an_application_still_names_its_destinations(
 
 def test_the_framework_offers_its_own_stubs_and_language_files(tmp_path: Path) -> None:
     """``vendor:publish`` must not be an empty command in a fresh application."""
-    from avalon.framework.application import Application
+    from almasix.framework.application import Application
 
     application = Application(tmp_path)
     application.load_environment()
@@ -271,9 +271,9 @@ def test_the_framework_offers_its_own_stubs_and_language_files(tmp_path: Path) -
     application.register_configured_providers()
     application.boot()
 
-    assert "avalon-stubs" in ServiceProvider.publishable_tags()
-    assert "avalon-lang" in ServiceProvider.publishable_tags()
+    assert "almasix-stubs" in ServiceProvider.publishable_tags()
+    assert "almasix-lang" in ServiceProvider.publishable_tags()
 
     command = VendorPublishCommand(application)
-    assert command.run(None, {"tag": ["avalon-stubs"]}) == 0
+    assert command.run(None, {"tag": ["almasix-stubs"]}) == 0
     assert (tmp_path / "stubs" / "model.stub").exists()

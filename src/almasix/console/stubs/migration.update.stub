@@ -1,0 +1,21 @@
+"""Alter the {{ table }} table."""
+
+from __future__ import annotations
+
+from almasix.orm import Migration, Schema
+
+
+class {{ class }}(Migration):
+    """{{ class }}."""
+
+    async def up(self) -> None:
+        await Schema.table(
+            "{{ table }}",
+            lambda table: (),  # e.g. table.string("slug")
+        )
+
+    async def down(self) -> None:
+        await Schema.table(
+            "{{ table }}",
+            lambda table: (),  # e.g. table.drop_column("slug")
+        )

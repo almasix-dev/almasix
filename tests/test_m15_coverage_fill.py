@@ -1,4 +1,4 @@
-"""Coverage fill for avalon.cache."""
+"""Coverage fill for almasix.cache."""
 
 from __future__ import annotations
 
@@ -10,14 +10,14 @@ from typing import Any
 
 import pytest
 
-from avalon.cache import Cache, CacheManager, cache, default_cache_config, set_manager
-from avalon.cache.drivers.array import ArrayStore
-from avalon.cache.drivers.database import DatabaseStore
-from avalon.cache.drivers.file import FileStore
-from avalon.cache.locks import CacheLock, LockTimeoutError
-from avalon.cache.schema import ensure_cache_table, ensure_cache_table_sync
-from avalon.cache.store import Repository, normalize_ttl
-from avalon.framework.application import Application
+from almasix.cache import Cache, CacheManager, cache, default_cache_config, set_manager
+from almasix.cache.drivers.array import ArrayStore
+from almasix.cache.drivers.database import DatabaseStore
+from almasix.cache.drivers.file import FileStore
+from almasix.cache.locks import CacheLock, LockTimeoutError
+from almasix.cache.schema import ensure_cache_table, ensure_cache_table_sync
+from almasix.cache.store import Repository, normalize_ttl
+from almasix.framework.application import Application
 from tests.orm_support import memory_db
 
 
@@ -66,7 +66,7 @@ async def test_database_edges(memory_db) -> None:
     store = DatabaseStore(connection="sqlite")
     store.put("bad", b"raw-not-used", None)
     # corrupt row
-    from avalon.orm.facade import DB
+    from almasix.orm.facade import DB
 
     await DB.statement(
         "DELETE FROM cache WHERE key = :key",
@@ -155,7 +155,7 @@ def test_lock_timeout_and_owner_mismatch() -> None:
 
 
 def test_provider_default_config(tmp_path: Path) -> None:
-    from avalon.cache.provider import CacheServiceProvider
+    from almasix.cache.provider import CacheServiceProvider
 
     app = Application(tmp_path)
     app.config.set("cache", {})
@@ -220,7 +220,7 @@ async def test_database_expired_value(memory_db) -> None:
     del memory_db
     await ensure_cache_table("sqlite")
     store = DatabaseStore(connection="sqlite")
-    from avalon.orm.facade import DB
+    from almasix.orm.facade import DB
 
     await DB.statement(
         "INSERT INTO cache (key, value, expiration) VALUES (:key, :value, :expiration)",
@@ -238,7 +238,7 @@ def test_sync_database_and_manager_driver(tmp_path: Path) -> None:
     """Hit sync ``_run`` / ``ensure_cache_table_sync`` (no running loop) + manager database path."""
     import asyncio
 
-    from avalon.orm import DatabaseManager, set_manager as set_db
+    from almasix.orm import DatabaseManager, set_manager as set_db
 
     async def _boot() -> DatabaseManager:
         manager = DatabaseManager(
@@ -306,7 +306,7 @@ def test_array_expired_add_increment_flush_locks() -> None:
 
 
 def test_file_lock_and_add_expired(tmp_path: Path) -> None:
-    from avalon.cache.locks import FileLock
+    from almasix.cache.locks import FileLock
 
     store = FileStore(tmp_path / "fl")
     store.put("gone", 1, 0)
@@ -351,7 +351,7 @@ async def test_database_lock_full(memory_db) -> None:
             with store.lock("d2", seconds=5):
                 pass
     # steal expired lock
-    from avalon.orm.facade import DB
+    from almasix.orm.facade import DB
 
     await DB.statement(
         "INSERT INTO cache_locks (key, owner, expiration) VALUES (:key, :owner, :expiration)",
@@ -470,7 +470,7 @@ def test_cache_lock_sleep_and_db_block_success(tmp_path: Path) -> None:
     """Hit FileLock/DatabaseLock block success + sleep arcs."""
     import asyncio
 
-    from avalon.orm import DatabaseManager, set_manager as set_db
+    from almasix.orm import DatabaseManager, set_manager as set_db
 
     fs = FileStore(tmp_path / "locks")
     # Success path of FileLock.block (line: return True when acquired)
@@ -523,7 +523,7 @@ def test_cache_lock_sleep_and_db_block_success(tmp_path: Path) -> None:
 
 
 def test_tags_duplicate_key_and_provider_unbound(tmp_path: Path) -> None:
-    from avalon.cache.provider import CacheServiceProvider
+    from almasix.cache.provider import CacheServiceProvider
 
     manager = CacheManager(config={"default": "array", "stores": {"array": {"driver": "array"}}})
     set_manager(manager)
@@ -540,7 +540,7 @@ def test_tags_duplicate_key_and_provider_unbound(tmp_path: Path) -> None:
 
 def test_schedule_filesystem_mutex_fallback(tmp_path: Path) -> None:
     """When Cache is not booted, without_overlapping uses filesystem Mutex."""
-    from avalon.console.scheduling import Event, run_event, _try_cache_lock
+    from almasix.console.scheduling import Event, run_event, _try_cache_lock
 
     set_manager(None)
     assert _try_cache_lock("x") is None
@@ -555,7 +555,7 @@ def test_schedule_filesystem_mutex_fallback(tmp_path: Path) -> None:
     assert ran["n"] == 1
     # Second overlapping run while mutex file held — acquire another Event same mutex
     # Hold by running with a long-held lock via Mutex directly
-    from avalon.console.mutex import Mutex
+    from almasix.console.mutex import Mutex
 
     mutex = Mutex(tmp_path, event.mutex_name())
     assert mutex.acquire() is True

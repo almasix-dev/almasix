@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 from sqlalchemy.dialects import mssql, mysql, oracle, postgresql, sqlite
 
-from avalon.orm.connection import ConnectionError_, _ensure_async_driver, _normalize_url
-from avalon.orm.dialects import drop_table_sql, quote_ident, rename_column_sql
-from avalon.orm.schema import Blueprint, compile_table_statements
+from almasix.orm.connection import ConnectionError_, _ensure_async_driver, _normalize_url
+from almasix.orm.dialects import drop_table_sql, quote_ident, rename_column_sql
+from almasix.orm.schema import Blueprint, compile_table_statements
 
 
 def test_normalize_url_laravel_drivers() -> None:
@@ -37,7 +37,7 @@ def test_normalize_url_laravel_drivers() -> None:
             "password": "secret",
             "host": "db",
             "port": 1433,
-            "database": "avalon",
+            "database": "almasix",
         }
     )
     assert sqlsrv.startswith("mssql+aioodbc://")

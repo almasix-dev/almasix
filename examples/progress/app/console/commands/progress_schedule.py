@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from avalon.console.command import Command
-from avalon.console.scheduling import Schedule, ScheduledTaskSkipped, run_due_events
-from avalon.events import Event as Bus
+from almasix.console.command import Command
+from almasix.console.scheduling import Schedule, ScheduledTaskSkipped, run_due_events
+from almasix.events import Event as Bus
 
 
 class ProgressScheduleCommand(Command):
@@ -54,6 +54,6 @@ class ProgressScheduleCommand(Command):
             self.line(f"  {outcome.event.summary():<32} {state} {outcome.output.strip()}")
 
         self.new_line()
-        self.comment("Run `grail schedule:list` to see this app's real schedule")
+        self.comment("Run `smith schedule:list` to see this app's real schedule")
         self.success("schedule demo ok")
         return 0

@@ -1,4 +1,4 @@
-"""Coverage fill-ins for avalon.caliburn edge paths."""
+"""Coverage fill-ins for almasix.prism edge paths."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from avalon.caliburn import (
+from almasix.prism import (
     AttributeBag,
     Component,
     HtmlString,
@@ -17,12 +17,12 @@ from avalon.caliburn import (
     set_engine,
     view,
 )
-from avalon.caliburn.compiler import compile_template
-from avalon.caliburn.engine import Engine
-from avalon.caliburn.escape import DeferredHtml
-from avalon.caliburn.helpers import get_engine
-from avalon.caliburn.stacks import StackBag
-from avalon.caliburn.xtags import expand_x_tags
+from almasix.prism.compiler import compile_template
+from almasix.prism.engine import Engine
+from almasix.prism.escape import DeferredHtml
+from almasix.prism.helpers import get_engine
+from almasix.prism.stacks import StackBag
+from almasix.prism.xtags import expand_x_tags
 
 
 def test_attribute_bag_merge_only_except_bool() -> None:
@@ -112,12 +112,12 @@ def test_xtags_self_closing_dynamic_and_echo_attr() -> None:
 def test_view_factory_and_helpers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "hi.cal.html").write_text("{{ n }}", encoding="utf-8")
+    (views / "hi.prism.html").write_text("{{ n }}", encoding="utf-8")
     engine = Engine(paths=[views])
     factory = ViewFactory(engine)
     factory.composer("hi", lambda ctx: ctx.setdefault("n", 1))
     factory.directive("shout", lambda expr: f"__w(str({expr}).upper())")
-    (views / "dir.cal.html").write_text("@shout('ok')", encoding="utf-8")
+    (views / "dir.prism.html").write_text("@shout('ok')", encoding="utf-8")
     assert factory.make("hi") == "1"
     assert factory.cache() >= 1
     factory.clear_cache()
@@ -137,11 +137,11 @@ def test_view_factory_and_helpers(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 def test_compiler_raw_and_push(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "layouts").mkdir(parents=True)
-    (views / "layouts" / "app.cal.html").write_text(
+    (views / "layouts" / "app.prism.html").write_text(
         "@yield('content')@stack('s')",
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @extends('layouts.app')
 @section('content')
@@ -174,7 +174,7 @@ def test_unless_for() -> None:
 def test_engine_matches_star_and_list_composer(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "a.cal.html").write_text("{{ v }}", encoding="utf-8")
+    (views / "a.prism.html").write_text("{{ v }}", encoding="utf-8")
     engine = Engine(paths=[views])
     engine.composer(["a", "missing"], lambda ctx: ctx.update(v="ok"))
     engine.composer("*", lambda ctx: None)
@@ -183,8 +183,8 @@ def test_engine_matches_star_and_list_composer(tmp_path: Path) -> None:
 
 
 def test_while_lang_choice_parent(tmp_path: Path) -> None:
-    from avalon.translation.helpers import set_translator
-    from avalon.translation.translator import Translator
+    from almasix.translation.helpers import set_translator
+    from almasix.translation.translator import Translator
 
     lang = tmp_path / "lang" / "en"
     lang.mkdir(parents=True)
@@ -198,8 +198,8 @@ def test_while_lang_choice_parent(tmp_path: Path) -> None:
 
     views = tmp_path / "views"
     (views / "layouts").mkdir(parents=True)
-    (views / "layouts" / "base.cal.html").write_text("@yield('content')", encoding="utf-8")
-    (views / "layouts" / "app.cal.html").write_text(
+    (views / "layouts" / "base.prism.html").write_text("@yield('content')", encoding="utf-8")
+    (views / "layouts" / "app.prism.html").write_text(
         """
 @extends('layouts.base')
 @section('content')
@@ -208,7 +208,7 @@ BASE
 """.strip(),
         encoding="utf-8",
     )
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         """
 @extends('layouts.app')
 @section('content')
@@ -251,7 +251,7 @@ def test_compiler_syntax_errors() -> None:
 def test_view_pattern_prefix_star(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "admin").mkdir(parents=True)
-    (views / "admin" / "users.cal.html").write_text("{{ v }}", encoding="utf-8")
+    (views / "admin" / "users.prism.html").write_text("{{ v }}", encoding="utf-8")
     engine = Engine(paths=[views])
     engine.composer("admin*", lambda ctx: ctx.update(v="admin"))
     assert engine.render("admin.users") == "admin"
@@ -260,7 +260,7 @@ def test_view_pattern_prefix_star(tmp_path: Path) -> None:
 def test_component_var_kwargs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "box.cal.html").write_text(
+    (views / "components" / "box.prism.html").write_text(
         "<div>{{ title }}{{ attributes }}</div>",
         encoding="utf-8",
     )
@@ -271,7 +271,7 @@ def test_component_var_kwargs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     (pkg / "__init__.py").write_text("", encoding="utf-8")
     (pkg / "box.py").write_text(
         """
-from avalon.caliburn import Component
+from almasix.prism import Component
 class Box(Component):
     def __init__(self, **kwargs):
         self.title = kwargs.pop("title", "")
@@ -287,7 +287,7 @@ class Box(Component):
     for mod in list(sys.modules):
         if mod == "app" or mod.startswith("app."):
             sys.modules.pop(mod, None)
-    (views / "page.cal.html").write_text(
+    (views / "page.prism.html").write_text(
         '<x-box title="T" class="c">x</x-box>',
         encoding="utf-8",
     )
@@ -314,8 +314,8 @@ def test_xtags_single_quotes_and_unclosed() -> None:
 def test_include_when_with_data(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "bit.cal.html").write_text("{{ x }}", encoding="utf-8")
-    (views / "page.cal.html").write_text(
+    (views / "bit.prism.html").write_text("{{ x }}", encoding="utf-8")
+    (views / "page.prism.html").write_text(
         "@includeWhen(True, 'bit', {'x': 'Y'})@includeUnless(False, 'bit', {'x': 'Z'})",
         encoding="utf-8",
     )
@@ -325,7 +325,7 @@ def test_include_when_with_data(tmp_path: Path) -> None:
 def test_custom_directive_multiline(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "page.cal.html").write_text("@box('hi')", encoding="utf-8")
+    (views / "page.prism.html").write_text("@box('hi')", encoding="utf-8")
     engine = Engine(paths=[views])
     engine.directive(
         "box",
@@ -348,7 +348,7 @@ def test_html_string_str() -> None:
 def test_render_component_slot_call_styles(tmp_path: Path) -> None:
     views = tmp_path / "views"
     (views / "components").mkdir(parents=True)
-    (views / "components" / "wrap.cal.html").write_text(
+    (views / "components" / "wrap.prism.html").write_text(
         "<w>{{ slot }}</w>",
         encoding="utf-8",
     )
@@ -377,7 +377,7 @@ def test_empty_python_block() -> None:
 def test_resolve_component_empty_and_creator_skip(tmp_path: Path) -> None:
     engine = Engine(paths=[tmp_path / "views"])
     (tmp_path / "views").mkdir()
-    (tmp_path / "views" / "x.cal.html").write_text("x", encoding="utf-8")
+    (tmp_path / "views" / "x.prism.html").write_text("x", encoding="utf-8")
     assert engine.resolve_component_class("") is None
     engine.creator("never", lambda ctx: ctx.update(z=1))
     assert engine.render("x") == "x"

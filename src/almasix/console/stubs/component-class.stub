@@ -1,0 +1,15 @@
+"""{{ class }} view component."""
+
+from __future__ import annotations
+
+from almasix.prism import Component
+
+
+class {{ class }}(Component):
+    """{{ class }}."""
+
+    def __init__(self) -> None:
+        pass
+
+    def render(self) -> str:
+        return "{{ view }}"

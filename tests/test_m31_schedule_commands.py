@@ -8,13 +8,13 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from avalon.console.scheduling import schedule
-from avalon.grail.cli import app as grail_app
+from almasix.console.scheduling import schedule
+from almasix.smith.cli import app as smith_app
 
 runner = CliRunner()
 
 ROUTES = """
-from avalon.console import schedule
+from almasix.console import schedule
 
 
 def heartbeat() -> None:
@@ -36,7 +36,7 @@ def scheduled_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     (tmp_path / "bootstrap").mkdir()
     (tmp_path / "bootstrap" / "app.py").write_text(
         "from pathlib import Path\n"
-        "from avalon.framework import Application\n"
+        "from almasix.framework import Application\n"
         "application = Application.configure(Path(__file__).resolve().parent.parent).create()\n",
         encoding="utf-8",
     )
@@ -46,7 +46,7 @@ def scheduled_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.syspath_prepend(str(tmp_path))
 
     # Each test gets the schedule to itself, and the loader must run again.
-    from avalon.console import kernel as kernel_module
+    from almasix.console import kernel as kernel_module
 
     kernel_module._loaded_console_routes.clear()
     schedule.clear()
@@ -56,15 +56,15 @@ def scheduled_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 def invoke(*argv: str) -> Any:
-    return runner.invoke(grail_app, list(argv))
+    return runner.invoke(smith_app, list(argv))
 
 
 def write_routes(app_path: Path, body: str) -> None:
     """Redefine the app's scheduled tasks, the way a reader would."""
-    from avalon.console import kernel as kernel_module
+    from almasix.console import kernel as kernel_module
 
     (app_path / "routes" / "console.py").write_text(
-        "from avalon.console import schedule\n\n" + body,
+        "from almasix.console import schedule\n\n" + body,
         encoding="utf-8",
     )
     kernel_module._loaded_console_routes.clear()
@@ -174,7 +174,7 @@ def test_schedule_test_asks_which_task_when_there_are_several(
 ) -> None:
     asked: list[str] = []
     monkeypatch.setattr(
-        "avalon.console.prompts.select",
+        "almasix.console.prompts.select",
         lambda label, options, **kwargs: asked.append(label) or 1,
     )
 
@@ -204,7 +204,7 @@ def test_schedule_test_says_so_when_nothing_is_scheduled(scheduled_app: Path) ->
 def test_schedule_interrupt_signals_the_current_minute(scheduled_app: Path) -> None:
     from datetime import datetime
 
-    from avalon.console.scheduling import interrupted
+    from almasix.console.scheduling import interrupted
 
     result = invoke("schedule:interrupt")
 
@@ -219,8 +219,8 @@ def test_schedule_clear_cache_reports_what_it_released(scheduled_app: Path) -> N
         scheduled_app, 'schedule.command("stuck").every_minute().without_overlapping()\n'
     )
 
-    from avalon.cache import set_manager
-    from avalon.cache.manager import CacheManager
+    from almasix.cache import set_manager
+    from almasix.cache.manager import CacheManager
 
     set_manager(CacheManager(config={"default": "array", "stores": {"array": {"driver": "array"}}}))
     try:

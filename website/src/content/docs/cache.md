@@ -5,12 +5,12 @@ description: Cache stores, remembering values, atomic locks, and tags.
 
 ## Introduction
 
-Avalon’s cache layer stores temporary data behind a single façade. Use it to
+Almasix’s cache layer stores temporary data behind a single façade. Use it to
 memoize expensive work, share short-lived state between requests, and take
 cross-process locks for scheduled tasks or jobs.
 
 ```python
-from avalon.cache import Cache, cache
+from almasix.cache import Cache, cache
 
 Cache.put("users:1", {"name": "Ada"}, 60)
 user = Cache.get("users:1")
@@ -27,20 +27,20 @@ from the environment:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `CACHE_STORE` | `file` | Name of the default store (`array`, `file`, `database`, `null`, …) |
-| `CACHE_PREFIX` | `avalon_cache_` | Prefix applied to every cache key |
+| `CACHE_PREFIX` | `almasix_cache_` | Prefix applied to every cache key |
 
 ```env
 CACHE_STORE=file
-CACHE_PREFIX=avalon_cache_
+CACHE_PREFIX=almasix_cache_
 ```
 
 ```python
 # config/cache.py
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("CACHE_STORE", "file"),
-    "prefix": env("CACHE_PREFIX", "avalon_cache_"),
+    "prefix": env("CACHE_PREFIX", "almasix_cache_"),
     "stores": {
         "array": {"driver": "array"},
         "file": {
@@ -69,7 +69,7 @@ config = {
 | **array** | Process-local only — ideal for tests and demos (progress defaults here) |
 | **file** | Single-server apps; data under `storage/framework/cache/data` |
 | **database** | Shared cache across app processes via Articulate (`cache` + `cache_locks` tables) |
-| **redis** | Shared cache via Redis (`avalon[redis]`) — tags and locks supported |
+| **redis** | Shared cache via Redis (`almasix[redis]`) — tags and locks supported |
 | **null** | Disable caching without removing call sites (writes accepted, reads miss) |
 
 ```python
@@ -125,7 +125,7 @@ value = Cache.remember_forever("config", lambda: load_config())
 ### The `cache()` helper
 
 ```python
-from avalon.cache import cache
+from almasix.cache import cache
 
 cache("users:1")          # get
 cache({"k": "v"}, 60)     # put many
@@ -163,7 +163,7 @@ key VARCHAR(255) PRIMARY KEY, owner VARCHAR(255), expiration INTEGER NOT NULL
 ```
 
 You can also call `ensure_cache_table()` / `ensure_cache_table_sync()` from
-`avalon.cache` in migrations or bootstraps.
+`almasix.cache` in migrations or bootstraps.
 
 ## Atomic locks
 
@@ -207,7 +207,7 @@ falling back to a filesystem mutex — see [Task Scheduling](/scheduling/).
 
 Tags let you invalidate related keys as a group. They work on the **array** and
 **redis** stores. File and database stores raise `RuntimeError` if you call
-`tags()` — Avalon is honest about driver support.
+`tags()` — Almasix is honest about driver support.
 
 ```python
 Cache.tags("users", "authors").put("ada", user, 60)
@@ -221,8 +221,8 @@ Cache.tags("users", "authors").flush()
 ## Custom drivers
 
 ```python
-from avalon.cache import Cache
-from avalon.cache.store import Repository
+from almasix.cache import Cache
+from almasix.cache.store import Repository
 
 Cache.extend("mongo", lambda app, cfg, name: Repository(MongoStore(...)))
 # then set stores.mongo.driver = "mongo" in config/cache.py

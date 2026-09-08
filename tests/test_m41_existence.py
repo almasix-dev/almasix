@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.orm import Model, Schema, relation
+from almasix.orm import Model, Schema, relation
 from tests.orm_support import memory_db  # noqa: F401
 
 
@@ -418,7 +418,7 @@ async def test_morph_existence_rejects_non_morph_relations(memory_db) -> None:
 
 @pytest.mark.asyncio
 async def test_existence_queries_require_a_model(memory_db) -> None:
-    from avalon.orm.builder import QueryBuilder
+    from almasix.orm.builder import QueryBuilder
 
     with pytest.raises(RuntimeError, match="require a model"):
         QueryBuilder.for_table("authors").has("posts")

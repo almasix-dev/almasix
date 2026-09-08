@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.orm import Model, Schema
+from almasix.orm import Model, Schema
 from tests.orm_support import memory_db  # noqa: F401
 
 pytestmark = pytest.mark.asyncio

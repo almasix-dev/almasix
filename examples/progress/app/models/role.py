@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from avalon.orm import Model, relation
+from almasix.orm import Model, relation
 
 
 class Role(Model):

@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 import pytest
 
-from avalon.client import (
+from almasix.client import (
     Batch,
     BatchInProgressException,
     ConnectionException,
@@ -25,8 +25,8 @@ from avalon.client import (
     ResponseReceived,
     set_factory,
 )
-from avalon.client.uri_template import expand
-from avalon.events import Dispatcher, Event, set_dispatcher
+from almasix.client.uri_template import expand
+from almasix.events import Dispatcher, Event, set_dispatcher
 
 URL = "https://api.example.test/users"
 OTHER = "https://api.example.test/orders"

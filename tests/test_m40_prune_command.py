@@ -1,7 +1,7 @@
 """M40 — the `model:prune` console command.
 
 These tests are synchronous: the command drives its own event loop, like every
-other Grail command, so the setup and assertions run in separate loops. The
+other Smith command, so the setup and assertions run in separate loops. The
 `db` helper drops stale pooled connections before each hop.
 """
 
@@ -16,10 +16,10 @@ from typing import Any
 
 import pytest
 
-from avalon.console.commands.model_prune import ModelPruneCommand
-from avalon.console.kernel import ConsoleKernel
-from avalon.framework import Application
-from avalon.orm import DatabaseManager, MassPrunable, Model, Prunable, Schema, set_manager
+from almasix.console.commands.model_prune import ModelPruneCommand
+from almasix.console.kernel import ConsoleKernel
+from almasix.framework import Application
+from almasix.orm import DatabaseManager, MassPrunable, Model, Prunable, Schema, set_manager
 
 _MANAGER: DatabaseManager | None = None
 
@@ -196,7 +196,7 @@ def test_prune_command_survives_an_app_without_models(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:
     """An app with no `app/models` package at all."""
-    from avalon.console.commands import model_prune
+    from almasix.console.commands import model_prune
 
     def missing(name: str) -> Any:
         raise ModuleNotFoundError(name)

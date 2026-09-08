@@ -1,4 +1,4 @@
-"""Coverage chase — REPL, debug, grail CLI, filesystem edge paths."""
+"""Coverage chase — REPL, debug, smith CLI, filesystem edge paths."""
 
 from __future__ import annotations
 
@@ -14,16 +14,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from avalon.console.command import Command
-from avalon.console.repl import (
+from almasix.console.command import Command
+from almasix.console.repl import (
     _configure_ptpython,
     _start_ipython,
     _start_plain_console,
     _start_rich_console,
     build_namespace,
 )
-from avalon.console.scheduling import Event, schedule
-from avalon.debug import (
+from almasix.console.scheduling import Event, schedule
+from almasix.debug import (
     Caller,
     DumpAndDie,
     _caller,
@@ -33,13 +33,13 @@ from avalon.debug import (
     dump,
     render_value,
 )
-from avalon.filesystem.adapter import FilesystemAdapter, coerce_bytes, normalize_path
-from avalon.filesystem.drivers.local import LocalAdapter
-from avalon.filesystem.drivers.memory import MemoryAdapter
-from avalon.filesystem.manager import Storage, StorageManager
-from avalon.filesystem.storage import Disk
-from avalon.framework.application import Application
-from avalon.grail import cli as grail_cli
+from almasix.filesystem.adapter import FilesystemAdapter, coerce_bytes, normalize_path
+from almasix.filesystem.drivers.local import LocalAdapter
+from almasix.filesystem.drivers.memory import MemoryAdapter
+from almasix.filesystem.manager import Storage, StorageManager
+from almasix.filesystem.storage import Disk
+from almasix.framework.application import Application
+from almasix.smith import cli as smith_cli
 from tests.support import purge_generated_app_modules
 
 runner = CliRunner()
@@ -145,7 +145,7 @@ def test_ipython_displayhook_and_asyncio_fallback(monkeypatch: pytest.MonkeyPatc
     )
     rendered: list[Any] = []
     monkeypatch.setattr(
-        "avalon.console.display.render",
+        "almasix.console.display.render",
         lambda value, **_: rendered.append(value),
     )
     assert _start_ipython({"x": 1}) == 0
@@ -233,7 +233,7 @@ def test_rich_console_runcode_paths(
     with pytest.raises(SystemExit):
         console.runcode(
             compile(
-                "from avalon.debug import DumpAndDie; raise DumpAndDie((1,), None)",
+                "from almasix.debug import DumpAndDie; raise DumpAndDie((1,), None)",
                 "<t>",
                 "exec",
             )
@@ -321,7 +321,7 @@ def test_render_value_json_fallback_and_headers(
 
 
 # ---------------------------------------------------------------------------
-# grail CLI
+# smith CLI
 # ---------------------------------------------------------------------------
 
 
@@ -330,8 +330,8 @@ def test_list_skips_hidden_and_names_broken_modules(
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
-    from avalon.console.commands.listing import ListCommand
-    from avalon.console.kernel import ConsoleKernel
+    from almasix.console.commands.listing import ListCommand
+    from almasix.console.kernel import ConsoleKernel
 
     class HiddenCmd(Command):
         signature = "demo:hidden"
@@ -349,7 +349,7 @@ def test_list_skips_hidden_and_names_broken_modules(
         def handle(self) -> int:
             return 0
 
-    from avalon.console.kernel import DiscoveryFailure
+    from almasix.console.kernel import DiscoveryFailure
 
     kernel = ConsoleKernel.for_cwd(tmp_path)
     kernel.discover_framework_commands()
@@ -370,17 +370,17 @@ def test_list_skips_hidden_and_names_broken_modules(
     assert empty.run_argv("list", []) == 0
 
 
-def test_schedule_run_work_and_fiddle(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_schedule_run_work_and_loupe(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     schedule.events.clear()
     monkeypatch.chdir(tmp_path)
     (tmp_path / "bootstrap").mkdir(exist_ok=True)
     (tmp_path / "bootstrap" / "app.py").write_text("x=1\n", encoding="utf-8")
 
-    empty = runner.invoke(grail_cli.app, ["schedule:run"])
+    empty = runner.invoke(smith_cli.app, ["schedule:run"])
     assert "No scheduled" in empty.stdout
 
     schedule.events.append(Event(description="inspire", command="inspire").every_minute())
-    ran = runner.invoke(grail_cli.app, ["schedule:run"])
+    ran = runner.invoke(smith_cli.app, ["schedule:run"])
     assert ran.exit_code == 0
     assert "Running: inspire" in ran.stdout
     schedule.events.clear()
@@ -395,13 +395,13 @@ def test_schedule_run_work_and_fiddle(tmp_path: Path, monkeypatch: pytest.Monkey
     monkeypatch.setattr("time.sleep", fake_sleep)
     schedule.events.clear()
     schedule.events.append(Event(description="tick", command="inspire").every_minute())
-    result = runner.invoke(grail_cli.app, ["schedule:work", "--sleep", "1"])
+    result = runner.invoke(smith_cli.app, ["schedule:work", "--sleep", "1"])
     assert "stopped" in result.stdout.lower()
     schedule.events.clear()
 
-    with patch("avalon.console.repl.start_fiddle", return_value=0):
-        for alias in ("fiddle", "tinker", "repl"):
-            result = runner.invoke(grail_cli.app, [alias])
+    with patch("almasix.console.repl.start_loupe", return_value=0):
+        for alias in ("loupe", "tinker", "repl"):
+            result = runner.invoke(smith_cli.app, [alias])
             assert result.exit_code == 0, alias
 
 

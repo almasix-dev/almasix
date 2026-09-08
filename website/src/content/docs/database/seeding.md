@@ -1,9 +1,9 @@
 ---
 title: Seeding
-description: Seed your database with test data using Avalon seeders.
+description: Seed your database with test data using Almasix seeders.
 ---
 
-Avalon includes a simple method of seeding your database with test data using seed classes. All seeders live in `database/seeders`.
+Almasix includes a simple method of seeding your database with test data using seed classes. All seeders live in `database/seeders`.
 
 :::note
 Model factories are not available yet. Seed with `Model.create` / the query builder until factories ship.
@@ -20,11 +20,11 @@ database/
     user_seeder.py
 ```
 
-`avalon new` ships an empty `DatabaseSeeder`. Override `run` and call child seeders:
+`almasix new` ships an empty `DatabaseSeeder`. Override `run` and call child seeders:
 
 ```python
 # database/seeders/database_seeder.py
-from avalon.orm import Seeder
+from almasix.orm import Seeder
 from database.seeders.user_seeder import UserSeeder
 
 class DatabaseSeeder(Seeder):
@@ -49,7 +49,7 @@ class UserSeeder(Seeder):
 
 ```python
 # database/seeders/quiet_seeder.py
-from avalon.orm import Seeder, WithoutModelEvents
+from almasix.orm import Seeder, WithoutModelEvents
 
 class QuietSeeder(WithoutModelEvents, Seeder):
     async def run(self) -> None:
@@ -61,12 +61,12 @@ You may also wrap a block with `without_model_events()`.
 ## Running seeders
 
 ```bash
-python grail make:seeder UserSeeder
-python grail db:seed
-python grail db:seed --class UserSeeder
-python grail migrate --seed
-python grail migrate --seed --seeder UserSeeder
-python grail migrate:fresh --seed
+python smith make:seeder UserSeeder
+python smith db:seed
+python smith db:seed --class UserSeeder
+python smith migrate --seed
+python smith migrate --seed --seeder UserSeeder
+python smith migrate:fresh --seed
 ```
 
 `--seeder` implies seeding (you may omit `--seed` when `--seeder` is set). The default class is `DatabaseSeeder`.

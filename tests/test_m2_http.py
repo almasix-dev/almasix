@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from avalon.framework import Application
-from avalon.http import (
+from almasix.framework import Application
+from almasix.http import (
     BadRequestHttpException,
     HttpException,
     NotFoundHttpException,
@@ -18,8 +18,8 @@ from avalon.http import (
     json,
     make_response,
 )
-from avalon.http.exceptions import UnauthorizedHttpException
-from avalon.routing import Route, Router, set_router
+from almasix.http.exceptions import UnauthorizedHttpException
+from almasix.routing import Route, Router, set_router
 from tests.support import purge_generated_app_modules
 
 
@@ -39,7 +39,7 @@ def _make_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Application:
         (app_pkg / relative).write_text("", encoding="utf-8")
 
     (app_pkg / "http" / "controllers" / "ping_controller.py").write_text(
-        "from avalon.http import Controller, NotFoundHttpException, Request\n"
+        "from almasix.http import Controller, NotFoundHttpException, Request\n"
         "\n"
         "class PingController(Controller):\n"
         "    async def index(self):\n"
@@ -53,7 +53,7 @@ def _make_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Application:
         encoding="utf-8",
     )
     (app_pkg / "http" / "middleware" / "tag_middleware.py").write_text(
-        "from avalon.http import Middleware, Request\n"
+        "from almasix.http import Middleware, Request\n"
         "\n"
         "class TagMiddleware(Middleware):\n"
         "    async def handle(self, request: Request, call_next):\n"
@@ -82,7 +82,7 @@ def _make_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Application:
     routes.mkdir()
     (routes / "web.py").write_text(
         "from app.http.controllers.ping_controller import PingController\n"
-        "from avalon.routing import Route\n"
+        "from almasix.routing import Route\n"
         "\n"
         "Route.get('/', [PingController, 'index'])\n"
         "Route.get('/items/{id}', [PingController, 'show'])\n"

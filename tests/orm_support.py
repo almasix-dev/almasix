@@ -6,8 +6,8 @@ from collections.abc import AsyncIterator
 
 import pytest
 
-from avalon.orm import DatabaseManager, Schema, set_manager
-from avalon.orm.model import Model
+from almasix.orm import DatabaseManager, Schema, set_manager
+from almasix.orm.model import Model
 
 
 @pytest.fixture

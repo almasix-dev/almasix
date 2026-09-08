@@ -3,13 +3,13 @@ title: Strings
 description: Str and the fluent Stringable — every string helper, documented method by method.
 ---
 
-Avalon has two ways to work a string. `Str` is a namespace of static methods
+Almasix has two ways to work a string. `Str` is a namespace of static methods
 that take the subject as their first argument, and `str_()` wraps a string in a
 `Stringable` so the same operations chain:
 
 ```python
 # app/http/controllers/post_controller.py
-from avalon.support import Str, str_
+from almasix.support import Str, str_
 
 Str.slug(Str.title("the hitchhiker's guide"))
 # 'the-hitchhikers-guide'
@@ -49,7 +49,7 @@ rather than faked:
 | Laravel | Why it is absent |
 | --- | --- |
 | `scan` | PHP's `sscanf` format strings; Python's parsing story is different enough that a port would be a new API rather than a port |
-| `toHtmlString` | Caliburn's escaper honours `__html__`, so `HtmlString` from `avalon.caliburn` is the equivalent — see [Views](/views/) |
+| `toHtmlString` | Prism's escaper honours `__html__`, so `HtmlString` from `almasix.prism` is the equivalent — see [Views](/views/) |
 | `toUri` | The URI object lands with named routes in the routing milestone; use `url()` today |
 
 ## Strings
@@ -64,7 +64,7 @@ in the subject, or is the empty string, the whole subject comes back unchanged
 rather than an empty string.
 
 ```python
-from avalon.support import Str
+from almasix.support import Str
 
 result = Str.after("ada@example.com", "@")
 
@@ -95,9 +95,9 @@ a fixed set of short joining words (`a`, `an`, `and`, `as`, `at`, `but`, `by`,
 first and last words are always capitalised whatever they are.
 
 ```python
-result = Str.apa("a nice title for the avalon docs")
+result = Str.apa("a nice title for the almasix docs")
 
-# 'A Nice Title for the Avalon Docs'
+# 'A Nice Title for the Almasix Docs'
 
 kept = Str.apa("A TALE of two cities")
 
@@ -165,12 +165,12 @@ smallest = Str.between("[a] bc [d]", "[", "]")
 ```
 
 Laravel's `between` runs to the *last* occurrence of `to` (giving `'a] bc [d'`
-for the second example); Avalon's stops at the first, so it behaves like
+for the second example); Almasix's stops at the first, so it behaves like
 Laravel's `betweenFirst`.
 
 ### between_first
 
-Returns the smallest portion between `from_` and `to`. In Avalon this is an
+Returns the smallest portion between `from_` and `to`. In Almasix this is an
 alias — it calls `between`, which already stops at the first `to`, so the two
 methods always return the same string.
 
@@ -300,9 +300,9 @@ Collapses consecutive runs of `character` down to a single occurrence.
 expression metacharacter such as `.` is treated literally.
 
 ```python
-result = Str.deduplicate("The  Avalon   framework")
+result = Str.deduplicate("The  Almasix   framework")
 
-# 'The Avalon framework'
+# 'The Almasix framework'
 
 path = Str.deduplicate("users//1///posts", "/")
 
@@ -414,14 +414,14 @@ Decodes a base64 string back to text, assuming UTF-8. The counterpart is
 `Str.to_base64`.
 
 ```python
-result = Str.from_base64("QXZhbG9u")
+result = Str.from_base64("QWxtYXNpeA==")
 
-# 'Avalon'
+# 'Almasix'
 ```
 
 Decoding is not strict: characters outside the base64 alphabet are discarded
 rather than reported, so invalid input returns whatever is left (often `''`)
-instead of raising. Laravel's `fromBase64` takes a `$strict` flag; Avalon has
+instead of raising. Laravel's `fromBase64` takes a `$strict` flag; Almasix has
 no equivalent.
 
 ### headline
@@ -468,9 +468,9 @@ Converts a small subset of Markdown to inline HTML, with no wrapping `<p>`.
 `` `code` `` and `[text](url)` are converted — nothing else.
 
 ```python
-result = Str.inline_markdown("Visit **Avalon** at [the site](https://example.com)")
+result = Str.inline_markdown("Visit **Almasix** at [the site](https://example.com)")
 
-# 'Visit <strong>Avalon</strong> at <a href="https://example.com">the site</a>'
+# 'Visit <strong>Almasix</strong> at <a href="https://example.com">the site</a>'
 
 code = Str.inline_markdown("Use `Str.of()` for *fluent* strings")
 
@@ -506,14 +506,14 @@ unmatched = Str.is_("admin/*", "public/index")
 
 The pattern must cover the whole value, `?` is not a wildcard, and matching is
 always case sensitive — Laravel's `Str::is` takes an `ignoreCase` argument that
-Avalon does not have.
+Almasix does not have.
 
 ### is_ascii
 
 Whether every character in the value can be encoded as ASCII.
 
 ```python
-result = Str.is_ascii("Avalon")
+result = Str.is_ascii("Almasix")
 
 # True
 
@@ -576,25 +576,25 @@ invalid = Str.is_ulid("not-a-ulid")
 ### is_url
 
 Whether the value parses as a URL, meaning it has both a scheme and a host.
-Pass `protocols` to restrict which schemes count. Avalon tests this with
+Pass `protocols` to restrict which schemes count. Almasix tests this with
 `urllib.parse.urlparse` rather than Laravel's URL regular expression, so any
 scheme is accepted unless you name the ones you want.
 
 ```python
-from avalon.support import Str
+from almasix.support import Str
 
-result = Str.is_url("https://avalon.dev/docs")
+result = Str.is_url("https://almasix.dev/docs")
 
 # True
 
-result = Str.is_url("http://avalon.dev", ["https"])
+result = Str.is_url("http://almasix.dev", ["https"])
 
 # False
 ```
 
 ### is_uuid
 
-Whether the value is a UUID. Avalon hands the string to Python's `uuid.UUID`,
+Whether the value is a UUID. Almasix hands the string to Python's `uuid.UUID`,
 which accepts more shapes than Laravel's regular expression does — the
 32-character unhyphenated form and the `urn:uuid:` form are both true here.
 
@@ -645,9 +645,9 @@ signature and is ignored: Python strings are already sequences of code points,
 so an accented character counts as one either way.
 
 ```python
-result = Str.length("Avalon")
+result = Str.length("Almasix")
 
-# 6
+# 7
 
 result = Str.length("naïve")
 
@@ -677,9 +677,9 @@ result = Str.limit("The quick brown fox", 9, " (…)")
 Lower-cases the whole string.
 
 ```python
-result = Str.lower("Avalon FRAMEWORK")
+result = Str.lower("Almasix FRAMEWORK")
 
-# 'avalon framework'
+# 'almasix framework'
 ```
 
 ### ltrim
@@ -689,20 +689,20 @@ whitespace; otherwise `characters` is a set of candidates rather than a prefix,
 as with `str.lstrip`.
 
 ```python
-result = Str.ltrim("  Avalon  ")
+result = Str.ltrim("  Almasix  ")
 
-# 'Avalon  '
+# 'Almasix  '
 
-result = Str.ltrim("xyxAvalon", "xy")
+result = Str.ltrim("xyxAlmasix", "xy")
 
-# 'Avalon'
+# 'Almasix'
 ```
 
 ### markdown
 
 Renders Markdown to HTML. No third-party Markdown package is involved or
-required: the work is done by Avalon's mail renderer
-(`avalon.mail.markdown.render_markdown_component`), which handles `#` and `##`
+required: the work is done by Almasix's mail renderer
+(`almasix.mail.markdown.render_markdown_component`), which handles `#` and `##`
 headings, `**bold**`, links, and paragraphs, and turns a link alone on its line
 into a button. Anything it does not know — lists, `*italic*`, code fences — is
 left as literal text inside a paragraph, so this is a much smaller Markdown
@@ -792,23 +792,23 @@ The value is stringified, `None` becomes the empty string, and the default is
 the empty string. `str_()` is the shorter global helper for the same thing.
 
 ```python
-result = Str.of("Avalon")
+result = Str.of("Almasix")
 
-# Stringable('Avalon')
+# Stringable('Almasix')
 
 result = Str.of(42)
 
 # Stringable('42')
 
-result = str(Str.of("  Avalon  ").trim().upper())
+result = str(Str.of("  Almasix  ").trim().upper())
 
-# 'AVALON'
+# 'ALMASIX'
 ```
 
 ### ordered_uuid
 
 A UUID whose leading characters increase with time, so a column of them stays
-roughly in insertion order and indexes better than random UUIDs. Avalon
+roughly in insertion order and indexes better than random UUIDs. Almasix
 produces this with `uuid.uuid1` — a version 1, time-and-node UUID, not the
 timestamp-first version 4 value Laravel generates, and it embeds the host's MAC
 address.
@@ -828,9 +828,9 @@ odd character out goes on the right. A string already at `length` is returned
 untouched.
 
 ```python
-result = Str.pad_both("Avalon", 12, "_")
+result = Str.pad_both("Almasix", 12, "_")
 
-# '___Avalon___'
+# '__Almasix___'
 
 repeated = Str.pad_both("x", 7, "-=")
 
@@ -858,9 +858,9 @@ Pads the end of the string until it is `length` characters long, again
 repeating `pad` to fit.
 
 ```python
-result = Str.pad_right("Avalon", 10, "-")
+result = Str.pad_right("Almasix", 10, "-")
 
-# 'Avalon----'
+# 'Almasix---'
 
 repeated = Str.pad_right("7", 5, "ab")
 
@@ -979,13 +979,13 @@ result = Str.remove("e", "Peter Piper picked a peck")
 
 # 'Ptr Pipr pickd a pck'
 
-result = Str.remove(["a", "e"], "Avalon")
+result = Str.remove(["a", "e"], "Almasix")
 
-# 'Avlon'
+# 'Almsix'
 
-result = Str.remove("A", "Avalon banana", case_sensitive=False)
+result = Str.remove("A", "Almasix banana", case_sensitive=False)
 
-# 'vlon bnn'
+# 'lmsix bnn'
 ```
 
 ### repeat
@@ -1012,17 +1012,17 @@ may be iterables, in which case they are paired up positionally; a single
 keyword-only here, where Laravel takes it positionally.
 
 ```python
-result = Str.replace("world", "Avalon", "Hello world")
+result = Str.replace("world", "Almasix", "Hello world")
 
-# 'Hello Avalon'
+# 'Hello Almasix'
 
 result = Str.replace(["cat", "dog"], "pet", "a cat and a dog")
 
 # 'a pet and a pet'
 
-result = Str.replace("WORLD", "Avalon", "Hello world", case_sensitive=False)
+result = Str.replace("WORLD", "Almasix", "Hello world", case_sensitive=False)
 
-# 'Hello Avalon'
+# 'Hello Almasix'
 ```
 
 ### replace_array
@@ -1047,11 +1047,11 @@ Replaces `search` with `replace` only when the subject ends with it, and
 returns the subject untouched otherwise.
 
 ```python
-result = Str.replace_end("World", "Avalon", "Hello World")
+result = Str.replace_end("World", "Almasix", "Hello World")
 
-# 'Hello Avalon'
+# 'Hello Almasix'
 
-result = Str.replace_end("World", "Avalon", "World Hello")
+result = Str.replace_end("World", "Almasix", "World Hello")
 
 # 'World Hello'
 ```
@@ -1113,7 +1113,7 @@ result = Str.replace_start("Hello", "Goodbye", "Hello World")
 
 # 'Goodbye World'
 
-result = Str.replace_start("World", "Avalon", "Hello World")
+result = Str.replace_start("World", "Almasix", "Hello World")
 
 # 'Hello World'
 ```
@@ -1123,11 +1123,11 @@ result = Str.replace_start("World", "Avalon", "Hello World")
 Returns the string with its characters in the opposite order.
 
 ```python
-from avalon.support import Str
+from almasix.support import Str
 
-result = Str.reverse("Avalon")
+result = Str.reverse("Almasix")
 
-# 'nolavA'
+# 'xisamlA'
 ```
 
 ### rtrim
@@ -1212,9 +1212,9 @@ Collapses every run of whitespace inside the string into a single space and
 trims the ends.
 
 ```python
-result = Str.squish("   avalon    is  here ")
+result = Str.squish("   almasix    is  here ")
 
-# 'avalon is here'
+# 'almasix is here'
 ```
 
 ### start
@@ -1272,11 +1272,11 @@ characters. With no `length` it runs to the end of the string, and a negative
 `start` counts back from the end.
 
 ```python
-result = Str.substr("The Avalon Framework", 4, 6)
+result = Str.substr("The Almasix Framework", 4, 7)
 
-# 'Avalon'
+# 'Almasix'
 
-result = Str.substr("The Avalon Framework", -9)
+result = Str.substr("The Almasix Framework", -9)
 
 # 'Framework'
 ```
@@ -1364,9 +1364,9 @@ Encodes the string as standard Base64, after encoding the text itself as UTF-8.
 `Str.from_base64` reverses it.
 
 ```python
-result = Str.to_base64("Avalon")
+result = Str.to_base64("Almasix")
 
-# 'QXZhbG9u'
+# 'QWxtYXNpeA=='
 
 result = Str.to_base64("Crème")
 
@@ -1413,13 +1413,13 @@ Upper-cases the first character and leaves the rest of the string exactly as it
 was.
 
 ```python
-result = Str.ucfirst("avalon framework")
+result = Str.ucfirst("almasix framework")
 
-# 'Avalon framework'
+# 'Almasix framework'
 
-result = Str.ucfirst("aVALON")
+result = Str.ucfirst("aLMASIX")
 
-# 'AVALON'
+# 'ALMASIX'
 ```
 
 ### ucsplit
@@ -1476,17 +1476,17 @@ defaults to `before`. The string is returned unchanged unless *both* ends
 match, so it will not strip a half-open pair.
 
 ```python
-result = Str.unwrap('"Avalon"', '"')
+result = Str.unwrap('"Almasix"', '"')
 
-# 'Avalon'
+# 'Almasix'
 
-result = Str.unwrap("{Avalon}", "{", "}")
+result = Str.unwrap("{Almasix}", "{", "}")
 
-# 'Avalon'
+# 'Almasix'
 
-result = Str.unwrap('"Avalon', '"')
+result = Str.unwrap('"Almasix', '"')
 
-# '"Avalon'
+# '"Almasix'
 ```
 
 ### upper
@@ -1494,9 +1494,9 @@ result = Str.unwrap('"Avalon', '"')
 Returns the string in upper case.
 
 ```python
-result = Str.upper("avalon")
+result = Str.upper("almasix")
 
-# 'AVALON'
+# 'ALMASIX'
 ```
 
 ### uuid
@@ -1562,13 +1562,13 @@ so a single argument wraps both ends with the same text. `Str.unwrap` reverses
 it.
 
 ```python
-result = Str.wrap("Avalon", '"')
+result = Str.wrap("Almasix", '"')
 
-# '"Avalon"'
+# '"Almasix"'
 
-result = Str.wrap("is", "This ", " Avalon!")
+result = Str.wrap("is", "This ", " Almasix!")
 
-# 'This is Avalon!'
+# 'This is Almasix!'
 ```
 
 ## Fluent strings
@@ -1582,7 +1582,7 @@ started from.
 Everything after the first occurrence of `search`, as a new `Stringable`.
 
 ```python
-from avalon.support import str_
+from almasix.support import str_
 
 result = str_("ada@example.com").after("@").value()
 
@@ -1687,7 +1687,7 @@ nested = str_("[a[b]]").between("[", "]").value()
 
 ### between_first
 
-Identical to `between` — Avalon implements it by calling `between`, so both
+Identical to `between` — Almasix implements it by calling `between`, so both
 stop at the first `to`.
 
 ```python
@@ -1713,11 +1713,11 @@ string, the fluent form wraps the hit in a `Stringable`; an index outside the
 string still returns the bool `False`, so the chain ends there.
 
 ```python
-result = str(str_("Avalon").char_at(0))
+result = str(str_("Almasix").char_at(0))
 
 # 'A'
 
-missing = str_("Avalon").char_at(10)
+missing = str_("Almasix").char_at(10)
 
 # False
 ```
@@ -1737,9 +1737,9 @@ result = str_("report.csv").chop_end(".csv").value()
 The value with the first matching prefix removed.
 
 ```python
-result = str_("https://avalon.dev").chop_start("https://").value()
+result = str_("https://almasix.dev").chop_start("https://").value()
 
-# 'avalon.dev'
+# 'almasix.dev'
 ```
 
 ### class_basename
@@ -1781,13 +1781,13 @@ result = str_("Ada Lovelace").contains_all(["Ada", "Lovelace"])
 ### dd
 
 Prints the current value to stderr in a bordered panel and then halts by
-raising `avalon.debug.DumpAndDie`, which the framework turns into a stopped
+raising `almasix.debug.DumpAndDie`, which the framework turns into a stopped
 request. It returns `None` and has no `Str` twin. In application code you call
 it bare — `str_(value).dd()` — and nothing after it runs; the example catches
 the exception only so that it can be executed here.
 
 ```python
-from avalon.debug import DumpAndDie
+from almasix.debug import DumpAndDie
 
 halted = False
 
@@ -1819,9 +1819,9 @@ result = token.decrypt().value()
 Collapses runs of `character` — a space unless you say otherwise — down to one.
 
 ```python
-result = str_("The   Avalon    framework").deduplicate().value()
+result = str_("The   Almasix    framework").deduplicate().value()
 
-# 'The Avalon framework'
+# 'The Almasix framework'
 
 path = str_("stop//go///now").deduplicate("/").value()
 
@@ -1931,11 +1931,11 @@ the `options` dict. Returns a `Stringable`, or `None` when the phrase is
 absent, so guard the chain.
 
 ```python
-result = str_("A long sentence about the Avalon framework and its helpers").excerpt("Avalon", options={"radius": 10}).value()
+result = str_("A long sentence about the Almasix framework and its helpers").excerpt("Almasix", options={"radius": 10}).value()
 
-# '...about the Avalon framework...'
+# '...about the Almasix framework...'
 
-missing = str_("A long sentence about Avalon").excerpt("Django")
+missing = str_("A long sentence about Almasix").excerpt("Django")
 
 # None
 ```
@@ -1969,9 +1969,9 @@ exists only on `Stringable` and is a thin alias for `Str.from_base64`; the
 encoding direction is `to_base`.
 
 ```python
-result = str_("QXZhbG9u").from_base().value()
+result = str_("QWxtYXNpeA==").from_base().value()
 
-# 'Avalon'
+# 'Almasix'
 ```
 
 ### from_base64
@@ -1979,9 +1979,9 @@ result = str_("QXZhbG9u").from_base().value()
 The fluent form of `Str.from_base64`, with the same result as `from_base`.
 
 ```python
-result = str_("QXZhbG9u").from_base64().value()
+result = str_("QWxtYXNpeA==").from_base64().value()
 
-# 'Avalon'
+# 'Almasix'
 ```
 
 ### hash
@@ -2030,9 +2030,9 @@ Renders the inline Markdown — emphasis, code spans and links — as HTML,
 escaping the rest.
 
 ```python
-result = str_("**Avalon** is [fast](https://avalon.dev)").inline_markdown().value()
+result = str_("**Almasix** is [fast](https://almasix.dev)").inline_markdown().value()
 
-# '<strong>Avalon</strong> is <a href="https://avalon.dev">fast</a>'
+# '<strong>Almasix</strong> is <a href="https://almasix.dev">fast</a>'
 ```
 
 ### is_
@@ -2052,7 +2052,7 @@ result = str_("foo/bar/baz").is_("foo/*")
 Whether the value is entirely ASCII. Returns a `bool`.
 
 ```python
-result = str_("Avalon").is_ascii()
+result = str_("Almasix").is_ascii()
 
 # True
 
@@ -2093,7 +2093,7 @@ anywhere in the string rather than anchored. Returns a `bool`. `test` is the
 same check under Laravel's fluent name.
 
 ```python
-result = str_("Avalon 1.4").is_match(r"\d+\.\d+")
+result = str_("Almasix 1.4").is_match(r"\d+\.\d+")
 
 # True
 
@@ -2128,11 +2128,11 @@ Whether the value parses as a URL with both a scheme and a host. Pass
 `protocols` to restrict the accepted schemes. Returns a `bool`.
 
 ```python
-result = str_("https://avalon.dev/docs").is_url()
+result = str_("https://almasix.dev/docs").is_url()
 
 # True
 
-wrong_scheme = str_("http://avalon.dev").is_url(["https"])
+wrong_scheme = str_("http://almasix.dev").is_url(["https"])
 
 # False
 ```
@@ -2143,7 +2143,7 @@ Whether the current value parses as a UUID; returns a `bool`, so the chain ends
 here.
 
 ```python
-from avalon.support import str_
+from almasix.support import str_
 
 result = str_("  550e8400-e29b-41d4-a716-446655440000  ").trim().is_uuid()
 
@@ -2175,9 +2175,9 @@ result = str_("foo bar").studly().lcfirst().value()
 The number of characters in the value, as an `int`; the chain ends here.
 
 ```python
-result = str_("  avalon  ").trim().length()
+result = str_("  almasix  ").trim().length()
 
-# 6
+# 7
 ```
 
 ### limit
@@ -2285,9 +2285,9 @@ useful argument: the delegate binds the current value to `Str.of`'s only
 parameter, so anything you pass is discarded.
 
 ```python
-result = str_("avalon").upper().of().value()
+result = str_("almasix").upper().of().value()
 
-# AVALON
+# ALMASIX
 ```
 
 ### ordered_uuid
@@ -2308,9 +2308,9 @@ result = str_("").ordered_uuid().value()
 Pads both sides of the value up to `length`, repeating `pad` to fit.
 
 ```python
-result = str_("avalon").pad_both(12, "_").value()
+result = str_("almasix").pad_both(12, "_").value()
 
-# ___avalon___
+# __almasix___
 ```
 
 ### pad_left
@@ -2393,11 +2393,11 @@ The index of the first occurrence of the needle as an `int`, or `False` when it
 is absent — either way the chain ends here.
 
 ```python
-result = str_("avalon framework").position("framework")
+result = str_("almasix framework").position("framework")
 
-# 7
+# 8
 
-result = str_("avalon framework").position("zzz")
+result = str_("almasix framework").position("zzz")
 
 # False
 ```
@@ -2456,9 +2456,9 @@ Replaces occurrences of `search` with `replace`; both may be lists, which are
 paired up positionally. `case_sensitive=False` matches without regard to case.
 
 ```python
-result = str_("Avalon rocks").replace("rocks", "ships").value()
+result = str_("Almasix rocks").replace("rocks", "ships").value()
 
-# Avalon ships
+# Almasix ships
 
 result = str_("a b c").replace(["a", "b"], ["x", "y"]).value()
 
@@ -2481,9 +2481,9 @@ result = str_("Between ? and ?").replace_array("?", ["8:30", "9:00"]).value()
 Replaces `search` only when the value ends with it.
 
 ```python
-result = str_("avalon.py.py").replace_end(".py", ".txt").value()
+result = str_("almasix.py.py").replace_end(".py", ".txt").value()
 
-# avalon.py.txt
+# almasix.py.txt
 ```
 
 ### replace_first
@@ -2512,13 +2512,13 @@ Replaces everything matching the regular expression; `replace` may be a
 replacement string or a callback receiving the match object.
 
 ```python
-result = str_("avalon 123 framework 456").replace_matches(r"[0-9]+", "#").value()
+result = str_("almasix 123 framework 456").replace_matches(r"[0-9]+", "#").value()
 
-# avalon # framework #
+# almasix # framework #
 
-result = str_("avalon 12").replace_matches(r"[0-9]+", lambda m: "<" + m.group(0) + ">").value()
+result = str_("almasix 12").replace_matches(r"[0-9]+", lambda m: "<" + m.group(0) + ">").value()
 
-# avalon <12>
+# almasix <12>
 ```
 
 ### replace_start
@@ -2536,9 +2536,9 @@ result = str_("http://example.com").replace_start("http://", "https://").value()
 Reverses the value.
 
 ```python
-result = str_("avalon").reverse().upper().value()
+result = str_("almasix").reverse().upper().value()
 
-# NOLAVA
+# XISAMLA
 ```
 
 ### rtrim
@@ -2547,9 +2547,9 @@ Strips characters from the end of the value; whitespace when no argument is
 given.
 
 ```python
-result = str_("avalon...").rtrim(".").value()
+result = str_("almasix...").rtrim(".").value()
 
-# avalon
+# almasix
 ```
 
 ### singular
@@ -2568,13 +2568,13 @@ Turns the value into a URL-friendly slug, with `-` as the separator unless you
 pass another.
 
 ```python
-result = str_("Avalon Framework!").slug().value()
+result = str_("Almasix Framework!").slug().value()
 
-# avalon-framework
+# almasix-framework
 
-result = str_("Avalon Framework").slug("_").value()
+result = str_("Almasix Framework").slug("_").value()
 
-# avalon_framework
+# almasix_framework
 ```
 
 ### snake
@@ -2609,9 +2609,9 @@ result = str_("a1b22c3d").split(r"[0-9]+", 1)
 Collapses runs of whitespace into single spaces and trims the ends.
 
 ```python
-result = str_("   Avalon    Framework   ").squish().value()
+result = str_("   Almasix    Framework   ").squish().value()
 
-# Avalon Framework
+# Almasix Framework
 ```
 
 ### start
@@ -2620,9 +2620,9 @@ Prefixes the value with the given string, collapsing any prefixes already there
 so it appears exactly once.
 
 ```python
-result = str_("///avalon").start("/").value()
+result = str_("///almasix").start("/").value()
 
-# /avalon
+# /almasix
 ```
 
 ### starts_with
@@ -2631,7 +2631,7 @@ Whether the value begins with the needle, or with any needle when given an
 iterable; returns a `bool`.
 
 ```python
-result = str_("Avalon Framework").lower().starts_with(["ava", "zzz"])
+result = str_("Almasix Framework").lower().starts_with(["alm", "zzz"])
 
 # True
 ```
@@ -2668,13 +2668,13 @@ The portion of the value beginning at `start`, running to the end unless a
 `length` is given. A negative `start` counts back from the end.
 
 ```python
-result = str_("Avalon Framework").substr(7).value()
+result = str_("Almasix Framework").substr(8).value()
 
 # Framework
 
-result = str_("Avalon Framework").substr(0, 6).lower().value()
+result = str_("Almasix Framework").substr(0, 7).lower().value()
 
-# avalon
+# almasix
 ```
 
 ### substr_count
@@ -2684,7 +2684,7 @@ returns an `int`, which ends the chain; `offset` skips that many leading
 characters before counting.
 
 ```python
-from avalon.support import str_
+from almasix.support import str_
 
 result = str_("If you like ice cream, you will like snow").substr_count("like")
 
@@ -2763,7 +2763,7 @@ four digits; anchor it yourself with `^` and `$` when you need a full match.
 There is no `Str.test` — the static equivalent is `Str.is_match`.
 
 ```python
-result = str_("avalon-2026").test(r"[0-9]{4}")
+result = str_("almasix-2026").test(r"[0-9]{4}")
 
 # True
 
@@ -2791,13 +2791,13 @@ Base64-encodes the wrapped string and returns a new `Stringable`, with
 and `from_base64`, so the two pairs of names are interchangeable.
 
 ```python
-result = str_("avalon").to_base().value()
+result = str_("almasix").to_base().value()
 
-# 'YXZhbG9u'
+# 'YWxtYXNpeA=='
 
-result = str_("avalon").to_base().from_base().value()
+result = str_("almasix").to_base().from_base().value()
 
-# 'avalon'
+# 'almasix'
 ```
 
 ### to_base64
@@ -2806,9 +2806,9 @@ Encodes the string as standard Base64 after encoding the text as UTF-8;
 identical to `to_base`.
 
 ```python
-result = str_("avalon").to_base64().value()
+result = str_("almasix").to_base64().value()
 
-# 'YXZhbG9u'
+# 'YWxtYXNpeA=='
 ```
 
 ### to_boolean
@@ -3072,9 +3072,9 @@ result = str_("framework").when_doesnt_end_with(".py", lambda s: s.append(".py")
 Runs the callback when the string starts with none of the given needles.
 
 ```python
-result = str_("avalon").when_doesnt_start_with("the ", lambda s: s.prepend("the ")).value()
+result = str_("almasix").when_doesnt_start_with("the ", lambda s: s.prepend("the ")).value()
 
-# 'the avalon'
+# 'the almasix'
 ```
 
 ### when_empty
@@ -3104,9 +3104,9 @@ result = str_("main.py").when_ends_with(".py", lambda s: s.basename(".py")).valu
 Runs the callback when the string equals the given value, compared as strings.
 
 ```python
-result = str_("avalon").when_exactly("avalon", lambda s: s.upper()).value()
+result = str_("almasix").when_exactly("almasix", lambda s: s.upper()).value()
 
-# 'AVALON'
+# 'ALMASIX'
 ```
 
 ### when_is
@@ -3115,9 +3115,9 @@ Runs the callback when the string matches the given shell-style pattern, in
 which `*` stands for any run of characters.
 
 ```python
-result = str_("avalon.pyi").when_is("*.py*", lambda s: s.upper()).value()
+result = str_("almasix.pyi").when_is("*.py*", lambda s: s.upper()).value()
 
-# 'AVALON.PYI'
+# 'ALMASIX.PYI'
 ```
 
 ### when_is_ascii
@@ -3172,9 +3172,9 @@ result = str_("").when_not_empty(lambda s: s.title()).value()
 Runs the callback when the string differs from the given value.
 
 ```python
-result = str_("avalon").when_not_exactly("laravel", lambda s: s.append(" (not laravel)")).value()
+result = str_("almasix").when_not_exactly("laravel", lambda s: s.append(" (not laravel)")).value()
 
-# 'avalon (not laravel)'
+# 'almasix (not laravel)'
 ```
 
 ### when_starts_with
@@ -3244,13 +3244,13 @@ Surrounds the string with `before` and `after`, with `after` defaulting to
 reverses it.
 
 ```python
-result = str_("avalon").wrap('"').value()
+result = str_("almasix").wrap('"').value()
 
-# '"avalon"'
+# '"almasix"'
 
-result = str_("avalon").wrap("[", "]").value()
+result = str_("almasix").wrap("[", "]").value()
 
-# '[avalon]'
+# '[almasix]'
 ```
 
 ## Related

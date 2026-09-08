@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/coolsam726/avalon/main/website/src/assets/avalon-banner.svg" alt="Avalon" width="300">
+  <img src="https://raw.githubusercontent.com/almasix-dev/almasix/main/website/src/assets/almasix-banner.svg" alt="Almasix" width="300">
 </p>
 
 <p align="center"><strong>Laravel's application shape, in async Python.</strong></p>
@@ -11,26 +11,26 @@
 </p>
 
 <p align="center">
-  <a href="pyproject.toml"><img alt="version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcoolsam726%2Favalon%2Fmain%2Fpyproject.toml&query=%24.project.version&style=flat-square&label=version&prefix=v&color=4c1d95"></a>
-  <a href="https://github.com/coolsam726/avalon/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/coolsam726/avalon/ci.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white"></a>
+  <a href="pyproject.toml"><img alt="version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Falmasix-dev%2Falmasix%2Fmain%2Fpyproject.toml&query=%24.project.version&style=flat-square&label=version&prefix=v&color=4c1d95"></a>
+  <a href="https://github.com/almasix-dev/almasix/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/almasix-dev/almasix/ci.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white"></a>
   <a href="docs/SMOKE.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-99%25-31c48d?style=flat-square&logo=codecov&logoColor=white"></a>
   <a href="tests"><img alt="tests" src="https://img.shields.io/badge/tests-1%2C886-31c48d?style=flat-square&logo=pytest&logoColor=white"></a>
   <a href="pyproject.toml"><img alt="python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?style=flat-square&logo=python&logoColor=white"></a>
   <a href="website/src/content/docs"><img alt="docs" src="https://img.shields.io/badge/docs-53%20pages-bc52ee?style=flat-square&logo=astro&logoColor=white"></a>
-  <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/coolsam726/avalon?style=flat-square&color=0f766e"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/almasix-dev/almasix?style=flat-square&color=0f766e"></a>
 </p>
 
 <!--
-  Avalon is not published to PyPI yet — the `avalon` name there belongs to an unrelated placeholder
+  Almasix is not published to PyPI yet — the `almasix` name there belongs to an unrelated placeholder
   project. Once a release name is settled, add the release/download badges here:
     https://img.shields.io/pypi/v/<name>?style=flat-square
     https://img.shields.io/pypi/dm/<name>?style=flat-square
 -->
 
-## Why Avalon
+## Why Almasix
 
 Python has excellent HTTP libraries and very few opinions about what an application looks like.
-Avalon supplies the opinions. It takes the conventions that make a Laravel codebase legible on
+Almasix supplies the opinions. It takes the conventions that make a Laravel codebase legible on
 first read — the directory layout, service providers, facades, fluent builders, `Route` groups,
 Eloquent-style models, Blade-style templates, Artisan-style commands — and implements them in
 modern Python. Requests, the ORM, queue workers, and the scheduler all run on `asyncio`, and the
@@ -38,17 +38,17 @@ FastAPI application underneath is never taken away from you.
 
 It is a parity project, not an homage. Each area of the framework is built against the
 corresponding page of Laravel's documentation, method by method, and every deliberate divergence
-is named in Avalon's own page for that feature — so `Str`, `Collection`, the query builder, and the
+is named in Almasix's own page for that feature — so `Str`, `Collection`, the query builder, and the
 scheduler behave the way your muscle memory expects, while `async`/`await`, type hints, context
 managers, and dataclasses are used where Python has the better answer.
 
 | Piece | What it is |
 | --- | --- |
-| **Avalon** (`avalon`) | the framework |
-| **`avalon new`** | the application installer |
-| **Grail** (`grail …`) | the in-app CLI — `grail serve`, `grail make:model`, `grail queue:work`, `grail fiddle` |
-| **Caliburn** (`avalon.caliburn`) | the view engine — `.cal.html` templates, directives, components, stacks |
-| **Articulate** (`avalon.orm`) | the ORM — models, relationships, migrations, pagination, on SQLAlchemy Core |
+| **Almasix** (`almasix`) | the framework |
+| **`almasix new`** | the application installer |
+| **Smith** (`smith …`) | the in-app CLI — `smith serve`, `smith make:model`, `smith queue:work`, `smith loupe` |
+| **Prism** (`almasix.prism`) | the view engine — `.prism.html` templates, directives, components, stacks |
+| **Articulate** (`almasix.orm`) | the ORM — models, relationships, migrations, pagination, on SQLAlchemy Core |
 
 ## A tour in five files
 
@@ -58,7 +58,7 @@ sit where you'd look for them:
 ```python
 # routes/web.py
 from app.http.controllers.post_controller import PostController
-from avalon.routing import Route
+from almasix.routing import Route
 
 with Route.group(middleware=["web"]):
     Route.get("/posts", [PostController, "index"], name="posts.index")
@@ -70,7 +70,7 @@ Models carry their own casts, scopes, and relationships:
 ```python
 # app/models/post.py
 from app.models.user import User
-from avalon.orm import Model, SoftDeletes, relation
+from almasix.orm import Model, SoftDeletes, relation
 
 
 class Post(SoftDeletes, Model):
@@ -90,8 +90,8 @@ Controllers read like their Laravel counterparts, with `await` at the edges:
 ```python
 # app/http/controllers/post_controller.py
 from app.models.post import Post
-from avalon.caliburn import view
-from avalon.http import Controller
+from almasix.prism import view
+from almasix.http import Controller
 
 
 class PostController(Controller):
@@ -100,10 +100,10 @@ class PostController(Controller):
         return view("posts.index", {"posts": posts})
 ```
 
-Templates are Caliburn — Blade's directives, compiled to Python:
+Templates are Prism — Blade's directives, compiled to Python:
 
 ```html
-{{-- resources/views/posts/index.cal.html --}}
+{{-- resources/views/posts/index.prism.html --}}
 @extends('layouts.app')
 
 @section('content')
@@ -116,11 +116,11 @@ Templates are Caliburn — Blade's directives, compiled to Python:
 @endsection
 ```
 
-Console commands and scheduled work are declared together, and run under `grail`:
+Console commands and scheduled work are declared together, and run under `smith`:
 
 ```python
 # routes/console.py
-from avalon.console import Artisan, schedule
+from almasix.console import Artisan, schedule
 
 
 def send_digest(command) -> int:
@@ -138,28 +138,28 @@ schedule.command("model:prune").daily().on_one_server()
 
 ### Create an application
 
-Avalon is not on PyPI yet — the `avalon` name there belongs to an unrelated project — so install it
+Almasix is not on PyPI yet — the `almasix` name there belongs to an unrelated project — so install it
 from Git:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install "avalon @ git+https://github.com/coolsam726/avalon.git"
+pip install "almasix @ git+https://github.com/almasix-dev/almasix.git"
 
-avalon new blog
+almasix new blog
 cd blog
 pip install -e .        # the framework requirement is already satisfied
-grail serve             # or: python grail serve
+smith serve             # or: python smith serve
 ```
 
-`avalon new` writes a complete application: `app/`, `bootstrap/`, `config/`, `routes/`,
+`almasix new` writes a complete application: `app/`, `bootstrap/`, `config/`, `routes/`,
 `resources/views` with error pages, `database/migrations`, `storage/`, a Vite config, and a root
-`grail` script. Use `grail …` when Avalon is on your `PATH`, or `python grail …` to run the app's
+`smith` script. Use `smith …` when Almasix is on your `PATH`, or `python smith …` to run the app's
 own script explicitly.
 
 ### Work on the framework
 
 ```bash
-git clone https://github.com/coolsam726/avalon.git && cd avalon
+git clone https://github.com/almasix-dev/almasix.git && cd almasix
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
@@ -177,12 +177,12 @@ today:
 - **The basics** — routing and route groups, controllers, middleware and aliases, requests and
   responses, session, CSRF, validation with form requests, URL generation, error handling and the
   debug page, logging, asset bundling.
-- **Caliburn views** — layouts and sections, includes, control directives, components and slots,
+- **Prism views** — layouts and sections, includes, control directives, components and slots,
   stacks, and a `dd()` dump page.
 - **Articulate ORM** — models with casts and serialization, the whole relationship surface, eager
   loading, soft deletes, pruning, migrations, seeding, pagination, and streaming reads through lazy
   collections.
-- **Digging deeper** — the Grail console with prompts and closure commands, the task scheduler
+- **Digging deeper** — the Smith console with prompts and closure commands, the task scheduler
   (frequencies, constraints, hooks, sub-minute tasks), cache, Redis, queues and workers, mail,
   notifications, events, the filesystem, collections, helpers and `Str`, the HTTP client,
   localization, and encryption.
@@ -201,8 +201,8 @@ written to follow Laravel's structure page for page — including a section per 
 [helpers](website/src/content/docs/helpers.md). Run `make docs` to read it locally at
 `http://localhost:4321`; the hosted site is not published yet.
 
-[`examples/progress`](examples/progress) is the living example — a real Avalon application that
-demonstrates each closed milestone through routes you can visit and `grail progress:*` commands you
+[`examples/progress`](examples/progress) is the living example — a real Almasix application that
+demonstrates each closed milestone through routes you can visit and `smith progress:*` commands you
 can run. Its `/progress` page is the project's milestone board.
 
 ## How the project is built
@@ -227,23 +227,23 @@ Currently **1,886 tests** at **99.38%** coverage.
 
 ## Status
 
-**25 of 51 milestones closed.** M5 (Articulate ORM) and M30 (Grail console exhaust) are
+**25 of 51 milestones closed.** M5 (Articulate ORM) and M30 (Smith console exhaust) are
 deliberately partial, with the remainder scheduled. Next up: **M42 — query builder and database
 exhaust**.
 
 ## Repository layout
 
 ```text
-src/avalon/
+src/almasix/
   framework/     # Application, container, providers, bootstrap
   config/        # env + config repository
   http/          # kernel, request, response, middleware
   routing/       # Route DSL → FastAPI bridge
   validation/    # form requests, rules, messages
   orm/           # Articulate — models, relations, builder, migrations
-  caliburn/      # Caliburn views — compiler, directives, components
+  prism/      # Prism views — compiler, directives, components
   auth/          # guards, providers, gates and policies
-  console/       # Grail commands, prompts, scheduler, fiddle
+  console/       # Smith commands, prompts, scheduler, loupe
   queue/         # jobs, dispatcher, workers, failed jobs
   cache/         # cache repository and stores
   mail/          # mailables and transports
@@ -253,13 +253,13 @@ src/avalon/
   client/        # HTTP client
   support/       # collections, helpers, Str, Number
   translation/   # __(), trans_choice(), locales
-  installer/     # avalon new
-  grail/         # the grail CLI
+  installer/     # almasix new
+  smith/         # the smith CLI
 docs/            # PLAN.md, SMOKE.md — the binding project documents
 website/         # the documentation site (Astro Starlight)
 examples/        # the living example application
 tests/           # unit, smoke, and regression suites
-grail            # root script → the same CLI as `grail`
+smith            # root script → the same CLI as `smith`
 ```
 
 ## Contributing
@@ -271,4 +271,4 @@ green, add the documentation page alongside the code, and extend
 
 ## License
 
-[MIT](LICENSE) © Avalon Contributors
+[MIT](LICENSE) © Almasix Contributors

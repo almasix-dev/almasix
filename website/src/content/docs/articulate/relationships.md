@@ -9,7 +9,7 @@ Declare relationships with `@relation`. Calling the method (`user.posts()`) retu
 
 ```python
 # app/models/user.py
-from avalon.orm import Model, relation, RelationNotLoadedError
+from almasix.orm import Model, relation, RelationNotLoadedError
 
 class User(Model):
     @relation
@@ -38,7 +38,7 @@ posts = await user.posts
 ```
 
 :::caution
-By default Avalon does **not** lazy-load on attribute access. A hidden query there is how N+1 problems start. Eager-load with `with_`, query with `await user.posts().get()`, or set `lazy_relations = True` and use `await user.posts`.
+By default Almasix does **not** lazy-load on attribute access. A hidden query there is how N+1 problems start. Eager-load with `with_`, query with `await user.posts().get()`, or set `lazy_relations = True` and use `await user.posts`.
 :::
 
 
@@ -143,7 +143,7 @@ class Post(Model):
 ```
 
 Now `post.comments[0].post` is the same `post` object, with no second query.
-Avalon guesses the inverse relation from the parent class name; pass the name
+Almasix guesses the inverse relation from the parent class name; pass the name
 explicitly when it differs, as in `chaperone("article")`. It works on
 `has_many`, `has_one`, `morph_many`, and `morph_one`.
 
@@ -178,7 +178,7 @@ casts, and methods of its own:
 
 ```python
 # app/models/subscription.py
-from avalon.orm import Pivot
+from almasix.orm import Pivot
 
 class Subscription(Pivot):
     casts = {"tier": "string", "started_at": "datetime"}
@@ -237,7 +237,7 @@ resolving. Register a morph map instead, usually in a service provider:
 
 ```python
 # app/providers/app_service_provider.py
-from avalon.orm import morph_map
+from almasix.orm import morph_map
 
 class AppServiceProvider(ServiceProvider):
     def boot(self) -> None:
@@ -503,7 +503,7 @@ a single model. String class names work in place of the classes themselves.
 ### Preventing N+1 by default
 
 Laravel lazy-loads on property access and offers `preventLazyLoading()` to turn
-that off. Avalon inverts the default deliberately: property access on an
+that off. Almasix inverts the default deliberately: property access on an
 unloaded relation raises `RelationNotLoadedError`, because a hidden query behind
 an attribute read is exactly how N+1 problems reach production unnoticed.
 
@@ -592,5 +592,5 @@ Two things on Laravel's page are deliberately absent:
 - **Scoped relationships** (`withAttributes`), which push a relation's
   constraints into the models it creates, land with the subquery work in M42.
 - **Automatic eager loading** (`automaticallyEagerLoadRelationships`) has no
-  counterpart, because Avalon does not lazy-load in the first place — see
+  counterpart, because Almasix does not lazy-load in the first place — see
   [preventing N+1 by default](#preventing-n1-by-default).

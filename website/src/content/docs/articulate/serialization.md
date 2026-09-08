@@ -94,7 +94,7 @@ users.set_visible(["id", "name"])
 Sometimes you want to serialize a value that has no column. Define the accessor first:
 
 ```python
-from avalon.orm import Attribute, Model
+from almasix.orm import Attribute, Model
 
 
 class User(Model):

@@ -1,6 +1,6 @@
 """Mailers and from address."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("MAIL_MAILER", "log"),

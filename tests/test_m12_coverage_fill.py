@@ -9,16 +9,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from avalon.caliburn.engine import Engine
-from avalon.caliburn.helpers import set_engine
-from avalon.framework import Application
-from avalon.mail import Address, Attachment, Content, Envelope, Mail, MailAssertions, Mailable
-from avalon.mail.helpers import default_mail_config
-from avalon.mail.mailer import MailManager, PendingMail, _read_storage, _resolve_attachments
-from avalon.mail.message import ResolvedAttachment, SentMessage
-from avalon.mail.provider import MailServiceProvider
-from avalon.mail.testing import MailAssertions as Assertions
-from avalon.mail.transports.smtp import SmtpTransport
+from almasix.prism.engine import Engine
+from almasix.prism.helpers import set_engine
+from almasix.framework import Application
+from almasix.mail import Address, Attachment, Content, Envelope, Mail, MailAssertions, Mailable
+from almasix.mail.helpers import default_mail_config
+from almasix.mail.mailer import MailManager, PendingMail, _read_storage, _resolve_attachments
+from almasix.mail.message import ResolvedAttachment, SentMessage
+from almasix.mail.provider import MailServiceProvider
+from almasix.mail.testing import MailAssertions as Assertions
+from almasix.mail.transports.smtp import SmtpTransport
 
 
 class PlainMail(Mailable):
@@ -132,13 +132,13 @@ def test_smtp_transport_connect_and_variants() -> None:
     )
 
     ssl_client = MagicMock()
-    with patch("avalon.mail.transports.smtp.smtplib.SMTP_SSL", return_value=ssl_client):
+    with patch("almasix.mail.transports.smtp.smtplib.SMTP_SSL", return_value=ssl_client):
         SmtpTransport(encryption="ssl").send(message)
     ssl_client.send_message.assert_called_once()
     ssl_client.quit.assert_called_once()
 
     tls_client = MagicMock()
-    with patch("avalon.mail.transports.smtp.smtplib.SMTP", return_value=tls_client):
+    with patch("almasix.mail.transports.smtp.smtplib.SMTP", return_value=tls_client):
         SmtpTransport(encryption="tls", username="user", password="secret").send(message)
     tls_client.starttls.assert_called_once()
     tls_client.login.assert_called_once_with("user", "secret")
@@ -164,9 +164,9 @@ def test_smtp_transport_connect_and_variants() -> None:
 def test_markdown_view_branch(tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
-    (views / "pages.cal.html").write_text("<div>{{ title }}</div>", encoding="utf-8")
+    (views / "pages.prism.html").write_text("<div>{{ title }}</div>", encoding="utf-8")
     set_engine(Engine(paths=[views], cache_enabled=False))
-    from avalon.mail.markdown import render_content
+    from almasix.mail.markdown import render_content
 
     html_body, text_body = render_content(Content(view="pages", with_data={"title": "View"}))
     assert html_body == "<div>View</div>"
@@ -183,7 +183,7 @@ def test_dispatch_to_queue_with_queue_provider(tmp_path: Path) -> None:
             "connections": {"sync": {"driver": "sync"}},
         },
     )
-    from avalon.queue.provider import QueueServiceProvider
+    from almasix.queue.provider import QueueServiceProvider
 
     MailServiceProvider(app).register()
     QueueServiceProvider(app).register()
@@ -296,7 +296,7 @@ async def test_dispatch_to_queue_in_running_loop(tmp_path: Path) -> None:
             "connections": {"sync": {"driver": "sync"}},
         },
     )
-    from avalon.queue.provider import QueueServiceProvider
+    from almasix.queue.provider import QueueServiceProvider
 
     MailServiceProvider(app).register()
     QueueServiceProvider(app).register()
@@ -329,7 +329,7 @@ def test_queue_sync_fallback_when_dispatch_unavailable(
     app.config.set("mail", {**default_mail_config(), "default": "log"})
     MailServiceProvider(app).register()
     MailServiceProvider(app).boot()
-    monkeypatch.setattr("avalon.mail.mailer._dispatch_to_queue", lambda *_args: False)
+    monkeypatch.setattr("almasix.mail.mailer._dispatch_to_queue", lambda *_args: False)
     Mail.to("user@example.com").queue(PlainMail())
 
 
@@ -348,7 +348,7 @@ def test_dispatch_to_queue_import_error(
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> Any:
-        if name == "avalon.queue.helpers":
+        if name == "almasix.queue.helpers":
             raise ImportError("queue unavailable")
         return real_import(name, globals, locals, fromlist, level)
 

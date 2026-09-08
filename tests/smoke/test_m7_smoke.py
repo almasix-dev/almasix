@@ -50,7 +50,7 @@ def test_m7_login_logout_session_flow(progress_client: TestClient) -> None:
 
     rejected = progress_client.post(
         "/login",
-        data={"email": "ada@avalon.dev", "password": "password"},
+        data={"email": "ada@almasix.dev", "password": "password"},
     )
     assert rejected.status_code == 419
 
@@ -58,7 +58,7 @@ def test_m7_login_logout_session_flow(progress_client: TestClient) -> None:
         "/login",
         data={
             "_token": token,
-            "email": "ada@avalon.dev",
+            "email": "ada@almasix.dev",
             "password": "password",
         },
         follow_redirects=True,
@@ -83,12 +83,12 @@ def test_m7_api_bearer_auth(progress_client: TestClient) -> None:
     body = ok.json()["user"]
     assert body.get("api_token") == "secret-token" or body.get("token") == "secret-token" or body.get(
         "email"
-    ) == "ada@avalon.dev"
+    ) == "ada@almasix.dev"
 
 
 def test_m7_session_cookie_is_set(progress_client: TestClient) -> None:
     response = progress_client.get("/")
     assert response.status_code == 200
-    assert "avalon_session" in response.cookies or any(
-        "avalon_session" in (m or "") for m in response.headers.get_list("set-cookie")
+    assert "almasix_session" in response.cookies or any(
+        "almasix_session" in (m or "") for m in response.headers.get_list("set-cookie")
     )

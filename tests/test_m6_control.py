@@ -1,8 +1,8 @@
-"""Caliburn control-flow directive tests."""
+"""Prism control-flow directive tests."""
 
 from __future__ import annotations
 
-from avalon.caliburn.compiler import compile_template
+from almasix.prism.compiler import compile_template
 
 
 def test_if_else() -> None:

@@ -18,14 +18,14 @@ from typing import Annotated, Any
 import pytest
 from pydantic import AfterValidator, BaseModel, ValidationError
 
-from avalon.caliburn.engine import Engine
-from avalon.caliburn.helpers import get_engine, set_engine
-from avalon.console.kernel import ConsoleKernel
-from avalon.console.stub import publish
-from avalon.mail.markdown import render_content
-from avalon.orm.casts import CastsAttributes, CastsInboundAttributes, resolve_cast
-from avalon.orm.model import EVENTS
-from avalon.queue import Job, ShouldQueue
+from almasix.console.kernel import ConsoleKernel
+from almasix.console.stub import publish
+from almasix.mail.markdown import render_content
+from almasix.orm.casts import CastsAttributes, CastsInboundAttributes, resolve_cast
+from almasix.orm.model import EVENTS
+from almasix.prism.engine import Engine
+from almasix.prism.helpers import get_engine, set_engine
+from almasix.queue import Job, ShouldQueue
 
 #: Command, argv, and the file it must write — the whole shipped surface.
 GENERATORS: list[tuple[str, list[str], str]] = [
@@ -115,12 +115,12 @@ def test_the_new_generators_describe_themselves_like_the_old_ones(
         assert description.startswith("Create a")
         assert directories[relative] in description
     assert kernel.commands["make:view"].description == (
-        "Create a Caliburn view in resources/views"
+        "Create a Prism view in resources/views"
     )
 
 
 def test_no_generator_wants_an_application_to_exist_first(kernel: ConsoleKernel) -> None:
-    """A generator has to work in a directory ``avalon new`` has not touched."""
+    """A generator has to work in a directory ``almasix new`` has not touched."""
     for command, _, _ in [*GENERATORS, ("make:view", [], "")]:
         assert kernel.commands[command].boots_application is False
 
@@ -172,7 +172,7 @@ def test_the_sync_option_makes_a_job_that_stays_in_process(
 
 
 async def test_a_generated_job_runs(kernel: ConsoleKernel, tmp_path: Path) -> None:
-    from avalon.queue.job import call_handle
+    from almasix.queue.job import call_handle
 
     assert kernel.run_argv("make:job", ["SendDigest"]) == 0
     job = load(tmp_path / "app" / "jobs" / "send_digest.py").SendDigest()
@@ -200,10 +200,10 @@ def test_the_markdown_option_writes_the_view_the_mailable_names(
 
     mailable = load(tmp_path / "app" / "mail" / "invoice_paid.py").InvoicePaid()
     assert mailable.content().markdown == "mail.invoice_paid"
-    assert (tmp_path / "resources" / "views" / "mail" / "invoice_paid.cal.html").is_file()
+    assert (tmp_path / "resources" / "views" / "mail" / "invoice_paid.prism.html").is_file()
 
 
-def test_the_generated_markdown_mail_renders_through_caliburn(
+def test_the_generated_markdown_mail_renders_through_prism(
     kernel: ConsoleKernel, tmp_path: Path, engine_restored: None
 ) -> None:
     assert kernel.run_argv("make:mail", ["InvoicePaid", "--markdown", "mail.invoice-paid"]) == 0
@@ -233,7 +233,7 @@ def test_a_generated_notification_goes_out_on_mail(
 def test_a_markdown_view_that_exists_is_reported_not_clobbered(
     kernel: ConsoleKernel, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    view = tmp_path / "resources" / "views" / "mail" / "invoice_paid.cal.html"
+    view = tmp_path / "resources" / "views" / "mail" / "invoice_paid.prism.html"
     view.parent.mkdir(parents=True)
     view.write_text("# mine\n", encoding="utf-8")
 
@@ -246,7 +246,7 @@ def test_a_markdown_view_that_exists_is_reported_not_clobbered(
 def test_a_markdown_notification_hands_the_mail_channel_a_mailable(
     kernel: ConsoleKernel, tmp_path: Path
 ) -> None:
-    from avalon.mail import Mailable
+    from almasix.mail import Mailable
 
     argv = ["ShipmentDelayed", "--markdown", "mail.shipment-delayed"]
     assert kernel.run_argv("make:notification", argv) == 0
@@ -255,7 +255,7 @@ def test_a_markdown_notification_hands_the_mail_channel_a_mailable(
     message = module.ShipmentDelayed().to_mail(object())
     assert isinstance(message, Mailable)
     assert message.content().markdown == "mail.shipment_delayed"
-    assert (tmp_path / "resources" / "views" / "mail" / "shipment_delayed.cal.html").is_file()
+    assert (tmp_path / "resources" / "views" / "mail" / "shipment_delayed.prism.html").is_file()
 
 
 # --- validation rules -----------------------------------------------------
@@ -358,7 +358,7 @@ def test_the_hooks_a_generated_exception_declares_are_the_ones_m8_looks_for(
     kernel: ConsoleKernel, tmp_path: Path
 ) -> None:
     """``--render`` and ``--report`` are only worth offering because the Handler asks."""
-    from avalon.exceptions import Handler
+    from almasix.exceptions import Handler
 
     assert 'getattr(exc, "report", None)' in inspect.getsource(Handler.report)
     assert 'getattr(exc, "render", None)' in inspect.getsource(Handler.render)
@@ -388,7 +388,7 @@ def test_a_generated_enum_has_a_case(kernel: ConsoleKernel, tmp_path: Path) -> N
 def test_a_backed_enum_casts_a_stored_value(
     kernel: ConsoleKernel, tmp_path: Path, option: str, expected: object
 ) -> None:
-    from avalon.orm.casts import cast_value
+    from almasix.orm.casts import cast_value
 
     assert kernel.run_argv("make:enum", ["Level", option, "--force"]) == 0
 
@@ -449,7 +449,7 @@ def test_a_generated_observer_only_names_real_model_events(
 def test_a_generated_observer_registers_on_a_model(
     kernel: ConsoleKernel, tmp_path: Path
 ) -> None:
-    from avalon.orm import Model
+    from almasix.orm import Model
 
     assert kernel.run_argv("make:observer", ["PostObserver"]) == 0
     observer = load(tmp_path / "app" / "observers" / "post_observer.py").PostObserver
@@ -478,10 +478,10 @@ def test_the_model_option_types_the_observers_arguments(
 # --- views ----------------------------------------------------------------
 
 
-def test_make_view_writes_a_caliburn_template(kernel: ConsoleKernel, tmp_path: Path) -> None:
+def test_make_view_writes_a_prism_template(kernel: ConsoleKernel, tmp_path: Path) -> None:
     assert kernel.run_argv("make:view", ["posts.index"]) == 0
 
-    path = tmp_path / "resources" / "views" / "posts" / "index.cal.html"
+    path = tmp_path / "resources" / "views" / "posts" / "index.prism.html"
     assert path.is_file()
     assert source(path).startswith("{{-- posts.index --}}")
 
@@ -491,14 +491,14 @@ def test_a_view_name_reads_the_same_with_dots_or_slashes(
 ) -> None:
     assert kernel.run_argv("make:view", ["Admin/Posts/Index"]) == 0
 
-    assert (tmp_path / "resources" / "views" / "admin" / "posts" / "index.cal.html").is_file()
+    assert (tmp_path / "resources" / "views" / "admin" / "posts" / "index.prism.html").is_file()
 
 
 def test_a_view_is_not_overwritten_without_force(
     kernel: ConsoleKernel, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert kernel.run_argv("make:view", ["welcome"]) == 0
-    path = tmp_path / "resources" / "views" / "welcome.cal.html"
+    path = tmp_path / "resources" / "views" / "welcome.prism.html"
     path.write_text("<p>mine</p>\n", encoding="utf-8")
 
     assert kernel.run_argv("make:view", ["welcome"]) == 1
@@ -530,7 +530,7 @@ def test_a_view_name_cannot_climb_out_of_the_views_directory(
     """``..`` is punctuation between segments, never a segment of its own."""
     assert kernel.run_argv("make:view", ["posts/../secrets"]) == 0
 
-    assert (tmp_path / "resources" / "views" / "posts" / "secrets.cal.html").is_file()
+    assert (tmp_path / "resources" / "views" / "posts" / "secrets.prism.html").is_file()
 
 
 def test_the_generated_view_compiles_as_a_template(
@@ -546,7 +546,7 @@ def test_the_generated_view_compiles_as_a_template(
 
 
 def test_every_generated_file_imports_inside_a_scaffolded_app(app_root: Path) -> None:
-    """The proof that matters: ``grail make:*`` output an application can import."""
+    """The proof that matters: ``smith make:*`` output an application can import."""
     built = ConsoleKernel.for_cwd(app_root)
     built.discover_framework_commands()
     scaffolded = set((app_root / "app").rglob("*.py"))

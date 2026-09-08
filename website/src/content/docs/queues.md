@@ -6,7 +6,7 @@ description: Jobs, sync and database drivers, workers, and failed jobs.
 ## Dispatching jobs
 
 ```python
-from avalon.queue import Job, ShouldQueue, dispatch
+from almasix.queue import Job, ShouldQueue, dispatch
 
 class SendDigest(ShouldQueue, Job):
     tries = 3
@@ -30,7 +30,7 @@ Jobs without `ShouldQueue` (and without `queue = True`) run synchronously. Use `
 | --- | --- | --- |
 | `sync` | Immediate | Default for tests/dev |
 | `database` | `jobs` / `failed_jobs` tables | Call `ensure_tables()` or migrate |
-| `redis` | Redis lists + delayed ZSET | Requires `avalon[redis]`; see [Redis](/redis/) |
+| `redis` | Redis lists + delayed ZSET | Requires `almasix[redis]`; see [Redis](/redis/) |
 
 ```python
 # config/queue.py
@@ -48,10 +48,10 @@ QUEUE_CONNECTION=redis
 ## Workers
 
 ```bash
-python grail queue:work
-python grail queue:listen
-python grail queue:failed
-python grail queue:retry {id}
+python smith queue:work
+python smith queue:listen
+python smith queue:failed
+python smith queue:retry {id}
 ```
 
 Failed jobs call `job.failed(exc)` and report through the M8 exception Handler when available.

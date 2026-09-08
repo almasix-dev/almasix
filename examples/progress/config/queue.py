@@ -1,6 +1,6 @@
 """Queue connections."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("QUEUE_CONNECTION", "sync"),

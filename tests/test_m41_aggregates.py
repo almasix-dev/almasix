@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.orm import Model, Schema, relation
+from almasix.orm import Model, Schema, relation
 from tests.orm_support import memory_db  # noqa: F401
 
 
@@ -248,7 +248,7 @@ async def test_deferred_aggregates_on_an_empty_collection_do_nothing(memory_db) 
 
 @pytest.mark.asyncio
 async def test_aggregate_loading_ignores_an_empty_model_list(memory_db) -> None:
-    from avalon.orm.eager import eager_load_aggregate
+    from almasix.orm.eager import eager_load_aggregate
 
     assert await eager_load_aggregate([], "entries", "entries_count", "count") is None
 

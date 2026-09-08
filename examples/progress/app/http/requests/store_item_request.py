@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from avalon.validation import Field, FormRequest
+from almasix.validation import Field, FormRequest
 
 
 class StoreItemRequest(FormRequest):

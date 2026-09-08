@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="112 86 288 288" fill="none" role="img" aria-label="Almasix">
+  <defs>
+    <linearGradient id="left" x1="140.4" y1="88" x2="256.0" y2="372" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF7A4D"/>
+      <stop offset="1" stop-color="#F1511B"/>
+    </linearGradient>
+    <linearGradient id="right" x1="256.0" y1="88" x2="343.1" y2="372" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1511B"/>
+      <stop offset="1" stop-color="#B83208"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="182.3" y1="348" x2="329.7" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF956C"/>
+      <stop offset="1" stop-color="#F1511B"/>
+    </linearGradient>
+    <linearGradient id="cap" x1="256.0" y1="100" x2="256.0" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!--
+    Pillar crotch at (256.0,208); diamond tip at (256.0,232).
+    Outer slant matched to Outfit ExtraBold "v" (slope 2.4573).
+  -->
+  <g shape-rendering="geometricPrecision">
+    <path fill="url(#left)"  d="M256.0 88L140.4 372H197.4L256.0 208Z"/>
+    <path fill="url(#right)" d="M256.0 88L256.0 208L314.6 372H371.6Z"/>
+    <path fill="url(#bar)"   d="M182.3 300L256.0 232L329.7 300L256.0 348Z"/>
+    <path fill="url(#cap)"   d="M256.0 108L229.2 168L256.0 208L282.8 168Z"/>
+  </g>
+</svg>

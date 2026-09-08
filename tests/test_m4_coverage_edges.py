@@ -1,4 +1,4 @@
-"""Coverage edges for avalon.translation."""
+"""Coverage edges for almasix.translation."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from avalon.framework import Application
-from avalon.translation import (
+from almasix.framework import Application
+from almasix.translation import (
     Lang,
     Number,
     Translator,
@@ -21,16 +21,16 @@ from avalon.translation import (
     set_translator,
     trans,
 )
-from avalon.translation.loader import FileLoader
-from avalon.translation.locale import (
+from almasix.translation.loader import FileLoader
+from almasix.translation.locale import (
     get_date_locale,
     get_fallback_locale,
     reset_locale_context,
     set_fallback_locale,
     set_locale,
 )
-from avalon.translation.plural import plural_category, plural_index, select
-from avalon.validation.messages import message_for
+from almasix.translation.plural import plural_category, plural_index, select
+from almasix.validation.messages import message_for
 
 
 @pytest.fixture(autouse=True)
@@ -133,7 +133,7 @@ def test_set_locale_middleware_without_header(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     (tmp_path / "config" / "http.py").write_text(
-        "from avalon.translation import SetLocaleMiddleware\n"
+        "from almasix.translation import SetLocaleMiddleware\n"
         "config = {\n"
         "  'middleware': [],\n"
         "  'middleware_groups': {'api': ['locale']},\n"
@@ -143,9 +143,9 @@ def test_set_locale_middleware_without_header(tmp_path: Path) -> None:
     )
     (tmp_path / "routes").mkdir()
     (tmp_path / "routes" / "api.py").write_text(
-        "from avalon.http import Controller\n"
-        "from avalon.routing import Route\n"
-        "from avalon.translation import get_locale\n"
+        "from almasix.http import Controller\n"
+        "from almasix.routing import Route\n"
+        "from almasix.translation import get_locale\n"
         "\n"
         "class C(Controller):\n"
         "    async def index(self):\n"
@@ -177,16 +177,16 @@ def test_translator_add_lines_and_default_locale() -> None:
 def test_cli_lang_error_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from typer.testing import CliRunner
 
-    from avalon.grail.cli import app as grail_app
+    from almasix.smith.cli import app as smith_app
 
     monkeypatch.chdir(tmp_path)
-    bad = CliRunner().invoke(grail_app, ["make:lang", "!!!"], catch_exceptions=False)
+    bad = CliRunner().invoke(smith_app, ["make:lang", "!!!"], catch_exceptions=False)
     assert bad.exit_code == 1
-    CliRunner().invoke(grail_app, ["lang:publish"], catch_exceptions=False)
-    ok = CliRunner().invoke(grail_app, ["lang:publish", "--force"], catch_exceptions=False)
+    CliRunner().invoke(smith_app, ["lang:publish"], catch_exceptions=False)
+    ok = CliRunner().invoke(smith_app, ["lang:publish", "--force"], catch_exceptions=False)
     assert ok.exit_code == 0
     missing_ok = CliRunner().invoke(
-        grail_app,
+        smith_app,
         ["lang:missing", "--locale", "en"],
         catch_exceptions=False,
     )
@@ -214,7 +214,7 @@ def test_message_for_colon_override() -> None:
 
 
 def test_parse_accept_language_edges() -> None:
-    from avalon.translation.middleware import _negotiate, _parse_accept_language
+    from almasix.translation.middleware import _negotiate, _parse_accept_language
 
     assert _parse_accept_language("sw;q=0.8, en;q=0.9")[0] == "en"
     assert _parse_accept_language("") == []

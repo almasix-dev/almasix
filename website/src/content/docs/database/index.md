@@ -3,7 +3,7 @@ title: Database — Getting Started
 description: Configure database connections and run queries with the DB facade.
 ---
 
-Almost every modern web application interacts with a database. Avalon makes this interaction simple through a unified API across supported drivers, a fluent query builder, and **Articulate** — Avalon's Active Record ORM.
+Almost every modern web application interacts with a database. Almasix makes this interaction simple through a unified API across supported drivers, a fluent query builder, and **Articulate** — Almasix's Active Record ORM.
 
 ## Configuration
 
@@ -11,7 +11,7 @@ Configure connections in the snippet below. A newly created application is ready
 
 ```python
 # config/database.py
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("DB_CONNECTION", "sqlite"),
@@ -24,8 +24,8 @@ config = {
             "driver": "pgsql",
             "host": env("DB_HOST", "127.0.0.1"),
             "port": env("DB_PORT", "5432"),
-            "database": env("DB_DATABASE", "avalon"),
-            "username": env("DB_USERNAME", "avalon"),
+            "database": env("DB_DATABASE", "almasix"),
+            "username": env("DB_USERNAME", "almasix"),
             "password": env("DB_PASSWORD", ""),
         },
     },
@@ -39,32 +39,32 @@ DB_CONNECTION=sqlite
 DB_DATABASE=database/database.sqlite
 ```
 
-SQLite `:memory:` databases are supported; Avalon uses a static pool so every acquire shares the same in-memory database.
+SQLite `:memory:` databases are supported; Almasix uses a static pool so every acquire shares the same in-memory database.
 
 ## Installing a driver
 
-SQLite ships with Avalon. Install extras for other engines:
+SQLite ships with Almasix. Install extras for other engines:
 
 ```bash
-pip install avalon[pgsql]    # PostgreSQL (asyncpg)
-pip install avalon[mysql]    # MySQL / MariaDB (aiomysql)
-pip install avalon[sqlsrv]   # SQL Server (aioodbc + ODBC driver)
-pip install avalon[oracle]   # Oracle (optional community niche)
-pip install avalon[db]       # all optional drivers
+pip install almasix[pgsql]    # PostgreSQL (asyncpg)
+pip install almasix[mysql]    # MySQL / MariaDB (aiomysql)
+pip install almasix[sqlsrv]   # SQL Server (aioodbc + ODBC driver)
+pip install almasix[oracle]   # Oracle (optional community niche)
+pip install almasix[db]       # all optional drivers
 ```
 
 | `driver` | Async URL | Extra |
 | --- | --- | --- |
 | `sqlite` | `sqlite+aiosqlite:///…` | included |
-| `pgsql` / `postgres` / `postgresql` | `postgresql+asyncpg://…` | `avalon[pgsql]` |
-| `mysql` / `mariadb` | `mysql+aiomysql://…` | `avalon[mysql]` |
-| `sqlsrv` / `mssql` / `sqlserver` | `mssql+aioodbc://…` | `avalon[sqlsrv]` |
-| `oracle` | `oracle+oracledb_async://…?service_name=` | `avalon[oracle]` |
+| `pgsql` / `postgres` / `postgresql` | `postgresql+asyncpg://…` | `almasix[pgsql]` |
+| `mysql` / `mariadb` | `mysql+aiomysql://…` | `almasix[mysql]` |
+| `sqlsrv` / `mssql` / `sqlserver` | `mssql+aioodbc://…` | `almasix[sqlsrv]` |
+| `oracle` | `oracle+oracledb_async://…?service_name=` | `almasix[oracle]` |
 
 A `url` key on a connection dict is used as-is (sync prefixes are upgraded to async drivers). For SQL Server, set `odbc_driver` (default `ODBC Driver 18 for SQL Server`) and `trust_server_certificate` as needed. For Oracle, prefer `service_name` (or `sid`).
 
 :::note[Oracle]
-Oracle is an optional Avalon extra for teams that need it — not part of the default SQLite / PostgreSQL / MySQL / SQL Server set.
+Oracle is an optional Almasix extra for teams that need it — not part of the default SQLite / PostgreSQL / MySQL / SQL Server set.
 :::
 
 
@@ -74,7 +74,7 @@ The `DB` facade gives you a simple way to run queries:
 
 ```python
 # app/http/controllers/example_controller.py
-from avalon.orm import DB
+from almasix.orm import DB
 
 users = await DB.select(
     "SELECT * FROM users WHERE email = :email",

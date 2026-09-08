@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
-from avalon.support import Collection, ItemNotFoundError, MultipleItemsFoundError, collect, data_get
-from avalon.support.collection import value_get
+from almasix.support import Collection, ItemNotFoundError, MultipleItemsFoundError, collect, data_get
+from almasix.support.collection import value_get
 
 
 # --- helpers / construction -------------------------------------------------

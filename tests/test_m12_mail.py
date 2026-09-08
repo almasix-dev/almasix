@@ -10,11 +10,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from avalon.caliburn.engine import Engine
-from avalon.caliburn.helpers import set_engine
-from avalon.filesystem.manager import Storage, StorageManager
-from avalon.framework import Application
-from avalon.mail import (
+from almasix.prism.engine import Engine
+from almasix.prism.helpers import set_engine
+from almasix.filesystem.manager import Storage, StorageManager
+from almasix.framework import Application
+from almasix.mail import (
     Address,
     Attachment,
     Content,
@@ -24,12 +24,12 @@ from avalon.mail import (
     Mailable,
     ShouldQueue,
 )
-from avalon.mail.helpers import default_mail_config, mail
-from avalon.mail.mailer import MailManager
-from avalon.mail.markdown import render_content
-from avalon.mail.provider import MailServiceProvider
-from avalon.mail.transports.log import LogTransport
-from avalon.mail.transports.smtp import SmtpTransport
+from almasix.mail.helpers import default_mail_config, mail
+from almasix.mail.mailer import MailManager
+from almasix.mail.markdown import render_content
+from almasix.mail.provider import MailServiceProvider
+from almasix.mail.transports.log import LogTransport
+from almasix.mail.transports.smtp import SmtpTransport
 
 
 @pytest.fixture
@@ -162,8 +162,8 @@ def test_path_and_storage_attachments(mail_app: Application, tmp_path: Path) -> 
 
 
 def test_log_transport_writes_logger() -> None:
-    from avalon.log.manager import get_logger
-    from avalon.mail.message import SentMessage
+    from almasix.log.manager import get_logger
+    from almasix.mail.message import SentMessage
 
     records: list[str] = []
     logger = get_logger()
@@ -182,23 +182,23 @@ def test_log_transport_writes_logger() -> None:
     assert any("Mail sent:" in record for record in records)
 
 
-def test_markdown_render_with_caliburn(tmp_path: Path) -> None:
+def test_markdown_render_with_prism(tmp_path: Path) -> None:
     views = tmp_path / "resources" / "views"
     mail_views = views / "mail"
     mail_views.mkdir(parents=True)
-    (mail_views / "welcome.cal.html").write_text("<p>Hello {{ name }}</p>", encoding="utf-8")
-    (mail_views / "welcome.text.cal.html").write_text("Hello {{ name }}", encoding="utf-8")
+    (mail_views / "welcome.prism.html").write_text("<p>Hello {{ name }}</p>", encoding="utf-8")
+    (mail_views / "welcome.text.prism.html").write_text("Hello {{ name }}", encoding="utf-8")
 
     engine = Engine(paths=[views], cache_enabled=False)
     set_engine(engine)
 
     html_body, text_body = render_content(
-        Content(markdown="mail.welcome", with_data={"name": "Avalon"})
+        Content(markdown="mail.welcome", with_data={"name": "Almasix"})
     )
     assert html_body is not None
-    assert "Hello Avalon" in html_body
-    assert "avalon-dump" not in html_body
-    assert text_body == "Hello Avalon"
+    assert "Hello Almasix" in html_body
+    assert "almasix-dump" not in html_body
+    assert text_body == "Hello Almasix"
 
 
 def test_markdown_html_fallback_without_text_view() -> None:

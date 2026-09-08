@@ -1,4 +1,4 @@
-"""Coverage edges for avalon.orm — remaining public API surface."""
+"""Coverage edges for almasix.orm — remaining public API surface."""
 
 from __future__ import annotations
 
@@ -10,9 +10,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from avalon.grail.cli import app as grail_app
-from avalon.installer.scaffold import scaffold_app
-from avalon.orm import (
+from almasix.installer.scaffold import scaffold_app
+from almasix.orm import (
     DB,
     Collection,
     Model,
@@ -20,10 +19,10 @@ from avalon.orm import (
     SoftDeletes,
     relation,
 )
-from avalon.orm.casts import CastError, cast_value, serialize_value, uncast_value
-from avalon.orm.connection import ConnectionError_, DatabaseManager, _ensure_async_driver
-from avalon.orm.facade import raw
-from avalon.orm.inflector import (
+from almasix.orm.casts import CastError, cast_value, serialize_value, uncast_value
+from almasix.orm.connection import ConnectionError_, DatabaseManager, _ensure_async_driver
+from almasix.orm.facade import raw
+from almasix.orm.inflector import (
     camel,
     foreign_key,
     pivot_table,
@@ -32,7 +31,8 @@ from avalon.orm.inflector import (
     snake,
     studly,
 )
-from avalon.orm.migration import MigrationError, make_migration
+from almasix.orm.migration import MigrationError, make_migration
+from almasix.smith.cli import app as smith_app
 
 pytest_plugins = ("tests.orm_support",)
 
@@ -229,23 +229,23 @@ def test_cli_migrate_on_scaffold(
     monkeypatch.delenv("DB_DATABASE", raising=False)
     runner = CliRunner()
     made = runner.invoke(
-        grail_app,
+        smith_app,
         ["make:migration", "create_widgets_table", "--create", "widgets"],
         catch_exceptions=False,
     )
     assert made.exit_code == 0, made.stdout
-    status = runner.invoke(grail_app, ["migrate:status"], catch_exceptions=False)
+    status = runner.invoke(smith_app, ["migrate:status"], catch_exceptions=False)
     assert status.exit_code == 0, status.stdout + status.stderr
-    migrated = runner.invoke(grail_app, ["migrate"], catch_exceptions=False)
+    migrated = runner.invoke(smith_app, ["migrate"], catch_exceptions=False)
     assert migrated.exit_code == 0, migrated.stdout
-    again = runner.invoke(grail_app, ["migrate"], catch_exceptions=False)
+    again = runner.invoke(smith_app, ["migrate"], catch_exceptions=False)
     assert again.exit_code == 0
     assert "Nothing to migrate" in again.stdout
-    rolled = runner.invoke(grail_app, ["migrate:rollback"], catch_exceptions=False)
+    rolled = runner.invoke(smith_app, ["migrate:rollback"], catch_exceptions=False)
     assert rolled.exit_code == 0, rolled.stdout
-    empty = runner.invoke(grail_app, ["migrate:rollback"], catch_exceptions=False)
+    empty = runner.invoke(smith_app, ["migrate:rollback"], catch_exceptions=False)
     assert empty.exit_code == 0
-    fresh = runner.invoke(grail_app, ["migrate:fresh"], catch_exceptions=False)
+    fresh = runner.invoke(smith_app, ["migrate:fresh"], catch_exceptions=False)
     assert fresh.exit_code == 0, fresh.stdout
     with pytest.raises(MigrationError):
         make_migration("", tmp_path)
@@ -253,7 +253,7 @@ def test_cli_migrate_on_scaffold(
 
 def test_cli_serve_requires_bootstrap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
-    result = CliRunner().invoke(grail_app, ["serve"], catch_exceptions=False)
+    result = CliRunner().invoke(smith_app, ["serve"], catch_exceptions=False)
     assert result.exit_code == 1
     assert "bootstrap/app.py" in result.stderr or "bootstrap/app.py" in result.stdout
 
@@ -261,11 +261,11 @@ def test_cli_serve_requires_bootstrap(tmp_path: Path, monkeypatch: pytest.Monkey
 def test_cli_make_lang_duplicate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     runner = CliRunner()
-    first = runner.invoke(grail_app, ["make:lang", "sw"], catch_exceptions=False)
+    first = runner.invoke(smith_app, ["make:lang", "sw"], catch_exceptions=False)
     assert first.exit_code == 0, first.stdout
-    second = runner.invoke(grail_app, ["make:lang", "sw"], catch_exceptions=False)
+    second = runner.invoke(smith_app, ["make:lang", "sw"], catch_exceptions=False)
     assert second.exit_code == 1
-    invalid = runner.invoke(grail_app, ["make:lang", "!!!"], catch_exceptions=False)
+    invalid = runner.invoke(smith_app, ["make:lang", "!!!"], catch_exceptions=False)
     assert invalid.exit_code == 1
 
 

@@ -9,9 +9,9 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from avalon.auth import events as auth_events
-from avalon.auth.cookies import queue_cookie, queue_forget_cookie
-from avalon.auth.guard import (
+from almasix.auth import events as auth_events
+from almasix.auth.cookies import queue_cookie, queue_forget_cookie
+from almasix.auth.guard import (
     AuthManager,
     Guard,
     SessionGuard,
@@ -23,7 +23,7 @@ from avalon.auth.guard import (
     reset_auth,
     set_auth,
 )
-from avalon.auth.middleware import (
+from almasix.auth.middleware import (
     Authenticate,
     AuthenticateWithBasicAuth,
     RedirectIfAuthenticated,
@@ -31,19 +31,19 @@ from avalon.auth.middleware import (
     StartAuth,
     mark_password_confirmed,
 )
-from avalon.auth.passwords import (
+from almasix.auth.passwords import (
     DatabaseTokenRepository,
     Password,
     PasswordBroker,
     get_password_manager,
     set_password_manager,
 )
-from avalon.auth.providers import ArticulateUserProvider, MemoryUserProvider
-from avalon.config import ConfigRepository, set_repository
-from avalon.hashing import Hash, HashManager, get_hash_manager, set_hash_manager
-from avalon.hashing.hasher import BcryptHasher
-from avalon.http.request import Request
-from avalon.session.store import Session, reset_session, set_session
+from almasix.auth.providers import ArticulateUserProvider, MemoryUserProvider
+from almasix.config import ConfigRepository, set_repository
+from almasix.hashing import Hash, HashManager, get_hash_manager, set_hash_manager
+from almasix.hashing.hasher import BcryptHasher
+from almasix.http.request import Request
+from almasix.session.store import Session, reset_session, set_session
 
 
 @pytest.fixture(autouse=True)
@@ -339,7 +339,7 @@ def test_hash_manager_config_and_bcrypt_edges() -> None:
 
 def test_argon_edges() -> None:
     pytest.importorskip("argon2")
-    from avalon.hashing.argon import Argon2IdHasher
+    from almasix.hashing.argon import Argon2IdHasher
 
     hasher = Argon2IdHasher(memory=8192, threads=1, time_cost=1)
     hashed = hasher.make("secret", {"memory": 8192, "threads": 1, "time": 1})
@@ -432,7 +432,7 @@ async def test_password_database_repository_paths(monkeypatch: pytest.MonkeyPatc
             email = (params or {}).get("email")
             return [r for r in FakeDB.rows if r.get("email") == email]
 
-    monkeypatch.setattr("avalon.orm.facade.DB", FakeDB)
+    monkeypatch.setattr("almasix.orm.facade.DB", FakeDB)
     token = await tokens.create("a@b.c")
     assert await tokens.exists("a@b.c", token)
     assert await tokens.recently_created("a@b.c")
@@ -443,8 +443,8 @@ async def test_password_database_repository_paths(monkeypatch: pytest.MonkeyPatc
     async def boom(*a, **k):
         raise RuntimeError("db down")
 
-    monkeypatch.setattr("avalon.orm.facade.DB.statement", boom)
-    monkeypatch.setattr("avalon.orm.facade.DB.select", boom)
+    monkeypatch.setattr("almasix.orm.facade.DB.statement", boom)
+    monkeypatch.setattr("almasix.orm.facade.DB.select", boom)
     token2 = await tokens2.create("b@b.c")
     assert await tokens2.exists("b@b.c", token2)
     await tokens2.delete_expired()
@@ -516,8 +516,8 @@ async def test_base_guard_login_events_and_hash_exceptions(monkeypatch: pytest.M
     await bare.login({"id": 1})
     assert "login" in seen
 
-    from avalon.hashing.hasher import BcryptHasher
-    import avalon.hashing.hasher as hasher_mod
+    from almasix.hashing.hasher import BcryptHasher
+    import almasix.hashing.hasher as hasher_mod
 
     bh = BcryptHasher(4)
     good = bh.make("a")
@@ -538,7 +538,7 @@ async def test_base_guard_login_events_and_hash_exceptions(monkeypatch: pytest.M
     def bad_config(*a, **k):
         raise RuntimeError("no config")
 
-    monkeypatch.setattr("avalon.config.config", bad_config)
+    monkeypatch.setattr("almasix.config.config", bad_config)
     mgr = get_hash_manager()
     assert mgr is not None
 
@@ -555,7 +555,7 @@ async def test_base_guard_login_events_and_hash_exceptions(monkeypatch: pytest.M
 
 @pytest.mark.asyncio
 async def test_provider_password_helpers() -> None:
-    from avalon.auth.providers import _password, _remember_token
+    from almasix.auth.providers import _password, _remember_token
 
     class Attr:
         def get_attribute(self, key):
@@ -568,7 +568,7 @@ async def test_provider_password_helpers() -> None:
     assert _remember_token({"remember_token": "r"}) == "r"
     assert _remember_token(type("R", (), {"remember_token": "t"})()) == "t"
     assert _remember_token(object()) is None
-    from avalon.auth.authenticatable import AuthenticatableMixin
+    from almasix.auth.authenticatable import AuthenticatableMixin
 
     class User(AuthenticatableMixin):
         def __init__(self, **attrs):
@@ -623,8 +623,8 @@ async def test_provider_password_helpers() -> None:
 
 @pytest.mark.asyncio
 async def test_start_auth_via_request_and_crypto_edges(monkeypatch: pytest.MonkeyPatch) -> None:
-    from avalon.session.signing import sign_payload, unsign_payload
-    from avalon.session.encrypt import decrypt_string, encrypt_string
+    from almasix.session.signing import sign_payload, unsign_payload
+    from almasix.session.encrypt import decrypt_string, encrypt_string
 
     token = encrypt_string("hello", key="k")
     bad = token[:-4] + "xxxx"
@@ -666,8 +666,8 @@ def test_hash_is_hashed_cross_algorithm() -> None:
 
 
 def test_translation_and_encrypt_middleware_edges() -> None:
-    from avalon.translation.plural import plural_category, plural_index, select
-    from avalon.session.encrypt_middleware import EncryptCookies
+    from almasix.translation.plural import plural_category, plural_index, select
+    from almasix.session.encrypt_middleware import EncryptCookies
     from starlette.responses import Response
 
     assert select("solo", 99) == "solo"
@@ -688,12 +688,12 @@ def test_translation_and_encrypt_middleware_edges() -> None:
 def test_last_mile_coverage_hits(monkeypatch: pytest.MonkeyPatch) -> None:
     from unittest.mock import patch
 
-    from avalon.auth.guard import AuthManager
-    from avalon.translation.plural import select
-    from avalon.validation.form_request import FormRequest, _schema_for
+    from almasix.auth.guard import AuthManager
+    from almasix.translation.plural import select
+    from almasix.validation.form_request import FormRequest, _schema_for
 
     assert select("", 1) == ""
-    with patch("avalon.translation.plural.plural_index", return_value=99):
+    with patch("almasix.translation.plural.plural_index", return_value=99):
         assert select("one|two", 5) == "two"
 
     class Sample(FormRequest):
@@ -745,20 +745,20 @@ def test_hash_is_hashed_when_driver_rejects() -> None:
 
 
 def test_auth_service_provider_boot_exception(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    from avalon.auth.provider import AuthServiceProvider
-    from avalon.framework import Application
+    from almasix.auth.provider import AuthServiceProvider
+    from almasix.framework import Application
 
     def boom():
         raise RuntimeError("no engine")
 
-    monkeypatch.setattr("avalon.caliburn.helpers.get_engine", boom)
+    monkeypatch.setattr("almasix.prism.helpers.get_engine", boom)
     app = Application(tmp_path)
     AuthServiceProvider(app).boot()
 
 
 def test_argon_check_exception_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     pytest.importorskip("argon2")
-    from avalon.hashing.argon import Argon2IdHasher
+    from almasix.hashing.argon import Argon2IdHasher
 
     hasher = Argon2IdHasher(memory=8192, threads=1, time_cost=1)
     hashed = hasher.make("secret")
@@ -780,8 +780,8 @@ def test_argon_check_exception_paths(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.asyncio
 async def test_tiny_remaining_branches() -> None:
-    from avalon.auth.guard import _remember_token_of, _remember_lifetime, _cookie_path, _cookie_secure
-    from avalon.auth.passwords import DatabaseTokenRepository
+    from almasix.auth.guard import _remember_token_of, _remember_lifetime, _cookie_path, _cookie_secure
+    from almasix.auth.passwords import DatabaseTokenRepository
     from datetime import datetime, timezone
 
     class HasAttr:
@@ -814,8 +814,8 @@ async def test_tiny_remaining_branches() -> None:
 
 
 def test_one_more_line() -> None:
-    from avalon.config.repository import ConfigRepository as CR
-    from avalon.config import set_repository
+    from almasix.config.repository import ConfigRepository as CR
+    from almasix.config import set_repository
 
     repo = CR()
     assert repo.get("missing.nested.key", "d") == "d"
@@ -840,7 +840,7 @@ async def test_auth_hydration_soft_fails_provider_errors(monkeypatch: pytest.Mon
 
     assert await TokenGuard("api", BoomProvider()).set_user_from_request_token("x") is None
 
-    from avalon.auth.middleware import _from_remember_cookie, _hydrate_user, _safe_resolve
+    from almasix.auth.middleware import _from_remember_cookie, _hydrate_user, _safe_resolve
 
     guard = SessionGuard("web", BoomProvider())
     assert await _safe_resolve(lambda: _hydrate_user(guard, {"id": 1})) is None

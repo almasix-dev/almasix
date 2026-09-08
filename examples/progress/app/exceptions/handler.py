@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from avalon.exceptions import Handler as ExceptionHandler
+from almasix.exceptions import Handler as ExceptionHandler
 
 
 class Handler(ExceptionHandler):

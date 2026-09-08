@@ -1,4 +1,4 @@
-"""Application entry — boots the Avalon kernel and exposes ASGI."""
+"""Application entry — boots the Almasix kernel and exposes ASGI."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 from app.http.middleware.demo_tag_middleware import DemoTagMiddleware
 
-from avalon.auth import (
+from almasix.auth import (
     Authenticate,
     AuthenticateWithBasicAuth,
     Authorize,
@@ -14,17 +14,17 @@ from avalon.auth import (
     RedirectIfAuthenticated,
     RequirePassword,
 )
-from avalon.auth.middleware import StartAuth
-from avalon.framework import Application, Middleware
-from avalon.session import EncryptCookies, StartSession, VerifyCsrfToken
-from avalon.translation import SetLocaleMiddleware
+from almasix.auth.middleware import StartAuth
+from almasix.framework import Application, Middleware
+from almasix.session import EncryptCookies, StartSession, VerifyCsrfToken
+from almasix.translation import SetLocaleMiddleware
 
 BASE_PATH = Path(__file__).resolve().parent.parent
 
 
 def configure_middleware(middleware: Middleware) -> None:
     """Register HTTP middleware (Laravel ``bootstrap/app.php`` shape)."""
-    # Behind a load balancer / ingress (from avalon.http import HEADER_X_FORWARDED_ALL):
+    # Behind a load balancer / ingress (from almasix.http import HEADER_X_FORWARDED_ALL):
     # middleware.trust_proxies(at="*", headers=HEADER_X_FORWARDED_ALL)
     # middleware.trust_hosts(at=["example.com", "*.example.com"])
     middleware.alias(

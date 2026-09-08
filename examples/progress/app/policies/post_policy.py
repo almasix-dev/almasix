@@ -6,7 +6,7 @@ from typing import Any
 
 from app.models.post import Post
 
-from avalon.auth import Policy
+from almasix.auth import Policy
 
 
 class PostPolicy(Policy):

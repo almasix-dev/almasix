@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from avalon.config import ConfigRepository, config, env, load_environment, set_repository
-from avalon.framework import Application, Container, ResolutionError
-from avalon.providers import ServiceProvider
+from almasix.config import ConfigRepository, config, env, load_environment, set_repository
+from almasix.framework import Application, Container, ResolutionError
+from almasix.providers import ServiceProvider
 
 
 class Greeter:
@@ -80,7 +80,7 @@ def test_config_repository_dot_access(tmp_path: Path) -> None:
     config_dir = tmp_path / "config"
     config_dir.mkdir()
     (config_dir / "app.py").write_text(
-        'config = {"name": "Avalon", "nested": {"enabled": True}}\n',
+        'config = {"name": "Almasix", "nested": {"enabled": True}}\n',
         encoding="utf-8",
     )
     (config_dir / "database.py").write_text(
@@ -90,7 +90,7 @@ def test_config_repository_dot_access(tmp_path: Path) -> None:
 
     repo = ConfigRepository()
     repo.load_directory(config_dir)
-    assert repo.get("app.name") == "Avalon"
+    assert repo.get("app.name") == "Almasix"
     assert repo.get("app.nested.enabled") is True
     assert repo.get("database.default") == "sqlite"
     assert repo.has("database.connections.sqlite.driver")
@@ -110,7 +110,7 @@ def test_container_autowire_and_cycle() -> None:
     container = Container()
     container.singleton(Greeter, lambda c: Greeter("!!"))
     user = container.resolve(UsesGreeter)
-    assert user.greeter.greet("Avalon") == "Hello Avalon!!"
+    assert user.greeter.greet("Almasix") == "Hello Almasix!!"
     assert container.make(UsesGreeter) is not user
 
     container.singleton(UsesGreeter, lambda c: c._autowire(UsesGreeter))
@@ -137,7 +137,7 @@ def test_application_bootstrap(tmp_path: Path, monkeypatch) -> None:
     (providers / "__init__.py").write_text("", encoding="utf-8")
     (providers / "tracking_provider.py").write_text(
         """
-from avalon.providers import ServiceProvider
+from almasix.providers import ServiceProvider
 
 class TrackingProvider(ServiceProvider):
     registered = False
@@ -157,7 +157,7 @@ class TrackingProvider(ServiceProvider):
     config_dir.mkdir()
     (config_dir / "app.py").write_text(
         """
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "name": env("APP_NAME", "Fallback"),
@@ -192,7 +192,7 @@ config = {
     count = len(app._providers)  # noqa: SLF001
     app.config.set(
         "app.providers",
-        ["avalon.providers.foundation.FoundationServiceProvider"],
+        ["almasix.providers.foundation.FoundationServiceProvider"],
     )
     app.register_configured_providers()
     # Foundation is always registered once; duplicate string entry is skipped.
@@ -216,4 +216,4 @@ def test_register_provider_instances_and_invalid(tmp_path: Path) -> None:
         app.register("NotAPath")
 
     with pytest.raises(TypeError):
-        app.register("avalon.framework.application.Application")
+        app.register("almasix.framework.application.Application")

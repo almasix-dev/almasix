@@ -1,10 +1,10 @@
 """Cache stores."""
 
-from avalon.config import env
+from almasix.config import env
 
 config = {
     "default": env("CACHE_STORE", "array"),
-    "prefix": env("CACHE_PREFIX", "avalon_cache_"),
+    "prefix": env("CACHE_PREFIX", "almasix_cache_"),
     "stores": {
         "array": {"driver": "array"},
         "file": {

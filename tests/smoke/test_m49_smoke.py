@@ -8,13 +8,13 @@ import re
 
 import pytest
 
-from avalon.support import Collection, LazyCollection, collect
-from avalon.support.collection import HIGHER_ORDER_MESSAGES
+from almasix.support import Collection, LazyCollection, collect
+from almasix.support.collection import HIGHER_ORDER_MESSAGES
 
 pytestmark = pytest.mark.smoke
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "src" / "avalon" / "support" / "collection.py"
+SOURCE = ROOT / "src" / "almasix" / "support" / "collection.py"
 PAGE = ROOT / "website" / "src" / "content" / "docs" / "collections.md"
 
 
@@ -105,6 +105,6 @@ def test_lazy_collections_stream_without_materialising() -> None:
 
 
 def test_the_articulate_collection_still_extends_the_support_one() -> None:
-    from avalon.orm import Collection as ModelCollection
+    from almasix.orm import Collection as ModelCollection
 
     assert issubclass(ModelCollection, Collection)

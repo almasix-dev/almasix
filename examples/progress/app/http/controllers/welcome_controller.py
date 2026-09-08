@@ -1,12 +1,12 @@
-"""Welcome controller — Caliburn landing page."""
+"""Welcome controller — Prism landing page."""
 
 from __future__ import annotations
 
-from avalon import __version__
-from avalon.caliburn import view
-from avalon.config import config
-from avalon.http import Controller, Response
-from avalon.routing import url
+from almasix import __version__
+from almasix.prism import view
+from almasix.config import config
+from almasix.http import Controller, Response
+from almasix.routing import url
 
 _API_LINKS = [
     {"href": "/api/health", "label": "middleware group + alias headers"},
@@ -26,12 +26,12 @@ _API_LINKS = [
 
 _FEATURES = [
     {
-        "title": "Caliburn views",
+        "title": "Prism views",
         "body": "Layouts, components, stacks, and control flow — Blade parity for Python.",
     },
     {
         "title": "Articulate ORM",
-        "body": "Eager loading, soft deletes, morphs, and grail migrate — async by default.",
+        "body": "Eager loading, soft deletes, morphs, and smith migrate — async by default.",
     },
     {
         "title": "Session + CSRF",
@@ -77,7 +77,7 @@ class WelcomeController(Controller):
         raise RuntimeError("Intentional demo failure")
 
     async def dump_demo(self) -> Response:
-        from avalon import dd
+        from almasix import dd
 
         dd(
             {"milestone": "M9", "helper": "dd()"},

@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from avalon.orm import (
+from almasix.orm import (
     Collection,
     DB,
     MassAssignmentError,
@@ -337,7 +337,7 @@ async def test_pagination_and_collection(memory_db) -> None:
 async def test_unloaded_relation_fails_loudly(memory_db) -> None:
     await schema(memory_db)
     ada = await User.create(email="a@b.c", name="Ada")
-    from avalon.orm import RelationNotLoadedError
+    from almasix.orm import RelationNotLoadedError
 
     with pytest.raises(RelationNotLoadedError):
         len(ada.posts)

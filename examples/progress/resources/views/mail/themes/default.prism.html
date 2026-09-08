@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ subject or "Message" }}</title>
+  <style>
+    body { margin:0; background:#f4f4f7; color:#24292f; font:15px/1.55 system-ui,sans-serif; }
+    .wrap { max-width:560px; margin:2rem auto; padding:0 1rem; }
+    .card { background:#fff; border:1px solid #d0d7de; border-radius:10px; padding:1.5rem; }
+    .brand { font-weight:650; color:#0969da; }
+    a.button { display:inline-block; background:#0969da; color:#fff !important; text-decoration:none;
+               padding:.55rem 1rem; border-radius:6px; font-weight:600; }
+  </style>
+</head>
+<body>
+  <div class="wrap"><div class="card">
+    <p class="brand">{{ app_name or "Almasix" }}</p>
+    {!! slot !!}
+  </div></div>
+</body>
+</html>

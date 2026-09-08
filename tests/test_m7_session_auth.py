@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from avalon.auth.guard import AuthManager, Guard, SessionGuard, auth
-from avalon.auth.passwords import Password, get_password_manager
-from avalon.auth.providers import MemoryUserProvider
-from avalon.hashing import Hash, HashManager, set_hash_manager
-from avalon.session.signing import sign_payload, unsign_payload
-from avalon.session.encrypt import decrypt_string, encrypt_string
-from avalon.session.store import Session, set_session, reset_session
+from almasix.auth.guard import AuthManager, Guard, SessionGuard, auth
+from almasix.auth.passwords import Password, get_password_manager
+from almasix.auth.providers import MemoryUserProvider
+from almasix.hashing import Hash, HashManager, set_hash_manager
+from almasix.session.signing import sign_payload, unsign_payload
+from almasix.session.encrypt import decrypt_string, encrypt_string
+from almasix.session.store import Session, set_session, reset_session
 
 
 @pytest.fixture(autouse=True)
@@ -40,7 +40,7 @@ def test_hash_make_check_rehash() -> None:
     assert Hash.is_hashed(hashed)
     assert not Hash.needs_rehash(hashed)
     set_hash_manager(HashManager())
-    get = __import__("avalon.hashing", fromlist=["get_hash_manager"]).get_hash_manager()
+    get = __import__("almasix.hashing", fromlist=["get_hash_manager"]).get_hash_manager()
     get.configure(rounds=5)
     assert Hash.needs_rehash(hashed)
 

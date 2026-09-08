@@ -1,4 +1,4 @@
-"""M30 — Grail Console exhaust (Artisan parity)."""
+"""M30 — Smith Console exhaust (Artisan parity)."""
 
 from __future__ import annotations
 
@@ -8,18 +8,18 @@ from typing import Any
 
 import pytest
 
-from avalon.console.command import (
+from almasix.console.command import (
     Command,
     Isolatable,
     PromptsForMissingInput,
     parse_signature,
 )
-from avalon.console.events import CommandFinished, CommandStarting, ConsoleStarting
-from avalon.console.exceptions import CommandFailed, CommandNotFound
-from avalon.console.facade import Artisan, _pending
-from avalon.console.kernel import ConsoleKernel, _parse_argv
-from avalon.events.facade import Event
-from avalon.framework import Application
+from almasix.console.events import CommandFinished, CommandStarting, ConsoleStarting
+from almasix.console.exceptions import CommandFailed, CommandNotFound
+from almasix.console.facade import Artisan, _pending
+from almasix.console.kernel import ConsoleKernel, _parse_argv
+from almasix.events.facade import Event
+from almasix.framework import Application
 
 
 @pytest.fixture(autouse=True)
@@ -222,7 +222,7 @@ def test_exit_code_constants_and_fail() -> None:
 
 
 def test_with_progress_bar_maps_items(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("AVALON_PROMPTS_INTERACTIVE", "0")
+    monkeypatch.setenv("ALMASIX_PROMPTS_INTERACTIVE", "0")
     command = Command()
     assert command.with_progress_bar([1, 2, 3], lambda item: item * 2) == [2, 4, 6]
     assert command.with_progress_bar([1]) == [1]
@@ -235,7 +235,7 @@ def test_choice_supports_multiple(monkeypatch: pytest.MonkeyPatch) -> None:
         captured["default"] = default
         return ["a"]
 
-    monkeypatch.setattr("avalon.console.prompts.multiselect", fake_multiselect)
+    monkeypatch.setattr("almasix.console.prompts.multiselect", fake_multiselect)
     command = Command()
     assert command.choice("pick", ["a", "b"], "a", multiple=True) == ["a"]
     assert captured["default"] == ["a"]
@@ -342,7 +342,7 @@ def test_artisan_kernel_boots_from_cwd_when_nothing_is_bound(
 
 
 def test_signature_parameters_gives_up_on_unsupported_callables() -> None:
-    from avalon.console.facade import _signature_parameters, _resolve_parameters
+    from almasix.console.facade import _signature_parameters, _resolve_parameters
 
     assert _signature_parameters(print) is not None
     assert _resolve_parameters(Command(), object()) == {}
@@ -386,7 +386,7 @@ def test_closure_commands_queue_until_a_kernel_exists(tmp_path: Path) -> None:
     Artisan.command("closure:later {--flag}", lambda flag: 0)
     assert _pending
     kernel = ConsoleKernel(Application(tmp_path))
-    from avalon.console.facade import drain_pending
+    from almasix.console.facade import drain_pending
 
     Artisan.set_kernel(kernel)
     drain_pending(kernel)
@@ -465,7 +465,7 @@ class IsolatedCommand(Isolatable, Command):
 def test_isolated_command_runs_once_at_a_time(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from avalon.console import isolation
+    from almasix.console import isolation
 
     # Pin the filesystem backend so a cache store booted by another test
     # cannot change which lock this exercises.
@@ -475,7 +475,7 @@ def test_isolated_command_runs_once_at_a_time(
     assert kernel.run_argv("isolated:work", ["--isolated"]) == 0
     assert IsolatedCommand.ran == 1
 
-    from avalon.console import isolation
+    from almasix.console import isolation
 
     held = isolation.acquire("isolated:work", 60, tmp_path)
     assert held is not None
@@ -489,7 +489,7 @@ def test_isolated_command_runs_once_at_a_time(
 
 
 def test_isolation_prefers_the_cache_lock(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    from avalon.console import isolation
+    from almasix.console import isolation
 
     class FakeLock:
         """Mirrors the CacheLock API (``get`` / ``release``)."""
@@ -518,8 +518,8 @@ def test_isolation_prefers_the_cache_lock(monkeypatch: pytest.MonkeyPatch, tmp_p
 def test_isolation_cache_lock_helper_survives_a_missing_cache(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from avalon.cache.manager import Cache
-    from avalon.console import isolation
+    from almasix.cache.manager import Cache
+    from almasix.console import isolation
 
     def unbooted() -> None:
         raise RuntimeError("cache is not configured")
@@ -531,8 +531,8 @@ def test_isolation_cache_lock_helper_survives_a_missing_cache(
 def test_isolation_uses_the_cache_lock_when_the_cache_is_booted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from avalon.cache.manager import Cache
-    from avalon.console import isolation
+    from almasix.cache.manager import Cache
+    from almasix.console import isolation
 
     sentinel = object()
     monkeypatch.setattr(Cache, "manager", staticmethod(lambda: None))
@@ -541,7 +541,7 @@ def test_isolation_uses_the_cache_lock_when_the_cache_is_booted(
 
 
 def test_isolation_reports_a_held_cache_lock(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    from avalon.console import isolation
+    from almasix.console import isolation
 
     class HeldLock:
         def get(self) -> bool:
@@ -632,7 +632,7 @@ def test_console_starting_is_dispatched_on_discovery(
 
 
 def test_command_finished_fires_for_dump_and_die(tmp_path: Path) -> None:
-    from avalon.debug import DumpAndDie
+    from almasix.debug import DumpAndDie
 
     class Dumping(Command):
         signature = "dumping"
@@ -653,7 +653,7 @@ def test_event_dispatch_failures_do_not_break_commands(
     def explode(*_args: Any, **_kwargs: Any) -> None:
         raise RuntimeError("no dispatcher")
 
-    monkeypatch.setattr("avalon.events.facade.Event.dispatch", explode)
+    monkeypatch.setattr("almasix.events.facade.Event.dispatch", explode)
     kernel = kernel_for(tmp_path, EchoCommand)
     assert kernel.run_argv("echo", ["hi"]) == 0
 
@@ -671,7 +671,7 @@ def test_unknown_commands_raise_command_not_found(tmp_path: Path) -> None:
 
 
 def test_isolated_exit_code_falls_back_for_unparsable_values() -> None:
-    from avalon.console.kernel import _isolated_exit_code
+    from almasix.console.kernel import _isolated_exit_code
 
     assert _isolated_exit_code(True) == Command.SUCCESS
     assert _isolated_exit_code("nonsense") == Command.SUCCESS
@@ -685,7 +685,7 @@ def test_isolated_exit_code_falls_back_for_unparsable_values() -> None:
 def test_artisan_queue_dispatches_a_job(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import asyncio
 
-    from avalon.console.queued import CallQueuedCommand
+    from almasix.console.queued import CallQueuedCommand
 
     kernel_for(tmp_path, EchoCommand)
     dispatched: list[CallQueuedCommand] = []
@@ -694,7 +694,7 @@ def test_artisan_queue_dispatches_a_job(tmp_path: Path, monkeypatch: pytest.Monk
         dispatched.append(job)
         return "queued"
 
-    monkeypatch.setattr("avalon.queue.helpers.dispatch", fake_dispatch)
+    monkeypatch.setattr("almasix.queue.helpers.dispatch", fake_dispatch)
     result = asyncio.run(
         Artisan.queue("echo hi", {"--upper": True}, connection="redis", queue="bulk")
     )
@@ -708,7 +708,7 @@ def test_artisan_queue_dispatches_a_job(tmp_path: Path, monkeypatch: pytest.Monk
 
 
 def test_queued_command_defaults(tmp_path: Path) -> None:
-    from avalon.console.queued import CallQueuedCommand
+    from almasix.console.queued import CallQueuedCommand
 
     kernel_for(tmp_path, EchoCommand)
     job = CallQueuedCommand("echo hi")

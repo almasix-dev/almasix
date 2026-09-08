@@ -1,7 +1,7 @@
 """M30 — the introspection commands: ``about``, ``help``, ``route:list``, ``config:show``.
 
 These four only report what the application already knows. The tests hold that
-line: a row Avalon cannot answer is absent, not blank and not guessed.
+line: a row Almasix cannot answer is absent, not blank and not guessed.
 """
 
 from __future__ import annotations
@@ -12,18 +12,18 @@ from pathlib import Path
 
 import pytest
 
-from avalon import __version__
-from avalon.console.command import Command
-from avalon.console.commands.introspection import HelpCommand
-from avalon.console.facade import Artisan
-from avalon.console.kernel import ConsoleKernel
+from almasix import __version__
+from almasix.console.command import Command
+from almasix.console.commands.introspection import HelpCommand
+from almasix.console.facade import Artisan
+from almasix.console.kernel import ConsoleKernel
 
 ROUTES = '''
 """Routes written by the test, with no application package to import."""
 
 from functools import partial
 
-from avalon.routing import Route
+from almasix.routing import Route
 
 
 class ProbeController:
@@ -93,7 +93,7 @@ def test_about_reports_the_environment_and_the_drivers(
 
     out = capsys.readouterr().out
     assert "Environment" in out
-    assert f"Avalon Version    {__version__}" in out
+    assert f"Almasix Version   {__version__}" in out
     assert "Application Name  Probe" in out
     assert "Environment       testing" in out
     assert "Debug Mode        ENABLED" in out
@@ -122,7 +122,7 @@ def test_about_leaves_out_the_rows_the_application_cannot_answer(
     assert "(nothing configured)" in out
     for absent in ("Application Name", "Debug Mode", "Cache", "Session", "Mail"):
         assert absent not in out
-    assert f"Avalon Version    {__version__}" in out
+    assert f"Almasix Version   {__version__}" in out
 
 
 def test_about_drops_a_configured_row_that_is_empty(
@@ -193,7 +193,7 @@ def test_about_json_is_snake_cased_and_grouped_by_section(
 
     payload = json.loads(capsys.readouterr().out)
     assert set(payload) == {"environment", "drivers"}
-    assert payload["environment"]["avalon_version"] == __version__
+    assert payload["environment"]["almasix_version"] == __version__
     assert payload["environment"]["application_name"] == "Probe"
     assert payload["environment"]["debug_mode"] == "ENABLED"
     assert payload["environment"]["fallback_locale"] == "en"
@@ -219,7 +219,7 @@ def test_about_only_prints_the_section_it_was_asked_for(
 
     out = capsys.readouterr().out
     assert "Drivers" in out
-    assert "Avalon Version" not in out
+    assert "Almasix Version" not in out
 
 
 def test_about_only_in_json_carries_just_that_section(
@@ -273,7 +273,7 @@ def test_help_prints_the_description_usage_arguments_options_and_aliases(
     out = capsys.readouterr().out
     assert "Description:" in out
     assert "  Describe one user" in out
-    assert "  grail probe:describe <user> [-Q, --queue=QUEUE] [--force]" in out
+    assert "  smith probe:describe <user> [-Q, --queue=QUEUE] [--force]" in out
     assert "Arguments:" in out
     assert "<user>" in out and "The user ID" in out
     assert "Options:" in out
@@ -292,7 +292,7 @@ def test_help_describes_a_command_that_has_no_description(
 
     out = capsys.readouterr().out
     assert "Description:" not in out
-    assert "  grail probe:quiet" in out
+    assert "  smith probe:quiet" in out
 
 
 def test_help_answers_for_an_alias_too(
@@ -301,7 +301,7 @@ def test_help_answers_for_an_alias_too(
     kernel.register(DescribedCommand)
 
     assert kernel.run_argv("help", ["probe:described"]) == 0
-    assert "  grail probe:describe <user>" in capsys.readouterr().out
+    assert "  smith probe:describe <user>" in capsys.readouterr().out
 
 
 def test_help_without_an_argument_prints_the_same_overview_as_list(
@@ -343,7 +343,7 @@ def test_help_needs_no_application(
 
     assert kernel.run_argv("help", ["version"]) == 0
     assert not kernel.app.is_bootstrapped
-    assert "  grail version" in capsys.readouterr().out
+    assert "  smith version" in capsys.readouterr().out
 
 
 # --- route:list -----------------------------------------------------------
@@ -519,7 +519,7 @@ def test_config_show_redacts_credentials_by_default(
         {
             "database.connections.pgsql": {
                 "host": "127.0.0.1",
-                "username": "avalon",
+                "username": "almasix",
                 "password": "s3cret",
             },
             "app.key": "base64:abc",
@@ -533,7 +533,7 @@ def test_config_show_redacts_credentials_by_default(
     out = capsys.readouterr().out
     assert "password: ********" in out
     assert "s3cret" not in out
-    assert "username: avalon" in out
+    assert "username: almasix" in out
 
     assert kernel.run_argv("config:show", ["app.key"]) == 0
     assert capsys.readouterr().out == "app.key\n  ********\n"

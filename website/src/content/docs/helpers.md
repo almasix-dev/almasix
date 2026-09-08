@@ -3,14 +3,14 @@ title: Helpers
 description: Arr, Number, path, URL and miscellaneous helpers — documented function by function.
 ---
 
-Avalon ships the helper catalogue Laravel does: array and object utilities on
+Almasix ships the helper catalogue Laravel does: array and object utilities on
 `Arr`, number formatting on `Number`, path and URL builders, and a long tail of
 miscellaneous functions. Nothing is injected into Python's builtins, so every
 helper is imported from the package that owns it:
 
 ```python
 # app/http/controllers/invoice_controller.py
-from avalon.support import Arr, Number, data_get
+from almasix.support import Arr, Number, data_get
 
 Arr.get({"user": {"name": "Ada"}}, "user.name")   # 'Ada'
 Number.currency(12.5)                              # '$12.50'
@@ -30,16 +30,16 @@ Two related pages carry their own surfaces: [Strings](/strings/) documents
 
 | Group | Import |
 | --- | --- |
-| Arrays and objects | `from avalon.support import Arr` |
-| Data paths | `from avalon.support import data_get, data_set, data_fill, data_forget, head, last` |
-| Numbers | `from avalon.support import Number` |
-| Paths | `from avalon.support import base_path, app_path, …` |
-| URLs | `from avalon.routing import url, asset` |
-| Application and container | `from avalon.framework import app, resolve` |
-| Request and response | `from avalon.http import request, response, redirect, back` |
-| Session and cookies | `from avalon.session import session, old, cookie, csrf_token` |
-| Views and forms | `from avalon.caliburn import view, csrf_field, method_field` |
-| Everything else | `from avalon.support import …` |
+| Arrays and objects | `from almasix.support import Arr` |
+| Data paths | `from almasix.support import data_get, data_set, data_fill, data_forget, head, last` |
+| Numbers | `from almasix.support import Number` |
+| Paths | `from almasix.support import base_path, app_path, …` |
+| URLs | `from almasix.routing import url, asset` |
+| Application and container | `from almasix.framework import app, resolve` |
+| Request and response | `from almasix.http import request, response, redirect, back` |
+| Session and cookies | `from almasix.session import session, old, cookie, csrf_token` |
+| Views and forms | `from almasix.prism import view, csrf_field, method_field` |
+| Everything else | `from almasix.support import …` |
 
 ## Arrays and objects
 
@@ -53,7 +53,7 @@ whether it is a mapping or a sequence. Strings and bytes are sequences in
 Python but are deliberately excluded, so they report `False`.
 
 ```python
-from avalon.support import Arr
+from almasix.support import Arr
 
 result = Arr.accessible({"a": 1})
 
@@ -160,7 +160,7 @@ result = Arr.cross_join()
 
 ### divide
 
-Splits a mapping into its keys and its values. Avalon returns a two-element
+Splits a mapping into its keys and its values. Almasix returns a two-element
 tuple, so it unpacks directly into two names.
 
 ```python
@@ -402,7 +402,7 @@ sequences. Given several keys it is true only when every one of them is
 present, and an empty list of keys is false.
 
 ```python
-from avalon.support import Arr
+from almasix.support import Arr
 
 result = Arr.has({"user": {"name": "Ada"}}, "user.name")
 
@@ -419,7 +419,7 @@ result = Arr.has({"user": {"name": "Ada"}}, ["user.name", "user.email"])
 
 Whether every one of the keys exists. This is the same test `has` already
 performs for a list of keys; Laravel added `Arr::hasAll` as the explicit form
-and Avalon mirrors it. An empty list of keys is false.
+and Almasix mirrors it. An empty list of keys is false.
 
 ```python
 result = Arr.has_all({"name": "Ada", "email": "ada@example.com"}, ["name", "email"])
@@ -445,7 +445,7 @@ otherwise — for reading configuration where a wrong type should fail at the
 read rather than further downstream. With no `key` the value itself is checked.
 Booleans are rejected even though `bool` subclasses `int`, so
 `Arr.integer({"debug": True}, "debug")` raises `TypeError: Value for 'debug' is
-not an integer: True`. Avalon also provides `Arr.string`, `Arr.boolean`,
+not an integer: True`. Almasix also provides `Arr.string`, `Arr.boolean`,
 `Arr.float` and `Arr.array` in the same shape.
 
 ```python
@@ -757,7 +757,7 @@ once per item, because the encoding is done by `urllib.parse.urlencode` with
 mapping is flattened to its keys instead of `filter[x]=1`.
 
 ```python
-from avalon.support import Arr
+from almasix.support import Arr
 
 result = Arr.query({"name": "Ada", "tags": ["a", "b"]})
 
@@ -848,7 +848,7 @@ result = Arr.shuffle([1, 2, 3, 4, 5])
 Returns the single item matching `callback`, or the single item in `array` when
 no callback is given. It raises `ItemNotFoundError` when nothing matches and
 `MultipleItemsFoundError` when more than one item does, both from
-`avalon.support.collection`.
+`almasix.support.collection`.
 
 ```python
 result = Arr.sole([1, 2, 3], lambda n: n > 2)
@@ -914,7 +914,7 @@ numbers = Arr.sort_desc([1, 3, 2])
 Sorts a nested structure at every level, descending into mappings and
 sequences. A mapping is sorted by its **keys** (unlike `Arr.sort`, which sorts
 a mapping by value) and a sequence by its values; pass `descending=True` for
-the reverse, which is the keyword Avalon uses in place of Laravel's separate
+the reverse, which is the keyword Almasix uses in place of Laravel's separate
 `sortRecursiveDesc`. A sequence whose items cannot be compared with one another
 is returned in its original order instead of raising.
 
@@ -936,9 +936,9 @@ type should fail at the read rather than further downstream. Omit `key` to
 assert on `array` itself.
 
 ```python
-result = Arr.string({"app": {"name": "Avalon"}}, "app.name")
+result = Arr.string({"app": {"name": "Almasix"}}, "app.name")
 
-# 'Avalon'
+# 'Almasix'
 ```
 
 ### take
@@ -1044,9 +1044,9 @@ wrapped rather than returned as-is, which differs from Laravel, where an
 associative array is its own list.
 
 ```python
-result = Arr.wrap("Avalon")
+result = Arr.wrap("Almasix")
 
-# ['Avalon']
+# ['Almasix']
 
 empty = Arr.wrap(None)
 
@@ -1070,7 +1070,7 @@ object for chaining). It is `data_set` with `overwrite=False`, so the existing
 `price` below is left alone while the missing `discount` is added.
 
 ```python
-from avalon.support import data_fill
+from almasix.support import data_fill
 
 data = {"products": {"desk": {"price": 100}}}
 data_fill(data, "products.desk.price", 200)
@@ -1086,7 +1086,7 @@ a single string or a list of them, and missing keys are ignored rather than
 raising.
 
 ```python
-from avalon.support import data_forget
+from almasix.support import data_forget
 
 data = {"products": {"desk": {"price": 100, "sku": "D1"}}}
 data_forget(data, "products.desk.price")
@@ -1106,7 +1106,7 @@ dropping the branches that came up empty; a second `*` collapses one level, so
 the result stays flat.
 
 ```python
-from avalon.support import data_get
+from almasix.support import data_get
 
 data = {"users": [{"name": "Ada"}, {"name": "Linus"}]}
 result = data_get(data, "users.0.name")
@@ -1139,7 +1139,7 @@ index is past the end; a non-numeric segment against a list raises `TypeError`
 rather than quietly discarding the list.
 
 ```python
-from avalon.support import data_set
+from almasix.support import data_set
 
 data = {"products": {"desk": {"price": 100}}}
 data_set(data, "products.desk.price", 200)
@@ -1162,7 +1162,7 @@ returns `false` there. The argument is materialised into a list first, so a
 generator is consumed.
 
 ```python
-from avalon.support import head
+from almasix.support import head
 
 result = (head([1, 2, 3]), head([]))
 
@@ -1170,7 +1170,7 @@ result = (head([1, 2, 3]), head([]))
 ```
 
 ```python
-from avalon.support import head
+from almasix.support import head
 
 result = head({"name": "Ada", "role": "engineer"})
 
@@ -1184,7 +1184,7 @@ Returns the final item of any iterable, or `None` when it is empty. Like
 well as sequences.
 
 ```python
-from avalon.support import last
+from almasix.support import last
 
 result = (last([1, 2, 3]), last([]))
 
@@ -1205,7 +1205,7 @@ rather than rounded, so `1999` abbreviates to `1K`, not `2K` as Laravel would
 give.
 
 ```python
-from avalon.support import Number
+from almasix.support import Number
 
 result = Number.abbreviate(1234)
 precise = Number.abbreviate(1234, precision=2)
@@ -1502,11 +1502,11 @@ nothing has been bootstrapped — so the output below is what it printed when ru
 from the repository root.
 
 ```python
-from avalon.support import app_path
+from almasix.support import app_path
 
 result = app_path("Models")
 
-# '/home/smaosa/Projects/avalon/app/Models'
+# '/home/smaosa/Projects/almasix/app/Models'
 ```
 
 ### base_path
@@ -1519,26 +1519,26 @@ slashes or several separate arguments — `base_path("storage/logs")` and
 `base_path("storage", "logs")` are equivalent.
 
 ```python
-from avalon.support import base_path
+from almasix.support import base_path
 
 root = base_path()
 logs = base_path("storage/logs")
 
-# '/home/smaosa/Projects/avalon'
-# '/home/smaosa/Projects/avalon/storage/logs'
+# '/home/smaosa/Projects/almasix'
+# '/home/smaosa/Projects/almasix/storage/logs'
 ```
 
 ### config_path
 
-Returns the path to the `config` directory, where Avalon looks for the
+Returns the path to the `config` directory, where Almasix looks for the
 `config/*.py` modules that populate `config()`.
 
 ```python
-from avalon.support import config_path
+from almasix.support import config_path
 
 result = config_path("app.py")
 
-# '/home/smaosa/Projects/avalon/config/app.py'
+# '/home/smaosa/Projects/almasix/config/app.py'
 ```
 
 ### database_path
@@ -1547,11 +1547,11 @@ Returns the path to the `database` directory, which holds migrations, seeders
 and a SQLite file if you use one.
 
 ```python
-from avalon.support import database_path
+from almasix.support import database_path
 
 result = database_path("migrations")
 
-# '/home/smaosa/Projects/avalon/database/migrations'
+# '/home/smaosa/Projects/almasix/database/migrations'
 ```
 
 ### lang_path
@@ -1559,11 +1559,11 @@ result = database_path("migrations")
 Returns the path to the `lang` directory, where translation files live.
 
 ```python
-from avalon.support import lang_path
+from almasix.support import lang_path
 
 result = lang_path("en/validation.py")
 
-# '/home/smaosa/Projects/avalon/lang/en/validation.py'
+# '/home/smaosa/Projects/almasix/lang/en/validation.py'
 ```
 
 ### public_path
@@ -1572,11 +1572,11 @@ Returns the path to the `public` directory — the document root, including the
 `public/build` output that Vite and Tailwind write into.
 
 ```python
-from avalon.support import public_path
+from almasix.support import public_path
 
 result = public_path("build/app.css")
 
-# '/home/smaosa/Projects/avalon/public/build/app.css'
+# '/home/smaosa/Projects/almasix/public/build/app.css'
 ```
 
 ### resource_path
@@ -1586,11 +1586,11 @@ front-end sources live. Note the directory is `resources` while the helper is
 singular, matching Laravel.
 
 ```python
-from avalon.support import resource_path
+from almasix.support import resource_path
 
 result = resource_path("views")
 
-# '/home/smaosa/Projects/avalon/resources/views'
+# '/home/smaosa/Projects/almasix/resources/views'
 ```
 
 ### storage_path
@@ -1599,11 +1599,11 @@ Returns the path to the `storage` directory, used for logs, caches and other
 generated files.
 
 ```python
-from avalon.support import storage_path
+from almasix.support import storage_path
 
-result = storage_path("logs/avalon.log")
+result = storage_path("logs/almasix.log")
 
-# '/home/smaosa/Projects/avalon/storage/logs/avalon.log'
+# '/home/smaosa/Projects/almasix/storage/logs/almasix.log'
 ```
 
 ## URLs
@@ -1626,8 +1626,8 @@ installs a config repository first; inside a booted app the import alone is
 enough.
 
 ```python
-from avalon.config import ConfigRepository, set_repository
-from avalon.routing import asset
+from almasix.config import ConfigRepository, set_repository
+from almasix.routing import asset
 
 repository = ConfigRepository()
 repository.set("app.url", "https://shop.test")
@@ -1652,8 +1652,8 @@ because the config repository is unset, so the example installs one; a booted
 app does this during bootstrap.
 
 ```python
-from avalon.config import ConfigRepository, set_repository
-from avalon.routing import url
+from almasix.config import ConfigRepository, set_repository
+from almasix.routing import url
 
 repository = ConfigRepository()
 repository.set("app.url", "https://shop.test")
@@ -1680,8 +1680,8 @@ turns into an error response. The code defaults to `404` and the message to
 rather than a per-status subclass, with the code on `status_code`.
 
 ```python
-from avalon.http.exceptions import HttpException
-from avalon.support import abort
+from almasix.http.exceptions import HttpException
+from almasix.support import abort
 
 try:
     abort(403, "This post is not yours.")
@@ -1698,8 +1698,8 @@ arguments after the condition are the ones `abort` takes — status code,
 message, and optional headers.
 
 ```python
-from avalon.http.exceptions import HttpException
-from avalon.support import abort_if
+from almasix.http.exceptions import HttpException
+from almasix.support import abort_if
 
 post = None
 try:
@@ -1711,7 +1711,7 @@ except HttpException as error:
 ```
 
 ```python
-from avalon.support import abort_if
+from almasix.support import abort_if
 
 result = abort_if(False, 404, "No such post.")
 
@@ -1724,8 +1724,8 @@ The inverse of `abort_if`: aborts when the condition is falsy. It reads well
 for guards that assert something must hold.
 
 ```python
-from avalon.http.exceptions import HttpException
-from avalon.support import abort_unless
+from almasix.http.exceptions import HttpException
+from almasix.support import abort_unless
 
 owns_post = False
 try:
@@ -1745,8 +1745,8 @@ code that runs inside the application, not for import-time work.
 
 ```python
 # needs a booted application
-from avalon.cache.manager import CacheManager
-from avalon.framework import app
+from almasix.cache.manager import CacheManager
+from almasix.framework import app
 
 application = app()
 manager = app(CacheManager)
@@ -1763,7 +1763,7 @@ queue code.
 
 ```python
 # needs a request context
-from avalon.auth import auth
+from almasix.auth import auth
 
 
 class SessionController:
@@ -1782,13 +1782,13 @@ Unlike Laravel, the methods that change authentication state — `attempt`,
 ### back
 
 Builds a 302 `Redirect` back to the page the request came from, falling back to
-`fallback` (default `/`) when there is nowhere to go back to. Avalon reads the
+`fallback` (default `/`) when there is nowhere to go back to. Almasix reads the
 `Referer` header rather than a session-stored previous URL, so a request that
 arrives without one — and any call made outside a request, like the one below —
 lands on the fallback.
 
 ```python
-from avalon.http import back
+from almasix.http import back
 
 redirect = back("/posts")
 result = (redirect.status_code, redirect.headers["location"])
@@ -1797,7 +1797,7 @@ result = (redirect.status_code, redirect.headers["location"])
 ```
 
 ```python
-from avalon.http import back
+from almasix.http import back
 
 result = back("/posts", status=303).status_code
 
@@ -1811,7 +1811,7 @@ returns the 60-character crypt string. The optional second argument is the
 driver's options, of which bcrypt reads `rounds`.
 
 ```python
-from avalon.hashing import Hash, bcrypt
+from almasix.hashing import Hash, bcrypt
 
 hashed = bcrypt("secret")
 result = (hashed[:7], len(hashed), Hash.check("secret", hashed))
@@ -1820,7 +1820,7 @@ result = (hashed[:7], len(hashed), Hash.check("secret", hashed))
 ```
 
 ```python
-from avalon.hashing import bcrypt
+from almasix.hashing import bcrypt
 
 result = bcrypt("secret", {"rounds": 4})[:7]
 
@@ -1834,7 +1834,7 @@ whitespace, or an empty mapping, sequence, or anything else with a length of
 zero. Booleans and numbers are never blank, and neither is the string `"0"`.
 
 ```python
-from avalon.support import blank
+from almasix.support import blank
 
 result = (blank(""), blank("   "), blank(None), blank([]), blank({}))
 
@@ -1842,7 +1842,7 @@ result = (blank(""), blank("   "), blank(None), blank([]), blank({}))
 ```
 
 ```python
-from avalon.support import blank
+from almasix.support import blank
 
 result = (blank(0), blank(False), blank("0"))
 
@@ -1858,7 +1858,7 @@ default.
 
 ```python
 # needs a booted application
-from avalon.cache import cache
+from almasix.cache import cache
 
 total = cache("orders.total", 0)
 cache({"orders.total": 42}, 600)
@@ -1877,7 +1877,7 @@ instance, or a string path, and splits a string on both `.` and `\` so
 PHP-style class strings carried over from Laravel still resolve.
 
 ```python
-from avalon.support import class_basename
+from almasix.support import class_basename
 
 result = (class_basename(dict), class_basename("app.models.User"))
 
@@ -1885,7 +1885,7 @@ result = (class_basename(dict), class_basename("app.models.User"))
 ```
 
 ```python
-from avalon.support import class_basename
+from almasix.support import class_basename
 
 result = class_basename({"a": 1})
 
@@ -1900,7 +1900,7 @@ where Laravel returns the traits used by a class this returns base classes —
 the sets are unordered, hence the `sorted` below.
 
 ```python
-from avalon.support import class_uses_recursive
+from almasix.support import class_uses_recursive
 
 
 class Timestamps:
@@ -1927,7 +1927,7 @@ Wraps a list, dict, tuple, set, generator, or another collection in a Support
 collection; see the [Collections](/collections/) page for the methods.
 
 ```python
-from avalon.support import collect
+from almasix.support import collect
 
 result = collect([1, 2, 3, 4]).filter(lambda n: n % 2 == 0).values().all()
 
@@ -1935,7 +1935,7 @@ result = collect([1, 2, 3, 4]).filter(lambda n: n % 2 == 0).values().all()
 ```
 
 ```python
-from avalon.support import collect
+from almasix.support import collect
 
 result = collect({"a": 1, "b": 2}).sum()
 
@@ -1950,7 +1950,7 @@ equivalent, so set values through the repository (`app().config.set(...)`).
 
 ```python
 # needs a booted application
-from avalon.config import config
+from almasix.config import config
 
 timezone = config("app.timezone", "UTC")
 guards = config("auth.guards", {})
@@ -1969,7 +1969,7 @@ it returns the cookie jar, whose `queue` method attaches a cookie to the
 outgoing response.
 
 ```python
-from avalon.session import cookie
+from almasix.session import cookie
 
 built = cookie("flavour", "mint", 60)
 result = (built.name, built.value, built.max_age, built.path, built.httponly)
@@ -1978,7 +1978,7 @@ result = (built.name, built.value, built.max_age, built.path, built.httponly)
 ```
 
 ```python
-from avalon.session import cookie
+from almasix.session import cookie
 
 result = cookie().forever("theme", "dark").max_age
 
@@ -1988,12 +1988,12 @@ result = cookie().forever("theme", "dark").max_age
 ### csrf_field
 
 Returns the hidden `_token` input a form needs, as an `HtmlString` that the
-Caliburn escaper leaves alone. In a template use the `@csrf` directive, which
+Prism escaper leaves alone. In a template use the `@csrf` directive, which
 compiles to the same markup.
 
 ```python
 # needs a request context
-from avalon.caliburn import csrf_field
+from almasix.prism import csrf_field
 
 field = csrf_field().__html__()
 
@@ -2008,7 +2008,7 @@ empty string.
 
 ```python
 # needs a request context
-from avalon.session import csrf_token
+from almasix.session import csrf_token
 
 token = csrf_token()
 
@@ -2023,8 +2023,8 @@ process is not killed: the HTTP kernel catches it and renders a dump page, and
 a test can catch it too. Anything after the `dd()` call does not run.
 
 ```python
-from avalon.debug import DumpAndDie
-from avalon.support import dd
+from almasix.debug import DumpAndDie
+from almasix.support import dd
 
 try:
     dd({"name": "Ada"})
@@ -2044,7 +2044,7 @@ payload has been tampered with or none of the configured keys fit — the curren
 key rotation does not invalidate old payloads.
 
 ```python
-from avalon.encryption import decrypt, encrypt
+from almasix.encryption import decrypt, encrypt
 
 result = decrypt(encrypt({"card": "4242"}))
 
@@ -2055,14 +2055,14 @@ result = decrypt(encrypt({"card": "4242"}))
 
 Pushes a job onto its queue connection, or runs it in-process when the job is
 not queueable. Laravel's `dispatch()` is synchronous and returns a
-`PendingDispatch`; Avalon's is a coroutine you have to await, and for a job
+`PendingDispatch`; Almasix's is a coroutine you have to await, and for a job
 that runs in-process it returns whatever `handle()` returned.
 
 ```python
 import asyncio
 
-from avalon.queue import dispatch
-from avalon.queue.job import Job
+from almasix.queue import dispatch
+from almasix.queue.job import Job
 
 
 class SendWelcomeEmail(Job):
@@ -2092,8 +2092,8 @@ without a worker. Like `dispatch` it is a coroutine, and it returns the value
 ```python
 import asyncio
 
-from avalon.queue import dispatch_sync
-from avalon.queue.job import Job, ShouldQueue
+from almasix.queue import dispatch_sync
+from almasix.queue.job import Job, ShouldQueue
 
 
 class RebuildSitemap(Job, ShouldQueue):
@@ -2113,7 +2113,7 @@ was given as a tuple, so it can be wrapped around an expression without
 changing the surrounding code.
 
 ```python
-from avalon.support import dump
+from almasix.support import dump
 
 result = dump({"name": "Ada"})
 
@@ -2121,7 +2121,7 @@ result = dump({"name": "Ada"})
 ```
 
 ```python
-from avalon.support import dump
+from almasix.support import dump
 
 result = dump(1, "two")
 
@@ -2135,7 +2135,7 @@ escaping quotes as well as angle brackets. Passing `double_encode=False` leaves
 entities such as `&lt;` alone, though `&amp;` is still re-encoded.
 
 ```python
-from avalon.support import e
+from almasix.support import e
 
 result = e("<b>Ada & Co</b>")
 
@@ -2143,7 +2143,7 @@ result = e("<b>Ada & Co</b>")
 ```
 
 ```python
-from avalon.support import e
+from almasix.support import e
 
 result = e("&lt;script&gt;", double_encode=False)
 
@@ -2160,7 +2160,7 @@ from `config('app.key')`, falling back to an insecure development key when no
 application is booted — which is why the example below runs on its own.
 
 ```python
-from avalon.encryption import decrypt, encrypt
+from almasix.encryption import decrypt, encrypt
 
 payload = encrypt("4242 4242 4242 4242")
 result = (type(payload).__name__, decrypt(payload))
@@ -2179,7 +2179,7 @@ only; loading the `.env` file is the application's job at boot.
 ```python
 import os
 
-from avalon.config import env
+from almasix.config import env
 
 os.environ["APP_DEBUG"] = "true"
 result = env("APP_DEBUG", False)
@@ -2190,7 +2190,7 @@ result = env("APP_DEBUG", False)
 ```python
 import os
 
-from avalon.config import env
+from almasix.config import env
 
 os.environ["DB_PORT"] = "5432"
 result = (env("DB_PORT", 3306), env("DB_PORT"))
@@ -2207,7 +2207,7 @@ listeners are called with the event name and the payload list.
 ```python
 from dataclasses import dataclass
 
-from avalon.events import event, listen
+from almasix.events import event, listen
 
 
 @dataclass
@@ -2222,8 +2222,8 @@ result = event(OrderShipped(order_id=17))
 ```
 
 A listener that returns `False` stops the ones after it. Note that
-`avalon.events` also exports a `dispatch` alias for this helper, which is a
-different function from `avalon.queue.dispatch`.
+`almasix.events` also exports a `dispatch` alias for this helper, which is a
+different function from `almasix.queue.dispatch`.
 
 ### filled
 
@@ -2231,7 +2231,7 @@ The inverse of `blank` — true when a value has something in it. `0`, `False`,
 and `"0"` are filled; whitespace-only strings are not.
 
 ```python
-from avalon.support import filled
+from almasix.support import filled
 
 result = (filled("Ada"), filled(0), filled(""), filled(None))
 
@@ -2245,7 +2245,7 @@ The optional second argument is context, which is appended to the line as
 `[key='value']` pairs.
 
 ```python
-from avalon.log import info
+from almasix.log import info
 
 result = info("Deploy finished", {"release": "1.4.0"})
 
@@ -2260,7 +2260,7 @@ Builds a throwaway object whose attributes are the keyword arguments you pass,
 for when a dict would need attribute access. It takes keyword arguments only.
 
 ```python
-from avalon.support import literal
+from almasix.support import literal
 
 point = literal(x=3, y=4)
 result = (point.x, point.y)
@@ -2277,7 +2277,7 @@ other levels. `with_(**context)` returns a writer that adds that context to
 every line.
 
 ```python
-from avalon.log import logger
+from almasix.log import logger
 
 logger("Cache warm", {"keys": 12})
 result = type(logger()).__name__
@@ -2286,7 +2286,7 @@ result = type(logger()).__name__
 ```
 
 ```python
-from avalon.log import logger
+from almasix.log import logger
 
 result = logger().with_(request_id="abc").warning("Disk almost full")
 
@@ -2297,10 +2297,10 @@ result = logger().with_(request_id="abc").warning("Disk almost full")
 
 Returns the hidden `_method` input that spoofs an HTTP verb a browser form
 cannot send, upper-casing whatever you pass. The result is an `HtmlString`, so
-Caliburn renders it unescaped — write it with `{!! method_field("put") !!}`.
+Prism renders it unescaped — write it with `{!! method_field("put") !!}`.
 
 ```python
-from avalon.caliburn import method_field
+from almasix.prism import method_field
 
 method_field("put")
 
@@ -2319,7 +2319,7 @@ Carbon-style wrapper, and the default is UTC rather than the configured
 application timezone.
 
 ```python
-from avalon.support import now
+from almasix.support import now
 
 now().tzinfo
 
@@ -2343,8 +2343,8 @@ that may have no session at all.
 
 ```python
 # needs a request context
-from avalon.http import redirect
-from avalon.session import old
+from almasix.http import redirect
+from almasix.session import old
 
 class RegisterController(Controller):
     async def store(self, request: Request):
@@ -2366,7 +2366,7 @@ each call site is a different object and is not memoised — pass a named
 function.
 
 ```python
-from avalon.support import once
+from almasix.support import once
 
 calls = []
 
@@ -2389,7 +2389,7 @@ return an `Optional`, not `None`, so test it with `bool(...)` rather than `is
 None`.
 
 ```python
-from avalon.support import optional
+from almasix.support import optional
 
 class User:
     name = "Ada"
@@ -2414,7 +2414,7 @@ either works, since a model instance is resolved by its class. It raises
 `LookupError` naming the model when nothing is registered for it.
 
 ```python
-from avalon.auth.access import Gate, Policy, policy
+from almasix.auth.access import Gate, Policy, policy
 
 class Post:
     pass
@@ -2446,7 +2446,7 @@ from `replacements`. `pattern` is a plain Python `re` pattern — no PHP-style
 with an empty string.
 
 ```python
-from avalon.support import preg_replace_array
+from almasix.support import preg_replace_array
 
 preg_replace_array(r":[a-z]+", ["8:30", "9:00"], "The event runs from :start to :end")
 
@@ -2470,7 +2470,7 @@ required — there is no argument-less redirector, so reach for
 
 ```python
 # needs a request context
-from avalon.http import redirect
+from almasix.http import redirect
 
 class RegisterController(Controller):
     async def store(self, request: Request):
@@ -2496,7 +2496,7 @@ for the failures you want recorded but not surfaced. Before an application is
 booted there is no handler, so it prints a single line to stderr instead.
 
 ```python
-from avalon.support import report
+from almasix.support import report
 
 report(ValueError("disk almost full"))
 
@@ -2508,7 +2508,7 @@ report(ValueError("disk almost full"))
 Calls `report` only when the condition is truthy, and does nothing otherwise.
 
 ```python
-from avalon.support import report_if
+from almasix.support import report_if
 
 report_if(False, RuntimeError("never reported"))
 report_if(True, RuntimeError("cache stampede"))
@@ -2521,7 +2521,7 @@ report_if(True, RuntimeError("cache stampede"))
 The inverse of `report_if`: reports the exception when the condition is falsy.
 
 ```python
-from avalon.support import report_unless
+from almasix.support import report_unless
 
 report_unless(True, ConnectionError("never reported"))
 report_unless(False, ConnectionError("search cluster unreachable"))
@@ -2539,14 +2539,14 @@ is safe.
 
 ```python
 # needs a request context
-from avalon.http import request
+from almasix.http import request
 
 class SearchController(Controller):
     async def index(self):
-        # For GET /search?q=avalon:
+        # For GET /search?q=almasix:
         request().path       # '/search'
         request().method     # 'GET'
-        request("q")         # 'avalon'
+        request("q")         # 'almasix'
         request("page", 1)   # 1
 ```
 
@@ -2557,7 +2557,7 @@ instead — called with the exception when it is a callable. The exception is
 also passed to `report` unless you pass `report=False`.
 
 ```python
-from avalon.support import rescue
+from almasix.support import rescue
 
 rescue(lambda: 1 / 0, "unavailable", report=False)
 
@@ -2577,8 +2577,8 @@ abstract.
 
 ```python
 # needs a booted application
-from avalon.config import ConfigRepository
-from avalon.framework import resolve
+from almasix.config import ConfigRepository
+from almasix.framework import resolve
 
 class ReportController(Controller):
     async def index(self):
@@ -2597,7 +2597,7 @@ that `response(None)` returns the factory rather than a 204 —
 gives you one.
 
 ```python
-from avalon.http import response
+from almasix.http import response
 
 response("Hello").status_code
 
@@ -2634,7 +2634,7 @@ backoff. Pass `when` a predicate over the exception to retry only some
 failures; anything it rejects is re-raised at once.
 
 ```python
-from avalon.support import retry
+from almasix.support import retry
 
 attempts = []
 
@@ -2658,7 +2658,7 @@ slept with `asyncio.sleep`, so a retrying call does not block the event loop.
 ```python
 import asyncio
 
-from avalon.support import retry_async
+from almasix.support import retry_async
 
 attempts = []
 
@@ -2683,7 +2683,7 @@ is a plain dict, so `session("cart.total")` looks for a key literally called
 
 ```python
 # needs a request context
-from avalon.session import session
+from almasix.session import session
 
 class CartController(Controller):
     async def show(self):
@@ -2703,15 +2703,15 @@ clear of the builtin. Call `str(...)` on the result when you need a plain
 `str`.
 
 ```python
-from avalon.support import str_
+from almasix.support import str_
 
-str_("  laravel to avalon ").trim().headline()
+str_("  laravel to almasix ").trim().headline()
 
-# Stringable('Laravel To Avalon')
+# Stringable('Laravel To Almasix')
 
-str(str_("avalon").upper())
+str(str_("almasix").upper())
 
-# 'AVALON'
+# 'ALMASIX'
 ```
 
 ### tap
@@ -2722,7 +2722,7 @@ rather than a higher-order proxy, so there is no `tap(value).method()` form to
 chain.
 
 ```python
-from avalon.support import tap
+from almasix.support import tap
 
 tap([1, 2], lambda items: items.append(3))
 
@@ -2741,7 +2741,7 @@ plain string becomes a `RuntimeError`, which is also the default when you pass
 nothing.
 
 ```python
-from avalon.support import throw_if
+from almasix.support import throw_if
 
 try:
     throw_if(True, ValueError, "quota exceeded")
@@ -2763,7 +2763,7 @@ The inverse of `throw_if`: raises when the condition is falsy, taking the same
 exception forms.
 
 ```python
-from avalon.support import throw_unless
+from almasix.support import throw_unless
 
 try:
     throw_unless(0, RuntimeError("a team is required"))
@@ -2782,7 +2782,7 @@ Returns today's `datetime.date` in UTC, or in `tz` when you pass one — it is
 instance set to midnight.
 
 ```python
-from avalon.support import now, today
+from almasix.support import now, today
 
 today() == now().date()
 
@@ -2801,7 +2801,7 @@ is an alias of `class_uses_recursive` over base classes and mixins, and it
 returns a `set` of classes rather than PHP's name-keyed array.
 
 ```python
-from avalon.support import trait_uses_recursive
+from almasix.support import trait_uses_recursive
 
 class Timestamps:
     pass
@@ -2828,7 +2828,7 @@ it) and returns the result; otherwise returns `default`, invoking it when it is
 a callable.
 
 ```python
-from avalon.support import transform
+from almasix.support import transform
 
 transform("42", int)
 
@@ -2848,14 +2848,14 @@ transform(None, int, lambda: "missing")
 Validates a payload outside the request lifecycle and returns a `Validator`
 with `passes()`, `fails()`, `errors()` and `validated()`. **This is a named
 deviation from Laravel:** `rules` is a Pydantic model or a `FormRequest`
-subclass, not an array of rule strings, because that is how Avalon declares
+subclass, not an array of rule strings, because that is how Almasix declares
 validation everywhere else. `errors()` maps field to a list of messages, and
 `validated()` (aliased `validate()`) returns the cleaned payload or raises
 `ValidationException`. The `messages` and `attributes` keyword arguments
 override message text and field names.
 
 ```python
-from avalon.validation import FormRequest, validator
+from almasix.validation import FormRequest, validator
 
 class Registration(FormRequest):
     email: str
@@ -2878,7 +2878,7 @@ Returns the value it is given, or calls it and returns the result when it is
 callable. Extra positional arguments are passed to the callable.
 
 ```python
-from avalon.support import value
+from almasix.support import value
 
 (value(5), value(lambda: 5), value(lambda n: n * 2, 21))
 
@@ -2887,20 +2887,20 @@ from avalon.support import value
 
 ### view
 
-Renders a Caliburn template and wraps it in an HTML response, with optional
+Renders a Prism template and wraps it in an HTML response, with optional
 `status` and `headers`. It renders there and then and hands back a Starlette
 `HTMLResponse` rather than a lazy view object the framework renders later, so
-reach for `avalon.caliburn.render()` when you want the markup as a string. It
+reach for `almasix.prism.render()` when you want the markup as a string. It
 needs the engine the application bootstraps, and raises `RuntimeError` before
 then.
 
 ```python
 # needs a booted application
-from avalon.caliburn import view
+from almasix.prism import view
 
 class WelcomeController(Controller):
     async def index(self):
-        # With resources/views/welcome.cal.html containing "<h1>Hello {{ name }}</h1>":
+        # With resources/views/welcome.prism.html containing "<h1>Hello {{ name }}</h1>":
         rendered = view("welcome", {"name": "Ada"})
         rendered.status_code   # 200
         rendered.media_type    # 'text/html'
@@ -2917,7 +2917,7 @@ parameter receives the condition itself, which is how you reuse the truthy
 value without repeating it.
 
 ```python
-from avalon.support import when
+from almasix.support import when
 
 when(True, "on", "off")
 
@@ -2939,7 +2939,7 @@ is what distinguishes it from `tap`. Laravel calls this `with`; the trailing
 underscore avoids the Python keyword.
 
 ```python
-from avalon.support import with_
+from almasix.support import with_
 
 with_(5, lambda n: n * 3)
 
@@ -2948,7 +2948,7 @@ with_(5, lambda n: n * 3)
 
 ## Not yet built
 
-Three of Laravel's miscellaneous helpers wait on features Avalon has not built,
+Three of Laravel's miscellaneous helpers wait on features Almasix has not built,
 and are absent rather than stubbed:
 
 | Laravel | Waiting on |
@@ -2959,14 +2959,14 @@ and are absent rather than stubbed:
 
 ## Other utilities
 
-Laravel's Helpers page closes with a set of standalone utilities. Avalon has
+Laravel's Helpers page closes with a set of standalone utilities. Almasix has
 not built them; they are listed here so their absence is a decision rather than
 a gap you have to discover:
 
-| Laravel utility | Status in Avalon |
+| Laravel utility | Status in Almasix |
 | --- | --- |
 | **Benchmarking** (`Benchmark::dd`) | Not built. Time code with `time.perf_counter` or your profiler. |
-| **Dates** (`Carbon`) | Not built as a wrapper. Avalon returns `datetime` / `date` from `now()` and `today()`, and the ORM casts to them; Python's `datetime` and `zoneinfo` cover what Carbon does. |
+| **Dates** (`Carbon`) | Not built as a wrapper. Almasix returns `datetime` / `date` from `now()` and `today()`, and the ORM casts to them; Python's `datetime` and `zoneinfo` cover what Carbon does. |
 | **Deferred functions** (`defer`) | Not built. Queue a job instead — see [Queues](/queues/). |
 | **Lottery** (`Lottery::odds`) | Not built. |
 | **Pipeline** (`Pipeline::send`) | Not built as a public utility, though the HTTP kernel runs middleware as a pipeline internally. |
@@ -2977,4 +2977,4 @@ a gap you have to discover:
 
 - [Strings](/strings/) — `Str`, `Stringable`, `str_()`
 - [Collections](/collections/) — `collect()`
-- [Views](/views/) — `view()`, `csrf_field()`, and the Caliburn directives
+- [Views](/views/) — `view()`, `csrf_field()`, and the Prism directives

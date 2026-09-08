@@ -1,25 +1,25 @@
 ---
 title: Views
-description: Render HTML with Caliburn from controllers and routes.
+description: Render HTML with Prism from controllers and routes.
 ---
 
-Views separate your controller from HTML. Avalon's view engine is **Caliburn** — templates compiled to Python (`.cal.html`).
+Views separate your controller from HTML. Almasix's view engine is **Prism** — templates compiled to Python (`.prism.html`).
 
 ## Creating and returning views
 
 ```python
 # app/http/controllers/welcome_controller.py
-from avalon.caliburn import view
+from almasix.prism import view
 
 
 async def index(self):
-    return view("welcome", {"title": "Avalon"})
+    return view("welcome", {"title": "Almasix"})
 ```
 
-Templates live under `resources/views`. Dots map to directories: `view("posts.show")` → `resources/views/posts/show.cal.html`.
+Templates live under `resources/views`. Dots map to directories: `view("posts.show")` → `resources/views/posts/show.prism.html`.
 
 ```html
-<!-- resources/views/welcome.cal.html -->
+<!-- resources/views/welcome.prism.html -->
 @extends("layouts.app")
 
 @section("content")
@@ -29,7 +29,7 @@ Templates live under `resources/views`. Dots map to directories: `view("posts.sh
 
 ## Passing data
 
-The second argument to `view()` is a dict of template data. Helpers such as `url`, `asset`, `e`, and `__` are injected automatically for Caliburn templates.
+The second argument to `view()` is a dict of template data. Helpers such as `url`, `asset`, `e`, and `__` are injected automatically for Prism templates.
 
 ## Escaping
 
@@ -42,15 +42,15 @@ The second argument to `view()` is a dict of template data. Helpers such as `url
 
 ## Deep dive
 
-This Basics page is the entry point. Full Caliburn documentation lives in its own section:
+This Basics page is the entry point. Full Prism documentation lives in its own section:
 
-- [Caliburn](/caliburn/) — overview
-- [Rendering Views](/caliburn/rendering/)
-- [Layouts & Inheritance](/caliburn/layouts/)
-- [Components & Slots](/caliburn/components/)
-- [Control Structures](/caliburn/control/)
-- [Including Subviews](/caliburn/includes/)
-- [Stacks & Directives](/caliburn/stacks/)
+- [Prism](/prism/) — overview
+- [Rendering Views](/prism/rendering/)
+- [Layouts & Inheritance](/prism/layouts/)
+- [Components & Slots](/prism/components/)
+- [Control Structures](/prism/control/)
+- [Including Subviews](/prism/includes/)
+- [Stacks & Directives](/prism/stacks/)
 
 ## Related
 

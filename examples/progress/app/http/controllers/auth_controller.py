@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from avalon.auth import auth
-from avalon.caliburn import view
-from avalon.hashing import Hash
-from avalon.http import Controller, Request, Response, redirect
-from avalon.routing import url
-from avalon.translation import __
+from almasix.auth import auth
+from almasix.prism import view
+from almasix.hashing import Hash
+from almasix.http import Controller, Request, Response, redirect
+from almasix.routing import url
+from almasix.translation import __
 
 
 class AuthController(Controller):
@@ -43,7 +43,7 @@ class AuthController(Controller):
             else (user.get("name") if isinstance(user, dict) else getattr(user, "name", email))
         )
         request.session.flash("status", f"Signed in as {name}.")
-        from avalon.auth.guard import pull_intended_url
+        from almasix.auth.guard import pull_intended_url
 
         return redirect(pull_intended_url("/"))
 
@@ -59,7 +59,7 @@ class AuthController(Controller):
         )
 
     async def confirm(self, request: Request) -> Response:
-        from avalon.auth.middleware import mark_password_confirmed
+        from almasix.auth.middleware import mark_password_confirmed
 
         password = str(request.input("password") or "")
         user = auth().user()

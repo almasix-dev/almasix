@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from avalon.cache import CacheManager, set_manager
-from avalon.console.commands.queue_failed import QueueFailedCommand, QueueRetryCommand
-from avalon.console.commands.storage_link import StorageLinkCommand
-from avalon.console.mutex import Mutex
-from avalon.console.scheduling import Event, Schedule, _cron_matches, _field_matches, run_event
-from avalon.framework.application import Application
-from avalon.queue.helpers import default_queue_config, set_manager as set_queue_manager
-from avalon.queue.manager import QueueManager
+from almasix.cache import CacheManager, set_manager
+from almasix.console.commands.queue_failed import QueueFailedCommand, QueueRetryCommand
+from almasix.console.commands.storage_link import StorageLinkCommand
+from almasix.console.mutex import Mutex
+from almasix.console.scheduling import Event, Schedule, _cron_matches, _field_matches, run_event
+from almasix.framework.application import Application
+from almasix.queue.helpers import default_queue_config, set_manager as set_queue_manager
+from almasix.queue.manager import QueueManager
 
 
 def test_schedule_frequencies_filters_and_command_runner(tmp_path: Path) -> None:
@@ -113,7 +113,7 @@ def test_queue_failed_empty_and_retry_non_database(tmp_path: Path) -> None:
     from unittest.mock import AsyncMock, patch
 
     with patch(
-        "avalon.console.commands.queue_failed.FailedJobRepository.all",
+        "almasix.console.commands.queue_failed.FailedJobRepository.all",
         new_callable=AsyncMock,
         return_value=[],
     ):

@@ -18,16 +18,16 @@ from uuid import uuid4
 
 import pytest
 
-from avalon.cache.helpers import set_manager as set_cache_manager
-from avalon.console.commands.docs import DOCS_URL_VARIABLE
-from avalon.console.commands.queue_failed import QueueFailedCommand
-from avalon.console.kernel import ConsoleKernel
-from avalon.console.output import Output
-from avalon.events.facade import Event
-from avalon.orm.facade import DB
-from avalon.queue import Job, ShouldQueue, ensure_tables
-from avalon.queue.failed import FailedJobRepository
-from avalon.queue.manager import QueueManager
+from almasix.cache.helpers import set_manager as set_cache_manager
+from almasix.console.commands.docs import DOCS_URL_VARIABLE
+from almasix.console.commands.queue_failed import QueueFailedCommand
+from almasix.console.kernel import ConsoleKernel
+from almasix.console.output import Output
+from almasix.events.facade import Event
+from almasix.orm.facade import DB
+from almasix.queue import Job, ShouldQueue, ensure_tables
+from almasix.queue.failed import FailedJobRepository
+from almasix.queue.manager import QueueManager
 
 Build = Callable[..., ConsoleKernel]
 
@@ -519,7 +519,7 @@ def test_docs_says_the_documentation_site_is_not_published_yet(
     assert kernel.run_argv("docs", []) == 0
 
     out = capsys.readouterr().out
-    assert "Avalon's documentation site is not published yet." in out
+    assert "Almasix's documentation site is not published yet." in out
     assert "website/src/content/docs/" in out
     assert DOCS_URL_VARIABLE in out
     assert urls == []

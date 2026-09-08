@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from app.http.requests.store_item_request import StoreItemRequest
 
-from avalon.config import ConfigRepository
-from avalon.http import (
+from almasix.config import ConfigRepository
+from almasix.http import (
     Controller,
     HttpException,
     NotFoundHttpException,
@@ -88,7 +88,7 @@ class DemoController(Controller):
         raise RuntimeError("Intentional demo failure")
 
     async def dump_demo(self) -> dict[str, str]:
-        from avalon import dd
+        from almasix import dd
 
         dd({"milestone": "M9", "helper": "dd()"}, ["api", "json", "halt"])
         return {}  # pragma: no cover — dd() never returns

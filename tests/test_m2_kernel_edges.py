@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from avalon.framework import Application
-from avalon.http import Controller, Middleware, Request
-from avalon.routing import Route, set_router
+from almasix.framework import Application
+from almasix.http import Controller, Middleware, Request
+from almasix.routing import Route, set_router
 from tests.support import purge_generated_app_modules
 
 
@@ -78,15 +78,15 @@ def test_callable_and_string_actions(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
 
 def test_http_exception_status_override() -> None:
-    from avalon.http import HttpException
+    from almasix.http import HttpException
 
     exc = HttpException("x", status_code=418)
     assert exc.status_code == 418
 
 
 def test_kernel_invalid_action_and_middleware() -> None:
-    from avalon.http.kernel import HttpKernel
-    from avalon.routing import Router
+    from almasix.http.kernel import HttpKernel
+    from almasix.routing import Router
 
     app = Application()
     kernel = HttpKernel(app, Router())
@@ -171,4 +171,4 @@ def test_request_json_and_form(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert client.post("/json", content=b"not-json", headers={"content-type": "application/json"}).json() == {
         "json": None
     }
-    assert client.post("/form", data={"name": "avalon"}).json() == {"name": "avalon"}
+    assert client.post("/form", data={"name": "almasix"}).json() == {"name": "almasix"}
