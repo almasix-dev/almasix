@@ -51,9 +51,9 @@ jobs:
         run: npm run build
 
       # The site is served from a subpath. Starlight rewrites its own navigation
-      # for `base`, but Markdown-authored links are prefixed by a post-build
-      # step; if that ever stops running, every cross-reference 404s in
-      # production while the build still looks green. Fail loudly instead.
+      # for `base`, but Markdown-authored links are prefixed by src/middleware.ts
+      # while rendering; if that ever stops running, every cross-reference 404s
+      # in production while the build still looks green. Fail loudly instead.
       - name: Every internal link is under the base path
         run: |
           stray=$(grep -rhoE '(href|src)="/[^"]*"' --include='*.html' dist \

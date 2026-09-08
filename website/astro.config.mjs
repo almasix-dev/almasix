@@ -5,8 +5,8 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
 // GitHub Pages serves this repo's site from a subpath, not the domain root.
-// Markdown-authored links like `/queues/` are prefixed with this after the
-// build by scripts/prefix-base-links.mjs — keep the two in step.
+// Markdown-authored links like `/queues/` are prefixed with this while
+// rendering, by src/middleware.ts.
 const base = '/almasix';
 
 // https://astro.build/config
