@@ -565,6 +565,26 @@ pytest -q tests/test_m41_*.py tests/smoke/test_m41_smoke.py
 
 ---
 
+## M49 — Support Collections exhaust
+
+```bash
+pytest -q tests/test_m49_*.py tests/smoke/test_m49_smoke.py
+```
+
+### M49 exit criteria
+
+- [x] Method Listing closed: `average`, `dd`, `dump`, and `lazy` were the remaining gaps
+- [x] Higher order messages: the 24 documented methods answer both forms — a callable member is invoked, anything else is read, including mapping keys and model attributes; filtering methods use the member as a predicate
+- [x] An empty collection answers either form rather than deciding which one crashes
+- [x] `LazyCollection` over an iterable or generator function, with the whole chainable surface and `remember()` for a second pass
+- [x] `AsyncLazyCollection` over an async source with awaited terminals, returned by `Model.cursor()` / `lazy()` / `lazy_by_id()`; `async for` over them unchanged
+- [x] Lazy-only methods: `take_until_timeout` (seconds or a datetime), `tap_each`, `throttle`, `with_heartbeat`; pauses honoured through later operations and in the pipeline tail
+- [x] Named deviation: operations needing every item (sorting, grouping) are absent from lazy collections; `collect()` materialises
+- [x] `collections` documented as a section per method, alphabetically, plus Keys / Creating / Extending / Higher order messages / Lazy collections. The smoke contract fails if a public method loses its section or a section names a method that does not exist
+- [x] 100% line and branch coverage on `avalon.support.collection` and `avalon.support.lazy`
+
+---
+
 ## Out of scope until later milestones
 
 - Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)

@@ -316,7 +316,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Avalon as fol
 
 | Laravel | Avalon docs slug (target) | Milestone | Docs action |
 | --- | --- | --- | --- |
-| Collections | `collections` | Support Collections, **M49** | Code 149/155; **docs gap** — one page, not a section per method |
+| Collections | `collections` | Support Collections, **M49** | **Done** — 155/155 methods, lazy collections, a section per method |
 | Localization | `localization` | **M4** (code **Done**) | **Docs gap** — write Starlight Localization page (code already exhausted) |
 | Helpers | `helpers` | **M14**, **M50** | Code short (`Arr` 42/57, `Number` 17/20); **docs gap** — no section per method |
 | Strings | `strings` | **M14**, **M50** | `Str` 80/87, `Stringable` 27/117; **docs gap** — no section per method |
@@ -1471,10 +1471,12 @@ Scheduled on 2026-09-08 after an audit of Laravel's Collections, Helpers, and St
 
 Laravel [Collections](https://laravel.com/docs/collections) — 155 methods on the Method Listing plus the Lazy Collections section.
 
-- **Missing methods:** `average` (the documented alias of `avg`), `dd`, `dump`, `lazy`
-- **`LazyCollection`** — the whole deferred section: construction from a generator, the `Enumerable` contract shared with `Collection`, and the lazy-only `take_until_timeout`, `tap_each`, `throttle`, `remember`, `with_heartbeat`. The plan deferred this explicitly ("until a streaming consumer needs it"); M40's `cursor` / `lazy` / `lazy_by_id` are that consumer, and they currently return plain async iterators rather than a chainable lazy collection
-- **Higher-order messages** — `collection.each.method()`, `collection.map.name`, and the rest of Laravel's proxied set
-- **Docs:** rewrite `collections` to a section per method (155 sections), plus Introduction, Creating Collections, Extending Collections, Higher Order Messages, and Lazy Collections, in Laravel's order. Keep the Articulate pointer, since `orm.Collection` extends this one
+- ~~**Missing methods:** `dd`, `dump`, `lazy` (`average` turned out to be a pre-existing alias of `avg`, so the audit's count of 149 was one generous)~~ **shipped (part 1)**
+- ~~**`LazyCollection`** — construction from an iterable or generator, the chainable surface, and the lazy-only `take_until_timeout`, `tap_each`, `throttle`, `remember`, `with_heartbeat`~~ **shipped (part 2)** — plus `AsyncLazyCollection`, since reading a row is awaited; `Model.cursor()` / `lazy()` / `lazy_by_id()` now return one, which is the streaming consumer this was deferred for
+- ~~**Higher-order messages** — `collection.each.method()`, `collection.map.name`, and the rest of Laravel's proxied set~~ **shipped (part 1)** — all 24, with the callable-or-value decision made by inspecting the items, since Python cannot tell a property read from a method call at the call site
+- ~~**Docs:** rewrite `collections` to a section per method (155 sections), plus Keys, Creating Collections, Extending Collections, Higher Order Messages, and Lazy Collections~~ **shipped (part 3)** — 2,800 lines against the old 140, and a smoke contract that fails if a public method loses its section or a section names a method that does not exist
+
+**Named deviation:** operations needing every item at once (sorting, grouping) are absent from lazy collections rather than faked; `collect()` materialises an eager collection.
 
 **Depends on:** nothing — the code gaps are small and self-contained. Sequence the docs rewrite alongside, since it is the larger share.
 
@@ -1541,6 +1543,8 @@ Scheduled on 2026-09-08: the support and reference-page exhaust track (**M49–M
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Caliburn deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 
 **M40–M44 (Articulate + Database exhaust) outrank M33–M39 in priority.** The 2026-09-08 audit found the ORM and database surface materially short of Laravel's Database and Eloquent sections, and every application touches it — so the ORM track should be sequenced ahead of routing sugar, starter kits, and deployment docs, whatever their numbers say.
+
+**M49 Support Collections exhaust gate met** — the Method Listing is closed, higher order messages answer both forms, lazy collections stream over sync and async sources and back the ORM's `cursor` / `lazy` reads, and the page documents all 155 methods a section at a time with a smoke contract keeping it that way.
 
 **M31 and M49–M50 came out of the 2026-09-08 reference-page audit.** Task scheduling is at 8 of 82 documented methods with a 55-line page against Laravel's 635 — the widest gap left in the framework. Collections are nearly complete in code (149/155) but documented as a table rather than 155 sections; helpers and strings are short on both counts (`Stringable` 27/117 is the worst of it). Sequence M49 and M50 opportunistically — they need no predecessors — and M31 after M30, which owns the command surface it registers into.
 
