@@ -179,6 +179,8 @@ Start as **one installable `avalon`**. When Caliburn, kits, filesystem drivers, 
 
 Do **not** rename the project to `avalon_framework`. “Framework” is the `avalon.framework` subpackage.
 
+**Distribution name (open, scheduled with M38):** the *import* namespace is `avalon` and stays that way. The *distribution* name cannot be, because `avalon` on PyPI is already taken by an unrelated placeholder project (“Real-time web framework”, Development Status :: 1 - Planning). Python routinely separates the two (`python-dotenv` imports `dotenv`), so the release milestone picks a distribution name and `pip install <name>` continues to give app code `import avalon`. Until then the README installs from Git and carries no PyPI badges, because there is nothing honest to point at.
+
 **Rules:**
 
 - Core happy path must not require Caliburn; API apps never import `avalon.caliburn`
@@ -1310,22 +1312,24 @@ Laravel [Deployment](https://laravel.com/docs/deployment) — how an Avalon app 
 - `optimize` / cache-warm story tied to M30's commands; health check endpoint conventions
 - Env / secret handling, log shipping, migration + queue worker deployment notes, container example
 - Docs: Starlight **Deployment**
+- **Releasing Avalon itself** (scheduled 2026-09-08): settle the distribution name per the Ecosystem growth note above, tag `v0.x`, and publish from CI with PyPI trusted publishing. Then the README's install instructions drop the Git direct reference, and the version badge moves from reading `pyproject.toml` to `pypi/v` with `pypi/dm` downloads beside it — the two badges deliberately absent today.
 
 **Depends on:** M30 (optimize commands), M11 (workers), M34 (headers behind a proxy).
 
-**Gate:** documented and reproducible for at least one container + one bare-metal path; `--workers` shipped.
+**Gate:** documented and reproducible for at least one container + one bare-metal path; `--workers` shipped; `pip install <distribution>` gives a working `import avalon` from PyPI.
 
 ### M39 — Docs site: versioning + Prologue
 
 The documentation-site commitments from the Documentation decision above, promoted out of "Later".
 
+- **Publish the site** (scheduled 2026-09-08): `astro.config.mjs` already points at `https://coolsam726.github.io/avalon`, but nothing deploys there and the URL 404s, so `make docs` on localhost is the only way to read the documentation. Wanted: a Pages workflow that builds `website/` and deploys on pushes to `main`, with the repository's Pages source set to GitHub Actions. Then the README's docs badge links to the live site instead of the Markdown sources, and the docs stop being a repository-only artifact.
 - Major-version switching (`1.x` / `2.x`) on the Starlight site
 - **Prologue** sidebar group: Release Notes / Changelog, Upgrade Guide, orientation pages
 - Changelogs and upgrade guides authored as docs content, not only GitHub Releases prose
 
-**Depends on:** nothing in code; wants a first tagged release to be meaningful.
+**Depends on:** nothing in code; versioning wants a first tagged release (**M38**) to be meaningful, but publishing the site does not and can land first.
 
-**Gate:** a reader can open docs for the major they run; Prologue published and maintained per release.
+**Gate:** the documentation is readable at a public URL without cloning; a reader can open docs for the major they run; Prologue published and maintained per release.
 
 ### M40 — Articulate model exhaust (Eloquent parity)
 
@@ -1527,6 +1531,8 @@ Everything that had a foreseeable shape has been promoted to **M30–M50** above
 Promoted in this pass: console exhaust (**M30**), scheduler exhaust (**M31**), interactive installer + stacks (**M32**), router DX and named routes (**M33**), security headers + CORS (**M34**), rate limiting (**M35**), starter kits (**M36**), tokens / OAuth / social auth (**M37**), deployment (**M38**), docs versioning + Prologue (**M39**), plus the docs track above.
 
 Scheduled on 2026-09-08: the support and reference-page exhaust track (**M49–M50**) — Collections, then Helpers / `Str` / `Stringable`, code and per-method docs together. Also scheduled the same day: the IDE and editor tooling track (**M45–M48**) — Caliburn language support, the Avalon language server, editor integrations and type stubs, and AI agent support. It is written down with gates rather than left as a wish, but deliberately sequenced last: tooling indexes the framework's vocabulary, and that vocabulary is still moving until the parity milestones close.
+
+Also scheduled on 2026-09-08, out of the README pass: publishing the documentation site to GitHub Pages (**M39**) and releasing Avalon to PyPI under a distribution name that is actually available (**M38**, with the naming constraint recorded under Ecosystem growth). Both are gaps the README could not honestly paper over — no docs URL, no PyPI badges — so they are milestones now rather than README footnotes.
 
 ## Quality bar for “solid core”
 
