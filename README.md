@@ -11,21 +11,15 @@
 </p>
 
 <p align="center">
-  <a href="pyproject.toml"><img alt="version" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Falmasix-dev%2Falmasix%2Fmain%2Fpyproject.toml&query=%24.project.version&style=flat-square&label=version&prefix=v&color=4c1d95"></a>
+  <a href="https://pypi.org/project/almasix/"><img alt="PyPI" src="https://img.shields.io/pypi/v/almasix?style=flat-square&label=pypi&color=4c1d95"></a>
+  <a href="https://pypi.org/project/almasix/"><img alt="downloads" src="https://img.shields.io/pypi/dm/almasix?style=flat-square&color=4c1d95"></a>
   <a href="https://github.com/almasix-dev/almasix/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/almasix-dev/almasix/ci.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white"></a>
-  <a href="docs/SMOKE.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-99%25-31c48d?style=flat-square&logo=codecov&logoColor=white"></a>
-  <a href="tests"><img alt="tests" src="https://img.shields.io/badge/tests-1%2C886-31c48d?style=flat-square&logo=pytest&logoColor=white"></a>
-  <a href="pyproject.toml"><img alt="python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?style=flat-square&logo=python&logoColor=white"></a>
-  <a href="website/src/content/docs"><img alt="docs" src="https://img.shields.io/badge/docs-53%20pages-bc52ee?style=flat-square&logo=astro&logoColor=white"></a>
-  <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/almasix-dev/almasix?style=flat-square&color=0f766e"></a>
+  <a href="https://github.com/almasix-dev/almasix/blob/main/docs/SMOKE.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-99%25-31c48d?style=flat-square&logo=codecov&logoColor=white"></a>
+  <a href="https://github.com/almasix-dev/almasix/tree/main/tests"><img alt="tests" src="https://img.shields.io/badge/tests-2%2C301-31c48d?style=flat-square&logo=pytest&logoColor=white"></a>
+  <a href="https://pypi.org/project/almasix/"><img alt="python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?style=flat-square&logo=python&logoColor=white"></a>
+  <a href="https://almasix-dev.github.io/almasix"><img alt="docs" src="https://img.shields.io/badge/docs-54%20pages-bc52ee?style=flat-square&logo=astro&logoColor=white"></a>
+  <a href="https://github.com/almasix-dev/almasix/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/almasix-dev/almasix?style=flat-square&color=0f766e"></a>
 </p>
-
-<!--
-  Almasix is not published to PyPI yet — the `almasix` name there belongs to an unrelated placeholder
-  project. Once a release name is settled, add the release/download badges here:
-    https://img.shields.io/pypi/v/<name>?style=flat-square
-    https://img.shields.io/pypi/dm/<name>?style=flat-square
--->
 
 ## Why Almasix
 
@@ -138,12 +132,9 @@ schedule.command("model:prune").daily().on_one_server()
 
 ### Create an application
 
-Almasix is not on PyPI yet — the `almasix` name there belongs to an unrelated project — so install it
-from Git:
-
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install "almasix @ git+https://github.com/almasix-dev/almasix.git"
+pip install almasix
 
 almasix new blog
 cd blog
