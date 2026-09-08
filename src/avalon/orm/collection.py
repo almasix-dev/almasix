@@ -12,6 +12,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from avalon.support.collection import Collection as SupportCollection
+from avalon.support.collection import install_higher_order
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from avalon.orm.builder import QueryBuilder
@@ -223,3 +224,8 @@ def _flatten(keys: tuple[Any, ...]) -> list[Any]:
         else:
             flat.append(key)
     return flat
+
+
+# The overrides below (`contains`, `unique`) must keep answering higher order
+# messages, so wrap this class's own methods too.
+install_higher_order(Collection)
