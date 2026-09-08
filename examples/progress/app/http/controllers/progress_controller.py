@@ -72,7 +72,7 @@ def _milestones() -> list[dict]:
                 "GET /api/orm feature tour",
                 "eager load / soft deletes / pivot / morphs",
                 "smith migrate / make:model",
-                "ladder shipped — query builder + schema owed by M42/M43",
+                "query builder exhausted in M42 — schema owed by M43",
             ],
         },
         {
@@ -421,11 +421,13 @@ def _milestones() -> list[dict]:
         {
             "id": "M42",
             "name": "Query builder + database exhaust",
-            "status": "next",
+            "status": "complete",
             "proof": [
-                "unions · locking · JSON wheres",
-                "read/write connections · DB.listen",
-                "db:show / db:table / db:monitor",
+                "smith progress:queries",
+                "JSON wheres + JSON updates · unions · locking",
+                "join_sub / join_lateral · sole · implode",
+                "read/write + sticky · DB.listen · DB.pretend",
+                "smith db · db:show / db:table / db:monitor",
             ],
         },
         {

@@ -758,6 +758,35 @@ pytest -q tests/test_m41_*.py tests/smoke/test_m41_smoke.py
 
 ---
 
+## M42 — Query builder + database layer exhaust
+
+```bash
+pytest -q tests/test_m42_*.py tests/smoke/test_m42_smoke.py
+cd examples/progress && python smith progress:queries
+```
+
+### M42 exit criteria
+
+- [x] Where clauses: `where_not`, `where_any` / `where_all` / `where_none`, `where_in` with a subquery, `where_integer_in_raw`, `where_null_safe_equals`, `where_between_columns` / `where_value_between`, `where_column`, `where_like` with portable case sensitivity, and the `or_` twin of each
+- [x] Date helpers: `where_date` / `where_month` / `where_day` / `where_year` / `where_time`, and `where_past` / `where_future` / `where_now_or_*` / `where_today` / `where_before_today` / `where_after_today` / `where_today_or_*`
+- [x] JSON: reading with Laravel's arrow syntax, `where_json_contains` / `doesnt_contain`, `where_json_contains_key`, `where_json_length`, and updating a path without disturbing the rest of the document
+- [x] Existence and subqueries: `where_exists` / `where_not_exists`, a subquery on either side of a comparison, `select_sub` / `add_select_sub` / `order_by_sub`, and correlation against the outer table
+- [x] Engine-specific clauses in one grammar module: full text (MySQL/MariaDB `MATCH … AGAINST`, PostgreSQL `to_tsvector`), vector distance (pgvector `<=>`, MariaDB `VEC_DISTANCE_COSINE`), JSON containment three ways; an engine without the operation raises `UnsupportedByDialectError`
+- [x] Joins: closure join clauses with `on` / `or_on` and the where family, `join_sub` / `left_join_sub` / `right_join_sub` / `cross_join_sub`, `join_lateral` / `left_join_lateral`, `from_sub`; `right_join` compiles as the equivalent left join
+- [x] Unions, ordering and paging applied to the combined result, pessimistic locking (`lock_for_update` / `shared_lock` / `lock`), `order_by_raw` / `group_by_raw` / `having_raw` / `having_between`, `reorder_desc`
+- [x] Writes: `insert_or_ignore`, `insert_using`, `update_or_insert`, `increment_each` / `decrement_each`, `truncate` with the counter reset, `delete(key)`
+- [x] Reads and components: `sole` (with `MultipleRecordsFoundError`), `implode`, `average`, `pipe`, `tap`, `with_attributes` seeding what a scoped query creates
+- [x] Debugging: `to_sql` leaves placeholders, `to_raw_sql` writes values in, `get_bindings`, `dump` / `dump_raw_sql` / `dd` / `dd_raw_sql`
+- [x] Database layer: read/write connections with `sticky`, `DB.select` / `select_one` / `scalar` / `insert` / `update` / `delete` / `statement` / `unprepared`, `DB.listen`, `when_querying_for_longer_than` with `total_query_duration`, `DB.pretend`
+- [x] Transactions: the block form, the callable form with deadlock retries, manual `begin_transaction` / `commit` / `rollback` with SAVEPOINT nesting, `transaction_level`, and `after_commit` (which runs now outside a transaction and is discarded on rollback)
+- [x] Pooled connections: a `direct` block is used by schema work, `db:show` / `db:table` / `db:monitor`, and `db`
+- [x] `db` opens the engine's own client (`sqlite3`, `mysql`, `psql`, `sqlcmd`), takes `--read` / `--write` / `--pooled`, and says which client it looked for when one is missing
+- [x] `database/index` and `database/queries` rewritten in the Laravel section order
+- [x] Living example: `smith progress:queries`; the board marks M42 complete
+- [x] 100% line and branch coverage on `almasix.orm.builder`, `almasix.orm.connection`, `almasix.orm.facade`, `almasix.orm.grammar`, and `almasix.console.commands.db`
+
+---
+
 ## M49 — Support Collections exhaust
 
 ```bash

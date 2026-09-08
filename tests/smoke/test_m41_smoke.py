@@ -82,7 +82,7 @@ def test_m41_board_marks_relationships_complete(progress_client: TestClient) -> 
     assert by_id["M40"]["status"] == "complete"
     assert by_id["M41"]["status"] == "complete"
     assert by_id["M41"]["name"] == "Relationship exhaust"
-    assert by_id["M42"]["status"] == "next"
+    assert by_id["M42"]["status"] == "complete"
 
 
 def test_m41_board_covers_every_planned_milestone(progress_client: TestClient) -> None:

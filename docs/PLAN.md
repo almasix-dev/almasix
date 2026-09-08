@@ -3,8 +3,8 @@
 > **Status:** Binding. This document is the source of truth for architecture and milestones.
 > Change it deliberately (PR / explicit decision), not casually mid-implementation.
 > Last aligned: 2026-09-08 (M0–M20 complete except **M5 Articulate ORM**, still partial;
-> exhaust milestones M30/M31, M40/M41 and M49/M50 landed; **M42 — Query builder + database
-> exhaust** is next).
+> exhaust milestones M30/M31, M40–M42 and M49/M50 landed; **M43 — Schema, migrations, and
+> pagination exhaust** is next).
 
 ## Working identity
 
@@ -774,7 +774,9 @@ Eloquent-shaped Active Record on SQLAlchemy Core — see the ORM decision above 
 
 **Shipped since, by M40 (Articulate model exhaust):** modern casting (`Attribute` accessors, custom / inbound casts, `encrypted*`, `hashed`, enum collections, immutable-date aliases, per-attribute date formats, query-time casts); serialization controls (`append` / `merge_appends` / `set_appends` / `without_appends`, `merge_hidden` / `merge_visible`, `serialize_date`); Eloquent collection methods keyed by model (`find`, `fresh`, `to_query`, `only` / `except_` / `diff` / `intersect` / `unique`) and custom collection classes; UUID / ULID keys, strictness config, `unguarded`, `without_timestamps`, quiet writes, pruning + `model:prune`, streaming cursors and `lazy` / `chunk_by_id`.
 
-**Still not exhausted — owed by M42–M44** (M41 closed the relationship items): query builder gaps (unions, pessimistic locking, JSON wheres, `where_exists` / subquery wheres, `where_not`, `where_any/all/none`, `where_time`, full-text, join subqueries, raw ordering/grouping, `insert_or_ignore`, `update_or_insert`, `increment_each`, `truncate`, `dd` / `dump` debugging); database layer gaps (read/write connections + sticky, query event listening, cumulative query-time monitoring, `DB.insert/update/delete/unprepared/scalar/pretend`, manual transactions, deadlock retries, `after_commit`, `db:show` / `db:table` / `db:monitor` / `db:wipe`); schema gaps (column alteration, `Schema.rename`, dropping indexes / foreign keys, schema inspection, ~25 column types, ~10 modifiers, `migrate:reset` / `migrate:refresh`, `--pretend` / `--step` / `--path` / `--force`, squashing); and pagination gaps (cursor pagination, URL-aware paginators, rendered link views).
+**Shipped since, by M42 (Query builder + database exhaust):** the where families (JSON paths, dates, `where_not`, `where_any/all/none`, existence and subquery wheres, full text, vectors), joins through closures and subqueries and laterals, unions, pessimistic locking, raw ordering and grouping, `insert_or_ignore` / `insert_using` / `update_or_insert` / `increment_each` / `truncate` / JSON column updates, `sole` / `implode`, `pipe` and `with_attributes`, `to_sql` / `to_raw_sql` / `dump` / `dd`; and under them read/write connections with `sticky`, `DB.listen` and cumulative query-time monitoring, `DB.insert/update/delete/unprepared/scalar/pretend`, manual transactions with deadlock retries and `after_commit`, pooled connections with a direct twin, and the `db` CLI shell.
+
+**Still not exhausted — owed by M43–M44**: schema gaps (column alteration, `Schema.rename`, dropping indexes / foreign keys, schema inspection, ~25 column types, ~10 modifiers, `migrate:reset` / `migrate:refresh`, `--pretend` / `--step` / `--path` / `--force`, squashing); and pagination gaps (cursor pagination, URL-aware paginators, rendered link views).
 
 ### M6 — Prism (`almasix.prism`)
 
@@ -1422,14 +1424,16 @@ Laravel [Eloquent: Relationships](https://laravel.com/docs/eloquent-relationship
 
 Laravel [Database: Getting Started](https://laravel.com/docs/database) and [Query Builder](https://laravel.com/docs/queries).
 
-- **Query builder:** scoped relationships (`with_attributes`, inherited from M41); unions (`union` / `union_all`); pessimistic locking (`lock_for_update` / `shared_lock`); JSON where clauses; `where_exists` / subquery wheres; `where_not`; `where_any` / `where_all` / `where_none`; `where_time` and the date-helper family; full-text wheres; join subqueries and closure join clauses; `order_by_raw` / `group_by_raw` / `having_between`; `insert_or_ignore` / `insert_using`; `update_or_insert`; JSON column updates; `increment_each` / `decrement_each`; `truncate`; `lazy` / `lazy_by_id` / `chunk_by_id`; debugging (`dd` / `dump` / `dump_raw_sql`); reusable query components
-- **Database layer:** read / write connections with the `sticky` option; query event listening (`DB.listen`) and cumulative query-time monitoring; `DB.insert` / `update` / `delete` / `unprepared` / `scalar` / `pretend`; manual transactions (`begin` / `commit` / `rollback`), deadlock retries (`transaction(cb, attempts)`), and `after_commit`
-- **Commands:** `db:show`, `db:table`, `db:monitor`, `db:wipe`, and a `db` CLI shell (these are the database half of M30's built-in catalogue)
-- Docs: rewrite `database/index` and `database/queries` to the Laravel section order
+- ~~**Query builder:** scoped relationships (`with_attributes`, inherited from M41); unions (`union` / `union_all`); pessimistic locking (`lock_for_update` / `shared_lock`); JSON where clauses; `where_exists` / subquery wheres; `where_not`; `where_any` / `where_all` / `where_none`; `where_time` and the date-helper family; full-text wheres; join subqueries and closure join clauses; `order_by_raw` / `group_by_raw` / `having_between`; `insert_or_ignore` / `insert_using`; `update_or_insert`; JSON column updates; `increment_each` / `decrement_each`; `truncate`; `lazy` / `lazy_by_id` / `chunk_by_id`; debugging (`dd` / `dump` / `dump_raw_sql`); reusable query components~~ **shipped (parts 1–3)** — plus the pieces the page implies: `select_sub` / `order_by_sub`, lateral joins, `from_sub`, `sole`, `implode`, `pipe`, `where_like` with portable case sensitivity, and `to_sql` / `to_raw_sql` split the way Laravel splits them. Dialect-specific SQL (JSON containment, full text, vectors) lives in `almasix.orm.grammar`, one compiler per engine, and an engine that cannot do the work raises rather than compiling something that means something else
+- ~~**Database layer:** read / write connections with the `sticky` option; query event listening (`DB.listen`) and cumulative query-time monitoring; `DB.insert` / `update` / `delete` / `unprepared` / `scalar` / `pretend`; manual transactions (`begin` / `commit` / `rollback`), deadlock retries (`transaction(cb, attempts)`), and `after_commit`~~ **shipped (part 4)** — plus pooled connections with a `direct` twin, which schema work and the introspection commands use without being asked
+- ~~**Commands:** `db:show`, `db:table`, `db:monitor`, `db:wipe`, and a `db` CLI shell (these are the database half of M30's built-in catalogue)~~ **shipped (part 4)** — `db` hands you the engine's own client rather than reimplementing a SQL shell
+- ~~Docs: rewrite `database/index` and `database/queries` to the Laravel section order~~ **shipped (part 5)**
+
+**Named deviations:** SQLite has no row locks, so a lock clause is dropped rather than faked; full-text and vector clauses raise `UnsupportedByDialectError` on engines without them; `right_join` compiles as the left join that returns the same rows, which works on every engine including SQLite before 3.39.
 
 **Depends on:** M5, M30 (command surface for the `db:*` commands), M16 Redis nice-to-have for monitoring output.
 
-**Gate:** both pages exhausted or deviations named; docs published.
+**Gate met:** both pages exhausted or deviations named; docs published; `almasix.orm.builder`, `almasix.orm.connection`, `almasix.orm.facade`, `almasix.orm.grammar`, and the `db` command at 100% statements and branches; `smith progress:queries` demonstrates the surface.
 
 ### M43 — Schema, migrations, and pagination exhaust
 
@@ -1620,6 +1624,8 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 **M40 Articulate model exhaust gate met** — casting overhaul, serialization controls, Eloquent collections, UUID/ULID keys, strictness, quiet writes, pruning, and cursor/chunk iteration.
 
 **M41 Relationship exhaust gate met** — one-of-many, default models, chaperone, the existence-query family including morph variants, aggregates and their deferred twins, pivot models with `using` / `as_` / timestamps / filtering, morph maps, `touches`, and the relation write helpers. All five parts have shipped: one-of-many and default models, existence queries, aggregates, pivots and morph maps and `touches`, and the docs rewrite that closed the page with `push`, `where_belongs_to`, dynamic relations, and `load_morph`. The two sections Almasix does not implement are named in the docs.
+
+**M42 Query builder + database exhaust gate met** — the where families down to JSON paths and date helpers, joins through closures and subqueries and laterals, unions, pessimistic locking, the write family (`insert_or_ignore`, `insert_using`, `update_or_insert`, `increment_each`, `truncate`, JSON column updates), `sole` / `implode` / `pipe` / `with_attributes`, and the debugging pair. Underneath: read/write connections with `sticky`, `DB.listen` and a cumulative query-time budget, pretend mode, manual transactions with deadlock retries and `after_commit`, pooled connections with a direct twin, and `db`, which opens the engine's own client. What each engine spells differently lives in one grammar module, and an engine that cannot do the work says so.
 
 **Now: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `almasix/smith/cli.py` vs `Command` classes in `almasix/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M32**, the interactive installer, which shares M30's stub tree.
 
