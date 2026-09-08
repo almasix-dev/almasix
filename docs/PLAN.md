@@ -190,7 +190,7 @@ Do **not** rename the project to `avalon_framework`. “Framework” is the `ava
 
 **Chosen approach:** Eloquent-shaped **Active Record + Query Builder API** as `avalon.orm`, built on **SQLAlchemy 2.0 Core (async-first)**.
 
-**Parity target:** full Eloquent parity — models, query builder, every relationship type, eager loading, collections, casts, accessors/mutators, scopes, soft deletes, events/observers, pagination, transactions, and migrations. M5 is **not** a subset; it exhausts this contract.
+**Parity target:** full Eloquent parity — models, query builder, every relationship type, eager loading, collections, casts, accessors/mutators, scopes, soft deletes, events/observers, pagination, transactions, and migrations. **M5 shipped the ladder for all of these; the 2026-09-08 audit against the Laravel Database + Eloquent sections found the surface short of exhaust, so M40–M44 finish the contract.**
 
 **Core over ORM (binding):** Avalon uses SQLAlchemy **Core** (expression language, dialects, pooling, async engine) and implements Active Record itself. SQLAlchemy's declarative/Session unit-of-work is deliberately **not** used — it contradicts Active Record semantics (identity map, flush ordering, detached instances) and would leak through the DX. This keeps `avalon.orm` in control of the model lifecycle.
 
@@ -208,7 +208,7 @@ Sync Eloquent-style calls are **not** offered — a hidden sync bridge under asy
 
 ### Decision: Articulate multi-store (SQL + NoSQL) — binding for M25
 
-M5 exhausted **SQL** Eloquent parity on SQLAlchemy Core. **NoSQL is not a second ORM and not a forever-Later extra** — it is a scheduled Articulate core track (**M25**) so document stores share the same Active Record mental model where semantics match, without pretending every SQL feature exists on Mongo.
+M5 shipped the **SQL** Eloquent ladder on SQLAlchemy Core (exhaust scheduled as **M40–M44** after the 2026-09-08 audit). **NoSQL is not a second ORM and not a forever-Later extra** — it is a scheduled Articulate core track (**M25**) so document stores share the same Active Record mental model where semantics match, without pretending every SQL feature exists on Mongo.
 
 **Why bake into Articulate (not a satellite package):** a bolt-on `avalon.mongo` that reimplements models/collections/events will fork the DX and force apps to learn two ORMs. Queuing NoSQL as Articulate work forces the connection/model boundary to stay honest while SQL remains the default happy path.
 
@@ -329,8 +329,8 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Avalon as fol
 | HTTP Client | `http-client` | **M20** | Shipped |
 | Processes | `processes` | **M21** | Write when Processes ship |
 | Concurrency | `concurrency` | **M22** | Write when Concurrency ships |
-| Eloquent: Mutators & Casting | Articulate page / section | **M5** (code **Done**) | **Docs deepen** — dedicated Mutators & Casts how-to (surface lives in Articulate index today) |
-| Eloquent: Serialization | `articulate/serialization` | **M23** | Write with API Resources |
+| Eloquent: Mutators & Casting | Articulate page / section | **Partial (M5)** — magic-method accessors + basic casts; `Attribute` objects, custom / inbound / encrypted / hashed / enum casts and query-time casts = **M40** | **Docs deepen** — dedicated Mutators & Casts how-to with M40 |
+| Eloquent: Serialization | `articulate/serialization` | **Partial (M5)** — `to_dict` / `to_json` / hidden / visible / appends; `append` / `set_appends` / `serialize_date` = **M40** | Write with M40 (API Resources stay M23) |
 | Eloquent: API Resources | `eloquent-resources` / `api-resources` | **M23** | Write when Resources ship |
 | Eloquent: Factories | `database/factories` | **M24** | Write when factories ship |
 | MongoDB / NoSQL | `database/nosql` (+ Articulate pages) | **M25** | Write when document-store driver ships — core Articulate multi-store, not a satellite ORM |
@@ -749,9 +749,9 @@ Full Laravel localization parity before ORM/views/auth. See the decision above f
 
 **Gate met:** dual-locale endpoint, CLI tooling, validation retrofit, coverage ≥ 95%.
 
-### M5 — `avalon.orm` — **complete**
+### M5 — `avalon.orm` — **ladder shipped, pages not exhausted**
 
-Full Eloquent parity — see the ORM decision above for the binding ladder. M5 exhausts it.
+Eloquent-shaped Active Record on SQLAlchemy Core — see the ORM decision above for the binding ladder. M5 shipped the ladder and the mental model; a 2026-09-08 audit against Laravel's **Database** (6 pages) and **Eloquent** (7 pages) sections found the surface materially short of parity, so the exhaust work is scheduled as **M40–M44** and the earlier claim of "M5 exhausts it" is withdrawn.
 
 - Connections + `DB` façade + transactions (savepoint nesting); `config/database.py` (SQLite / PostgreSQL / MySQL+MariaDB / SQL Server + optional Oracle)
 - `Model` base: casts, accessors/mutators, mass-assignment guard, dirty tracking, timestamps, serialization
@@ -764,7 +764,9 @@ Full Eloquent parity — see the ORM decision above for the binding ladder. M5 e
 - Living example: `GET /api/orm` feature tour; `/api/posts` / `/api/users` cover eager load, scopes, soft deletes, pivot roles, morph comments, pagination, upsert
 - Feature docs: [`website/…/articulate/`](../website/src/content/docs/articulate/) + [`database/`](../website/src/content/docs/database/)
 
-**Gate met:** models, relations, migrator, seeders, coverage ≥ 95%.
+**Gate met (M5 ladder):** models, relations, migrator, seeders, coverage ≥ 95%.
+
+**Not exhausted — owed by M40–M44:** modern casting (`Attribute`-style accessors, custom / inbound casts, `encrypted*`, `hashed`, enum collections, immutable dates, per-attribute date formats, query-time casts); serialization controls (`append` / `set_appends` / `without_appends`, `serialize_date`); relationship completions (`has_one_of_many` / `latest_of_many`, `chaperone`, `with_default`, `where_relation`, `or_where_has`, morph existence queries, aggregate eager loads `with_sum` / `with_avg` / `with_exists`, `load_count` family, pivot `with_timestamps` / `as` / custom pivot models, morph maps, `touches`); UUID/ULID keys, strictness config, pruning, quiet saves, `without_timestamps`; query builder gaps (unions, pessimistic locking, JSON wheres, `where_exists` / subquery wheres, `where_not`, `where_any/all/none`, `where_time`, full-text, join subqueries, raw ordering/grouping, `insert_or_ignore`, `update_or_insert`, `increment_each`, `truncate`, `lazy` / `chunk_by_id`, `dd` / `dump` debugging); database layer gaps (read/write connections + sticky, query event listening, cumulative query-time monitoring, `DB.insert/update/delete/unprepared/scalar/pretend`, manual transactions, deadlock retries, `after_commit`, `db:show` / `db:table` / `db:monitor` / `db:wipe`); schema gaps (column alteration, `Schema.rename`, dropping indexes / foreign keys, schema inspection, ~25 column types, ~10 modifiers, `migrate:reset` / `migrate:refresh`, `--pretend` / `--step` / `--path` / `--force`, squashing); and pagination gaps (cursor pagination, URL-aware paginators, rendered link views).
 
 ### M6 — Caliburn (`avalon.caliburn`)
 
@@ -1306,6 +1308,78 @@ The documentation-site commitments from the Documentation decision above, promot
 
 **Gate:** a reader can open docs for the major they run; Prologue published and maintained per release.
 
+### M40 — Articulate model exhaust (Eloquent parity)
+
+Laravel [Eloquent: Getting Started](https://laravel.com/docs/eloquent), [Mutators & Casting](https://laravel.com/docs/eloquent-mutators), [Serialization](https://laravel.com/docs/eloquent-serialization), [Collections](https://laravel.com/docs/eloquent-collections). M5 shipped the ladder; these four pages are not exhausted.
+
+- **Casting overhaul:** `Attribute`-style accessor/mutator objects alongside the existing `get_x_attribute` methods; custom cast classes and inbound-only casts; `encrypted` / `encrypted:array` / `encrypted:object` (on M17 Crypt); `hashed` (on M7); enum collections; immutable dates; `decimal` rounding semantics; per-attribute date formats (`datetime:%Y-%m-%d`); query-time casting (`with_casts`); a `casts()` method as well as the class attribute
+- **Serialization:** `append` / `merge_appends` / `set_appends` / `without_appends`; `merge_hidden` / `merge_visible`; `serialize_date`; relation serialization rules. (Instance-scoped `make_hidden` / `make_visible` / `set_hidden` / `set_visible` landed with the audit.)
+- **Model surface:** UUID / ULID primary keys; strictness configuration (`prevent_silently_discarding_attributes`, `prevent_accessing_missing_attributes`); `without_timestamps`; quiet writes (`save_quietly` / `delete_quietly`); `unguarded`; `Prunable` / `MassPrunable` + `model:prune`; advanced subqueries; real cursors and `lazy` / `chunk_by_id`; pending attributes on scopes
+- **Collections:** Eloquent-specific `find`, `fresh`, `to_query`, `only` / `except` by model key, `make_visible` / `make_hidden`, `append`, and custom collection classes (`new_collection`)
+- Docs: deepen `articulate/index`, add dedicated **Mutators & Casts** and **Serialization** pages (the latter currently slated for M23)
+
+**Depends on:** M5 (base), M17 encryption (encrypted casts), M7 hashing. Factories stay **M24**; API Resources stay **M23**.
+
+**Gate:** every section of the four Eloquent pages implemented or listed as a deliberate deviation with a reason; `avalon.orm` at 100% coverage; docs published.
+
+### M41 — Relationship exhaust
+
+Laravel [Eloquent: Relationships](https://laravel.com/docs/eloquent-relationships) — the largest page in the Laravel docs (87 sections). All ten relation types exist; their DX does not.
+
+- `has_one_of_many` / `latest_of_many` / `oldest_of_many` / `of_many`; `chaperone()`; `with_default()` default models
+- Aggregate eager loads: `with_sum` / `with_avg` / `with_min` / `with_max` / `with_exists`, and the lazy `load_count` / `load_sum` / `load_aggregate` family
+- Existence querying: `or_has`, `or_where_has`, `or_where_doesnt_have`, `where_relation` / `or_where_relation`, `with_where_has`, and the morph variants (`has_morph`, `where_has_morph`, `where_doesnt_have_morph`)
+- Pivots: `with_timestamps()`, `as()` accessor naming, custom `Pivot` model classes via `using()`, `where_pivot_in` / `where_pivot_null`, `order_by_pivot`, `sync_without_detaching`, and a real `updated` result from `sync`
+- Morph maps (Laravel's `enforceMorphMap`) so `morph_to` stops requiring an explicit per-relation types dict
+- `touches` — updating parent timestamps on child writes
+- Relation write helpers: `create_quietly`, `find_or_new`, `update_or_create`, `make` / `make_many`
+- Docs: rewrite `articulate/relationships` to the Laravel section order
+
+**Depends on:** M40 (casting/serialization land first so pivot casts behave).
+
+**Gate:** page exhausted or deviations named; N+1 protection story documented against Laravel's `preventLazyLoading` (Avalon inverts the default deliberately); docs published.
+
+### M42 — Query builder + database layer exhaust
+
+Laravel [Database: Getting Started](https://laravel.com/docs/database) and [Query Builder](https://laravel.com/docs/queries).
+
+- **Query builder:** unions (`union` / `union_all`); pessimistic locking (`lock_for_update` / `shared_lock`); JSON where clauses; `where_exists` / subquery wheres; `where_not`; `where_any` / `where_all` / `where_none`; `where_time` and the date-helper family; full-text wheres; join subqueries and closure join clauses; `order_by_raw` / `group_by_raw` / `having_between`; `insert_or_ignore` / `insert_using`; `update_or_insert`; JSON column updates; `increment_each` / `decrement_each`; `truncate`; `lazy` / `lazy_by_id` / `chunk_by_id`; debugging (`dd` / `dump` / `dump_raw_sql`); reusable query components
+- **Database layer:** read / write connections with the `sticky` option; query event listening (`DB.listen`) and cumulative query-time monitoring; `DB.insert` / `update` / `delete` / `unprepared` / `scalar` / `pretend`; manual transactions (`begin` / `commit` / `rollback`), deadlock retries (`transaction(cb, attempts)`), and `after_commit`
+- **Commands:** `db:show`, `db:table`, `db:monitor`, `db:wipe`, and a `db` CLI shell (these are the database half of M30's built-in catalogue)
+- Docs: rewrite `database/index` and `database/queries` to the Laravel section order
+
+**Depends on:** M5, M30 (command surface for the `db:*` commands), M16 Redis nice-to-have for monitoring output.
+
+**Gate:** both pages exhausted or deviations named; docs published.
+
+### M43 — Schema, migrations, and pagination exhaust
+
+Laravel [Migrations](https://laravel.com/docs/migrations) (113 sections) and [Pagination](https://laravel.com/docs/pagination).
+
+- **Column catalogue:** the ~25 missing types (`char`, `tiny_integer` … `medium_integer`, `long_text` / `medium_text` / `tiny_text`, `binary`, `enum`, `set`, `year`, `time`, the `*_tz` variants, `ip_address`, `mac_address`, `ulid`, `uuid_morphs` / `ulid_morphs` / `nullable_morphs`, `remember_token`, spatial types, `vector`)
+- **Modifiers:** `unsigned`, `comment`, `use_current` / `use_current_on_update`, `charset` / `collation`, `virtual_as` / `stored_as` / `generated_as`, `invisible`, `auto_increment`
+- **Alteration:** `change()` (Avalon has **no column alteration today**), `Schema.rename`, `drop_index` / `drop_unique` / `drop_primary` / `drop_foreign` / `drop_constrained_foreign_id`, `rename_index`, foreign-key constraint toggling, and schema inspection (`get_tables` / `get_columns` / `get_indexes`)
+- **Commands and flags:** `migrate:reset`, `migrate:refresh`, `migrate:install`, plus `--pretend`, `--step`, `--path`, `--database`, `--force`; schema squashing (`schema:dump`)
+- **Pagination:** cursor pagination (`cursor_paginate` + `CursorPaginator`); URL-aware paginators (`url`, `next_page_url`, `previous_page_url`, `appends`, `with_query_string`, `path` / page-name customization, `on_each_side`, `through`, `first_item` / `last_item`); rendered link views in Caliburn for both the Tailwind and Bootstrap stacks (pairs with **M32**)
+- Docs: rewrite `database/migrations` and `database/pagination`
+
+**Depends on:** M5, M6 Caliburn (pagination views), M30 (commands), M32 (stack-aware link views).
+
+**Gate:** both pages exhausted or deviations named; column alteration proven on SQLite plus one server engine; docs published.
+
+### M44 — Multi-engine database CI
+
+Today the suite executes against **SQLite only**; PostgreSQL, MySQL/MariaDB, SQL Server, and Oracle are covered by URL construction and offline DDL string compilation. Dialect-native paths (including `upsert`) are therefore unverified.
+
+- CI services for PostgreSQL and MySQL/MariaDB; the ORM suite runs against each
+- A dialect conformance suite: schema DDL, upserts, JSON wheres, locking, transactions / savepoints, and pagination on every engine claimed
+- Document engine support honestly per feature (a support matrix), including what SQLite cannot do
+- SQL Server / Oracle stay best-effort unless a real service is added
+
+**Depends on:** M42 / M43 (the features under test); ideally lands alongside them rather than after.
+
+**Gate:** green CI on at least PostgreSQL + MySQL in addition to SQLite; the support matrix published and honest.
+
 ### Docs track (may land anytime)
 
 Not milestones — outstanding pages for code that already shipped:
@@ -1316,7 +1390,7 @@ Not milestones — outstanding pages for code that already shipped:
 
 ### Later (still deferred)
 
-Everything that had a foreseeable shape has been promoted to **M30–M39** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
+Everything that had a foreseeable shape has been promoted to **M30–M44** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
 
 - Additional NoSQL engines beyond Mongo (Cosmos API, Dynamo-shaped, …) — same M25 store abstraction; exhaust per driver when demanded, so there is no honest milestone count
 - Full Caliburn advanced parity — an ongoing **M6 track** by design, not a one-shot milestone
@@ -1342,5 +1416,7 @@ Promoted in this pass: console exhaust (**M30**), scheduler exhaust (**M31**), i
 **Now: M30 Grail Console exhaust.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
 
 **Milestones M21–M29** (Processes → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+
+**M40–M44 (Articulate + Database exhaust) outrank M33–M39 in priority.** The 2026-09-08 audit found the ORM and database surface materially short of Laravel's Database and Eloquent sections, and every application touches it — so the ORM track should be sequenced ahead of routing sugar, starter kits, and deployment docs, whatever their numbers say.
 
 **Docs (anytime):** see the Docs track above — Localization page (M4 code done); Mutators & Casts Articulate how-to (M5 code done); `@vite` directive (M6 partial).

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from datetime import datetime, timezone
 from typing import Any, ClassVar
 
@@ -112,6 +112,9 @@ class Model(metaclass=ModelMeta):
         self._relations: dict[str, Any] = {}
         self._exists = False
         self._extra: dict[str, Any] = {}
+        # None means "use the class attribute" — overrides stay per instance.
+        self._hidden: tuple[str, ...] | None = None
+        self._visible: tuple[str, ...] | None = None
 
         defaults = dict(type(self).attributes)
         if defaults:
@@ -721,28 +724,39 @@ class Model(metaclass=ModelMeta):
 
     # --- serialization ------------------------------------------------------
 
+    def get_hidden(self) -> tuple[str, ...]:
+        """Effective hidden keys — instance override, else the class attribute."""
+        return self._hidden if self._hidden is not None else tuple(type(self).hidden)
+
+    def get_visible(self) -> tuple[str, ...]:
+        """Effective visible allowlist — instance override, else the class."""
+        return self._visible if self._visible is not None else tuple(type(self).visible)
+
     def attributes_to_dict(self) -> dict[str, Any]:
         cls = type(self)
+        hidden = self.get_hidden()
+        visible = self.get_visible()
         data: dict[str, Any] = {}
         for key in self._attributes:
-            if cls.visible and key not in cls.visible:
+            if visible and key not in visible:
                 continue
-            if key in cls.hidden:
+            if key in hidden:
                 continue
             data[key] = serialize_value(self.get_attribute(key))
         for key in cls.appends:
-            if key in cls.hidden:
+            if key in hidden:
                 continue
             data[key] = serialize_value(self.get_attribute(key))
         for key, value in self._extra.items():
-            if key not in cls.hidden:
+            if key not in hidden:
                 data[key] = serialize_value(value)
         return data
 
     def relations_to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
+        hidden = self.get_hidden()
         for name, value in self._relations.items():
-            if name in type(self).hidden:
+            if name in hidden:
                 continue
             if isinstance(value, Collection):
                 data[name] = value.to_dict()
@@ -761,11 +775,25 @@ class Model(metaclass=ModelMeta):
         return json.dumps(self.to_dict())
 
     def make_hidden(self, *keys: str) -> Model:
-        type(self).hidden = tuple({*type(self).hidden, *keys})
+        """Hide extra attributes on **this** model only (Laravel ``makeHidden``)."""
+        self._hidden = tuple({*self.get_hidden(), *keys})
         return self
 
     def make_visible(self, *keys: str) -> Model:
-        type(self).hidden = tuple(k for k in type(self).hidden if k not in keys)
+        """Reveal normally hidden attributes on this model (``makeVisible``)."""
+        self._hidden = tuple(k for k in self.get_hidden() if k not in keys)
+        if self._visible is not None or type(self).visible:
+            self._visible = tuple({*self.get_visible(), *keys})
+        return self
+
+    def set_hidden(self, keys: Sequence[str]) -> Model:
+        """Replace this model's hidden list outright (``setHidden``)."""
+        self._hidden = tuple(keys)
+        return self
+
+    def set_visible(self, keys: Sequence[str]) -> Model:
+        """Replace this model's visible allowlist outright (``setVisible``)."""
+        self._visible = tuple(keys)
         return self
 
 
