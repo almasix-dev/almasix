@@ -30,6 +30,7 @@ BLUEPRINTS: dict[str, Blueprint] = {
     "request": Blueprint(("app", "http", "requests"), "request.stub"),
     "resource": Blueprint(("app", "http", "resources"), "resource.stub"),
     "model": Blueprint(("app", "models"), "model.stub"),
+    "document": Blueprint(("app", "models"), "document.stub"),
     "seeder": Blueprint(("database", "seeders"), "seeder.stub"),
     "factory": Blueprint(("database", "factories"), "factory.plain.stub"),
     "command": Blueprint(("app", "console", "commands"), "command.stub"),

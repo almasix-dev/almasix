@@ -514,6 +514,20 @@ config = {
             "username": env("DB_USERNAME", "almasix"),
             "password": env("DB_PASSWORD", ""),
         },
+        # Document stores. Articulate reaches these through Document models;
+        # "memory" keeps documents in the process, which is what tests want.
+        "mongodb": {
+            "driver": "mongodb",
+            "dsn": env("MONGODB_DSN", ""),
+            "host": env("MONGODB_HOST", "127.0.0.1"),
+            "port": env("MONGODB_PORT", 27017),
+            "database": env("MONGODB_DATABASE", "almasix"),
+            "username": env("MONGODB_USERNAME", ""),
+            "password": env("MONGODB_PASSWORD", ""),
+        },
+        "memory": {
+            "driver": "memory",
+        },
     },
 }
 '''

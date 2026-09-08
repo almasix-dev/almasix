@@ -1,0 +1,16 @@
+"""{{ class }} document."""
+
+from __future__ import annotations
+
+from almasix.orm import Document, HasFactory
+
+
+class {{ class }}(HasFactory, Document):
+    """{{ class }} document."""
+
+    connection = "mongodb"
+
+    fillable: tuple[str, ...] = ()
+
+    #: Indexes `smith documents:index` creates for this collection.
+    indexes = ()

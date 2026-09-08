@@ -322,7 +322,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 86 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 89 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -365,6 +365,13 @@ What the framework ships, 86 commands, as `smith list` groups them. An applicati
 | `db:table` | Show information about the given database table |
 | `db:wipe` | Drop all tables from the database |
 
+### `documents`
+
+| Command | Description |
+| --- | --- |
+| `documents:index` | Create the indexes declared on document models |
+| `documents:show` | Show the collections in a document store |
+
 ### `env`
 
 | Command | Description |
@@ -406,6 +413,7 @@ What the framework ships, 86 commands, as `smith list` groups them. An applicati
 | `make:command` | Create a console command in app/console/commands |
 | `make:component` | Create an anonymous Prism component in resources/views/components |
 | `make:controller` | Create a controller in app/http/controllers |
+| `make:document` | Create a document model in app/models |
 | `make:enum` | Create an enum in app/enums |
 | `make:event` | Create a new event class |
 | `make:exception` | Create an exception in app/exceptions |

@@ -337,7 +337,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Eloquent: Serialization | `articulate/serialization` | **Done (M40)** | Page published; links out to API Resources |
 | Eloquent: API Resources | `api-resources` | **Done (M23)** | Page published |
 | Eloquent: Factories | `database/factories` | **Done (M24)** | Page published |
-| MongoDB / NoSQL | `database/nosql` (+ Articulate pages) | **M25** | Write when document-store driver ships — core Articulate multi-store, not a satellite ORM |
+| MongoDB / NoSQL | `articulate/documents` (+ Database Getting Started) | **Done (M25)** | Page published — core Articulate multi-store, not a satellite ORM |
 | Scout / Search | `scout` / `search` | **M27** | Write when search ships |
 | Queues | `queues` | **M11** | Write when queues ship |
 | Mail | `mail` | **M12** | Write when mail ships |
@@ -1134,7 +1134,11 @@ Bake **document stores into Articulate core** under the multi-store contract (se
 
 **Depends on:** M5 SQL Articulate (done). Prefer after **M24** factories so seed/factory demos can cover both stores; may start design seams earlier without claiming exhaust.
 
-**Gate:** Mongo driver exhausted end-to-end (config → model → query → tests → docs); SQL regressions still green; coverage ≥ 98% on new driver code (aim 100%). Other NoSQL engines are follow-on drivers under the same abstraction — not claimed unless exhausted here.
+**Gate:** Mongo driver exhausted end-to-end (config → model → query → tests → docs); SQL regressions still green; coverage ≥ 98% on new driver code (aim 100%). Other NoSQL engines are follow-on drivers under the same abstraction — not claimed unless exhausted here. **Met.**
+
+**Status (M25):** `almasix.orm.documents` — a store-agnostic `Query` / `Condition` / `Order` shape, a `DocumentStore` contract, and two drivers: `MongoStore` (Motor behind `almasix[mongodb]`, with the whole operator set translated to Mongo filters, `distinct`, `$inc`, index information, and `raw_aggregate` for native pipelines) and `MemoryStore` (in-process, same semantics, unique-index enforcement — the document answer to `:memory:` SQLite); `DocumentBuilder` spelling the SQL builder's surface for what a collection can answer (the `where` family, dotted paths, ordering, windows, `select` / `distinct`, scopes, `when` / `unless` / `tap`, chunking, `lazy`, both paginators, `insert` / `update` / `upsert` / `increment` / `delete` / `truncate`) plus four document-native filters (`where_regex`, `where_exists_field`, `where_all`, `where_size`) and `where_raw` taking either an engine filter or a predicate; `UnsupportedQueryError` naming the alternative for every SQL-only call rather than pretending; `Document` reusing all of `Model` (casts, accessors, events, observers, soft deletes, factories, serialization) with `_id` keys, collection naming, and declared `indexes`; `EmbeddedDocument` with `embeds_one` / `embeds_many`, write-back on `save()`, and in-memory filtering; references — including document → SQL — through the existing relations and eager loader, with a document-native `with_count`; `DatabaseManager.store()` / `is_document()` telling stores and databases apart and refusing the wrong one; `smith make:document [--factory|--embed]`, `documents:index [--pretend]`, `documents:show`; Starlight **Documents (NoSQL)** + a document section on Database Getting Started; the progress app's `Activity` document with `GET /api/documents` and `progress:documents`.
+
+**Deliberate deviations (M25):** Laravel ships no NoSQL, so parity here is measured against `mongodb/laravel-mongodb` — the model behaves like every other model, spelled Almasix's way. Transactions stay SQL-only, because Mongo needs a replica set and pretending otherwise would be a lie in the one place it hurts; `_id` is handed back as the store's own value rather than wrapped in an ObjectId type applications must then know about; embeds save through their parent, since an embedded document has no collection of its own; the `memory` driver is a first-class configured store rather than a test double, so the same code path runs in CI and on a laptop with no Mongo.
 
 ### M26 — Broadcasting
 
@@ -1615,7 +1619,9 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **M24 Model factories gate met** — the Laravel builder in full (states, sequences, `has` / `for_` / `has_attached` / `recycle`, hooks, quiet writes), `make:factory`, and a `DemoSeeder` that builds every row through a factory.
 
-**Milestones M25–M29** (Articulate NoSQL → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+**M25 Articulate NoSQL gate met** — a store abstraction with two drivers (MongoDB through Motor, and an in-process store with the same semantics), `Document` models that keep every Model behaviour, embedded documents, references that cross into SQL, declared indexes with `documents:index` / `documents:show`, and a builder that refuses SQL-only calls by name instead of pretending.
+
+**Milestones M26–M29** (Broadcasting → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 

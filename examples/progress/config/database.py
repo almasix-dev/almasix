@@ -51,5 +51,20 @@ config = {
             "username": env("DB_USERNAME", "almasix"),
             "password": env("DB_PASSWORD", ""),
         },
+        # M25 — document stores. `Activity` lives here rather than in a table.
+        # The demo defaults to the in-process store so it runs anywhere; point
+        # DOCUMENTS_CONNECTION at "mongodb" to run the same code against Mongo.
+        "documents": {
+            "driver": "memory",
+        },
+        "mongodb": {
+            "driver": "mongodb",
+            "dsn": env("MONGODB_DSN", ""),
+            "host": env("MONGODB_HOST", "127.0.0.1"),
+            "port": env("MONGODB_PORT", 27017),
+            "database": env("MONGODB_DATABASE", "almasix_progress"),
+            "username": env("MONGODB_USERNAME", ""),
+            "password": env("MONGODB_PASSWORD", ""),
+        },
     },
 }

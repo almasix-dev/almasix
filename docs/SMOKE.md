@@ -587,6 +587,30 @@ pytest -q tests/test_m24_*.py tests/smoke/test_m24_smoke.py
 
 ---
 
+## M25 — Articulate NoSQL / document stores
+
+```bash
+pytest -q tests/test_m25_*.py tests/smoke/test_m25_smoke.py
+```
+
+### M25 exit criteria
+
+- [x] A store-agnostic query shape (`Query` / `Condition` / `Order`) and a `DocumentStore` contract every driver satisfies
+- [x] `MongoStore` over Motor (`almasix[mongodb]`): every operator translated to a Mongo filter, `and` / `or` precedence, sorts, windows, projections, `distinct`, `$inc`, index information, `raw_aggregate`
+- [x] `MemoryStore` with the same semantics in-process — unique indexes, dotted paths, `None`-safe sorting — so tests and demos need no server
+- [x] `DocumentBuilder`: the `where` family, dotted fields, ordering, windows, `select` / `distinct`, scopes, `when` / `unless` / `tap`, chunking, `lazy`, both paginators, `insert` / `update` / `upsert` / `increment` / `delete` / `truncate`
+- [x] Document-native filters — `where_regex`, `where_exists_field`, `where_all`, `where_size` — and `where_raw` taking an engine filter or a predicate
+- [x] SQL-only calls raise `UnsupportedQueryError` naming the alternative (`join`, `group_by`, `having`, `where_column`, `union`, raw SQL)
+- [x] `Document` keeps every `Model` behaviour — casts, accessors, events, observers, soft deletes, serialization, factories — with `_id` keys, collection naming, and per-instance connections
+- [x] `EmbeddedDocument` with `embeds_one` / `embeds_many`, write-back through the parent, in-memory filtering, and declared fields
+- [x] References load across stores, including document → SQL, with eager loading and a document-native `with_count`
+- [x] `DatabaseManager.store()` / `is_document()` / `document_connection_names()`; asking for a store as a connection (or the reverse) is refused by name
+- [x] `smith make:document [--factory|--embed]`, `documents:index [--pretend]`, `documents:show`; indexes declared on the model
+- [x] Living example: `Activity` on a document store, `smith progress:documents`, `GET /api/documents`; the board marks M25 complete
+- [x] Docs + smoke; SQL regressions green; 100% line and branch coverage on `almasix.orm.documents`
+
+---
+
 ## M30 — Smith Console exhaust
 
 ```bash

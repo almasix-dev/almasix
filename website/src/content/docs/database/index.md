@@ -111,6 +111,24 @@ await DB.connection("pgsql").table("users").get()
 
 Pin a Articulate model to a connection with `Model.connection = "pgsql"`. You may also register connections at runtime with `DatabaseManager.add_connection(name, config)` and dispose them with `disconnect()` / `disconnect(name)`.
 
+## Document connections
+
+A connection whose driver is `mongodb` or `memory` holds collections rather than tables. Those are resolved with `store()` instead of `connection()`, and Articulate reaches them through [`Document` models](/articulate/documents/):
+
+```bash
+pip install almasix[mongodb]  # MongoDB (motor)
+```
+
+| `driver` | Store | Extra |
+| --- | --- | --- |
+| `mongodb` | MongoDB, through Motor | `almasix[mongodb]` |
+| `memory` | In-process documents, for tests and demos | included |
+
+```python
+get_manager().store("mongodb")        # a DocumentStore
+get_manager().is_document("mongodb")  # True
+```
+
 ## Next steps
 
 Prefer the fluent [query builder](/database/queries/) for most reads and writes, and [Articulate models](/articulate/) when you want Active Record persistence and relationships.

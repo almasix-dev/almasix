@@ -167,36 +167,95 @@ class Connection:
         await self._engine.dispose()
 
 
+#: Drivers whose connections hold collections, not tables.
+DOCUMENT_DRIVERS = ("mongodb", "mongo", "memory")
+
+
 class DatabaseManager:
-    """Resolves named connections from `config/database.py`."""
+    """Resolves named connections from `config/database.py`.
+
+    A connection is either a SQL database or a document store, decided by its
+    driver. `connection()` hands back the first kind and `store()` the second;
+    asking for the wrong one says so rather than failing obscurely.
+    """
 
     def __init__(self, config: Mapping[str, Any] | None = None) -> None:
         config = dict(config or {})
         self.default: str = str(config.get("default", "sqlite"))
         self._definitions: dict[str, Any] = dict(config.get("connections", {}) or {})
         self._connections: dict[str, Connection] = {}
+        self._stores: dict[str, Any] = {}
+
+    def _definition(self, key: str) -> dict[str, Any]:
+        if key not in self._definitions:
+            raise ConnectionError_(f"Database connection {key!r} is not configured.")
+        return dict(self._definitions[key])
+
+    def driver(self, name: str | None = None) -> str:
+        """The driver behind a connection name."""
+        return str(self._definition(name or self.default).get("driver", ""))
+
+    def is_document(self, name: str | None = None) -> bool:
+        """Whether this connection stores documents rather than rows."""
+        return self.driver(name) in DOCUMENT_DRIVERS
 
     def connection(self, name: str | None = None) -> Connection:
         key = name or self.default
         if key not in self._connections:
-            if key not in self._definitions:
-                raise ConnectionError_(f"Database connection {key!r} is not configured.")
-            self._connections[key] = Connection(key, self._definitions[key])
+            definition = self._definition(key)
+            if str(definition.get("driver", "")) in DOCUMENT_DRIVERS:
+                raise ConnectionError_(
+                    f"Connection {key!r} is a document store "
+                    f"({definition.get('driver')!r}) — reach it with store(), not connection()."
+                )
+            self._connections[key] = Connection(key, definition)
         return self._connections[key]
+
+    def store(self, name: str | None = None) -> Any:
+        """The document store behind a connection name."""
+        from almasix.orm.documents.stores import MemoryStore, MongoStore
+
+        key = name or self.default
+        if key not in self._stores:
+            definition = self._definition(key)
+            driver = str(definition.get("driver", ""))
+            if driver == "memory":
+                self._stores[key] = MemoryStore(key, definition)
+            elif driver in ("mongodb", "mongo"):
+                self._stores[key] = MongoStore(key, definition)
+            else:
+                raise ConnectionError_(
+                    f"Connection {key!r} is a {driver!r} database, not a document store."
+                )
+        return self._stores[key]
+
+    def set_store(self, name: str, store: Any) -> None:
+        """Bind a store instance directly — how tests hand in a fake client."""
+        self._stores[name] = store
 
     def add_connection(self, name: str, config: Mapping[str, Any]) -> None:
         self._definitions[name] = dict(config)
         self._connections.pop(name, None)
+        self._stores.pop(name, None)
 
     def connection_names(self) -> list[str]:
         return sorted(self._definitions)
+
+    def document_connection_names(self) -> list[str]:
+        return sorted(name for name in self._definitions if self.is_document(name))
 
     async def disconnect(self, name: str | None = None) -> None:
         if name is None:
             for connection in list(self._connections.values()):
                 await connection.disconnect()
             self._connections.clear()
+            for store in list(self._stores.values()):
+                await store.disconnect()
+            self._stores.clear()
             return
         connection = self._connections.pop(name, None)
         if connection is not None:
             await connection.disconnect()
+        store = self._stores.pop(name, None)
+        if store is not None:
+            await store.disconnect()

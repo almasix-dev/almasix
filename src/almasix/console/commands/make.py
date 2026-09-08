@@ -59,6 +59,28 @@ class Generator(Command):
         """Where the file lands: the working directory, as ``smith`` was run."""
         return Path.cwd()
 
+    def write_factory(self) -> int:
+        """The factory `--factory` asks for, bound to the class just written."""
+        model = self.class_name()
+        try:
+            path = make(
+                "factory",
+                f"{model}Factory",
+                base_path=self.root(),
+                force=bool(self.option("force")),
+                stub="factory.stub",
+                replacements={
+                    "model": model,
+                    "modelVariable": snake(model),
+                    "namespacedModel": f"app.models.{snake(model)}",
+                },
+            )
+        except MakeError as exc:
+            self.error(str(exc))
+            return self.FAILURE
+        self.success(f"Factory created: {path.relative_to(self.root())}")
+        return self.SUCCESS
+
 
 class MakeControllerCommand(Generator):
     signature = (
@@ -163,26 +185,27 @@ class MakeModelCommand(Generator):
         self.success(f"Migration created: {path.relative_to(root)}")
         return self.SUCCESS
 
-    def write_factory(self) -> int:
-        model = self.class_name()
-        try:
-            path = make(
-                "factory",
-                f"{model}Factory",
-                base_path=self.root(),
-                force=bool(self.option("force")),
-                stub="factory.stub",
-                replacements={
-                    "model": model,
-                    "modelVariable": snake(model),
-                    "namespacedModel": f"app.models.{snake(model)}",
-                },
-            )
-        except MakeError as exc:
-            self.error(str(exc))
-            return self.FAILURE
-        self.success(f"Factory created: {path.relative_to(self.root())}")
-        return self.SUCCESS
+
+class MakeDocumentCommand(Generator):
+    """A document model — a collection instead of a table, no migration."""
+
+    signature = (
+        "make:document {name : Class name, e.g. Article or Blog/Article} "
+        "{--f|factory : Also create a factory} "
+        "{--e|embed : An embedded document rather than a collection-backed one} "
+        "{--force : Overwrite an existing file}"
+    )
+    description = "Create a document model in app/models"
+    kind = "document"
+
+    def stub(self) -> str:
+        return "embed.stub" if self.option("embed") else "document.stub"
+
+    def handle(self) -> int:
+        code = super().handle()
+        if code != self.SUCCESS or not self.option("factory"):
+            return code
+        return self.write_factory()
 
 
 class MakeResourceCommand(Generator):

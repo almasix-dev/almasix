@@ -10,6 +10,17 @@ from almasix.orm.casts import (
 )
 from almasix.orm.collection import Collection
 from almasix.orm.connection import Connection, DatabaseManager
+from almasix.orm.documents import (
+    Document,
+    DocumentBuilder,
+    DocumentStore,
+    EmbeddedDocument,
+    EmbedsMany,
+    EmbedsOne,
+    MemoryStore,
+    MongoStore,
+    UnsupportedQueryError,
+)
 from almasix.orm.facade import DB, get_manager, raw, set_manager
 from almasix.orm.factories import (
     CrossJoinSequence,
@@ -83,6 +94,12 @@ __all__ = [
     "DatabaseManager",
     "DatabaseServiceProvider",
     "DiscardedAttributeError",
+    "Document",
+    "DocumentBuilder",
+    "DocumentStore",
+    "EmbeddedDocument",
+    "EmbedsMany",
+    "EmbedsOne",
     "EnumCollection",
     "Factory",
     "FactoryError",
@@ -97,11 +114,13 @@ __all__ = [
     "HasUuids",
     "MassAssignmentError",
     "MassPrunable",
+    "MemoryStore",
     "Migration",
     "Migrator",
     "MissingAttributeError",
     "Model",
     "ModelNotFoundError",
+    "MongoStore",
     "MorphMany",
     "MorphOne",
     "MorphPivot",
@@ -120,6 +139,7 @@ __all__ = [
     "Sequence",
     "SimplePaginator",
     "SoftDeletes",
+    "UnsupportedQueryError",
     "WithoutModelEvents",
     "attribute",
     "clear_morph_map",

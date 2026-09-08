@@ -261,8 +261,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M25",
             "name": "Articulate NoSQL",
-            "status": "planned",
-            "proof": ["Mongo document models", "multi-store Articulate"],
+            "status": "complete",
+            "proof": [
+                "Document models over Mongo and a memory store",
+                "embeds, references, indexes, factories, soft deletes",
+                "make:document; documents:index; documents:show",
+                "GET /api/documents",
+                "progress:documents",
+            ],
         },
         {
             "id": "M26",

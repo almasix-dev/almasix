@@ -165,6 +165,7 @@ export default defineConfig({
 						{ label: 'Serialization', slug: 'articulate/serialization' },
 						{ label: 'Collections', slug: 'articulate/collections' },
 						{ label: 'Soft Deletes & Events', slug: 'articulate/events' },
+						{ label: 'Documents (NoSQL)', slug: 'articulate/documents' },
 					],
 				},
 				{
