@@ -316,10 +316,10 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Avalon as fol
 
 | Laravel | Avalon docs slug (target) | Milestone | Docs action |
 | --- | --- | --- | --- |
-| Collections | `collections` | Support Collections | **Done** |
+| Collections | `collections` | Support Collections, **M49** | Code 149/155; **docs gap** — one page, not a section per method |
 | Localization | `localization` | **M4** (code **Done**) | **Docs gap** — write Starlight Localization page (code already exhausted) |
-| Helpers | `helpers` | **M14** | Shipped |
-| Strings | `strings` | **M14** | Shipped |
+| Helpers | `helpers` | **M14**, **M50** | Code short (`Arr` 42/57, `Number` 17/20); **docs gap** — no section per method |
+| Strings | `strings` | **M14**, **M50** | `Str` 80/87, `Stringable` 27/117; **docs gap** — no section per method |
 | Cache | `cache` | **M15** | Shipped |
 | Redis | `redis` | **Done (M16)** | Redis page + Cache/Session/Queues updates |
 | Encryption | `encryption` | **M17** | `Crypt` façade, JSON-safe encrypt, `APP_PREVIOUS_KEYS`, `key:generate` |
@@ -433,7 +433,9 @@ Laravel’s [`Illuminate\Support\Collection`](https://laravel.com/docs/collectio
 
 **Gate:** eager `Collection` exhausts the Laravel “Available Methods” list (skip Lazy / `dd` / `dump`); tests + docs green; Articulate regressions still pass. Can ship alongside M7 — does not block auth exhaust.
 
-**Status (Collections):** Support `Collection` + `collect()` shipped — method surface (incl. `splice`, `multiply`, `reduce_spread`, assoc/using diffs & intersects, `to_pretty_json` / `from_json`), key-preserving filters, macros, Starlight **Collections** docs, `tests/test_support_collection.py`. Articulate `orm.Collection` extends Support. `LazyCollection` still deferred.
+**Status (Collections):** Support `Collection` + `collect()` shipped — method surface (incl. `splice`, `multiply`, `reduce_spread`, assoc/using diffs & intersects, `to_pretty_json` / `from_json`), key-preserving filters, macros, Starlight **Collections** docs, `tests/test_support_collection.py`. Articulate `orm.Collection` extends Support.
+
+**Correction (2026-09-08 audit):** the method surface is close but not closed, and the docs claim was too generous. 149 of the 155 methods on Laravel's Method Listing exist; `average`, `dd`, `dump`, and `lazy` do not. `LazyCollection` and higher-order messages (`collection.each.method()`) were never built, so Laravel's entire Lazy Collections section — including the `Enumerable` contract, `take_until_timeout`, `tap_each`, `throttle`, `remember`, and `with_heartbeat` — has no counterpart. The docs are the larger gap: Laravel gives each of the 155 methods its own section with an explanation and a runnable example (4,390 lines); Avalon's page is 140 lines built around a method-surface table. **M49** closes both.
 
 ## Decision: Production serving (ASGI)
 
@@ -970,7 +972,9 @@ Laravel [Helpers](https://laravel.com/docs/helpers) + [Strings](https://laravel.
 
 **Gate:** claimed helper + `Str` surface exhausted, docs published, coverage ≥ 98% on new modules.
 
-**Status (M14):** Ladder exhausted — `Arr`, `Number`, `data_*` / misc helpers (`blank`, `tap`, `optional`, `retry`, `abort_if`, path helpers, …); `Str` / `Stringable` / `str_()`; Starlight Helpers + Strings; progress `progress:helpers`; tests + smoke.
+**Status (M14):** Ladder shipped — `Arr`, `Number`, `data_*` / misc helpers (`blank`, `tap`, `optional`, `retry`, `abort_if`, path helpers, …); `Str` / `Stringable` / `str_()`; Starlight Helpers + Strings; progress `progress:helpers`; tests + smoke.
+
+**Correction (2026-09-08 audit):** "exhausted" was wrong — the ladder reaches every category, but no category is closed. Against the Laravel pages: `Str` has 80 of 87 methods, `Arr` 42 of 57, `Number` 17 of 20, and the fluent `Stringable` only 27 of 117, because it hand-writes its methods instead of delegating the whole `Str` surface. Of Laravel's ~65 global helpers, 37 exist somewhere in the package and 28 do not — some fairly (`broadcast`, `policy`, `context`, `fake` await their features) and some not (`request`, `response`, `session`, `cookie`, `logger`, `report`, `resolve`, `app`, `validator`, `old`, `back`, `bcrypt`, `method_field`, `csrf_field` all wrap surfaces that already ship). The URL family (`route`, `to_route`, `action`, `to_action`, `uri`, `secure_url`, `secure_asset`) belongs with named routes in **M33**. Docs are short the same way collections are: Laravel spends 3,787 lines on Helpers and 4,042 on Strings, a section per method; Avalon spends 154 and 180 on grouped tables. **M50** closes both.
 
 ### M15 — Cache (`avalon.cache`)
 
@@ -1189,18 +1193,22 @@ Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the l
 
 ### M31 — Task Scheduling exhaust
 
-Laravel [Task Scheduling](https://laravel.com/docs/scheduling) — M9 shipped a 5-frequency DSL; the page is far from exhausted.
+Laravel [Task Scheduling](https://laravel.com/docs/scheduling) — M9 shipped a 5-frequency DSL. The 2026-09-08 audit put it at **8 of the 82 methods** the Laravel page documents: `call`, `command`, `cron`, `every_minute`, `every_five_minutes`, `hourly`, `daily`, `weekdays`, `weekends`, and `without_overlapping`. This is the thinnest surface in the framework relative to its page.
 
-- Full frequency vocabulary: `daily_at`, `twice_daily`, `weekly` / `weekly_on`, `monthly` / `monthly_on`, `quarterly`, `yearly`, `every_two_minutes` … `every_thirty_minutes`, `hourly_at`, plus `between` / `unless_between`, `at`, `days`, `timezone`
-- Constraints and hooks: `when` / `skip`, `before` / `after` / `on_success` / `on_failure`, `ping_before` / `then_ping`
-- Execution modes: `run_in_background`, `on_one_server` (cache lock), `without_overlapping` expiry, job scheduling (`schedule.job(...)` → M11) and shell tasks (`schedule.exec(...)` → M21)
-- Output handling: `send_output_to` / `append_output_to`, `email_output_to` (→ M12)
-- Commands: `schedule:list`, `schedule:test`, `schedule:clear-cache`, and a documented `schedule:work` vs cron story
-- Docs: rewrite Starlight **Task Scheduling**
+- **Frequency vocabulary:** `every_two_minutes` … `every_thirty_minutes` and `every_four_minutes`; `hourly_at`, `every_two_hours` / `every_three_hours` / `every_four_hours` / `every_six_hours` / `every_odd_hour`; `daily_at`, `twice_daily`, `twice_daily_at`; `weekly` / `weekly_on`; `monthly` / `monthly_on` / `twice_monthly` / `last_day_of_month`; `quarterly` / `quarterly_on`; `yearly` / `yearly_on`; `days`, `days_of_month`, `at`
+- **Sub-minute:** `every_second` / `every_two_seconds` / `every_five_seconds` / `every_ten_seconds` / `every_fifteen_seconds` / `every_twenty_seconds` / `every_thirty_seconds`, the long-running `schedule:run` loop they require, and `schedule:interrupt`
+- **Day constraints:** `mondays` … `sundays` as named methods alongside the existing `weekdays` / `weekends`
+- **Constraints:** `between` / `unless_between`, `when` / `skip`, `environments`, `even_in_maintenance_mode`, `timezone`
+- **Hooks:** `before` / `after` / `on_success` / `on_failure`, and the ping family `ping_before` / `ping_before_if` / `then_ping` / `then_ping_if` / `ping_on_success` / `ping_on_success_if` / `ping_on_failure` / `ping_on_failure_if`
+- **Execution modes:** `run_in_background`, `on_one_server` (cache lock) with `name` / `purpose` for lock identity, `without_overlapping` expiry, `group` for shared attributes, job scheduling (`schedule.job(...)` → M11) and shell tasks (`schedule.exec(...)` → M21)
+- **Output handling:** `send_output_to` / `append_output_to`, `email_output_to` / `email_output_on_failure` (→ M12)
+- **Events:** the scheduled-task lifecycle events Laravel dispatches, on Avalon's event bus
+- **Commands:** `schedule:list`, `schedule:test`, `schedule:work`, `schedule:interrupt`, `schedule:clear-cache`, and a documented `schedule:work` vs cron story
+- **Docs:** rewrite Starlight **Task Scheduling** — 55 lines today against Laravel's 635, missing sub-minute tasks, groups, output, hooks, maintenance mode, environments, and events entirely. Follow the Laravel section order.
 
 **Depends on:** M30 (command surface), M11 (queued jobs), M15/M16 (locks), M12 (output email), M21 (shell tasks).
 
-**Gate:** frequency + hook vocabulary exhausted against the Laravel page; `schedule:list` proves the registry; docs published.
+**Gate:** frequency, constraint, hook, and output vocabulary exhausted against the Laravel page or the deviation named; `schedule:list` proves the registry; sub-minute tasks demonstrated end to end; docs published in the Laravel section order.
 
 ### M32 — Installer + scaffold stacks (`avalon new`)
 
@@ -1453,6 +1461,40 @@ Adjacent to the IDE work rather than part of it, but it is half of what "editor 
 
 **Gate:** every tool answers correctly against `examples/progress`; guidelines reviewed against the deviation list in this plan; setup is one command for at least the MCP-capable editors Avalon documents.
 
+## Support and reference-page exhaust (M49–M50)
+
+Scheduled on 2026-09-08 after an audit of Laravel's Collections, Helpers, and Strings pages. These are reference pages, and Laravel documents them a particular way: **one section per method**, each with a sentence of explanation and a runnable example. Avalon documents them as grouped tables, which is browsable but not answerable — a reader who wants to know what `sliding` does has nowhere to look. Matching the format is most of the work; the code gaps are the smaller half.
+
+**Docs standard for reference pages:** every public method gets its own heading, a one-line description, and an example with its result. Grouped tables may stay as a navigational index at the top, not as the documentation itself.
+
+### M49 — Support Collections exhaust
+
+Laravel [Collections](https://laravel.com/docs/collections) — 155 methods on the Method Listing plus the Lazy Collections section.
+
+- **Missing methods:** `average` (the documented alias of `avg`), `dd`, `dump`, `lazy`
+- **`LazyCollection`** — the whole deferred section: construction from a generator, the `Enumerable` contract shared with `Collection`, and the lazy-only `take_until_timeout`, `tap_each`, `throttle`, `remember`, `with_heartbeat`. The plan deferred this explicitly ("until a streaming consumer needs it"); M40's `cursor` / `lazy` / `lazy_by_id` are that consumer, and they currently return plain async iterators rather than a chainable lazy collection
+- **Higher-order messages** — `collection.each.method()`, `collection.map.name`, and the rest of Laravel's proxied set
+- **Docs:** rewrite `collections` to a section per method (155 sections), plus Introduction, Creating Collections, Extending Collections, Higher Order Messages, and Lazy Collections, in Laravel's order. Keep the Articulate pointer, since `orm.Collection` extends this one
+
+**Depends on:** nothing — the code gaps are small and self-contained. Sequence the docs rewrite alongside, since it is the larger share.
+
+**Gate:** Method Listing exhausted or deviations named; lazy collections demonstrated against a real streaming read (`Model.cursor`); every method has its own documented section with an example; coverage stays 100% on `avalon.support.collection`.
+
+### M50 — Helpers, `Str`, and `Stringable` exhaust
+
+Laravel [Helpers](https://laravel.com/docs/helpers) + [Strings](https://laravel.com/docs/strings).
+
+- **`Str` (80/87):** `doesnt_end_with`, `doesnt_start_with`, `initials`, `is_match`, `match`, `match_all`, `ucwords`
+- **`Stringable` (27/117):** the fluent wrapper hand-writes a subset, so `Str.slug(value)` works while `str_(value).slug()` does not. Delegate the whole `Str` surface, then add the fluent-only methods — `pipe`, `scan`, `test`, `to_uri`, `to_html_string`, `new_line`, `strip_tags`, `hash`, `encrypt` / `decrypt`, `from_base` / `to_base`, and the `when_*` conditional family
+- **`Arr` (42/57):** typed getters `array` / `boolean` / `float` / `integer` / `string`, plus `every`, `some`, `sole`, `partition`, `push`, `select`, `from`, `has_all`, `only_values`, `except_values`. Several exist on `Collection` but not on `Arr`, where Laravel documents both
+- **`Number` (17/20):** `parse_int`, `parse_float`, `spell_ordinal`
+- **Global helpers:** the 28 absent ones, minus those honestly gated on unbuilt features (`broadcast`, `policy`, `context`, `fake`). The wrappers over surfaces that already ship — `request`, `response`, `session`, `cookie`, `logger`, `report`, `resolve`, `app`, `validator`, `old`, `back`, `bcrypt`, `method_field`, `csrf_field`, `trait_uses_recursive` — have no excuse. The URL family (`route`, `to_route`, `action`, `to_action`, `uri`, `secure_url`, `secure_asset`) lands with named routes in **M33** and is cross-referenced, not duplicated
+- **Docs:** rewrite `strings` and `helpers` to a section per method, in Laravel's order and grouping (Arrays & Objects, Numbers, Paths, URLs, Miscellaneous; then Strings, then Fluent Strings). Laravel also documents Other Utilities — Benchmarking, Dates, Deferred Functions, Lottery, Pipeline, Sleep, Timebox — which Avalon has not built; name them as deferred rather than leaving them unmentioned
+
+**Depends on:** M33 for the URL helper family only; everything else is standalone.
+
+**Gate:** both pages exhausted or deviations named; `Stringable` delegates every `Str` method with a test proving the fluent and static forms agree; every method has its own documented section with an example.
+
 ### Docs track (may land anytime)
 
 Not milestones — outstanding pages for code that already shipped:
@@ -1463,7 +1505,7 @@ Not milestones — outstanding pages for code that already shipped:
 
 ### Later (still deferred)
 
-Everything that had a foreseeable shape has been promoted to **M30–M48** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
+Everything that had a foreseeable shape has been promoted to **M30–M50** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
 
 - Additional NoSQL engines beyond Mongo (Cosmos API, Dynamo-shaped, …) — same M25 store abstraction; exhaust per driver when demanded, so there is no honest milestone count
 - Full Caliburn advanced parity — an ongoing **M6 track** by design, not a one-shot milestone
@@ -1472,7 +1514,7 @@ Everything that had a foreseeable shape has been promoted to **M30–M48** above
 
 Promoted in this pass: console exhaust (**M30**), scheduler exhaust (**M31**), interactive installer + stacks (**M32**), router DX and named routes (**M33**), security headers + CORS (**M34**), rate limiting (**M35**), starter kits (**M36**), tokens / OAuth / social auth (**M37**), deployment (**M38**), docs versioning + Prologue (**M39**), plus the docs track above.
 
-Scheduled on 2026-09-08: the IDE and editor tooling track (**M45–M48**) — Caliburn language support, the Avalon language server, editor integrations and type stubs, and AI agent support. It is written down with gates rather than left as a wish, but deliberately sequenced last: tooling indexes the framework's vocabulary, and that vocabulary is still moving until the parity milestones close.
+Scheduled on 2026-09-08: the support and reference-page exhaust track (**M49–M50**) — Collections, then Helpers / `Str` / `Stringable`, code and per-method docs together. Also scheduled the same day: the IDE and editor tooling track (**M45–M48**) — Caliburn language support, the Avalon language server, editor integrations and type stubs, and AI agent support. It is written down with gates rather than left as a wish, but deliberately sequenced last: tooling indexes the framework's vocabulary, and that vocabulary is still moving until the parity milestones close.
 
 ## Quality bar for “solid core”
 
@@ -1499,5 +1541,7 @@ Scheduled on 2026-09-08: the IDE and editor tooling track (**M45–M48**) — Ca
 **M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Caliburn deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 
 **M40–M44 (Articulate + Database exhaust) outrank M33–M39 in priority.** The 2026-09-08 audit found the ORM and database surface materially short of Laravel's Database and Eloquent sections, and every application touches it — so the ORM track should be sequenced ahead of routing sugar, starter kits, and deployment docs, whatever their numbers say.
+
+**M31 and M49–M50 came out of the 2026-09-08 reference-page audit.** Task scheduling is at 8 of 82 documented methods with a 55-line page against Laravel's 635 — the widest gap left in the framework. Collections are nearly complete in code (149/155) but documented as a table rather than 155 sections; helpers and strings are short on both counts (`Stringable` 27/117 is the worst of it). Sequence M49 and M50 opportunistically — they need no predecessors — and M31 after M30, which owns the command surface it registers into.
 
 **Docs (anytime):** see the Docs track above — Localization page (M4 code done); `@vite` directive (M6 partial). The Mutators & Casts how-to shipped with M40.

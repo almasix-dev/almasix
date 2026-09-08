@@ -168,13 +168,13 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M30** | `grail progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated` (parts 2–3 owed) |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `grail model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
-| **M21–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M21–M50** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Avalon
 
 M0–M20, M40, and M41 are closed; **M5** and **M30** are partly done. Next is
 **M42 — query builder + database exhaust**. The board on `/progress` lists the
-full **M0–M48** roadmap with a status and proof for each milestone.
+full **M0–M50** roadmap with a status and proof for each milestone.
 ## CLI
 
 ```bash

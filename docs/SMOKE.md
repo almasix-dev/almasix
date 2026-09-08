@@ -561,7 +561,7 @@ pytest -q tests/test_m41_*.py tests/smoke/test_m41_smoke.py
 - [x] Dynamic relations: `resolve_relation_using` relations query, eager-load, and still refuse to lazy-load
 - [x] Morph loading: `load_morph` / `load_morph_count` take a relation list per target class on both `Model` and `Collection`
 - [x] `articulate/relationships` rewritten in Laravel section order, with the N+1 deviation documented and the two unimplemented sections (`withAttributes`, `automaticallyEagerLoadRelationships`) named
-- [x] Living example: `/api/orm` relationship tour (pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates, existence queries); milestone board covers M0–M48 with `partial` statuses
+- [x] Living example: `/api/orm` relationship tour (pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates, existence queries); milestone board covers M0–M50 with `partial` statuses
 
 ---
 
