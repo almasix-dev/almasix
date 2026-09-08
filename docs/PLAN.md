@@ -1450,6 +1450,14 @@ Laravel [Migrations](https://laravel.com/docs/migrations) (113 sections) and [Pa
 
 **Named deviations:** SQLite cannot change a column in place, drop a foreign key or a primary key, or rename an index — each raises rather than pretending; its Python driver commits DDL as it runs, so a migration's schema changes are not rolled back there (its data is); `schema:dump` reads the schema back through the inspector instead of shelling out to `mysqldump` / `pg_dump`, so it needs no client binary and reads the same on every engine.
 
+**Owed — the surfaces the new paginators have not reached yet.** The SQL query builder is exhausted; four places still speak the old pagination:
+
+- `Model.paginate` takes `page=1` rather than reading the request, and there is no `Model.simple_paginate` or `Model.cursor_paginate` classmethod, so only `Model.query().paginate()` behaves the way Laravel's does
+- The document builder (`almasix.orm.documents`) and the Scout search builder keep the old `page=1` signature with no `page_name`, and neither has cursor pagination — the document half wants keyset walking (`chunk_by_id` / `lazy_by_id`) underneath it first, so it belongs with the **M25** revisit
+- A paginator returned straight from a route renders as its `repr`, because nothing makes it `Responsable` the way Laravel's is; returning `to_dict()` is the only honest route today
+- The `pagination.previous` / `pagination.next` translation strings ship but nothing reads them — the link views spell both words out, so the labels do not localize
+- `almasix.http.resources.response.pagination_information` builds its own page URLs (dropping the request's query string as it goes) instead of asking the paginator, which now knows its own path, and it does not emit Laravel's numbered `meta.links` array
+
 **Depends on:** M5, M6 Prism (pagination views), M30 (commands), M32 (stack-aware link views).
 
 **Gate met:** both pages exhausted or deviations named; column alteration compiled for MySQL, PostgreSQL, SQL Server, and Oracle and refused honestly on SQLite; `almasix.orm.blueprint`, `almasix.orm.schema`, `almasix.orm.migration`, and `almasix.orm.pagination` at 100% statements and branches; docs published; `smith progress:schema` demonstrates the surface.
