@@ -322,7 +322,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 102 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 103 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -490,6 +490,12 @@ What the framework ships, 102 commands, as `smith list` groups them. An applicat
 | Command | Description |
 | --- | --- |
 | `route:list` | List the application's registered routes |
+
+### `schema`
+
+| Command | Description |
+| --- | --- |
+| `schema:dump` | Dump the current database schema to database/schema |
 
 ### `schedule`
 

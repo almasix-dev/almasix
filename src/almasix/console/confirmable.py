@@ -10,17 +10,18 @@ from __future__ import annotations
 from typing import Any
 
 
-def current_environment() -> str:
-    """``config('app.env')`` — ``production`` when there is nothing to read.
+def current_environment(default: str = "production") -> str:
+    """``config('app.env')`` — ``default`` when there is nothing to read.
 
-    Guessing "production" is the safe guess: the worst it can do is refuse.
+    Guessing "production" is the safe guess for a command that destroys
+    something: the worst it can do is refuse.
     """
     from almasix.config import config
 
     try:
-        return str(config("app.env", "production") or "production")
+        return str(config("app.env", default) or default)
     except Exception:  # noqa: BLE001 - config is absent outside a booted app
-        return "production"
+        return default
 
 
 class Confirmable:
@@ -44,3 +45,19 @@ class Confirmable:
             self.comment("Nothing was changed.")
             return False
         return True
+
+    def confirm_in_production(self: Any) -> bool:
+        """Laravel's guard as written: nothing is asked outside production.
+
+        A command that only writes what you asked it to write — `migrate`,
+        say — has no reason to stop and check on a laptop, and every reason
+        to stop on a production database.
+        """
+        # Outside an application there is no production database to protect,
+        # so a missing config is not read as one here.
+        if self.option("force") or current_environment("local") != "production":
+            return True
+        self.error(
+            "Application is in production. Re-run with --force if you really mean it."
+        )
+        return False

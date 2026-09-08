@@ -55,13 +55,13 @@ def test_migrate_reports_a_database_it_cannot_reach(
 ) -> None:
     from almasix.console.commands.database import DatabaseCommand
 
-    async def explode() -> None:
+    async def explode(**_: object) -> None:
         raise RuntimeError("no such table: migrations")
 
     monkeypatch.setattr(
         DatabaseCommand,
         "migrator",
-        lambda self: type("Broken", (), {"run": staticmethod(explode)})(),
+        lambda self, *args: type("Broken", (), {"run": staticmethod(explode)})(),
     )
     kernel.boot_application()
 

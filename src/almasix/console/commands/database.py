@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Sequence
 from pathlib import Path
 from typing import Any
 
 from almasix.console.command import Command
 from almasix.console.confirmable import Confirmable
 from almasix.console.exceptions import CommandFailed
-from almasix.orm.migration import Migrator
+from almasix.orm.migration import MigrationResult, Migrator
 from almasix.orm.seeder import SeederError, resolve_seeder_class, run_seeder
 
 
@@ -29,19 +29,22 @@ class SeederOutput:
 class DatabaseCommand(Command):
     """Shared body: the migrator, the event loop, and the seeder run."""
 
-    def migrator(self, connection: str | None = None, path: str | Path | None = None) -> Migrator:
-        directory = Path(path) if path else self.root() / "database" / "migrations"
-        if not directory.is_absolute():
-            directory = self.root() / directory
-        return Migrator(directory, connection)
+    def migrator(
+        self,
+        connection: str | None = None,
+        path: str | Path | Sequence[str | Path] | None = None,
+    ) -> Migrator:
+        given = [path] if isinstance(path, (str, Path)) else list(path or [])
+        directories = [Path(one) for one in given] or [Path("database/migrations")]
+        rooted = [one if one.is_absolute() else self.root() / one for one in directories]
+        return Migrator(rooted, connection)
 
     def resolve_migrator(self) -> Migrator | None:
         """The migrator ``--database`` and ``--path`` ask for, or ``None``.
 
         Names the option it could not read before returning ``None``, so the
-        caller only has to answer with ``INVALID``. Where Laravel's ``--path``
-        takes any number of directories, Almasix's takes one: a ``Migrator``
-        reads a single tree.
+        caller only has to answer with ``INVALID``. ``--path`` takes several
+        directories, comma-separated, as Laravel's repeated flag does.
         """
         connection = self.option("database")
         if connection is True:
@@ -55,10 +58,22 @@ class DatabaseCommand(Command):
                 "Invalid value for '--path': provide a directory, e.g. --path=database/migrations."
             )
             return None
-        return self.migrator(
-            str(connection or "").strip() or None,
-            str(path or "").strip() or None,
-        )
+        directories = [part.strip() for part in str(path or "").split(",") if part.strip()]
+        return self.migrator(str(connection or "").strip() or None, directories)
+
+    def report(self, results: Sequence[MigrationResult], verb: str, style: str) -> None:
+        """Say what ran and how long it took, the way Laravel's migrator does."""
+        announce = self.success if style == "success" else self.warn
+        for result in results:
+            if result.queries:
+                self.line(f"{verb}: {result}")
+                for query in result.queries:
+                    self.line(f"  {query.sql}")
+                continue
+            announce(f"{verb}: {result} ({result.elapsed:.2f}ms)")
+
+    def pretending(self) -> bool:
+        return bool(self.option("pretend"))
 
     def root(self) -> Path:
         """The working directory, as ``smith`` was run.
@@ -105,21 +120,64 @@ class DatabaseCommand(Command):
         return self.seed_database(seeder)
 
 
-class MigrateCommand(DatabaseCommand):
+class MigrateCommand(Confirmable, DatabaseCommand):
+    """Run whatever has not run yet.
+
+    ``--pretend`` prints the SQL each migration would run instead of running
+    it, which is honest here because schema changes go through the connection
+    like any other statement.
+    """
+
     signature = (
         "migrate {--seed : Run DatabaseSeeder after migrating} "
-        "{--seeder= : Seeder class to run, which implies --seed}"
+        "{--seeder= : Seeder class to run, which implies --seed} "
+        "{--database= : Connection to migrate (default: the configured default)} "
+        "{--path= : Directories to read migrations from, comma-separated} "
+        "{--step : Give each migration its own batch, so it can be rolled back alone} "
+        "{--pretend : Print the SQL that would run, and run none of it} "
+        "{--schema-path= : Schema dump to load before migrating} "
+        "{--graceful : Report a failure as success, for deploys that must not stop} "
+        "{--force : Migrate without asking, and allow it in production}"
     )
     description = "Run outstanding migrations"
 
     def handle(self) -> int:
-        applied = self.run_async(self.migrator().run())
+        migrator = self.resolve_migrator()
+        if migrator is None:
+            return self.INVALID
+        if not self.confirm_in_production():
+            return self.FAILURE
+
+        try:
+            self.load_schema_if_asked(migrator)
+            applied = self.run_async(
+                migrator.run(step=bool(self.option("step")), pretend=self.pretending())
+            )
+        except CommandFailed:
+            if self.option("graceful"):
+                return self.SUCCESS
+            raise
+
         if not applied:
             self.line("Nothing to migrate.")
         else:
-            for name in applied:
-                self.success(f"Migrated: {name}")
+            self.report(applied, "Migrated", "success")
+        if self.pretending():
+            return self.SUCCESS
         return self.seed_if_asked()
+
+    def load_schema_if_asked(self, migrator: Migrator) -> None:
+        """Replay a squashed schema first, when one was named and none has run."""
+        given = self.option("schema_path")
+        if not given or given is True:
+            return
+        source = Path(str(given))
+        if not source.is_absolute():
+            source = self.root() / source
+        if self.run_async(migrator.any_ran()):
+            return
+        count = self.run_async(migrator.load_schema(source))
+        self.success(f"Loaded {count} statement(s) from {source.name}.")
 
 
 class MigrateInstallCommand(DatabaseCommand):
@@ -147,31 +205,66 @@ class MigrateInstallCommand(DatabaseCommand):
         return self.SUCCESS
 
 
-class MigrateRollbackCommand(DatabaseCommand):
-    signature = "migrate:rollback {--step=1 : Batches to roll back}"
+class MigrateRollbackCommand(Confirmable, DatabaseCommand):
+    """Undo the last batch, or exactly what ``--step`` / ``--batch`` name.
+
+    ``--step`` counts migrations, as Laravel's does. It counted batches in
+    Almasix until M43; ``migrate:rollback`` with nothing at all still undoes
+    the last batch, which is what most callers meant by it.
+    """
+
+    signature = (
+        "migrate:rollback {--step=0 : Migrations to roll back, newest first} "
+        "{--batch=0 : Roll back one batch exactly, by its number} "
+        "{--database= : Connection to roll back (default: the configured default)} "
+        "{--path= : Directories to read migrations from, comma-separated} "
+        "{--pretend : Print the SQL that would run, and run none of it} "
+        "{--force : Roll back without asking, and allow it in production}"
+    )
     description = "Roll back the last migration batch"
 
     def handle(self) -> int:
-        rolled = self.run_async(self.migrator().rollback(int(self.option("step") or 1)))
+        step = self.count("step")
+        batch = self.count("batch")
+        if step is None or batch is None:
+            return self.INVALID
+        migrator = self.resolve_migrator()
+        if migrator is None:
+            return self.INVALID
+        if not self.confirm_in_production():
+            return self.FAILURE
+
+        rolled = self.run_async(
+            migrator.rollback(step=step, batch=batch, pretend=self.pretending())
+        )
         if not rolled:
             self.line("Nothing to roll back.")
             return self.SUCCESS
-        for name in rolled:
-            self.warn(f"Rolled back: {name}")
+        self.report(rolled, "Rolled back", "warn")
         return self.SUCCESS
+
+    def count(self, name: str) -> int | None:
+        """One counting option, or ``None`` once it has been refused."""
+        given = self.option(name)
+        try:
+            value = 0 if given is None or given is True else int(str(given))
+        except ValueError:
+            self.error(f"Invalid value for '--{name}': {given!r} is not a valid integer.")
+            return None
+        if value < 0:
+            self.error(f"Invalid value for '--{name}': {given!r} is not a count.")
+            return None
+        return value
 
 
 class MigrateResetCommand(Confirmable, DatabaseCommand):
-    """Roll every migration back, newest first.
-
-    ``--pretend`` is not offered: Almasix's migrator runs schema changes rather
-    than compiling them to SQL, so there is nothing honest to print.
-    """
+    """Roll every migration back, newest first."""
 
     signature = (
         "migrate:reset "
         "{--database= : Connection to roll back (default: the configured default)} "
-        "{--path= : Directory to read migrations from (default: database/migrations)} "
+        "{--path= : Directories to read migrations from, comma-separated} "
+        "{--pretend : Print the SQL that would run, and run none of it} "
         "{--force : Roll back without asking, and allow it in production}"
     )
     description = "Roll back every migration that has run"
@@ -180,15 +273,16 @@ class MigrateResetCommand(Confirmable, DatabaseCommand):
         migrator = self.resolve_migrator()
         if migrator is None:
             return self.INVALID
-        if not self.confirm_to_proceed("This rolls back every migration that has run."):
+        if not self.pretending() and not self.confirm_to_proceed(
+            "This rolls back every migration that has run."
+        ):
             return self.FAILURE
 
-        rolled = self.run_async(migrator.reset())
+        rolled = self.run_async(migrator.reset(pretend=self.pretending()))
         if not rolled:
             self.line("Nothing to roll back.")
             return self.SUCCESS
-        for name in rolled:
-            self.warn(f"Rolled back: {name}")
+        self.report(rolled, "Rolled back", "warn")
         self.success(f"Rolled back {len(rolled)} migration(s).")
         return self.SUCCESS
 
@@ -220,13 +314,11 @@ class MigrateRefreshCommand(Confirmable, DatabaseCommand):
             return self.FAILURE
 
         rolled, applied = self.run_async(migrator.refresh(steps))
-        for name in rolled:
-            self.warn(f"Rolled back: {name}")
+        self.report(rolled, "Rolled back", "warn")
         if not applied:
             self.line("Nothing to migrate.")
         else:
-            for name in applied:
-                self.success(f"Migrated: {name}")
+            self.report(applied, "Migrated", "success")
         return self.seed_if_asked()
 
     def steps(self) -> int | None:
@@ -243,31 +335,90 @@ class MigrateRefreshCommand(Confirmable, DatabaseCommand):
         return steps
 
 
-class MigrateFreshCommand(DatabaseCommand):
+class MigrateFreshCommand(Confirmable, DatabaseCommand):
     signature = (
         "migrate:fresh {--seed : Run DatabaseSeeder after migrating} "
-        "{--seeder= : Seeder class to run, which implies --seed}"
+        "{--seeder= : Seeder class to run, which implies --seed} "
+        "{--database= : Connection to rebuild (default: the configured default)} "
+        "{--path= : Directories to read migrations from, comma-separated} "
+        "{--step : Give each migration its own batch} "
+        "{--force : Rebuild without asking, and allow it in production}"
     )
     description = "Drop all tables and re-run every migration"
 
     def handle(self) -> int:
-        for name in self.run_async(self.migrator().fresh()):
-            self.success(f"Migrated: {name}")
+        migrator = self.resolve_migrator()
+        if migrator is None:
+            return self.INVALID
+        if not self.confirm_in_production():
+            return self.FAILURE
+
+        applied = self.run_async(migrator.fresh(step=bool(self.option("step"))))
+        self.report(applied, "Migrated", "success")
         return self.seed_if_asked()
 
 
 class MigrateStatusCommand(DatabaseCommand):
-    signature = "migrate:status"
+    """Show what has run, in which batch, and what is still waiting."""
+
+    signature = (
+        "migrate:status "
+        "{--database= : Connection to read (default: the configured default)} "
+        "{--path= : Directories to read migrations from, comma-separated} "
+        "{--pending : Show only the migrations that have not run}"
+    )
     description = "Show which migrations have run"
 
     def handle(self) -> int:
-        rows = self.run_async(self.migrator().status())
+        migrator = self.resolve_migrator()
+        if migrator is None:
+            return self.INVALID
+        rows = self.run_async(migrator.status())
+        if self.option("pending"):
+            rows = [row for row in rows if not row["ran"]]
+            if not rows:
+                self.success("No pending migrations.")
+                return self.SUCCESS
         if not rows:
             self.line("No migrations.")
             return self.SUCCESS
         for row in rows:
-            mark = "Ran" if row["ran"] else "Pending"
-            self.line(f"{mark:8} {row['migration']}")
+            mark = f"Ran [{row['batch']}]" if row["ran"] else "Pending"
+            self.line(f"{mark:10} {row['migration']}")
+        return self.SUCCESS
+
+
+class SchemaDumpCommand(DatabaseCommand):
+    """Write the current schema to one file, so a fresh database can skip ahead.
+
+    Laravel calls out to `mysqldump`; Almasix reads the schema back through
+    the inspector instead, so the dump is the same shape on every engine and
+    needs no client binary installed.
+    """
+
+    signature = (
+        "schema:dump "
+        "{--database= : Connection to dump (default: the configured default)} "
+        "{--path= : Directories the migrations live in, comma-separated} "
+        "{--prune : Delete the migration files the dump now stands in for}"
+    )
+    description = "Dump the current database schema to database/schema"
+
+    def handle(self) -> int:
+        migrator = self.resolve_migrator()
+        if migrator is None:
+            return self.INVALID
+        name = str(self.option("database") or "").strip() or "database"
+        destination = self.root() / "database" / "schema" / f"{name}-schema.sql"
+        written = self.run_async(migrator.dump_schema(destination))
+        self.success(f"Database schema dumped to {written}.")
+
+        if self.option("prune"):
+            removed = 0
+            for path in migrator.files():
+                path.unlink()
+                removed += 1
+            self.success(f"Pruned {removed} migration file(s).")
         return self.SUCCESS
 
 

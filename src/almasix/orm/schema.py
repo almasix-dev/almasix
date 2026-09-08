@@ -45,18 +45,8 @@ class Schema:
     async def create(table: str, callback: Any, connection: str | None = None) -> None:
         blueprint = Blueprint(table)
         callback(blueprint)
-        metadata = sa.MetaData()
-        engine = _schema_connection(connection).engine
-
-        def reflect_and_create(sync_conn: Any) -> None:
-            # Load existing tables so ForeignKey("users.id") can resolve during CREATE.
-            metadata.reflect(bind=sync_conn)
-            sa_table = blueprint.to_table(metadata, engine.dialect)
-            metadata.create_all(sync_conn, tables=[sa_table])
-
-        async with engine.begin() as conn:
-            await _enable_foreign_keys(conn, engine.dialect.name)
-            await conn.run_sync(reflect_and_create)
+        target = _schema_connection(connection)
+        await _run(target, compile_create_statements(blueprint, target.engine.dialect))
 
     @staticmethod
     async def create_if_not_exists(
@@ -72,15 +62,8 @@ class Schema:
         """Alter an existing table (Laravel ``Schema::table``)."""
         blueprint = Blueprint(table)
         callback(blueprint)
-        engine = _schema_connection(connection).engine
-        dialect_name = engine.dialect.name
-        statements = compile_table_statements(blueprint, engine.dialect)
-        if not statements:
-            return
-        async with engine.begin() as conn:
-            await _enable_foreign_keys(conn, dialect_name)
-            for statement in statements:
-                await conn.execute(sa.text(statement))
+        target = _schema_connection(connection)
+        await _run(target, compile_table_statements(blueprint, target.engine.dialect))
 
     @staticmethod
     async def rename(from_table: str, to_table: str, connection: str | None = None) -> None:
@@ -343,9 +326,53 @@ def rename_table_sql(from_table: str, to_table: str, dialect: Any) -> str:
     return f"ALTER TABLE {old} RENAME TO {new}"
 
 
-async def _enable_foreign_keys(conn: Any, dialect_name: str) -> None:
-    if dialect_name == "sqlite":  # pragma: no branch
-        await conn.execute(sa.text("PRAGMA foreign_keys=ON"))
+async def _run(target: Any, statements: list[str]) -> None:
+    """Run compiled DDL through the connection, not around it.
+
+    Going through :class:`~almasix.orm.connection.Connection` is what lets a
+    migration join a transaction, be counted by a query listener, and be
+    printed rather than run under ``DB.pretend`` — none of which is possible
+    for DDL that opens its own engine-level transaction.
+    """
+    if not statements:
+        return
+    async with target.transaction():
+        for statement in statements:
+            await target.execute(statement)
+
+
+def compile_create_statements(blueprint: Blueprint, dialect: Any) -> list[str]:
+    """The ``CREATE TABLE`` and its indexes, as SQL this engine understands."""
+    metadata = sa.MetaData()
+    _stub_foreign_tables(blueprint, metadata)
+    table = blueprint.to_table(metadata, dialect)
+    statements = [str(sa.schema.CreateTable(table).compile(dialect=dialect)).strip()]
+    statements.extend(
+        str(sa.schema.CreateIndex(index).compile(dialect=dialect)).strip()
+        for index in sorted(table.indexes, key=lambda index: index.name or "")
+    )
+    return statements
+
+
+def _stub_foreign_tables(blueprint: Blueprint, metadata: sa.MetaData) -> None:
+    """Stand in for the tables this one points at.
+
+    A ``REFERENCES users (id)`` clause needs `users` to be in the metadata to
+    compile, but only its name and the column's — so a stub is enough, and it
+    saves reflecting the whole schema on every create.
+    """
+    for column in blueprint.columns:
+        reference = column.options.get("references")
+        if not reference:
+            continue
+        name, _, referenced = reference.partition(".")
+        if name == blueprint.table or name in metadata.tables:
+            continue
+        sa.Table(
+            name,
+            metadata,
+            sa.Column(referenced or "id", sa.BigInteger, primary_key=True),
+        )
 
 
 def compile_table_statements(blueprint: Blueprint, dialect: Any) -> list[str]:

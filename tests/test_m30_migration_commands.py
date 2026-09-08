@@ -218,7 +218,7 @@ def test_reset_will_not_touch_production_without_force(
 ) -> None:
     kernel = build(environment="production")
     write_migration(tmp_path, "2020_01_01_000000", "posts")
-    assert kernel.run_argv("migrate", []) == 0
+    assert kernel.run_argv("migrate", ["--force"]) == 0
 
     assert kernel.run_argv("migrate:reset", []) == 1
 
