@@ -44,12 +44,15 @@ await post.delete()               # sets deleted_at
 await Post.query().get()          # excludes trashed
 await Post.with_trashed().get()
 await Post.only_trashed().get()
+await Post.without_trashed().get()  # the default, stated explicitly
 post.trashed()
 await post.restore()
 await post.force_delete()         # hard DELETE
 ```
 
 Add `table.soft_deletes()` on your migration blueprint.
+
+Trashed rows still occupy the table. To clear them out on a schedule, make the model [prunable](/articulate/#pruning-models).
 
 ## Events
 
@@ -67,3 +70,17 @@ Post.observe(PostObserver)
 ```
 
 A listener that returns `False` aborts that lifecycle step (`save` / `delete` / `restore`). Async listeners are awaited on the async path. `retrieved` and `replicating` fire in a sync context — do not pass async callbacks there.
+
+### Muting events
+
+```python
+await post.save_quietly()
+await post.delete_quietly()
+await post.force_delete_quietly()
+await post.restore_quietly()
+
+with Model.without_events():      # a whole block
+    await Post.create(title="Silent")
+```
+
+The `*_quietly` methods mute events on that instance only, so concurrent work keeps firing its own. `without_events()` is process-wide for the duration of the block.

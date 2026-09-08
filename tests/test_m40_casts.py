@@ -28,7 +28,7 @@ from avalon.orm.casts import (
     uncast_value,
 )
 from avalon.orm.model import Model
-from tests.orm_support import memory_db  # noqa: F401 - fixture
+from tests.orm_support import memory_db  # noqa: F401
 
 pytestmark = pytest.mark.anyio
 
@@ -253,7 +253,7 @@ async def test_merge_casts_and_has_cast_are_per_instance() -> None:
     assert Loose.class_casts() == {}
 
 
-async def test_with_casts_applies_casts_for_one_query(memory_db) -> None:  # noqa: ANN001
+async def test_with_casts_applies_casts_for_one_query(memory_db) -> None:
     class Reading(Model):
         table = "readings"
         fillable = ("amount",)

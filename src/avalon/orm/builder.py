@@ -718,7 +718,56 @@ class QueryBuilder:
 
         return await self.chunk(size, handle)
 
-    async def cursor(self, size: int = 100) -> AsyncIterator[Any]:
+    async def chunk_by_id(
+        self,
+        size: int,
+        callback: Callable[[Collection[Any]], Any],
+        column: str | None = None,
+    ) -> bool:
+        """Chunk by ascending id, so writes during the walk cannot skip rows.
+
+        Offset paging (:meth:`chunk`) loses rows when the callback updates the
+        column it is ordering by; keyset paging does not.
+        """
+        key = column or self._key_column()
+        last: Any = None
+        while True:
+            query = self.clone().reorder(key, "asc").limit(size)
+            if last is not None:
+                query = query.where(key, ">", last)
+            results = await query.get()
+            if not len(results):
+                return True
+            outcome = callback(results)
+            if hasattr(outcome, "__await__"):
+                outcome = await outcome
+            if outcome is False:
+                return False
+            last = _value_of(results[-1], key)
+            if len(results) < size:
+                return True
+
+    async def each_by_id(
+        self,
+        callback: Callable[[Any], Any],
+        size: int = 100,
+        column: str | None = None,
+    ) -> bool:
+        """Walk every row by id, one at a time."""
+
+        async def handle(chunk: Collection[Any]) -> Any:
+            for item in chunk:
+                outcome = callback(item)
+                if hasattr(outcome, "__await__"):
+                    outcome = await outcome
+                if outcome is False:
+                    return False
+            return True
+
+        return await self.chunk_by_id(size, handle, column)
+
+    async def lazy(self, size: int = 1000) -> AsyncIterator[Any]:
+        """Iterate the whole result set in chunks, yielding one row at a time."""
         page = 1
         while True:
             results = await self.clone().for_page(page, size).get()
@@ -729,6 +778,40 @@ class QueryBuilder:
             if len(results) < size:
                 return
             page += 1
+
+    async def lazy_by_id(self, size: int = 1000, column: str | None = None) -> AsyncIterator[Any]:
+        """Like :meth:`lazy`, but paged by ascending id."""
+        key = column or self._key_column()
+        last: Any = None
+        while True:
+            query = self.clone().reorder(key, "asc").limit(size)
+            if last is not None:
+                query = query.where(key, ">", last)
+            results = await query.get()
+            if not len(results):
+                return
+            for item in results:
+                yield item
+            last = _value_of(results[-1], key)
+            if len(results) < size:
+                return
+
+    async def cursor(self, size: int = 100) -> AsyncIterator[Any]:
+        """Stream rows from the database, hydrating one model at a time.
+
+        Unlike :meth:`lazy`, this holds a single result set open instead of
+        issuing one query per chunk, so nothing but the current row is in
+        memory. Eager loads need the whole set, so they are not applied here.
+        """
+        connection = self.get_connection()
+        async for row in connection.stream(self.to_select(), chunk_size=size):
+            yield self.model._hydrate(row, casts=self._casts) if self.model else row
+
+    def _key_column(self) -> str:
+        """The column keyset paging should walk."""
+        if self.model is not None:
+            return self.model.primary_key
+        return "id"
 
     # --- pagination ---------------------------------------------------------
 
@@ -990,3 +1073,11 @@ def _combine(clauses: Sequence[tuple[str, ClauseElement]]) -> ClauseElement | No
     for boolean, clause in clauses[1:]:
         combined = sa.or_(combined, clause) if boolean == "or" else sa.and_(combined, clause)
     return combined
+
+
+def _value_of(row: Any, key: str) -> Any:
+    """Read a column from a model or a plain row."""
+    getter = getattr(row, "get_raw_attribute", None)
+    if callable(getter):
+        return getter(key)
+    return row[key]

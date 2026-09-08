@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from avalon.orm import Collection, Model, Schema, relation
-from tests.orm_support import memory_db  # noqa: F401 - fixture
+from tests.orm_support import memory_db  # noqa: F401
 
 pytestmark = pytest.mark.asyncio
 
@@ -40,7 +40,7 @@ class Article(Model):
 
 
 @pytest.fixture
-async def schema(memory_db) -> None:  # noqa: ANN001
+async def schema(memory_db) -> None:
     await Schema.create(
         "writers",
         lambda table: (
@@ -129,7 +129,7 @@ async def test_merge_hidden_and_merge_visible_are_per_instance() -> None:
     assert set(revealed.to_dict()) == {"name"}
 
 
-async def test_relations_respect_hidden_and_visible(schema) -> None:  # noqa: ANN001
+async def test_relations_respect_hidden_and_visible(schema) -> None:
     writer = await Writer.create(name="Ada")
     await Article.create(title="On Computing", writer_id=writer.id)
 
@@ -156,13 +156,13 @@ async def test_to_json_forwards_options() -> None:
 
 
 @pytest.fixture
-async def writers(schema) -> Collection[Writer]:  # noqa: ANN001
+async def writers(schema) -> Collection[Writer]:
     for name in ("Ada", "Alan", "Grace"):
         await Writer.create(name=name)
     return await Writer.all()
 
 
-async def test_collection_find_by_key_model_and_callback(writers) -> None:  # noqa: ANN001
+async def test_collection_find_by_key_model_and_callback(writers) -> None:
     first = writers[0]
 
     assert writers.find(first.id) is first
@@ -172,7 +172,7 @@ async def test_collection_find_by_key_model_and_callback(writers) -> None:  # no
     assert writers.find(9999, "fallback") == "fallback"
 
 
-async def test_collection_contains_accepts_keys_and_models(writers) -> None:  # noqa: ANN001
+async def test_collection_contains_accepts_keys_and_models(writers) -> None:
     first = writers[0]
 
     assert writers.contains(first.id) is True
@@ -182,7 +182,7 @@ async def test_collection_contains_accepts_keys_and_models(writers) -> None:  # 
     assert writers.contains("name", "Ada") is True
 
 
-async def test_collection_only_and_except_use_model_keys(writers) -> None:  # noqa: ANN001
+async def test_collection_only_and_except_use_model_keys(writers) -> None:
     keys = writers.model_keys()
 
     assert writers.only(keys[0]).model_keys() == [keys[0]]
@@ -191,7 +191,7 @@ async def test_collection_only_and_except_use_model_keys(writers) -> None:  # no
     assert writers.except_([keys[0], keys[1]]).model_keys() == keys[2:]
 
 
-async def test_collection_diff_intersect_and_unique_use_model_keys(writers) -> None:  # noqa: ANN001
+async def test_collection_diff_intersect_and_unique_use_model_keys(writers) -> None:
     keys = writers.model_keys()
     subset = writers.only([keys[0]])
 
@@ -206,7 +206,7 @@ async def test_collection_diff_intersect_and_unique_use_model_keys(writers) -> N
 # --- collection serialization pass-throughs ---------------------------------
 
 
-async def test_collection_visibility_helpers_apply_to_every_model(writers) -> None:  # noqa: ANN001
+async def test_collection_visibility_helpers_apply_to_every_model(writers) -> None:
     writers.make_hidden("name")
     assert all("name" not in item.to_dict() for item in writers)
 
@@ -220,7 +220,7 @@ async def test_collection_visibility_helpers_apply_to_every_model(writers) -> No
     assert all("name" not in item.to_dict() for item in writers)
 
 
-async def test_collection_append_applies_to_every_model(writers) -> None:  # noqa: ANN001
+async def test_collection_append_applies_to_every_model(writers) -> None:
     writers.append("initials")
     assert all("initials" in item.to_dict() for item in writers)
 
@@ -228,7 +228,7 @@ async def test_collection_append_applies_to_every_model(writers) -> None:  # noq
 # --- collection queries -----------------------------------------------------
 
 
-async def test_collection_to_query_scopes_to_its_models(writers) -> None:  # noqa: ANN001
+async def test_collection_to_query_scopes_to_its_models(writers) -> None:
     keys = writers.model_keys()
     query = writers.only([keys[0]]).to_query()
 
@@ -241,7 +241,7 @@ async def test_to_query_rejects_an_empty_collection() -> None:
         Collection([]).to_query()
 
 
-async def test_collection_fresh_reloads_from_the_database(writers) -> None:  # noqa: ANN001
+async def test_collection_fresh_reloads_from_the_database(writers) -> None:
     writers[0].name = "Changed"
     assert writers[0].name == "Changed"
 
@@ -250,7 +250,7 @@ async def test_collection_fresh_reloads_from_the_database(writers) -> None:  # n
     assert reloaded.model_keys() == writers.model_keys()
 
 
-async def test_collection_fresh_may_eager_load(schema) -> None:  # noqa: ANN001
+async def test_collection_fresh_may_eager_load(schema) -> None:
     writer = await Writer.create(name="Ada")
     await Article.create(title="On Computing", writer_id=writer.id)
 
@@ -258,7 +258,7 @@ async def test_collection_fresh_may_eager_load(schema) -> None:  # noqa: ANN001
     assert len(reloaded[0].articles) == 1
 
 
-async def test_collection_fresh_drops_deleted_models(writers) -> None:  # noqa: ANN001
+async def test_collection_fresh_drops_deleted_models(writers) -> None:
     removed = writers[0]
     await removed.delete()
 
@@ -283,7 +283,7 @@ class Sorted(Collection):
         return sorted(item.name for item in self)
 
 
-async def test_a_model_may_return_a_custom_collection(schema) -> None:  # noqa: ANN001
+async def test_a_model_may_return_a_custom_collection(schema) -> None:
     class Author(Writer):
         table = "writers"
         collection_class = Sorted
@@ -297,5 +297,5 @@ async def test_a_model_may_return_a_custom_collection(schema) -> None:  # noqa: 
     assert isinstance(Author.new_collection([]), Sorted)
 
 
-async def test_the_default_collection_is_still_returned(writers) -> None:  # noqa: ANN001
+async def test_the_default_collection_is_still_returned(writers) -> None:
     assert type(writers) is Collection

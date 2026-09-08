@@ -121,6 +121,22 @@ class Connection:
         rows = await self.select(statement, parameters)
         return rows[0] if rows else None
 
+    async def stream(
+        self,
+        statement: ClauseElement | str,
+        parameters: Mapping[str, Any] | None = None,
+        *,
+        chunk_size: int = 100,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Yield rows as the driver produces them, without buffering the set."""
+        compiled = text(statement) if isinstance(statement, str) else statement
+        async with self.acquire() as connection:
+            result = await connection.stream(
+                compiled, parameters, execution_options={"yield_per": chunk_size}
+            )
+            async for row in result.mappings():
+                yield dict(row)
+
     @asynccontextmanager
     async def transaction(self) -> AsyncIterator[AsyncConnection]:
         """Run in a transaction; nested calls use SAVEPOINTs."""

@@ -41,6 +41,11 @@ class SoftDeletes:
         builder = cls.query().without_global_scope(SOFT_DELETE_SCOPE)  # type: ignore[attr-defined]
         return builder.where_not_null(f"{builder.table}.{cls.deleted_at}")
 
+    @classmethod
+    def without_trashed(cls) -> QueryBuilder:
+        """The default scope, stated explicitly (``withoutTrashed``)."""
+        return cls.query()  # type: ignore[attr-defined]
+
     # --- instance -----------------------------------------------------------
 
     def trashed(self) -> bool:
@@ -73,3 +78,7 @@ class SoftDeletes:
         self.sync_original()  # type: ignore[attr-defined]
         await self._fire_event("restored")  # type: ignore[attr-defined]
         return True
+
+    async def restore_quietly(self) -> bool:
+        """Restore without firing model events (``restoreQuietly``)."""
+        return await self._quietly(self.restore)  # type: ignore[attr-defined]

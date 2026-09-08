@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable, Iterable, Mapping, Sequence
+import re
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date, datetime, timezone
 from typing import Any, ClassVar
 
@@ -18,6 +21,7 @@ from avalon.orm.casts import (
     serialize_value,
 )
 from avalon.orm.collection import Collection
+from avalon.orm.ids import fill_unique_ids
 from avalon.orm.inflector import foreign_key, snake, table_name
 
 EVENTS = (
@@ -38,9 +42,29 @@ EVENTS = (
 # Set by ``avalon.orm.seeder.without_model_events`` / ``WithoutModelEvents``.
 _EVENTS_DISABLED = False
 
+# Strictness, configured once at boot (Laravel does this in a provider).
+_STRICT_DISCARDING = False
+_STRICT_MISSING = False
+
+# Classes whose timestamps are suspended, plus a global unguard switch.
+_TIMESTAMPS_OFF: ContextVar[frozenset[type]] = ContextVar("_TIMESTAMPS_OFF", default=frozenset())
+_UNGUARDED = False
+
+_UNSET = object()
+
+_ACCESSOR_HOOK = re.compile(r"^(get|set)_.+_attribute$")
+
 
 class MassAssignmentError(RuntimeError):
     """Raised when a guarded attribute is mass-assigned."""
+
+
+class DiscardedAttributeError(RuntimeError):
+    """Raised when a non-fillable attribute would be silently discarded."""
+
+
+class MissingAttributeError(AttributeError):
+    """Raised when reading an attribute the model never loaded."""
 
 
 class RelationNotLoadedError(AttributeError):
@@ -140,6 +164,8 @@ class Model(metaclass=ModelMeta):
         self._appends: tuple[str, ...] | None = None
         self._cast_overrides: dict[str, Any] = {}
         self._attribute_cache: dict[str, Any] = {}
+        # Muted for the duration of one quiet write; never process-wide.
+        self._muted = False
 
         defaults = dict(type(self).attributes)
         if defaults:
@@ -265,15 +291,25 @@ class Model(metaclass=ModelMeta):
     # --- attributes ---------------------------------------------------------
 
     def fill(self, attributes: Mapping[str, Any]) -> Model:
+        if _UNGUARDED:
+            return self.force_fill(attributes)
         if self._totally_guarded() and attributes:
             offending = ", ".join(sorted(attributes))
             raise MassAssignmentError(
                 f"Add [{offending}] to fillable to allow mass assignment on "
                 f"{type(self).__name__}."
             )
+        discarded = []
         for key, value in attributes.items():
             if self.is_fillable(key):
                 self.set_attribute(key, value)
+            else:
+                discarded.append(key)
+        if discarded and _STRICT_DISCARDING:
+            raise DiscardedAttributeError(
+                f"Add [{', '.join(sorted(discarded))}] to fillable to allow mass "
+                f"assignment on {type(self).__name__}."
+            )
         return self
 
     def force_fill(self, attributes: Mapping[str, Any]) -> Model:
@@ -283,6 +319,8 @@ class Model(metaclass=ModelMeta):
 
     @classmethod
     def is_fillable(cls, key: str) -> bool:
+        if _UNGUARDED:
+            return True
         if key in cls.fillable:
             return True
         if cls.is_guarded(key):
@@ -298,6 +336,77 @@ class Model(metaclass=ModelMeta):
         return not cls.fillable and tuple(cls.guarded) == ("*",)
 
     # --- casting ------------------------------------------------------------
+
+    # --- strictness and guarding -------------------------------------------
+
+    @staticmethod
+    def prevent_silently_discarding_attributes(value: bool = True) -> None:
+        """Raise instead of dropping non-fillable attributes during `fill`."""
+        global _STRICT_DISCARDING
+        _STRICT_DISCARDING = value
+
+    @staticmethod
+    def prevent_accessing_missing_attributes(value: bool = True) -> None:
+        """Raise when reading an attribute a persisted model never retrieved."""
+        global _STRICT_MISSING
+        _STRICT_MISSING = value
+
+    @classmethod
+    def should_be_strict(cls, value: bool = True) -> None:
+        """Turn on every strictness check at once (Laravel's ``shouldBeStrict``).
+
+        Lazy loading is already strict in Avalon — unloaded relation access
+        raises by default — so this covers the other two checks.
+        """
+        cls.prevent_silently_discarding_attributes(value)
+        cls.prevent_accessing_missing_attributes(value)
+
+    @staticmethod
+    def unguard() -> None:
+        """Stop enforcing mass-assignment rules process-wide."""
+        global _UNGUARDED
+        _UNGUARDED = True
+
+    @staticmethod
+    def reguard() -> None:
+        """Enforce mass-assignment rules again."""
+        global _UNGUARDED
+        _UNGUARDED = False
+
+    @classmethod
+    @contextmanager
+    def unguarded(cls) -> Iterator[None]:
+        """Run a block with mass assignment unguarded, then restore it."""
+        global _UNGUARDED
+        previous = _UNGUARDED
+        _UNGUARDED = True
+        try:
+            yield
+        finally:
+            _UNGUARDED = previous
+
+    @classmethod
+    @contextmanager
+    def without_timestamps(cls) -> Iterator[None]:
+        """Run a block without touching this model's timestamps."""
+        token = _TIMESTAMPS_OFF.set(_TIMESTAMPS_OFF.get() | {cls})
+        try:
+            yield
+        finally:
+            _TIMESTAMPS_OFF.reset(token)
+
+    @classmethod
+    @contextmanager
+    def without_events(cls) -> Iterator[None]:
+        """Run a block with model events muted (``Model::withoutEvents``)."""
+        from avalon.orm import model as model_mod
+
+        previous = model_mod._EVENTS_DISABLED
+        model_mod._EVENTS_DISABLED = True
+        try:
+            yield
+        finally:
+            model_mod._EVENTS_DISABLED = previous
 
     @classmethod
     def new_collection(cls, items: Any = None) -> Collection[Any]:
@@ -361,7 +470,7 @@ class Model(metaclass=ModelMeta):
             value = prepare_for_storage(value, resolved)
         self._attributes[key] = value
 
-    def get_attribute(self, key: str, default: Any = None) -> Any:
+    def get_attribute(self, key: str, default: Any = _UNSET) -> Any:
         caster = self._caster(key)
         if key in self._attributes:
             value = self._cast_for_read(key, self._attributes[key])
@@ -388,7 +497,16 @@ class Model(metaclass=ModelMeta):
 
         if key in self._relations:
             return self._relations[key]
-        return self._extra.get(key, default)
+        if key in self._extra:
+            return self._extra[key]
+        if default is not _UNSET:
+            return default
+        if _STRICT_MISSING and self._exists:
+            raise MissingAttributeError(
+                f"{type(self).__name__}.{key} was not retrieved — add it to the "
+                f"select, or read it with get_attribute({key!r}, default)."
+            )
+        return None
 
     def _cast_for_read(self, key: str, value: Any) -> Any:
         cast = self.get_casts().get(key)
@@ -440,6 +558,13 @@ class Model(metaclass=ModelMeta):
                 )
             raise RelationNotLoadedError(
                 f"Relation {name!r} is not loaded on {type(self).__name__}. {hint}"
+            )
+        # Strict mode turns "you never selected this column" into a real error,
+        # but accessor-hook probes (`set_x_attribute`) must still miss quietly.
+        if _STRICT_MISSING and self._exists and not _ACCESSOR_HOOK.match(name):
+            raise MissingAttributeError(
+                f"{type(self).__name__}.{name} was not retrieved — add it to the "
+                f"select, or read it with get_attribute({name!r}, default)."
             )
         raise AttributeError(f"{type(self).__name__!r} has no attribute {name!r}")
 
@@ -522,8 +647,14 @@ class Model(metaclass=ModelMeta):
     def _fresh_timestamp(self) -> datetime:
         return datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
 
-    def _touch_timestamps(self, *, creating: bool) -> None:
+    def _timestamps_enabled(self) -> bool:
         if not type(self).timestamps:
+            return False
+        suspended = _TIMESTAMPS_OFF.get()
+        return not any(issubclass(type(self), owner) for owner in suspended)
+
+    def _touch_timestamps(self, *, creating: bool) -> None:
+        if not self._timestamps_enabled():
             return
         now = self._fresh_timestamp()
         cls = type(self)
@@ -545,9 +676,31 @@ class Model(metaclass=ModelMeta):
             await self._fire_event("saved")
         return saved
 
+    async def _quietly(self, operation: Callable[[], Any]) -> Any:
+        """Run one write with this instance's events muted."""
+        previous = self._muted
+        self._muted = True
+        try:
+            return await operation()
+        finally:
+            self._muted = previous
+
+    async def save_quietly(self) -> bool:
+        """Save without firing model events (``saveQuietly``)."""
+        return await self._quietly(self.save)
+
+    async def delete_quietly(self) -> bool:
+        """Delete without firing model events (``deleteQuietly``)."""
+        return await self._quietly(self.delete)
+
+    async def force_delete_quietly(self) -> bool:
+        """Force delete without firing model events (``forceDeleteQuietly``)."""
+        return await self._quietly(self.force_delete)
+
     async def _perform_insert(self) -> bool:
         if await self._fire_event("creating") is False:
             return False
+        fill_unique_ids(self)
         self._touch_timestamps(creating=True)
 
         cls = type(self)
@@ -636,7 +789,7 @@ class Model(metaclass=ModelMeta):
         return clone
 
     async def touch(self) -> bool:
-        if not type(self).timestamps:
+        if not self._timestamps_enabled():
             return False
         self._touch_timestamps(creating=False)
         return await self.save()
@@ -798,7 +951,7 @@ class Model(metaclass=ModelMeta):
     async def _fire_event(self, event: str) -> Any:
         from avalon.orm import model as model_mod
 
-        if getattr(model_mod, "_EVENTS_DISABLED", False):
+        if self._muted or getattr(model_mod, "_EVENTS_DISABLED", False):
             return True
         for listener in type(self)._events.get(event, []):
             outcome = listener(self)

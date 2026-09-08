@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
-from avalon.orm import Model, SoftDeletes, relation
+from datetime import datetime, timedelta, timezone
+
+from avalon.orm import Model, Prunable, SoftDeletes, relation
 
 
-class Post(SoftDeletes, Model):
+class Post(Prunable, SoftDeletes, Model):
     fillable = ("title", "user_id", "published", "views")
     casts = {"published": "bool", "views": "int"}  # noqa: RUF012
 
     def scope_published(query):
         return query.where("published", True)
+
+    def prunable(self):
+        """`grail model:prune` deletes posts trashed more than a week ago."""
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
+        return self.only_trashed().where("deleted_at", "<", cutoff)
 
     @relation
     def author(self):
