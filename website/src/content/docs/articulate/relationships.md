@@ -168,6 +168,162 @@ await user.load_missing("profile")
 await users.load("posts")   # Collection
 ```
 
+## Many to many: the intermediate table
+
+Rows from a many-to-many relation carry their pivot row with them:
+
+```python
+# app/models/user.py
+class User(Model):
+    @relation
+    def plans(self):
+        return self.belongs_to_many(Plan).with_pivot("tier")
+```
+
+```python
+for plan in await user.plans().get():
+    plan.pivot.tier
+```
+
+`with_pivot` names the extra columns to fetch. `as_("subscription")` renames the
+accessor, so the same row reads as `plan.subscription.tier` — worth doing when
+"pivot" says nothing about the domain.
+
+`with_timestamps()` maintains `created_at` and `updated_at` on the intermediate
+table: attaching stamps both, and `update_existing_pivot` bumps `updated_at`.
+
+### Custom intermediate models
+
+`using()` hydrates pivot rows into a `Pivot` subclass, which can carry accessors,
+casts, and methods of its own:
+
+```python
+# app/models/subscription.py
+from avalon.orm import Pivot
+
+class Subscription(Pivot):
+    casts = {"tier": "string", "started_at": "datetime"}
+
+    @property
+    def is_premium(self) -> bool:
+        return self.tier == "gold"
+```
+
+```python
+return self.belongs_to_many(Plan).using(Subscription).as_("subscription")
+```
+
+Pivot instances save and delete through their relation, so
+`await plan.pivot.save()` writes just the intermediate row.
+
+### Filtering and ordering on pivot columns
+
+```python
+await user.plans().where_pivot("tier", "=", "gold").get()
+await user.plans().where_pivot_in("tier", ["gold", "silver"]).get()
+await user.plans().where_pivot_not_in("tier", ["free"]).get()
+await user.plans().where_pivot_null("cancelled_at").get()
+await user.plans().where_pivot_not_null("cancelled_at").get()
+await user.plans().where_pivot_between("seats", 5, 50).get()
+await user.plans().order_by_pivot("created_at", "desc").get()
+```
+
+These constraints belong to the relation, so they apply to eager loads as well
+as direct reads.
+
+### Attaching, syncing, toggling
+
+```python
+await user.plans().attach(plan.id, {"tier": "gold"})
+await user.plans().attach({1: {"tier": "gold"}, 2: {"tier": "free"}})
+await user.plans().detach([1, 2])
+await user.plans().detach()            # everything
+
+await user.plans().sync([1, 2, 3])
+await user.plans().sync({1: {"tier": "gold"}})
+await user.plans().sync_without_detaching([4])
+await user.plans().toggle([1, 2])
+await user.plans().update_existing_pivot(1, {"tier": "silver"})
+```
+
+`sync` reports what changed as `{"attached": [...], "detached": [...],
+"updated": [...]}`. Ids that were already attached but whose pivot attributes
+changed land under `updated`.
+
+## Custom polymorphic types
+
+By default a `*_type` column stores the model's class name, which welds the
+database to the code layout — rename or move a class and the stored rows stop
+resolving. Register a morph map instead, usually in a service provider:
+
+```python
+# app/providers/app_service_provider.py
+from avalon.orm import morph_map
+
+class AppServiceProvider(ServiceProvider):
+    def boot(self) -> None:
+        morph_map({
+            "post": Post,
+            "video": Video,
+        })
+```
+
+Now `commentable_type` holds `"post"`, and `morph_to` resolves it without an
+explicit type map:
+
+```python
+# app/models/comment.py
+@relation
+def commentable(self):
+    return self.morph_to("commentable")   # uses the registered map
+```
+
+`enforce_morph_map({...})` goes further and raises for any polymorphic model
+missing from the map, which is how you keep class names from leaking into new
+tables. A row whose type column is empty resolves to `None`; a stored type the
+map does not know is an error.
+
+## Touching parent timestamps
+
+When a child changes, the parent's `updated_at` often should change too — a
+cached post listing goes stale when a comment is edited. Name the relations to
+bump:
+
+```python
+# app/models/comment.py
+class Comment(Model):
+    touches = ("post",)
+
+    @relation
+    def post(self):
+        return self.belongs_to(Post)
+```
+
+Saving a comment now touches its post. Suspend it with
+`Model.without_touching()`, or for particular models with
+`Model.without_touching_on(Comment)`.
+
+## Inserting and updating related models
+
+```python
+await post.comments().create({"body": "Nice"})
+await post.comments().create_many([{"body": "One"}, {"body": "Two"}])
+await post.comments().create_quietly({"body": "No events"})
+await post.comments().save(comment)
+await post.comments().save_many([first, second])
+
+comment = post.comments().make({"body": "Unsaved"})       # foreign key set
+comments = post.comments().make_many([{"body": "a"}])
+
+await post.comments().first_or_create({"body": "Nice"})
+await post.comments().first_or_new({"body": "Nice"})
+await post.comments().find_or_new(comment_id)
+await post.comments().update_or_create({"body": "old"}, {"body": "new"})
+```
+
+`associate` and `dissociate` set and clear the foreign key on a `belongs_to`
+child.
+
 ## Aggregating related models
 
 Counting or summing a relation does not need the related rows loaded. Each

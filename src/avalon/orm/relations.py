@@ -13,6 +13,7 @@ from sqlalchemy.sql.util import ClauseAdapter
 from avalon.orm.builder import _MISSING, QueryBuilder
 from avalon.orm.collection import Collection
 from avalon.orm.inflector import pivot_table, snake
+from avalon.orm.morph import morph_alias, morph_map, morph_target
 
 if TYPE_CHECKING:
     from avalon.orm.model import Model
@@ -272,13 +273,66 @@ class HasOneOrMany(Relation):
         attributes: Mapping[str, Any],
         values: Mapping[str, Any] | None = None,
     ) -> Any:
-        probe = self.query()
-        for key, value in attributes.items():
-            probe.where(key, "=", value)
-        found = await probe.first()
+        found = await self._match(attributes)
         if found is not None:
             return found
         return await self.create({**attributes, **(values or {})})
+
+    async def _match(self, attributes: Mapping[str, Any]) -> Any:
+        probe = self.query()
+        for key, value in attributes.items():
+            probe.where(key, "=", value)
+        return await probe.first()
+
+    def make(self, attributes: Mapping[str, Any] | None = None, **kwargs: Any) -> Any:
+        """An unsaved related model with the foreign key already set."""
+        instance = self.related()
+        instance.force_fill(
+            {
+                **(attributes or {}),
+                **kwargs,
+                self.foreign_key: self.parent.get_raw_attribute(self.local_key),
+            }
+        )
+        return instance
+
+    def make_many(self, records: Iterable[Mapping[str, Any]]) -> list[Any]:
+        return [self.make(record) for record in records]
+
+    async def create_quietly(
+        self,
+        attributes: Mapping[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Create without firing model events."""
+        instance = self.make(attributes, **kwargs)
+        await instance.save_quietly()
+        return instance
+
+    async def first_or_new(
+        self,
+        attributes: Mapping[str, Any],
+        values: Mapping[str, Any] | None = None,
+    ) -> Any:
+        found = await self._match(attributes)
+        return found if found is not None else self.make({**attributes, **(values or {})})
+
+    async def find_or_new(self, key: Any) -> Any:
+        """The related model with this key, or an unsaved one."""
+        found = await self.query().find(key)
+        return found if found is not None else self.make()
+
+    async def update_or_create(
+        self,
+        attributes: Mapping[str, Any],
+        values: Mapping[str, Any] | None = None,
+    ) -> Any:
+        found = await self._match(attributes)
+        if found is None:
+            return await self.create({**attributes, **(values or {})})
+        found.fill(dict(values or {}))
+        await found.save()
+        return found
 
     # --- one of many --------------------------------------------------------
 
@@ -446,10 +500,104 @@ class BelongsToMany(Relation):
         self.parent_key = type(parent).primary_key
         self.related_key = related.primary_key
         self._pivot_columns: list[str] = []
+        self._pivot_accessor = "pivot"
+        self._pivot_class: type[Any] | None = None
+        self._pivot_timestamps = False
+        self._pivot_wheres: list[tuple[str, str, Any, Any]] = []
+        self._pivot_orders: list[tuple[str, str]] = []
 
     def with_pivot(self, *columns: str) -> BelongsToMany:
         self._pivot_columns.extend(columns)
         return self
+
+    @property
+    def pivot_class(self) -> type[Any]:
+        from avalon.orm.pivot import Pivot
+
+        return self._pivot_class or Pivot
+
+    def using(self, pivot_class: type[Any]) -> BelongsToMany:
+        """Hydrate pivot rows into a custom `Pivot` subclass (``using``)."""
+        self._pivot_class = pivot_class
+        return self
+
+    def as_(self, accessor: str) -> BelongsToMany:
+        """Rename the pivot accessor — Laravel's ``as``."""
+        self._pivot_accessor = accessor
+        return self
+
+    def with_timestamps(
+        self,
+        created_at: str = "created_at",
+        updated_at: str = "updated_at",
+    ) -> BelongsToMany:
+        """Maintain timestamps on the intermediate table."""
+        self._pivot_timestamps = True
+        self._pivot_created_at = created_at
+        self._pivot_updated_at = updated_at
+        self.with_pivot(created_at, updated_at)
+        return self
+
+    # --- pivot filtering and ordering ---------------------------------------
+
+    def _add_pivot_where(self, column: str, kind: str, *values: Any) -> BelongsToMany:
+        self._pivot_wheres.append((kind, column, values[0] if values else None, values))
+        return self
+
+    def where_pivot_in(self, column: str, values: Iterable[Any]) -> BelongsToMany:
+        return self._add_pivot_where(column, "in", list(values))
+
+    def where_pivot_not_in(self, column: str, values: Iterable[Any]) -> BelongsToMany:
+        return self._add_pivot_where(column, "not_in", list(values))
+
+    def where_pivot_null(self, column: str) -> BelongsToMany:
+        return self._add_pivot_where(column, "null")
+
+    def where_pivot_not_null(self, column: str) -> BelongsToMany:
+        return self._add_pivot_where(column, "not_null")
+
+    def where_pivot_between(self, column: str, low: Any, high: Any) -> BelongsToMany:
+        return self._add_pivot_where(column, "between", low, high)
+
+    def order_by_pivot(self, column: str, direction: str = "asc") -> BelongsToMany:
+        self._pivot_orders.append((column, direction))
+        return self
+
+    def _apply_pivot_constraints(self, builder: QueryBuilder) -> QueryBuilder:
+        for kind, column, first, values in self._pivot_wheres:
+            qualified = f"{self.pivot}.{column}"
+            if kind == "in":
+                builder.where_in(qualified, first)
+            elif kind == "not_in":
+                builder.where_not_in(qualified, first)
+            elif kind == "null":
+                builder.where_null(qualified)
+            elif kind == "not_null":
+                builder.where_not_null(qualified)
+            else:
+                builder.where_between(qualified, values[0], values[1])
+        for column, direction in self._pivot_orders:
+            builder.order_by(f"{self.pivot}.{column}", direction)
+        return builder
+
+    # --- pivot hydration ----------------------------------------------------
+
+    def _hydrate_pivot(self, model: Any, parent_key: Any = _MISSING) -> Any:
+        """Attach the intermediate row to a result as `model.pivot`."""
+        from avalon.orm.pivot import new_pivot
+
+        if parent_key is _MISSING:
+            parent_key = self.parent.get_raw_attribute(self.parent_key)
+        attributes: dict[str, Any] = {
+            self.foreign_pivot_key: parent_key,
+            self.related_pivot_key: model.get_raw_attribute(self.related_key),
+        }
+        for column in self._pivot_columns:
+            key = f"pivot_{column}"
+            if key in model._attributes:
+                attributes[column] = model._attributes[key]
+        model.set_relation(self._pivot_accessor, new_pivot(self, attributes))
+        return model
 
     def _join(self, builder: QueryBuilder) -> QueryBuilder:
         related_table = self.related.get_table()
@@ -467,11 +615,22 @@ class BelongsToMany(Relation):
 
     def query(self) -> QueryBuilder:
         builder = self._join(self._related_builder())
-        return builder.where(
+        builder.where(
             f"{self.pivot}.{self.foreign_pivot_key}",
             "=",
             self.parent.get_raw_attribute(self.parent_key),
         )
+        return self._apply_pivot_constraints(builder)
+
+    async def get(self) -> Collection[Any]:
+        results = await self.query().get()
+        for model in results:
+            self._hydrate_pivot(model)
+        return results
+
+    async def first(self) -> Any:
+        found = await self.query().first()
+        return self._hydrate_pivot(found) if found is not None else None
 
     def where_pivot(
         self,
@@ -487,7 +646,8 @@ class BelongsToMany(Relation):
         builder.add_select(
             builder.column(f"{self.pivot}.{self.foreign_pivot_key}").label(PIVOT_PARENT)
         )
-        return builder.where_in(f"{self.pivot}.{self.foreign_pivot_key}", keys)
+        builder.where_in(f"{self.pivot}.{self.foreign_pivot_key}", keys)
+        return self._apply_pivot_constraints(builder)
 
     def match(self, models: Sequence[Model], results: Collection[Any], name: str) -> None:
         grouped: dict[Any, list[Any]] = {}
@@ -497,7 +657,10 @@ class BelongsToMany(Relation):
             grouped.setdefault(marker, []).append(item)
         for model in models:
             key = model.get_raw_attribute(self.parent_key)
-            model.set_relation(name, Collection(grouped.get(key, [])))
+            matches = grouped.get(key, [])
+            for match in matches:
+                self._hydrate_pivot(match, key)
+            model.set_relation(name, Collection(matches))
 
     def existence_query(
         self,
@@ -531,18 +694,35 @@ class BelongsToMany(Relation):
         ids: Any,
         attributes: Mapping[str, Any] | None = None,
     ) -> int:
+        """Attach ids, optionally with pivot attributes.
+
+        `ids` may be a mapping of id to per-row attributes, which is how you
+        attach several rows with different pivot data in one call.
+        """
         rows = []
-        for identifier in _as_keys(ids):
+        for identifier, extra in _as_pairs(ids).items():
             rows.append(
                 {
                     self.foreign_pivot_key: self.parent.get_raw_attribute(self.parent_key),
                     self.related_pivot_key: identifier,
                     **(attributes or {}),
+                    **extra,
+                    **self._timestamps(fresh=True),
                 }
             )
         if not rows:
             return 0
         return await self._pivot_query().insert(rows)
+
+    def _timestamps(self, *, fresh: bool) -> dict[str, Any]:
+        """Pivot timestamp columns, when `with_timestamps` asked for them."""
+        if not self._pivot_timestamps:
+            return {}
+        now = self.parent._fresh_timestamp()
+        stamps = {self._pivot_updated_at: now}
+        if fresh:
+            stamps[self._pivot_created_at] = now
+        return stamps
 
     async def detach(self, ids: Any = None) -> int:
         builder = self._pivot_query().where(
@@ -553,16 +733,31 @@ class BelongsToMany(Relation):
         return await builder.delete()
 
     async def sync(self, ids: Any, detaching: bool = True) -> dict[str, list[Any]]:
-        desired = _as_keys(ids)
+        """Make the pivot match `ids`, reporting what changed.
+
+        `ids` may be a mapping of id to pivot attributes; ids already attached
+        with different attributes are updated and reported under `updated`.
+        """
+        desired = _as_pairs(ids)
         current = await self.pivot_ids()
         attached = [key for key in desired if key not in current]
         detached = [key for key in current if key not in desired] if detaching else []
+        updated: list[Any] = []
 
         if detached:
             await self.detach(detached)
         if attached:
-            await self.attach(attached)
-        return {"attached": attached, "detached": detached, "updated": []}
+            await self.attach({key: desired[key] for key in attached})
+        for key, extra in desired.items():
+            if key not in attached and extra:
+                changed = await self.update_existing_pivot(key, extra)
+                if changed:
+                    updated.append(key)
+        return {"attached": attached, "detached": detached, "updated": updated}
+
+    async def sync_without_detaching(self, ids: Any) -> dict[str, list[Any]]:
+        """Sync without removing ids that are missing from the list."""
+        return await self.sync(ids, detaching=False)
 
     async def toggle(self, ids: Any) -> dict[str, list[Any]]:
         requested = _as_keys(ids)
@@ -576,11 +771,14 @@ class BelongsToMany(Relation):
         return {"attached": attach, "detached": detach}
 
     async def update_existing_pivot(self, identifier: Any, attributes: Mapping[str, Any]) -> int:
+        payload = {**dict(attributes), **self._timestamps(fresh=False)}
+        if not payload:
+            return 0
         return await (
             self._pivot_query()
             .where(self.foreign_pivot_key, "=", self.parent.get_raw_attribute(self.parent_key))
             .where(self.related_pivot_key, "=", identifier)
-            .update(dict(attributes))
+            .update(payload)
         )
 
     async def pivot_ids(self) -> list[Any]:
@@ -698,7 +896,7 @@ class MorphOneOrMany(HasOneOrMany):
         super().__init__(parent, related, f"{name}_id", type(parent).primary_key)
         self.morph_name = name
         self.morph_type = f"{name}_type"
-        self.morph_class = type(parent).__name__
+        self.morph_class = morph_alias(type(parent))
 
     def query(self) -> QueryBuilder:
         return super().query().where(self.morph_type, "=", self.morph_class)
@@ -759,15 +957,21 @@ class MorphOne(MorphOneOrMany):
 class MorphTo(Relation):
     """Inverse polymorphic relation — resolves `{name}_type` to a model."""
 
-    def __init__(self, child: Model, name: str, types: Mapping[str, type[Model]]) -> None:
+    def __init__(
+        self,
+        child: Model,
+        name: str,
+        types: Mapping[str, type[Model]] | None = None,
+    ) -> None:
         super().__init__(child, type(child))
         self.morph_name = name
         self.morph_id = f"{name}_id"
         self.morph_type = f"{name}_type"
-        self.types = dict(types)
+        # Without an explicit map, fall back to the globally registered one.
+        self.types = dict(types) if types is not None else morph_map()
 
     def _target(self, alias: str | None) -> type[Model] | None:
-        return self.types.get(str(alias)) if alias else None
+        return self.types.get(str(alias)) or morph_target(str(alias))
 
     def query(self) -> QueryBuilder:
         target = self._target(self.parent.get_raw_attribute(self.morph_type))
@@ -781,7 +985,11 @@ class MorphTo(Relation):
         )
 
     async def get(self) -> Any:  # type: ignore[override]
+        # A row with no type or no id points at nothing; only a stored type
+        # that the map does not know is an error.
         if self.parent.get_raw_attribute(self.morph_id) is None:
+            return None
+        if not self.parent.get_raw_attribute(self.morph_type):
             return None
         return await self.query().first()
 
@@ -852,7 +1060,7 @@ class MorphToMany(BelongsToMany):
         self.morph_name = name
         self.morph_type = f"{name}_type"
         self.inverse = inverse
-        self.morph_class = morph_owner.__name__ if inverse else type(parent).__name__
+        self.morph_class = morph_alias(morph_owner if inverse else type(parent))
 
     def query(self) -> QueryBuilder:
         return super().query().where(f"{self.pivot}.{self.morph_type}", "=", self.morph_class)
@@ -876,6 +1084,13 @@ class MorphToMany(BelongsToMany):
         if ids is not None:
             builder.where_in(self.related_pivot_key, _as_keys(ids))
         return await builder.delete()
+
+
+def _as_pairs(ids: Any) -> dict[Any, dict[str, Any]]:
+    """Normalize attach/sync ids into `{id: pivot attributes}`."""
+    if isinstance(ids, Mapping):
+        return {key: dict(value or {}) for key, value in ids.items()}
+    return {key: {} for key in _as_keys(ids)}
 
 
 def _as_keys(ids: Any) -> list[Any]:

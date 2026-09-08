@@ -1333,10 +1333,10 @@ Laravel [Eloquent: Relationships](https://laravel.com/docs/eloquent-relationship
 - ~~`latest_of_many` / `oldest_of_many` / `of_many` / `one()`; `chaperone()`; `with_default()` default models~~ **shipped (part 1)** — one-of-many picks one row per parent with a correlated subquery, so eager loads stay one query; defaults cover `belongs_to` / `has_one` / `morph_one`; chaperone covers the has-many and morph-many pairs
 - ~~Aggregate eager loads: `with_sum` / `with_avg` / `with_min` / `with_max` / `with_exists`, and the lazy `load_count` / `load_sum` / `load_aggregate` family~~ **shipped (part 3)** — one query per aggregate, `as` aliases, constraining callbacks, and the deferred family on both `Model` and `Collection`
 - ~~Existence querying: `or_has`, `or_where_has`, `or_where_doesnt_have`, `where_relation` / `or_where_relation`, `with_where_has`, and the morph variants (`has_morph`, `where_has_morph`, `where_doesnt_have_morph`)~~ **shipped (part 2)** — plus dotted nesting (`has("posts.comments")`) and `MorphTo.existence_query_for`, which the morph variants needed
-- Pivots: `with_timestamps()`, `as()` accessor naming, custom `Pivot` model classes via `using()`, `where_pivot_in` / `where_pivot_null`, `order_by_pivot`, `sync_without_detaching`, and a real `updated` result from `sync`
-- Morph maps (Laravel's `enforceMorphMap`) so `morph_to` stops requiring an explicit per-relation types dict
-- `touches` — updating parent timestamps on child writes
-- Relation write helpers: `create_quietly`, `find_or_new`, `update_or_create`, `make` / `make_many`
+- ~~Pivots: `with_timestamps()`, `as()` accessor naming, custom `Pivot` model classes via `using()`, `where_pivot_in` / `where_pivot_null`, `order_by_pivot`, `sync_without_detaching`, and a real `updated` result from `sync`~~ **shipped (part 4)** — plus a real `pivot` accessor on results (`Pivot` / `MorphPivot` models that save and delete through their relation) and per-id attach attributes
+- ~~Morph maps (Laravel's `enforceMorphMap`) so `morph_to` stops requiring an explicit per-relation types dict~~ **shipped (part 4)**
+- ~~`touches` — updating parent timestamps on child writes~~ **shipped (part 4)** — with `without_touching` / `without_touching_on`
+- ~~Relation write helpers: `create_quietly`, `find_or_new`, `update_or_create`, `make` / `make_many`~~ **shipped (part 4)** — plus `first_or_new`
 - Docs: rewrite `articulate/relationships` to the Laravel section order
 
 **Depends on:** M40 (casting/serialization land first so pivot casts behave).
@@ -1487,7 +1487,7 @@ Scheduled on 2026-09-08: the IDE and editor tooling track (**M45–M48**) — Ca
 
 **M40 Articulate model exhaust gate met** — casting overhaul, serialization controls, Eloquent collections, UUID/ULID keys, strictness, quiet writes, pruning, and cursor/chunk iteration.
 
-**Now: M41 Relationship exhaust**, the largest page in the Laravel docs and the biggest remaining parity gap, unblocked by M40. Parts 1 (one-of-many, default models, chaperone), 2 (existence queries), and 3 (aggregates) have shipped; parts 4–5 cover pivots and morph maps, then the docs rewrite.
+**Now: M41 Relationship exhaust**, the largest page in the Laravel docs and the biggest remaining parity gap, unblocked by M40. Parts 1–4 have shipped (one-of-many and default models, existence queries, aggregates, pivots and morph maps and `touches`); part 5 is the docs rewrite in Laravel's section order.
 
 **Then: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
 

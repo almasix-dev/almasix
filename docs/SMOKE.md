@@ -552,7 +552,10 @@ pytest -q tests/test_m41_*.py
 - [x] Chaperone: `chaperone()` hydrates the inverse relation on `has_many` / `has_one` / `morph_many` / `morph_one` children
 - [x] Existence querying: `or_has` / `or_doesnt_have` / `or_where_has` / `or_where_doesnt_have`, dotted nesting, `where_relation` / `or_where_relation`, `with_where_has`, and the eight morph variants plus `where_morph_relation`
 - [x] Aggregates: `with_count` / `with_sum` / `with_avg` / `with_min` / `with_max` / `with_exists` / `with_aggregate` with `as` aliases and callbacks; `load_count` / `load_sum` / `load_avg` / `load_min` / `load_max` / `load_exists` / `load_aggregate` on `Model` and `Collection`
-- [ ] Pivots: `with_timestamps`, `as`, custom pivot models, `order_by_pivot`, `where_pivot_*`; morph maps; `touches`
+- [x] Pivots: `pivot` accessor with `as_` renaming, `using` custom `Pivot` models, `with_timestamps`, `where_pivot_in` / `not_in` / `null` / `not_null` / `between`, `order_by_pivot`, per-id attach attributes, `sync` `updated` results, `sync_without_detaching`
+- [x] Morph maps: `morph_map` / `enforce_morph_map`, `morph_to` without an explicit types dict, null types resolving to `None`
+- [x] Touching: `touches`, `without_touching`, `without_touching_on`
+- [x] Relation write helpers: `make` / `make_many` / `create_quietly` / `first_or_new` / `find_or_new` / `update_or_create`
 - [ ] `articulate/relationships` rewritten in Laravel section order
 
 ---

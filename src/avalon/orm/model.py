@@ -48,6 +48,8 @@ _STRICT_MISSING = False
 
 # Classes whose timestamps are suspended, plus a global unguard switch.
 _TIMESTAMPS_OFF: ContextVar[frozenset[type]] = ContextVar("_TIMESTAMPS_OFF", default=frozenset())
+_TOUCHING_OFF: ContextVar[bool] = ContextVar("_TOUCHING_OFF", default=False)
+_TOUCH_EXEMPT: ContextVar[frozenset[type]] = ContextVar("_TOUCH_EXEMPT", default=frozenset())
 _UNGUARDED = False
 
 _UNSET = object()
@@ -134,6 +136,8 @@ class Model(metaclass=ModelMeta):
 
     fillable: ClassVar[tuple[str, ...]] = ()
     guarded: ClassVar[tuple[str, ...]] = ("*",)
+    #: Relations whose parents get their `updated_at` bumped on write.
+    touches: ClassVar[tuple[str, ...]] = ()
     hidden: ClassVar[tuple[str, ...]] = ()
     visible: ClassVar[tuple[str, ...]] = ()
     appends: ClassVar[tuple[str, ...]] = ()
@@ -674,7 +678,42 @@ class Model(metaclass=ModelMeta):
 
         if saved:
             await self._fire_event("saved")
+            await self.touch_owners()
         return saved
+
+    async def touch_owners(self) -> None:
+        """Bump `updated_at` on the relations named in `touches`."""
+        if _TOUCHING_OFF.get() or type(self) in _TOUCH_EXEMPT.get():
+            return
+        for name in type(self).touches:
+            relation = self.get_relation(name)
+            owners = await relation.get()
+            if owners is None:
+                continue
+            group = owners if isinstance(owners, Collection) else [owners]
+            for owner in group:
+                if owner is not None and owner.exists:  # pragma: no branch
+                    await owner.touch()
+
+    @classmethod
+    @contextmanager
+    def without_touching(cls) -> Iterator[None]:
+        """Suspend `touches` for the duration of the block."""
+        token = _TOUCHING_OFF.set(True)
+        try:
+            yield
+        finally:
+            _TOUCHING_OFF.reset(token)
+
+    @staticmethod
+    @contextmanager
+    def without_touching_on(*models: type[Model]) -> Iterator[None]:
+        """Suspend `touches` for particular models only."""
+        token = _TOUCH_EXEMPT.set(_TOUCH_EXEMPT.get() | set(models))
+        try:
+            yield
+        finally:
+            _TOUCH_EXEMPT.reset(token)
 
     async def _quietly(self, operation: Callable[[], Any]) -> Any:
         """Run one write with this instance's events muted."""
@@ -931,7 +970,7 @@ class Model(metaclass=ModelMeta):
 
         return MorphMany(self, related, name)
 
-    def morph_to(self, name: str, types: Mapping[str, type[Model]]):
+    def morph_to(self, name: str, types: Mapping[str, type[Model]] | None = None):
         from avalon.orm.relations import MorphTo
 
         return MorphTo(self, name, types)
