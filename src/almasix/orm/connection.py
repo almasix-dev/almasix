@@ -231,6 +231,10 @@ class Connection:
             bindings = []
         if isinstance(parameters, Mapping):
             bindings = list(parameters.values())
+        elif isinstance(parameters, Sequence):
+            # An insert of several rows arrives as one statement per row's
+            # worth of bindings; a listener wants to see all of them.
+            bindings = [value for row in parameters for value in dict(row).values()]
         return QueryExecuted(sql=sql, bindings=bindings, time=elapsed, connection_name=self.name)
 
     def _record(self, statement: Any, parameters: Any, elapsed: float) -> None:
@@ -365,12 +369,17 @@ class Connection:
                     _deferred.reset(deferred_token)
 
     async def begin_transaction(self) -> None:
-        """Open a transaction you will `commit` or `rollback` yourself."""
+        """Open a transaction you will `commit` or `rollback` yourself.
+
+        Each frame remembers whether it opened the connection: one begun
+        inside a block transaction is a SAVEPOINT within it, and closing it
+        must leave the block's connection where the block will find it.
+        """
         frames = dict(_manual.get() or {})
         stack = list(frames.get(self.name, []))
         existing = self.current()
         if existing is not None:
-            stack.append(await existing.begin_nested())
+            stack.append((await existing.begin_nested(), None))
         else:
             connection = await self._engine.connect()
             bag = dict(_active.get() or {})
@@ -378,45 +387,44 @@ class Connection:
             _active.set(bag)
             if _deferred.get() is None:
                 _deferred.set({})
-            stack.append(await connection.begin())
+            stack.append((await connection.begin(), connection))
         frames[self.name] = stack
         _manual.set(frames)
 
     async def commit(self) -> None:
         """Commit the innermost hand-opened transaction."""
-        transaction, outermost = self._pop_manual("commit")
+        transaction, connection = self._pop_manual("commit")
         await transaction.commit()
-        if outermost:
-            await self._close_manual(run_deferred=True)
+        if connection is not None:
+            await self._close_manual(connection, run_deferred=True)
 
     async def rollback(self) -> None:
         """Roll back the innermost hand-opened transaction."""
-        transaction, outermost = self._pop_manual("rollback")
+        transaction, connection = self._pop_manual("rollback")
         await transaction.rollback()
-        if outermost:
-            await self._close_manual(run_deferred=False)
+        if connection is not None:
+            await self._close_manual(connection, run_deferred=False)
 
-    def _pop_manual(self, verb: str) -> tuple[Any, bool]:
+    def _pop_manual(self, verb: str) -> tuple[Any, AsyncConnection | None]:
         frames = dict(_manual.get() or {})
         stack = list(frames.get(self.name, []))
         if not stack:
             raise RuntimeError(f"There is no transaction on {self.name!r} to {verb}.")
-        transaction = stack.pop()
+        frame = stack.pop()
         frames[self.name] = stack
         _manual.set(frames)
-        return transaction, not stack
+        return frame
 
-    async def _close_manual(self, *, run_deferred: bool) -> None:
+    async def _close_manual(self, connection: AsyncConnection, *, run_deferred: bool) -> None:
         bag = dict(_active.get() or {})
-        connection = bag.pop(self.name, None)
+        bag.pop(self.name, None)
         _active.set(bag)
         deferred_bag = _deferred.get() or {}
         if run_deferred:
             self._run_deferred(deferred_bag)
         else:
             deferred_bag.pop(self.name, None)
-        if connection is not None:
-            await connection.close()
+        await connection.close()
 
     def _run_deferred(self, bag: dict[str, list[Callable[[], Any]]]) -> None:
         """Run the callbacks this connection deferred, in the order given."""

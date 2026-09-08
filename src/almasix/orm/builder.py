@@ -55,6 +55,9 @@ _OPERATORS = {
 
 _JOIN_TYPES = {"inner", "left", "right", "cross"}
 
+#: SQLite keeps autoincrement counters here — but only once one has been used.
+_SQLITE_SEQUENCE = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sqlite_sequence'"
+
 #: One clause object per table name, shared by every builder in the process.
 #
 # SQLAlchemy decides a subquery is correlated by comparing FROM objects by
@@ -182,6 +185,7 @@ class QueryBuilder:
         self._from: Any = None
         self._unions: list[tuple[bool, QueryBuilder]] = []
         self._lock: str | None = None
+        self._pending_attributes: dict[str, Any] = {}
 
     # --- plumbing -----------------------------------------------------------
 
@@ -214,6 +218,7 @@ class QueryBuilder:
         clone._from = self._from
         clone._unions = list(self._unions)
         clone._lock = self._lock
+        clone._pending_attributes = dict(self._pending_attributes)
         return clone
 
     def _table_clause(self, name: str) -> TableClause:
@@ -992,6 +997,13 @@ class QueryBuilder:
         )
         return self
 
+    def _having_column(self, column: str) -> Any:
+        """A `having` usually names an aggregate this query gave a name to."""
+        for selected in self._selects:
+            if isinstance(selected, sa.Label) and selected.name == column:
+                return selected.element
+        return self.column(column)
+
     def having(
         self,
         column: Any,
@@ -1006,7 +1018,7 @@ class QueryBuilder:
             raise TypeError("having() requires having(column, value) or having(column, operator, value)")
         operator, value = self._operator_and_value(operator, value)
         apply = self._resolve_operator(operator)
-        self._havings.append((boolean, apply(self.column(column), value)))
+        self._havings.append((boolean, apply(self._having_column(column), value)))
         return self
 
     def or_having(self, column: Any, operator: Any = _MISSING, value: Any = _MISSING) -> QueryBuilder:
@@ -1020,7 +1032,7 @@ class QueryBuilder:
         boolean: str = "and",
     ) -> QueryBuilder:
         low, high = _pair(low, high)
-        self._havings.append((boolean, self.column(column).between(low, high)))
+        self._havings.append((boolean, self._having_column(column).between(low, high)))
         return self
 
     def or_having_between(self, column: str, low: Any, high: Any = _MISSING) -> QueryBuilder:
@@ -1034,11 +1046,11 @@ class QueryBuilder:
         return self.having_raw(sql, boolean="or")
 
     def having_null(self, column: str, boolean: str = "and") -> QueryBuilder:
-        self._havings.append((boolean, self.column(column).is_(None)))
+        self._havings.append((boolean, self._having_column(column).is_(None)))
         return self
 
     def having_not_null(self, column: str, boolean: str = "and") -> QueryBuilder:
-        self._havings.append((boolean, self.column(column).isnot(None)))
+        self._havings.append((boolean, self._having_column(column).isnot(None)))
         return self
 
     def limit(self, count: int) -> QueryBuilder:
@@ -1246,6 +1258,27 @@ class QueryBuilder:
         """Apply reusable query logic and keep building — Laravel's ``tap``."""
         callback(self)
         return self
+
+    def with_attributes(
+        self,
+        values: Mapping[str, Any],
+        as_conditions: bool = True,
+    ) -> QueryBuilder:
+        """Constrain on attributes *and* seed them on anything this query creates.
+
+        Laravel's ``withAttributes`` is what makes a scoped relationship whole:
+        a query that only finds published posts should also produce published
+        posts. Pass ``as_conditions=False`` to seed without filtering.
+        """
+        self._pending_attributes.update(values)
+        if as_conditions:
+            for key, value in values.items():
+                self.where(key, "=", value)
+        return self
+
+    def pending_attributes(self) -> dict[str, Any]:
+        """The attributes this query seeds onto models it creates."""
+        return dict(self._pending_attributes)
 
     def pipe(self, callback: Callable[[QueryBuilder], Any]) -> Any:
         """Hand the query to something that returns a result of its own.
@@ -1648,16 +1681,17 @@ class QueryBuilder:
             star = f"{self.table}.*" if self._joins else "*"
             selected = [sa.literal_column(star)]
         source = self._from if self._from is not None else self._table_clause(self.table)
-        statement = sa.select(*selected).select_from(source)
-
         for kind, table_name, onclause in self._joins:
             target = self._table_clause(table_name)
             if kind == "cross":
-                statement = statement.join(target, sa.literal(True))
-            elif kind == "left":
-                statement = statement.outerjoin(target, onclause)
+                source = sa.join(source, target, sa.literal(True))
+            elif kind == "right":
+                # SQLAlchemy has no right join, and none is needed: the same
+                # rows come back from a left join with the sides swapped.
+                source = sa.join(target, source, onclause, isouter=True)
             else:
-                statement = statement.join(target, onclause, isouter=(kind == "right"))
+                source = sa.join(source, target, onclause, isouter=(kind == "left"))
+        statement = sa.select(*selected).select_from(source)
 
         clause = self._compile_wheres()
         if clause is not None:
@@ -2151,8 +2185,12 @@ class QueryBuilder:
     async def truncate(self) -> None:
         """Empty the table and reset its auto-increment, where the engine can."""
         connection = self.get_connection()
-        for sql in _truncate_sql(self.table, connection.engine.dialect):
+        dialect = connection.engine.dialect
+        for sql in _truncate_sql(self.table, dialect):
             await connection.execute(sql)
+        if dialect.name == "sqlite" and await connection.scalar(_SQLITE_SEQUENCE):
+            # The sequence table only exists once something has autoincremented.
+            await connection.execute(f"DELETE FROM sqlite_sequence WHERE name = '{self.table}'")
 
     async def increment(self, column: str, amount: int = 1, **extra: Any) -> int:
         target = self.column(column)
@@ -2252,7 +2290,7 @@ class QueryBuilder:
             return found
         if self.model is None:
             raise RuntimeError("first_or_create() requires a model")
-        return await self.model.create({**attributes, **(values or {})})
+        return await self.model.create({**self._pending_attributes, **attributes, **(values or {})})
 
     async def first_or_new(
         self,
@@ -2268,7 +2306,7 @@ class QueryBuilder:
         if self.model is None:
             raise RuntimeError("first_or_new() requires a model")
         instance = self.model()
-        instance.force_fill({**attributes, **(values or {})})
+        instance.force_fill({**self._pending_attributes, **attributes, **(values or {})})
         return instance
 
     async def update_or_create(
@@ -2286,7 +2324,7 @@ class QueryBuilder:
             return found
         if self.model is None:
             raise RuntimeError("update_or_create() requires a model")
-        return await self.model.create({**attributes, **(values or {})})
+        return await self.model.create({**self._pending_attributes, **attributes, **(values or {})})
 
 
 class JoinClause(QueryBuilder):
@@ -2381,12 +2419,14 @@ def _ignoring_insert(table: TableClause, payload: Sequence[Mapping[str, Any]], d
 def _truncate_sql(table: str, dialect: Any) -> list[str]:
     """Emptying a table, spelled for the engine in front of us.
 
-    SQLite has no `TRUNCATE`, so it gets a delete plus a reset of the sequence
-    table — which is what makes the ids start over the way they do elsewhere.
+    SQLite has no `TRUNCATE`; its delete is paired with a reset of the
+    sequence table, which is what makes the ids start over the way they do
+    elsewhere. That reset lives in `truncate` because the sequence table is
+    only there once something has autoincremented.
     """
     quoted = quote_ident(dialect, table)
     if dialect.name == "sqlite":
-        return [f"DELETE FROM {quoted}", f"DELETE FROM sqlite_sequence WHERE name = '{table}'"]
+        return [f"DELETE FROM {quoted}"]
     if dialect.name in {"postgresql", "mssql"}:
         return [f"TRUNCATE TABLE {quoted}" + (" RESTART IDENTITY CASCADE" if dialect.name == "postgresql" else "")]
     return [f"TRUNCATE TABLE {quoted}"]

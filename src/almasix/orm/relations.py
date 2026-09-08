@@ -49,6 +49,24 @@ class Relation:
         self.parent = parent
         self.related = related
         self._default: Any = None
+        self._attributes: dict[str, Any] = {}
+        self._as_conditions = True
+
+    def with_attributes(self, values: Mapping[str, Any], as_conditions: bool = True) -> Any:
+        """Scope the relation, and seed the same attributes on what it creates.
+
+        A `has_many` narrowed to one kind of row should make that kind of row;
+        without this, `features().create(...)` would produce something the
+        relation itself would not find.
+        """
+        self._attributes.update(values)
+        self._as_conditions = as_conditions
+        return self
+
+    def _apply_attributes(self, builder: QueryBuilder) -> QueryBuilder:
+        if self._attributes and self._as_conditions:
+            builder.with_attributes(self._attributes)
+        return builder
 
     # --- builder proxy ------------------------------------------------------
 
@@ -122,7 +140,7 @@ class Relation:
     # --- helpers ------------------------------------------------------------
 
     def _related_builder(self) -> QueryBuilder:
-        return self.related.new_query()
+        return self._apply_attributes(self.related.new_query())
 
     @staticmethod
     def _keys(models: Sequence[Model], key: str) -> list[Any]:
@@ -251,6 +269,7 @@ class HasOneOrMany(Relation):
 
     async def create(self, attributes: Mapping[str, Any] | None = None, **kwargs: Any) -> Any:
         payload = {
+            **self._attributes,
             **(attributes or {}),
             **kwargs,
             self.foreign_key: self.parent.get_raw_attribute(self.local_key),
@@ -292,6 +311,7 @@ class HasOneOrMany(Relation):
         instance = self.related()
         instance.force_fill(
             {
+                **self._attributes,
                 **(attributes or {}),
                 **kwargs,
                 self.foreign_key: self.parent.get_raw_attribute(self.local_key),
@@ -383,6 +403,8 @@ class HasOneOrMany(Relation):
     def _copy_state_to(self, relation: HasOneOrMany) -> Any:
         relation._of_many = self._of_many
         relation._chaperone = self._chaperone
+        relation._attributes = dict(self._attributes)
+        relation._as_conditions = self._as_conditions
         return relation
 
     def _hydrate_parents(self, children: Iterable[Any], name: str | None = None) -> None:
