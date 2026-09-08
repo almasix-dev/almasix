@@ -1337,7 +1337,7 @@ Laravel [Eloquent: Relationships](https://laravel.com/docs/eloquent-relationship
 - ~~Morph maps (Laravel's `enforceMorphMap`) so `morph_to` stops requiring an explicit per-relation types dict~~ **shipped (part 4)**
 - ~~`touches` — updating parent timestamps on child writes~~ **shipped (part 4)** — with `without_touching` / `without_touching_on`
 - ~~Relation write helpers: `create_quietly`, `find_or_new`, `update_or_create`, `make` / `make_many`~~ **shipped (part 4)** — plus `first_or_new`
-- Docs: rewrite `articulate/relationships` to the Laravel section order
+- ~~Docs: rewrite `articulate/relationships` to the Laravel section order~~ **shipped (part 5)** — sections now follow the Laravel page, and the N+1 deviation is documented where eager loading is explained
 
 **Depends on:** M40 (casting/serialization land first so pivot casts behave).
 
@@ -1487,9 +1487,9 @@ Scheduled on 2026-09-08: the IDE and editor tooling track (**M45–M48**) — Ca
 
 **M40 Articulate model exhaust gate met** — casting overhaul, serialization controls, Eloquent collections, UUID/ULID keys, strictness, quiet writes, pruning, and cursor/chunk iteration.
 
-**Now: M41 Relationship exhaust**, the largest page in the Laravel docs and the biggest remaining parity gap, unblocked by M40. Parts 1–4 have shipped (one-of-many and default models, existence queries, aggregates, pivots and morph maps and `touches`); part 5 is the docs rewrite in Laravel's section order.
+**M41 Relationship exhaust gate met** — one-of-many, default models, chaperone, the existence-query family including morph variants, aggregates and their deferred twins, pivot models with `using` / `as_` / timestamps / filtering, morph maps, `touches`, and the relation write helpers. All five parts have shipped: one-of-many and default models, existence queries, aggregates, pivots and morph maps and `touches`, and the docs rewrite.
 
-**Then: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
+**Now: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
 
 **Milestones M21–M29** (Processes → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
 

@@ -556,7 +556,7 @@ pytest -q tests/test_m41_*.py
 - [x] Morph maps: `morph_map` / `enforce_morph_map`, `morph_to` without an explicit types dict, null types resolving to `None`
 - [x] Touching: `touches`, `without_touching`, `without_touching_on`
 - [x] Relation write helpers: `make` / `make_many` / `create_quietly` / `first_or_new` / `find_or_new` / `update_or_create`
-- [ ] `articulate/relationships` rewritten in Laravel section order
+- [x] `articulate/relationships` rewritten in Laravel section order, with the N+1 deviation documented
 
 ---
 

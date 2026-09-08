@@ -147,27 +147,6 @@ Avalon guesses the inverse relation from the parent class name; pass the name
 explicitly when it differs, as in `chaperone("article")`. It works on
 `has_many`, `has_one`, `morph_many`, and `morph_one`.
 
-## Eager loading
-
-```python
-# app/http/controllers/example_controller.py
-posts = await Post.query().with_("author").get()
-posts[0].author.name
-
-users = await User.query().with_(
-    "posts",
-    notes=lambda q: q.where("published", True),
-).get()
-
-await User.query().with_("posts.comments").get()
-await User.query().with_count("posts").get()
-user._extra["posts_count"]
-
-await user.load("posts")
-await user.load_missing("profile")
-await users.load("posts")   # Collection
-```
-
 ## Many to many: the intermediate table
 
 Rows from a many-to-many relation carry their pivot row with them:
@@ -283,103 +262,6 @@ missing from the map, which is how you keep class names from leaking into new
 tables. A row whose type column is empty resolves to `None`; a stored type the
 map does not know is an error.
 
-## Touching parent timestamps
-
-When a child changes, the parent's `updated_at` often should change too — a
-cached post listing goes stale when a comment is edited. Name the relations to
-bump:
-
-```python
-# app/models/comment.py
-class Comment(Model):
-    touches = ("post",)
-
-    @relation
-    def post(self):
-        return self.belongs_to(Post)
-```
-
-Saving a comment now touches its post. Suspend it with
-`Model.without_touching()`, or for particular models with
-`Model.without_touching_on(Comment)`.
-
-## Inserting and updating related models
-
-```python
-await post.comments().create({"body": "Nice"})
-await post.comments().create_many([{"body": "One"}, {"body": "Two"}])
-await post.comments().create_quietly({"body": "No events"})
-await post.comments().save(comment)
-await post.comments().save_many([first, second])
-
-comment = post.comments().make({"body": "Unsaved"})       # foreign key set
-comments = post.comments().make_many([{"body": "a"}])
-
-await post.comments().first_or_create({"body": "Nice"})
-await post.comments().first_or_new({"body": "Nice"})
-await post.comments().find_or_new(comment_id)
-await post.comments().update_or_create({"body": "old"}, {"body": "new"})
-```
-
-`associate` and `dissociate` set and clear the foreign key on a `belongs_to`
-child.
-
-## Aggregating related models
-
-Counting or summing a relation does not need the related rows loaded. Each
-aggregate runs one extra query for the whole result set and lands on the parent
-under a conventional name:
-
-```python
-writers = await Writer.query().with_count("entries").get()
-writers[0].entries_count            # 2
-
-writers = await (
-    Writer.query()
-    .with_sum("entries", "votes")   # entries_sum_votes
-    .with_avg("entries", "votes")   # entries_avg_votes
-    .with_min("entries", "votes")   # entries_min_votes
-    .with_max("entries", "votes")   # entries_max_votes
-    .with_exists("entries")         # entries_exists -> bool
-    .get()
-)
-```
-
-A relation with no rows counts `0` and exists `False`; the column aggregates are
-`None`, matching Laravel's null.
-
-Constrain an aggregate with a keyword callback, and rename it with `as`:
-
-```python
-await Writer.query().with_count(
-    entries=lambda q: q.where("published", "=", True)
-).get()
-
-await Writer.query().with_count({
-    "entries as published_count": lambda q: q.where("published", "=", True)
-}).get()
-```
-
-`with_aggregate("entries", "sum", "votes", "score")` is the long form when you
-want to name both the function and the attribute yourself. Aggregates are
-independent of `select`, so narrowing the parent's columns does not drop them.
-
-### Deferred aggregates
-
-When the parents are already in hand, the `load_` family does the same work:
-
-```python
-await writer.load_count("entries")
-await writer.load_sum("entries", "votes")
-await writer.load_exists("entries")
-await writer.load_aggregate("entries", "votes", "max")
-
-writers = await Writer.query().get()
-await writers.load_count("entries")   # one query for the whole collection
-```
-
-These take the same callbacks, mappings, and `as` aliases as their eager twins.
-
 ## Querying relationship existence
 
 ```python
@@ -461,6 +343,160 @@ full set is `has_morph`, `or_has_morph`, `doesnt_have_morph`,
 
 `doesnt_have_morph` with no callback is how you find orphaned rows — comments
 whose `commentable_id` points at nothing.
+
+## Aggregating related models
+
+Counting or summing a relation does not need the related rows loaded. Each
+aggregate runs one extra query for the whole result set and lands on the parent
+under a conventional name:
+
+```python
+writers = await Writer.query().with_count("entries").get()
+writers[0].entries_count            # 2
+
+writers = await (
+    Writer.query()
+    .with_sum("entries", "votes")   # entries_sum_votes
+    .with_avg("entries", "votes")   # entries_avg_votes
+    .with_min("entries", "votes")   # entries_min_votes
+    .with_max("entries", "votes")   # entries_max_votes
+    .with_exists("entries")         # entries_exists -> bool
+    .get()
+)
+```
+
+A relation with no rows counts `0` and exists `False`; the column aggregates are
+`None`, matching Laravel's null.
+
+Constrain an aggregate with a keyword callback, and rename it with `as`:
+
+```python
+await Writer.query().with_count(
+    entries=lambda q: q.where("published", "=", True)
+).get()
+
+await Writer.query().with_count({
+    "entries as published_count": lambda q: q.where("published", "=", True)
+}).get()
+```
+
+`with_aggregate("entries", "sum", "votes", "score")` is the long form when you
+want to name both the function and the attribute yourself. Aggregates are
+independent of `select`, so narrowing the parent's columns does not drop them.
+
+### Deferred aggregates
+
+When the parents are already in hand, the `load_` family does the same work:
+
+```python
+await writer.load_count("entries")
+await writer.load_sum("entries", "votes")
+await writer.load_exists("entries")
+await writer.load_aggregate("entries", "votes", "max")
+
+writers = await Writer.query().get()
+await writers.load_count("entries")   # one query for the whole collection
+```
+
+These take the same callbacks, mappings, and `as` aliases as their eager twins.
+
+## Eager loading
+
+Reading a relation you did not load raises rather than quietly running a query,
+so eager loading is not an optimisation here — it is how you get the data:
+
+```python
+# app/http/controllers/example_controller.py
+posts = await Post.query().with_("author").get()
+posts[0].author.name
+```
+
+That is one query for the posts and one for their authors, whatever the row
+count.
+
+### Multiple, nested, and constrained
+
+```python
+await User.query().with_("posts", "profile").get()
+await User.query().with_("posts.comments").get()          # nested
+
+await User.query().with_(
+    "posts",
+    notes=lambda q: q.where("published", True),           # constrained
+).get()
+```
+
+A keyword callback receives the relation's query builder, so it can filter,
+order, or narrow the selected columns. `without("posts")` drops a relation that
+an earlier scope added.
+
+### Lazy eager loading
+
+When the parents are already loaded, `load` fills relations in afterwards:
+
+```python
+await user.load("posts")
+await user.load_missing("profile")     # skips what is already loaded
+await users.load("posts")              # a whole Collection, still one query
+```
+
+### Preventing N+1 by default
+
+Laravel lazy-loads on property access and offers `preventLazyLoading()` to turn
+that off. Avalon inverts the default deliberately: property access on an
+unloaded relation raises `RelationNotLoadedError`, because a hidden query behind
+an attribute read is exactly how N+1 problems reach production unnoticed.
+
+If you want Laravel's behaviour on a given model, opt in explicitly — the query
+is still awaited, so the IO stays visible:
+
+```python
+class User(Model):
+    lazy_relations = True
+
+posts = await user.posts          # awaited, not hidden
+```
+
+## Inserting and updating related models
+
+```python
+await post.comments().create({"body": "Nice"})
+await post.comments().create_many([{"body": "One"}, {"body": "Two"}])
+await post.comments().create_quietly({"body": "No events"})
+await post.comments().save(comment)
+await post.comments().save_many([first, second])
+
+comment = post.comments().make({"body": "Unsaved"})       # foreign key set
+comments = post.comments().make_many([{"body": "a"}])
+
+await post.comments().first_or_create({"body": "Nice"})
+await post.comments().first_or_new({"body": "Nice"})
+await post.comments().find_or_new(comment_id)
+await post.comments().update_or_create({"body": "old"}, {"body": "new"})
+```
+
+`associate` and `dissociate` set and clear the foreign key on a `belongs_to`
+child.
+
+## Touching parent timestamps
+
+When a child changes, the parent's `updated_at` often should change too — a
+cached post listing goes stale when a comment is edited. Name the relations to
+bump:
+
+```python
+# app/models/comment.py
+class Comment(Model):
+    touches = ("post",)
+
+    @relation
+    def post(self):
+        return self.belongs_to(Post)
+```
+
+Saving a comment now touches its post. Suspend it with
+`Model.without_touching()`, or for particular models with
+`Model.without_touching_on(Comment)`.
 
 ## Soft deletes on related models
 
