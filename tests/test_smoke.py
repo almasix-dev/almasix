@@ -1,9 +1,21 @@
+import tomllib
+from pathlib import Path
+
 from almasix import __version__
 from almasix.framework import Application, Container
 
 
 def test_version() -> None:
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.2.0"
+
+
+def test_version_matches_the_packaged_metadata() -> None:
+    """The release tag is checked against pyproject, not against ``__version__``.
+
+    Without this the two can drift and a stale ``__version__`` ships unnoticed.
+    """
+    pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    assert tomllib.loads(pyproject.read_text())["project"]["version"] == __version__
 
 
 def test_container_bind_and_resolve() -> None:

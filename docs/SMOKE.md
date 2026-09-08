@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.1.0` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.2.0` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
