@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from avalon.console.stub import render
 from avalon.orm.inflector import snake
 
 _SEGMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_VIEW_SEGMENT_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_-]*$")
 
 
 class MakeError(ValueError):
@@ -20,187 +23,27 @@ class Blueprint:
     directory: tuple[str, ...]
     stub: str
 
-def _controller_stub(name: str) -> str:
-    return f'''"""{name}."""
-
-from __future__ import annotations
-
-from avalon.http import Controller
-
-
-class {name}(Controller):
-    """{name}."""
-
-    async def index(self) -> dict[str, str]:
-        # Web routes return html(...); api routes return dict / list.
-        return {{"controller": "{name}"}}
-'''
-
-
-def _middleware_stub(name: str) -> str:
-    return f'''"""{name}."""
-
-from __future__ import annotations
-
-from collections.abc import Awaitable, Callable
-from typing import Any
-
-from avalon.http import Middleware, Request
-
-
-class {name}(Middleware):
-    """{name}."""
-
-    async def handle(
-        self,
-        request: Request,
-        call_next: Callable[[Request], Awaitable[Any]],
-    ) -> Any:
-        return await call_next(request)
-'''
-
-
-def _provider_stub(name: str) -> str:
-    return f'''"""{name}."""
-
-from __future__ import annotations
-
-from avalon.providers import ServiceProvider
-
-
-class {name}(ServiceProvider):
-    """{name}."""
-
-    def register(self) -> None:
-        """Bind services into the container."""
-
-    def boot(self) -> None:
-        """Bootstrap services after all providers are registered."""
-'''
-
-
-def _request_stub(name: str) -> str:
-    return f'''"""{name}."""
-
-from __future__ import annotations
-
-from avalon.validation import Field, FormRequest
-
-
-class {name}(FormRequest):
-    """{name}."""
-
-    name: str = Field(min_length=1)
-
-    def authorize(self) -> bool:
-        return True
-
-    def messages(self) -> dict[str, str]:
-        return {{}}
-'''
-
-
-def _model_stub(name: str) -> str:
-    return f'''"""{name} model."""
-
-from __future__ import annotations
-
-from avalon.orm import Model
-
-
-class {name}(Model):
-    """{name} model."""
-
-    fillable: tuple[str, ...] = ()
-'''
-
-
-def _seeder_stub(name: str) -> str:
-    return f'''"""{name}."""
-
-from __future__ import annotations
-
-from avalon.orm import Seeder
-
-
-class {name}(Seeder):
-    """{name}."""
-
-    async def run(self) -> None:
-        """Seed the application's database."""
-'''
-
-
-def _command_stub(name: str) -> str:
-    command_name = "".join(
-        f"-{c.lower()}" if c.isupper() else c for c in name.replace("Command", "")
-    ).lstrip("-") or "command"
-    return f'''"""{name}."""
-
-from __future__ import annotations
-
-from avalon.console import Command
-
-
-class {name}(Command):
-    signature = "{command_name}"
-    description = "{name}"
-
-    def handle(self) -> int:
-        self.info("{name} running")
-        return 0
-'''
-
-
 BLUEPRINTS: dict[str, Blueprint] = {
-    "controller": Blueprint(("app", "http", "controllers"), "controller"),
-    "middleware": Blueprint(("app", "http", "middleware"), "middleware"),
-    "provider": Blueprint(("app", "providers"), "provider"),
-    "request": Blueprint(("app", "http", "requests"), "request"),
-    "model": Blueprint(("app", "models"), "model"),
-    "seeder": Blueprint(("database", "seeders"), "seeder"),
-    "command": Blueprint(("app", "console", "commands"), "command"),
+    "controller": Blueprint(("app", "http", "controllers"), "controller.stub"),
+    "middleware": Blueprint(("app", "http", "middleware"), "middleware.stub"),
+    "provider": Blueprint(("app", "providers"), "provider.stub"),
+    "request": Blueprint(("app", "http", "requests"), "request.stub"),
+    "model": Blueprint(("app", "models"), "model.stub"),
+    "seeder": Blueprint(("database", "seeders"), "seeder.stub"),
+    "command": Blueprint(("app", "console", "commands"), "command.stub"),
+    "job": Blueprint(("app", "jobs"), "job.queued.stub"),
+    "mail": Blueprint(("app", "mail"), "mail.stub"),
+    "notification": Blueprint(("app", "notifications"), "notification.stub"),
+    "rule": Blueprint(("app", "rules"), "rule.stub"),
+    "cast": Blueprint(("app", "casts"), "cast.stub"),
+    "exception": Blueprint(("app", "exceptions"), "exception.stub"),
+    "enum": Blueprint(("app", "enums"), "enum.stub"),
+    "interface": Blueprint(("app", "contracts"), "interface.stub"),
+    "observer": Blueprint(("app", "observers"), "observer.plain.stub"),
+    # A plain class lands wherever its name says: ``Services/Ledger`` →
+    # ``app/services/ledger.py``.
+    "class": Blueprint(("app",), "class.stub"),
 }
-
-_STUBS = {
-    "controller": _controller_stub,
-    "middleware": _middleware_stub,
-    "provider": _provider_stub,
-    "request": _request_stub,
-    "model": _model_stub,
-    "seeder": _seeder_stub,
-    "command": _command_stub,
-}
-
-
-def _component_stub(name: str) -> str:
-    """Anonymous Caliburn component under resources/views/components."""
-    return f'''@props({{}})
-{{{{-- {name} — anonymous Caliburn component --}}}}
-<div {{{{ attributes }}}}>
-  {{{{ slot }}}}
-</div>
-'''
-
-
-def _component_class_stub(class_name: str, view_name: str) -> str:
-    return f'''"""{class_name} view component."""
-
-from __future__ import annotations
-
-from avalon.caliburn import Component
-
-
-class {class_name}(Component):
-    """{class_name}."""
-
-    def __init__(self) -> None:
-        pass
-
-    def render(self) -> str:
-        return "{view_name}"
-'''
-
 
 def make_component(
     name: str,
@@ -233,7 +76,10 @@ def make_component(
     directory.mkdir(parents=True, exist_ok=True)
     display = "/".join(rel_parts)
     view_name = "components." + ".".join(rel_parts)
-    target.write_text(_component_stub(display), encoding="utf-8")
+    target.write_text(
+        render("component.stub", {"name": display}, base_path=base_path),
+        encoding="utf-8",
+    )
 
     if class_based:
         class_name = studly(rel_parts[-1])
@@ -246,7 +92,11 @@ def make_component(
         class_dir.mkdir(parents=True, exist_ok=True)
         _ensure_packages(base_path, ("app", "view", "components") + rel_parts[:-1])
         class_path.write_text(
-            _component_class_stub(class_name, view_name),
+            render(
+                "component-class.stub",
+                {"class": class_name, "view": view_name},
+                base_path=base_path,
+            ),
             encoding="utf-8",
         )
 
@@ -266,12 +116,24 @@ def _split(name: str) -> tuple[tuple[str, ...], str]:
     return tuple(parts[:-1]), parts[-1]
 
 
-def make(kind: str, name: str, *, base_path: Path, force: bool = False) -> Path:
+def make(
+    kind: str,
+    name: str,
+    *,
+    base_path: Path,
+    force: bool = False,
+    stub: str | None = None,
+    replacements: Mapping[str, str] | None = None,
+) -> Path:
     """Generate a class file and return its path.
 
     CLI names stay PascalCase (`PostController`, `Admin/UserController`);
     packages and module files use Python snake_case
     (`app/http/controllers/admin/user_controller.py`).
+
+    `stub` overrides the blueprint's template, which is how one generator
+    offers variants (`make:job --sync`); `replacements` adds placeholder
+    values on top of `class` and `command`.
     """
     blueprint = BLUEPRINTS.get(kind)
     if blueprint is None:
@@ -287,8 +149,78 @@ def make(kind: str, name: str, *, base_path: Path, force: bool = False) -> Path:
 
     directory.mkdir(parents=True, exist_ok=True)
     _ensure_packages(base_path, blueprint.directory + package_ns)
-    target.write_text(_STUBS[kind](class_name), encoding="utf-8")
+    target.write_text(
+        render(
+            stub or blueprint.stub,
+            {
+                "class": class_name,
+                "command": command_name(class_name),
+                **dict(replacements or {}),
+            },
+            base_path=base_path,
+        ),
+        encoding="utf-8",
+    )
     return target
+
+
+def make_view(
+    name: str,
+    *,
+    base_path: Path,
+    force: bool = False,
+    stub: str = "view.stub",
+    replacements: Mapping[str, str] | None = None,
+) -> Path:
+    """Create a Caliburn template under ``resources/views`` and return its path.
+
+    Names are view names, so `posts.index`, `posts/index`, and `Posts/Index`
+    all reach `resources/views/posts/index.cal.html`.
+    """
+    parts = view_parts(name)
+    directory = base_path.joinpath("resources", "views", *parts[:-1])
+    target = directory / f"{parts[-1]}.cal.html"
+    if target.exists() and not force:
+        raise MakeError(f"{target.relative_to(base_path)} already exists. Use --force to overwrite.")
+
+    directory.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        render(
+            stub,
+            {"name": view_name(name), **dict(replacements or {})},
+            base_path=base_path,
+        ),
+        encoding="utf-8",
+    )
+    return target
+
+
+def view_parts(name: str) -> tuple[str, ...]:
+    """Split a view name on dots and slashes into snake_case path segments."""
+    raw = [part for part in re.split(r"[./\\]", name.removesuffix(".cal.html")) if part]
+    if not raw:
+        raise MakeError("A view name is required.")
+    for part in raw:
+        if not _VIEW_SEGMENT_RE.match(part):
+            raise MakeError(
+                f"Invalid name segment {part!r}. Use letters, numbers, dashes, and "
+                "underscores; must start with a letter or number."
+            )
+    return tuple(snake(part) for part in raw)
+
+
+def view_name(name: str) -> str:
+    """The dotted name Caliburn resolves the generated template by."""
+    return ".".join(view_parts(name))
+
+
+def command_name(class_name: str) -> str:
+    """``SendEmails`` → ``send-emails``, the signature a new command starts with."""
+    dashed = "".join(
+        f"-{letter.lower()}" if letter.isupper() else letter
+        for letter in class_name.replace("Command", "")
+    )
+    return dashed.lstrip("-") or "command"
 
 def _ensure_packages(base_path: Path, parts: tuple[str, ...]) -> None:
     """Generated directories must be importable packages."""

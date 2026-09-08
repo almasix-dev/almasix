@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from avalon.console.command import Command
+from avalon.console.stub import render
 
 
 def _pascal(name: str) -> str:
@@ -23,24 +24,12 @@ class MakeEventCommand(Command):
 
     def handle(self) -> int:
         name = _pascal(str(self.argument("name")))
-        path = Path.cwd() / "app" / "events" / f"{_snake(name)}.py"
+        base_path = Path.cwd()
+        path = base_path / "app" / "events" / f"{_snake(name)}.py"
         if path.exists():
             self.error(f"Event already exists: {path}")
             return 1
-        _write(
-            path,
-            f'''"""Application event."""
-
-from __future__ import annotations
-
-
-class {name}:
-    """Event payload."""
-
-    def __init__(self, **payload) -> None:
-        self.__dict__.update(payload)
-''',
-        )
+        _write(path, render("event.stub", {"class": name}, base_path=base_path))
         # ensure package init
         init = path.parent / "__init__.py"
         if not init.exists():
@@ -57,34 +46,26 @@ class MakeListenerCommand(Command):
         name = _pascal(str(self.argument("name")))
         event_name = self.option("event")
         queued = bool(self.option("queued"))
-        path = Path.cwd() / "app" / "listeners" / f"{_snake(name)}.py"
+        base_path = Path.cwd()
+        path = base_path / "app" / "listeners" / f"{_snake(name)}.py"
         if path.exists():
             self.error(f"Listener already exists: {path}")
             return 1
 
-        imports = ["from __future__ import annotations"]
-        bases = ""
-        if queued:
-            imports.append("from avalon.events import ShouldQueue")
-            bases = "(ShouldQueue)"
-        event_import = ""
-        handle_arg = "event"
-        if event_name:
-            ename = _pascal(str(event_name))
-            event_import = f"from app.events.{_snake(ename)} import {ename}\n"
-            handle_arg = f"event: {ename}"
-
-        body = f'''"""Event listener."""
-
-{chr(10).join(imports)}
-{event_import}
-
-class {name}{bases}:
-    """Handle the event."""
-
-    def handle(self, {handle_arg}) -> None:
-        pass
-'''
+        event = _pascal(str(event_name)) if event_name else ""
+        if event:
+            stub = "listener-queued.stub" if queued else "listener.stub"
+        else:
+            stub = "listener-queued-duck.stub" if queued else "listener-duck.stub"
+        body = render(
+            stub,
+            {
+                "class": name,
+                "event": event,
+                "namespacedEvent": f"app.events.{_snake(event)}" if event else "",
+            },
+            base_path=base_path,
+        )
         _write(path, body)
         init = path.parent / "__init__.py"
         if not init.exists():

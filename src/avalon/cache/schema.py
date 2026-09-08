@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 
 CACHE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS cache (

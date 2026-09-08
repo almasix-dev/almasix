@@ -59,9 +59,9 @@ def test_serve_auto_selects_next_port(tmp_path, monkeypatch: pytest.MonkeyPatch)
         assert end == MAX_PORT
         return 3003
 
-    monkeypatch.setattr("avalon.grail.cli.find_available_port", fake_find)
+    monkeypatch.setattr("avalon.console.commands.runtime.find_available_port", fake_find)
     mock_run = MagicMock()
-    monkeypatch.setattr("avalon.grail.cli.uvicorn.run", mock_run)
+    monkeypatch.setattr("avalon.console.commands.runtime.uvicorn.run", mock_run)
 
     result = runner.invoke(grail_app, ["serve"])
     assert result.exit_code == 0, result.stdout
@@ -77,11 +77,11 @@ def test_serve_uses_requested_port_when_free(
     root = scaffold_app("port_app2", destination=tmp_path / "port_app2")
     monkeypatch.chdir(root)
     monkeypatch.setattr(
-        "avalon.grail.cli.find_available_port",
+        "avalon.console.commands.runtime.find_available_port",
         lambda host, start, end: start,
     )
     mock_run = MagicMock()
-    monkeypatch.setattr("avalon.grail.cli.uvicorn.run", mock_run)
+    monkeypatch.setattr("avalon.console.commands.runtime.uvicorn.run", mock_run)
 
     result = runner.invoke(grail_app, ["serve", "--port", "3010"])
     assert result.exit_code == 0, result.stdout

@@ -1,0 +1,11 @@
+"""Event listener."""
+
+from __future__ import annotations
+from {{ namespacedEvent }} import {{ event }}
+
+
+class {{ class }}:
+    """Handle the event."""
+
+    def handle(self, event: {{ event }}) -> None:
+        pass

@@ -8,9 +8,12 @@ enables IPython ``autoawait`` so ``await User.query().get()`` also works.
 from __future__ import annotations
 
 import asyncio
+import importlib
 import inspect
 import sys
 from typing import TYPE_CHECKING, Any
+
+import typer
 
 if TYPE_CHECKING:
     from avalon.framework.application import Application
@@ -92,10 +95,12 @@ def build_namespace(app: Application) -> dict[str, Any]:
         ns["log"] = log
     except Exception:
         pass
+    refused = set(config("fiddle.dont_alias", []) or [])
     try:
         from app.models.user import User  # type: ignore
 
-        ns["User"] = User
+        if "User" not in refused:
+            ns["User"] = User
     except Exception:
         pass
     # Discover other app models for convenience.
@@ -113,13 +118,71 @@ def build_namespace(app: Application) -> dict[str, Any]:
                 if (
                     isinstance(obj, type)
                     and attr not in ns
+                    and attr not in refused
                     and attr[:1].isupper()
                     and getattr(obj, "__module__", "").startswith("app.models")
                 ):
                     ns[attr] = obj
     except Exception:
         pass
+    _add_aliases(ns, refused)
+    _add_commands(ns)
     return ns
+
+
+def _add_aliases(ns: dict[str, Any], refused: set[str]) -> None:
+    """``config/fiddle.py`` → ``alias``: classes to have waiting in the shell.
+
+    Laravel's Tinker aliases whatever it finds; Avalon asks, because a dotted
+    path is unambiguous and an import that fails should say which one did.
+    """
+    from avalon.config import config
+
+    for name, dotted in (config("fiddle.alias", {}) or {}).items():
+        if name in refused:
+            continue
+        module_name, _, attribute = str(dotted).rpartition(".")
+        try:
+            ns[name] = getattr(importlib.import_module(module_name), attribute)
+        except Exception as exc:
+            typer.secho(f"fiddle.alias {name} ({dotted}): {exc}", fg=typer.colors.YELLOW)
+
+
+def _add_commands(ns: dict[str, Any]) -> None:
+    """``config/fiddle.py`` → ``commands``: commands callable from the shell.
+
+    Tinker lists commands so you can type them at its prompt. A Python REPL
+    reads Python, so each name becomes a callable instead:
+    ``inspire()``, or ``queue_work(once=True)``.
+    """
+    from avalon.console.facade import Artisan
+
+    available = Artisan.all()
+    for name in _config_list("fiddle.commands"):
+        if name not in available:
+            typer.secho(f"fiddle.commands {name}: no such command", fg=typer.colors.YELLOW)
+            continue
+        ns[name.replace(":", "_").replace("-", "_")] = _command_caller(name)
+
+
+def _command_caller(name: str) -> Any:
+    """A callable that runs one command with keyword arguments as options."""
+    from avalon.console.facade import Artisan
+
+    def call(*arguments: Any, **options: Any) -> int:
+        parameters = {f"--{key.replace('_', '-')}": value for key, value in options.items()}
+        line = " ".join([name, *(str(argument) for argument in arguments)])
+        return Artisan.call(line, parameters)
+
+    call.__name__ = name.replace(":", "_")
+    call.__doc__ = f"Run the {name!r} command."
+    return call
+
+
+def _config_list(key: str) -> list[str]:
+    from avalon.config import config
+
+    return [str(item) for item in (config(key, []) or [])]
 
 
 def start_fiddle(app: Application) -> int:

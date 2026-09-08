@@ -31,6 +31,13 @@ class Command:
     description: ClassVar[str] = ""
     hidden: ClassVar[bool] = False
 
+    #: Extra names this command answers to (Laravel's ``$aliases``).
+    aliases: ClassVar[tuple[str, ...]] = ()
+
+    #: Whether the application must be booted before ``handle()`` runs.
+    #: Generators and ``version`` work in a bare directory, so they say no.
+    boots_application: ClassVar[bool] = True
+
     #: Laravel exit codes (`Command::SUCCESS` and friends).
     SUCCESS: ClassVar[int] = 0
     FAILURE: ClassVar[int] = 1
@@ -42,6 +49,10 @@ class Command:
 
     def __init__(self, app: Application | None = None) -> None:
         self.app = app
+        #: The kernel running this command (Laravel's ``getApplication()``),
+        #: set by :meth:`ConsoleKernel.run_command`. It is how a command can
+        #: ask what other commands exist.
+        self.kernel: Any = None
         self.output = Output()
         self._arguments: dict[str, Any] = {}
         self._options: dict[str, Any] = {}
@@ -163,13 +174,13 @@ class Command:
         """Laravel ``$this->call()`` — run another command, showing its output."""
         from avalon.console.facade import Artisan
 
-        return Artisan.call(command, arguments, app=self.app)
+        return Artisan.call(command, arguments, app=self.app, kernel=self.kernel)
 
     def call_silently(self, command: str, arguments: dict[str, Any] | None = None) -> int:
         """Laravel ``$this->callSilently()`` — run another command, muting output."""
         from avalon.console.facade import Artisan
 
-        return Artisan.call(command, arguments, app=self.app, silent=True)
+        return Artisan.call(command, arguments, app=self.app, silent=True, kernel=self.kernel)
 
     # --- lifecycle ------------------------------------------------------
 
@@ -221,7 +232,13 @@ class Command:
         self._arguments = dict(arguments or {})
         self._options = dict(options or {})
         for key, value in {**self._arguments, **self._options}.items():
-            setattr(self, key.replace("-", "_"), value)
+            attribute = key.replace("-", "_")
+            # ``serve --app`` must not replace the command's application, and
+            # ``make:policy {name}`` must not shadow ``name()``. Input that
+            # collides with the command's own surface stays in option()/argument().
+            if attribute in _COMMAND_SURFACE:
+                continue
+            setattr(self, attribute, value)
         try:
             result = self.handle()
         except CommandFailed as exc:
@@ -231,6 +248,10 @@ class Command:
         if result is None:
             return self.SUCCESS
         return int(result)
+
+
+#: Names that belong to the command itself, so input never overwrites them.
+_COMMAND_SURFACE = frozenset(vars(Command)) | {"app", "kernel", "output"}
 
 
 class Isolatable:

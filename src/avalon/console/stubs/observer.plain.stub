@@ -1,0 +1,29 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+class {{ class }}:
+    """Model observer — register it with ``Model.observe({{ class }})``.
+
+    A method named after a model event is registered as a listener for it:
+    ``retrieved``, ``creating``, ``created``, ``updating``, ``updated``,
+    ``saving``, ``saved``, ``deleting``, ``deleted``, ``restoring``,
+    ``restored``, ``replicating``. Returning ``False`` from a *-ing* method
+    aborts that step. ``retrieved`` and ``replicating`` fire in a sync
+    context, so those two must not be ``async``.
+    """
+
+    async def created(self, model: Any) -> None:
+        """Handle the model "created" event."""
+
+    async def updated(self, model: Any) -> None:
+        """Handle the model "updated" event."""
+
+    async def deleted(self, model: Any) -> None:
+        """Handle the model "deleted" event."""
+
+    async def restored(self, model: Any) -> None:
+        """Handle the model "restored" event."""

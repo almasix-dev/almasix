@@ -145,6 +145,21 @@ class DatabaseQueue:
             connection=self.db_connection,
         )
 
+    async def clear(self, queue: str = "default") -> int:
+        """Delete every job on ``queue``, returning how many went (``queue:clear``).
+
+        Reserved rows go too, as Laravel's does: a worker that finishes one
+        afterwards simply deletes a row that is no longer there.
+        """
+        from avalon.orm.facade import DB
+
+        deleted = await DB.statement(
+            f"DELETE FROM {self.table} WHERE queue = :queue",
+            {"queue": queue},
+            connection=self.db_connection,
+        )
+        return int(deleted or 0)
+
     async def size(self, queue: str = "default") -> int:
         from avalon.orm.facade import DB
 
@@ -160,7 +175,6 @@ class DatabaseQueue:
         return int((row or {}).get("total") or 0)
 
     async def restore_failed(self, failed_id: int) -> bool:
-        from avalon.orm.facade import DB
         from avalon.queue.failed import FailedJobRepository
 
         repo = FailedJobRepository(self.manager.failed_config() if self.manager else {})

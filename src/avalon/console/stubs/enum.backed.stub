@@ -1,0 +1,11 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from enum import Enum
+
+
+class {{ class }}({{ base }}, Enum):
+    """{{ class }} — a backed enum, usable as a model cast."""
+
+    EXAMPLE = {{ case }}

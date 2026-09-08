@@ -1,0 +1,10 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+
+class {{ class }}:
+    """{{ class }} — a single action, called as ``{{ class }}()()``."""
+
+    def __call__(self) -> None:
+        """Do the work."""

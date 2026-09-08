@@ -66,6 +66,7 @@ def scaffold_app(name: str, destination: Path | None = None) -> Path:
         "config/notifications.py": _config_notifications(),
         "config/cache.py": _config_cache(),
         "config/redis.py": _config_redis(),
+        "config/fiddle.py": _config_fiddle(),
         "app/models/__init__.py": "",
         "app/console/__init__.py": "",
         "app/console/commands/__init__.py": "",
@@ -653,6 +654,26 @@ config = {
         "log": {"driver": "log"},
         "array": {"driver": "array"},
     },
+}
+'''
+
+
+def _config_fiddle() -> str:
+    return '''"""Fiddle — what the REPL has waiting for you (`grail fiddle`).
+
+Your models under app/models are aliased automatically; everything here is
+for the rest.
+"""
+
+config = {
+    # Commands to have as callables in the shell: "inspire" → inspire().
+    "commands": [],
+    # Extra names to import, as name -> dotted path.
+    "alias": {
+        # "Str": "avalon.support.Str",
+    },
+    # Names to keep out of the shell, even if a model would have claimed them.
+    "dont_alias": [],
 }
 '''
 

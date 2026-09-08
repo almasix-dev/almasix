@@ -5,9 +5,8 @@ from __future__ import annotations
 import itertools
 import sys
 import threading
-import time
 from collections.abc import Callable, Iterable, Sequence
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from rich.console import Console
 from rich.progress import BarColumn, Progress as RichProgress, SpinnerColumn, TextColumn, TimeElapsedColumn

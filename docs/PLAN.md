@@ -1534,6 +1534,24 @@ Scheduled on 2026-09-08: the support and reference-page exhaust track (**M49–M
 
 Also scheduled on 2026-09-08, out of the README pass: publishing the documentation site to GitHub Pages (**M39**) and releasing Avalon to PyPI under a distribution name that is actually available (**M38**, with the naming constraint recorded under Ecosystem growth). Both are gaps the README could not honestly paper over — no docs URL, no PyPI badges — so they are milestones now rather than README footnotes.
 
+And scheduled on 2026-09-08 during M30: the **lint gate (M51)**, which turned out to be a gate on paper only — CI does not run `make lint`, and `make lint` does not pass. Fixing it properly means choosing a rule set and correcting 932 findings, which is its own milestone rather than a detour inside a parity one. The README's lint claims came out in the meantime.
+
+## Project hygiene (M51)
+
+### M51 — Lint and format gate
+
+Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gates and **CI has never run it**: the workflow runs smoke, tests, and regression only. `[tool.ruff]` sets `line-length` and `target-version` but selects no rules, and the dev extra pins `ruff>=0.8.0` — so the rule set is whatever the installed ruff defaults to. With 0.16.5, `ruff check src tests` reports 932 findings on `main` (243 unused-noqa, 194 redefined-while-unused, 99 blind-except, 57 unsorted-imports, 57 unused-import, 51 naive `datetime` calls, and a long tail). The README's lint badge and gate row were therefore claims nothing enforced; both are removed until this milestone lands.
+
+- **Pin ruff** to an exact version in the dev extra, so the rule set cannot change under the project the way it did here
+- **Select rules explicitly** in `[tool.ruff.lint]` instead of inheriting a moving default. `E4,E7,E9,F` is the floor that already passes; `I`, `UP`, `B`, `DTZ`, `RUF`, `SIM` are the candidates, each judged by what fixing it costs and what it protects. Different selections for `src/` and `tests/` are legitimate
+- **Fix the fallout, or ignore per rule with a reason.** The 243 unused-`noqa` findings are the argument: a suppression with no reason outlives the problem it silenced
+- **Add the CI job** — `ruff check` and `ruff format --check` across the same Python versions as the test matrix
+- **Restore the README** lint badge and the `make lint` row in the gate table, once the job exists to back them
+
+**Depends on:** nothing. Best run between milestones, since fixing findings touches files across every package.
+
+**Gate:** `make lint` green on a pinned ruff with an explicit selection; a CI job enforcing it on every push; the README's claims matching what CI does.
+
 ## Quality bar for “solid core”
 
 - Type hints + tests per subpackage boundary

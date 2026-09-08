@@ -287,15 +287,15 @@ def test_grail_cli_error_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.chdir(tmp_path)
     runner = CliRunner()
 
-    with patch("avalon.grail.cli._boot_app", side_effect=RuntimeError("no app")):
-        assert runner.invoke(grail_app, ["migrate"]).exit_code == 1
-        assert runner.invoke(grail_app, ["migrate:fresh"]).exit_code == 1
-    with patch("avalon.grail.cli._boot_migrator", side_effect=RuntimeError("no db")):
-        assert runner.invoke(grail_app, ["migrate:rollback"]).exit_code == 1
-        assert runner.invoke(grail_app, ["migrate:status"]).exit_code == 1
-    with patch("avalon.grail.cli.make_lang", side_effect=LangError("bad")):
+    with patch(
+        "avalon.console.commands.database.DatabaseCommand.migrator",
+        side_effect=RuntimeError("no db"),
+    ):
+        for command in ("migrate", "migrate:fresh", "migrate:rollback", "migrate:status"):
+            assert runner.invoke(grail_app, [command]).exit_code == 1
+    with patch("avalon.console.commands.publishing.make_lang", side_effect=LangError("bad")):
         assert runner.invoke(grail_app, ["make:lang", "!!"]).exit_code == 1
-    with patch("avalon.grail.cli.publish_lang", side_effect=LangError("bad")):
+    with patch("avalon.console.commands.publishing.publish_lang", side_effect=LangError("bad")):
         assert runner.invoke(grail_app, ["lang:publish"]).exit_code == 1
 
 

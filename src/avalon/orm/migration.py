@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from avalon.console.stub import render
 from avalon.orm.facade import DB
 from avalon.orm.inflector import studly
 from avalon.orm.schema import Schema
@@ -185,6 +186,7 @@ def make_migration(
     *,
     table: str | None = None,
     create: bool = False,
+    base_path: Path | None = None,
 ) -> Path:
     """Write a timestamped migration stub and return its path.
 
@@ -210,82 +212,14 @@ def make_migration(
 
     class_name = studly(slug)
     if table and create:
-        body = _create_stub(class_name, table)
+        stub = "migration.create.stub"
     elif table:
-        body = _update_stub(class_name, table)
+        stub = "migration.update.stub"
     else:
-        body = _blank_stub(class_name)
+        stub = "migration.stub"
+    body = render(stub, {"class": class_name, "table": table or ""}, base_path=base_path)
     path.write_text(body, encoding="utf-8")
     return path
-
-
-def _blank_stub(class_name: str) -> str:
-    return f'''"""{class_name} migration."""
-
-from __future__ import annotations
-
-from avalon.orm import Migration
-
-
-class {class_name}(Migration):
-    """{class_name}."""
-
-    async def up(self) -> None:
-        pass
-
-    async def down(self) -> None:
-        pass
-'''
-
-
-def _create_stub(class_name: str, table: str) -> str:
-    return f'''"""Create the {table} table."""
-
-from __future__ import annotations
-
-from avalon.orm import Migration, Schema
-
-
-class {class_name}(Migration):
-    """{class_name}."""
-
-    async def up(self) -> None:
-        await Schema.create(
-            "{table}",
-            lambda table: (
-                table.id(),
-                table.timestamps(),
-            ),
-        )
-
-    async def down(self) -> None:
-        await Schema.drop_if_exists("{table}")
-'''
-
-
-def _update_stub(class_name: str, table: str) -> str:
-    return f'''"""Alter the {table} table."""
-
-from __future__ import annotations
-
-from avalon.orm import Migration, Schema
-
-
-class {class_name}(Migration):
-    """{class_name}."""
-
-    async def up(self) -> None:
-        await Schema.table(
-            "{table}",
-            lambda table: (),  # e.g. table.string("slug")
-        )
-
-    async def down(self) -> None:
-        await Schema.table(
-            "{table}",
-            lambda table: (),  # e.g. table.drop_column("slug")
-        )
-'''
 
 
 # Callable kept for type checkers looking at Schema.create callbacks.

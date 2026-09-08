@@ -1,0 +1,14 @@
+"""{{ class }} job."""
+
+from __future__ import annotations
+
+from avalon.queue import Job, ShouldQueue
+
+
+class {{ class }}(ShouldQueue, Job):
+    """Queued job — ``await {{ class }}.dispatch()`` pushes it to the queue."""
+
+    tries = 1
+
+    async def handle(self) -> None:
+        """Run the job."""

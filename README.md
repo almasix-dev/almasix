@@ -17,7 +17,6 @@
   <a href="tests"><img alt="tests" src="https://img.shields.io/badge/tests-1%2C886-31c48d?style=flat-square&logo=pytest&logoColor=white"></a>
   <a href="pyproject.toml"><img alt="python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?style=flat-square&logo=python&logoColor=white"></a>
   <a href="website/src/content/docs"><img alt="docs" src="https://img.shields.io/badge/docs-53%20pages-bc52ee?style=flat-square&logo=astro&logoColor=white"></a>
-  <a href="https://docs.astral.sh/ruff/"><img alt="lint" src="https://img.shields.io/badge/lint-ruff-261230?style=flat-square&logo=ruff&logoColor=white"></a>
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/coolsam726/avalon?style=flat-square&color=0f766e"></a>
 </p>
 
@@ -220,7 +219,9 @@ The gates are enforced in CI on Python 3.11, 3.12, and 3.13:
 | Milestone smoke tests | `make smoke` |
 | Contract regressions | `make regression` |
 | Full suite, coverage **≥ 98%** (aim 100%) | `make test-cov` |
-| Lint | `make lint` |
+
+`make lint` runs ruff locally but is not a CI gate yet, and does not pass — choosing a rule set and
+clearing the backlog is [M51](docs/PLAN.md).
 
 Currently **1,886 tests** at **99.38%** coverage.
 

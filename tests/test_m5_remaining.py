@@ -246,7 +246,7 @@ def test_cli_error_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     assert made.exit_code == 1
     model = runner.invoke(grail_app, ["make:model", "Widget"], catch_exceptions=False)
     assert model.exit_code == 0
-    with patch("avalon.grail.cli.find_available_port", side_effect=NoFreePortError("full")):
+    with patch("avalon.console.commands.runtime.find_available_port", side_effect=NoFreePortError("full")):
         serve = runner.invoke(grail_app, ["serve", "--app", "x:y"], catch_exceptions=False)
         assert serve.exit_code == 1
     with pytest.raises(ValueError):

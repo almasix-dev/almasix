@@ -115,6 +115,17 @@ class RedisQueue:
         else:
             await client.rpush(self._queue_key(queue), payload)
 
+    async def clear(self, queue: str = "default") -> int:
+        """Drop the ready list and the delayed set, returning how many jobs went.
+
+        Reserved jobs are left alone: they are in a worker's hands, not pending.
+        """
+        client = self._redis()
+        ready = int(await client.llen(self._queue_key(queue)) or 0)
+        delayed = int(await client.zcard(self._delayed_key(queue)) or 0)
+        await client.delete(self._queue_key(queue), self._delayed_key(queue))
+        return ready + delayed
+
     async def size(self, queue: str = "default") -> int:
         await self._promote_delayed(queue)
         client = self._redis()
