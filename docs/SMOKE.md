@@ -543,5 +543,6 @@ pytest -q tests/test_m40_*.py tests/smoke/test_m40_smoke.py
 
 - Digging Deeper: processes, concurrency, API resources, factories, **Articulate NoSQL (M25)**, broadcasting, search, testing toolkit, package guidelines (M21–M29)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs versioning + Prologue (M39)
+- IDE and editor tooling (M45–M48): Caliburn grammars + formatter, `avalon-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

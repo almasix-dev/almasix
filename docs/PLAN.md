@@ -782,7 +782,7 @@ Eloquent-shaped Active Record on SQLAlchemy Core — see the ORM decision above 
 - Benchmark suite from day one; continue parity without blocking auth
 - **Subpath:** asset helpers + smoke under `APP_BASE_PATH`
 - XSS defaults: escaped `{{ }}` vs raw `{!! !!}`
-- **Tooling:** `grail make:component` (anonymous `.cal.html` under `resources/views/components`)
+- **Tooling:** `grail make:component` (anonymous `.cal.html` under `resources/views/components`). Editor tooling — grammar, highlighting, snippets, formatter, directive completion — is **M45**, the Blade-equivalent IDE support; it waits until the directive vocabulary stops moving.
 - **Assets:** `asset()` / `@asset` + serve `public/` in `grail serve`. Default scaffold ships Vite + Tailwind (`package.json`, `resources/css|js`, → `public/build`). Progress may keep plain CSS/JS under `public/` for the living demo while still carrying the default Vite tree for scaffold baseline parity. Full `@vite` directive is a follow-up.
 
 **Gate:** ladder exhausted, Caliburn docs section covers shipped surfaces, progress example is Caliburn-first, coverage **100%** on `avalon.caliburn` (statements + branches on the M6 test suite). Real `@csrf` / `@auth` / `@guest` token wiring waits on M7 sessions; `grail view:*` CLI waits on M9 console kernel (engine `cache_views` / `clear_cache` APIs ship now).
@@ -1384,6 +1384,72 @@ Today the suite executes against **SQLite only**; PostgreSQL, MySQL/MariaDB, SQL
 
 **Gate:** green CI on at least PostgreSQL + MySQL in addition to SQLite; the support matrix published and honest.
 
+## IDE and editor tooling (M45–M48)
+
+Laravel's editor story is no longer a community afterthought: there is an **official language server** ([`laravel/lsp`](https://github.com/laravel/lsp)) driving the **official VS Code extension**, **Laravel Idea** is now bundled free with PhpStorm, `laravel-ide-helper` fills in what PHP's type system cannot express, and **Laravel Boost** hands AI agents a project-aware MCP server. A developer opening a Laravel project gets completion for routes, views, config keys, translation keys, Eloquent columns, validation rules, and Blade components — plus a warning when a view does not exist.
+
+Avalon should reach the same bar, and Caliburn templates specifically deserve the treatment Blade gets. Python starts ahead in one way (real type hints instead of generated docblocks) and behind in another (nothing knows what `.cal.html` is).
+
+**Sequencing:** this track lands **after** the parity milestones it describes. Tooling that completes half a framework teaches the wrong shape, and every milestone from M30 onwards changes the very vocabulary the language server would index — command signatures, route names, cast names, relation names. Target it once M40–M44 close and the router / installer work (M32–M33) settles.
+
+### M45 — Caliburn language support
+
+The baseline every editor needs before anything smarter is possible: something that knows `.cal.html` is a language.
+
+- **TextMate grammar** for `.cal.html`: HTML host language, `{{ }}` / `{!! !!}` expression islands, the full directive vocabulary (`@if` / `@elseif` / `@else` / `@unless` / `@isset` / `@empty` / `@for` / `@foreach` / `@forelse` / `@while`, `@extends` / `@section` / `@yield` / `@show` / `@parent`, `@include` / `@each`, `@component` / `@slot` / `@props` / `@aware`, `@push` / `@prepend` / `@stack` / `@once`, `@auth` / `@guest` / `@can` / `@canany` / `@cannot` / `@error`, `@csrf` / `@asset` / `@lang` / `@choice`, `@cache`, `@dump` / `@dd`, and `@python` / `@endpython` blocks highlighted as embedded Python)
+- **Tree-sitter grammar** for the editors that use it (Zed, Neovim, Helix) and for GitHub **Linguist** registration, so `.cal.html` stops rendering as plain text in diffs and on the docs site
+- Snippets for every directive and for `<x-component>` / `<x-slot>` tags, with Emmet working inside markup
+- Editor behavior rules: comment toggling (`{{-- --}}`), auto-closing directive pairs, indentation inside directives, folding on directive and tag pairs, brace matching for `{{ }}`
+- **Formatter** — `grail caliburn:format` plus a library entry point, so the same implementation serves the CLI, pre-commit hooks, and every editor's format-on-save. Blade's ecosystem needed a third-party npm formatter for this; Avalon should ship one and keep it in Python so no Node toolchain is required. Options mirror `blade-formatter` where they make sense (indent size, attribute wrapping, line length) and it must be idempotent and directive-aware, never reindenting inside `@python` blocks
+
+**Depends on:** M6 Caliburn (the directive vocabulary must be stable; adding directives after the grammar ships means grammar churn).
+
+**Gate:** grammar covers every shipped directive with a fixture per construct; formatter idempotent on the whole `examples/` and `website/` template corpus; grammars published and consumable outside VS Code (Linguist PR opened).
+
+### M46 — Avalon Language Server (`avalon-lsp`)
+
+One LSP server, so every editor benefits from one implementation instead of each plugin reimplementing framework knowledge. Python-hosted (`pygls`) and shipped as part of `avalon[dev]` so it is present in the same virtualenv as the app it introspects.
+
+- **Completion** for the string-keyed surfaces where a type checker cannot help: view names in `view()` / `@include` / `@extends`, route names in `route()` / `redirect().route()`, config keys in `config()`, translation keys in `__()` / `trans()` / `@lang`, disk names in `Storage.disk()`, queue and connection names, cache stores, gate / policy abilities in `can()` / `@can`, middleware names and aliases in route definitions, relation names in `with_()` / `load()` / `has()`, model columns in `where()` / `order_by()` / `select()`, cast names in `casts`, and component names in `<x-…>` tags
+- **Diagnostics**: unknown view, route, config key, translation key, disk, middleware, ability, relation, or column — the checks that make a typo a squiggle instead of a 500 at runtime. Plus Caliburn-specific ones: unclosed directive, `@section` without `@extends`, unknown component, missing required `@props`
+- **Hover** carrying the docs: directive signatures, facade methods, and model column types, sourced from the Starlight site so documentation and tooling cannot disagree
+- **Document links and go-to-definition**: `view("posts.index")` jumps to the template, `@include` / `@extends` / `<x-…>` jump to the included file, `route("posts.show")` jumps to the route definition, `config("mail.default")` jumps to the config file, a relation jumps to its declaration
+- **Code actions**: create the missing view, create the missing config key, generate a migration for a column that does not exist, extract a partial from a selection, convert `@include` to a component
+- **Index and invalidation**: build the symbol index by booting the application once (as `grail` does) and watching `routes/`, `config/`, `lang/`, `resources/views/`, and `app/models/` — never by regex-scraping source, which is how community tooling drifts from reality
+
+**Depends on:** M45 (grammar), M30 (a single console surface to enumerate commands), M33 (named routes must exist before completing them), M40 (model metadata: casts, appends, relations).
+
+**Gate:** the server answers every completion, diagnostic, hover, link, and code action above against `examples/progress`; a conformance test suite drives it over LSP itself rather than through internal APIs; cold index under a second on the living example.
+
+### M47 — Editor integrations and type stubs
+
+The packaging layer — what a developer actually installs — plus the typing work that makes Avalon's *own* API complete under a type checker.
+
+- **VS Code extension**: bundles the grammar, snippets, and LSP client; view / route / config completion; run Grail commands from the palette; a `.cal.html` preview of resolved template inheritance
+- **JetBrains plugin (PyCharm)**: the Laravel Idea equivalent — Caliburn file type with directive completion, the same string-key completions, Grail run configurations, and `make:*` generators wired into the New… menu
+- **Generic LSP recipes** for Neovim, Zed, Helix, and Sublime, kept in the docs and tested in CI so they cannot rot
+- **`grail ide:stubs`** — generate `.pyi` stubs for the surfaces Python's type system cannot infer: model columns (from migrations and the live schema), facade proxies, config keys as literal types, and route names as a literal union. This is the honest analogue of `laravel-ide-helper`: needed for the dynamic edges, not for the whole framework
+- **`grail ide:install`** — detect the editor(s) in a project and write their configuration, the way `boost:install` does, so setup is one command rather than a documentation page
+- **Type-checker plugin** (mypy, and pyright where its API allows): `Model.query()` returning a builder generic in the model, `Attribute` descriptors typing as their accessor's return type, cast-aware attribute types, relation descriptors resolving to the related model or a collection of it
+- **Debugger configuration**: `debugpy` launch configs for `grail serve`, `grail queue:work`, and the test suite
+
+**Depends on:** M45, M46. `ide:stubs` also depends on M43 (schema inspection) to read columns from a live database rather than only from migration files.
+
+**Gate:** a fresh `avalon new` project gets working completion in VS Code and PyCharm with no manual configuration; stubs verified by a type-check test that would fail if the dynamic surface drifted; recipes for the other editors exercised in CI.
+
+### M48 — AI agent support (MCP server + guidelines)
+
+Adjacent to the IDE work rather than part of it, but it is half of what "editor support" means now: Laravel Boost is an MCP server plus AI guidelines plus a documentation API, and it is why agents write idiomatic Laravel rather than plausible-looking Laravel.
+
+- **MCP server** (`grail mcp` / `avalon-mcp`) exposing the same introspection the language server indexes: application info and installed packages, database schema, read-only queries, route list, Grail command list and execution, config reads, log and exception reads, and a Fiddle tool for evaluating code in application context
+- **Docs search tool** over the Starlight site's content, version-aware, so an agent cites the docs for the version in the project instead of remembering an older API
+- **Agent guidelines** — composable, versioned instruction files teaching Avalon's conventions and the places it deliberately diverges from Laravel (no silent lazy loading, `await` on every read, `strftime` date formats), published for the common agent formats
+- **`grail mcp:install`** to detect editors and agents and write their configuration
+
+**Depends on:** M46 (the index is the same one; build it once and serve both), M39 (versioned docs for version-aware search).
+
+**Gate:** every tool answers correctly against `examples/progress`; guidelines reviewed against the deviation list in this plan; setup is one command for at least the MCP-capable editors Avalon documents.
+
 ### Docs track (may land anytime)
 
 Not milestones — outstanding pages for code that already shipped:
@@ -1394,7 +1460,7 @@ Not milestones — outstanding pages for code that already shipped:
 
 ### Later (still deferred)
 
-Everything that had a foreseeable shape has been promoted to **M30–M44** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
+Everything that had a foreseeable shape has been promoted to **M30–M48** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
 
 - Additional NoSQL engines beyond Mongo (Cosmos API, Dynamo-shaped, …) — same M25 store abstraction; exhaust per driver when demanded, so there is no honest milestone count
 - Full Caliburn advanced parity — an ongoing **M6 track** by design, not a one-shot milestone
@@ -1402,6 +1468,8 @@ Everything that had a foreseeable shape has been promoted to **M30–M44** above
 - Passport-class full OAuth2 server — scoped inside **M37**, but may stay an optional extra rather than ship
 
 Promoted in this pass: console exhaust (**M30**), scheduler exhaust (**M31**), interactive installer + stacks (**M32**), router DX and named routes (**M33**), security headers + CORS (**M34**), rate limiting (**M35**), starter kits (**M36**), tokens / OAuth / social auth (**M37**), deployment (**M38**), docs versioning + Prologue (**M39**), plus the docs track above.
+
+Scheduled on 2026-09-08: the IDE and editor tooling track (**M45–M48**) — Caliburn language support, the Avalon language server, editor integrations and type stubs, and AI agent support. It is written down with gates rather than left as a wish, but deliberately sequenced last: tooling indexes the framework's vocabulary, and that vocabulary is still moving until the parity milestones close.
 
 ## Quality bar for “solid core”
 
@@ -1420,6 +1488,8 @@ Promoted in this pass: console exhaust (**M30**), scheduler exhaust (**M31**), i
 **Now: M30 Grail Console exhaust.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `avalon/grail/cli.py` vs `Command` classes in `avalon/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M31** scheduler exhaust and **M32** the interactive installer, which shares M30's stub tree.
 
 **Milestones M21–M29** (Processes → Package development) keep their place in the roadmap and are unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
+
+**M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Caliburn deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
 
 **M40–M44 (Articulate + Database exhaust) outrank M33–M39 in priority.** The 2026-09-08 audit found the ORM and database surface materially short of Laravel's Database and Eloquent sections, and every application touches it — so the ORM track should be sequenced ahead of routing sugar, starter kits, and deployment docs, whatever their numbers say.
 
