@@ -14,7 +14,7 @@ from avalon.auth.provider import AuthServiceProvider
 from avalon.config import ConfigRepository, set_repository
 from avalon.framework import Application
 from avalon.http.request import Request
-from avalon.session.cookie import sign_payload, unsign_payload
+from avalon.session.signing import sign_payload, unsign_payload
 from avalon.session.csrf import VerifyCsrfToken, csrf_token
 from avalon.session.encrypt import decrypt_string, encrypt_string
 from avalon.session.encrypt_middleware import EncryptCookies
@@ -127,17 +127,17 @@ def test_cookie_unsign_edges() -> None:
     import json
     import time
 
-    from avalon.session import cookie as cookie_mod
+    from avalon.session import signing
 
-    body = cookie_mod._b64encode(json.dumps({"a": 1}).encode())  # noqa: SLF001
+    body = signing._b64encode(json.dumps({"a": 1}).encode())  # noqa: SLF001
     msg = f"{body}.notint"
-    sig = cookie_mod._sign(msg, "k")  # noqa: SLF001
+    sig = signing._sign(msg, "k")  # noqa: SLF001
     assert unsign_payload(f"{body}.notint.{sig}", key="k") is None
 
-    bad_body = cookie_mod._b64encode(b"\xff\xfe")  # noqa: SLF001
+    bad_body = signing._b64encode(b"\xff\xfe")  # noqa: SLF001
     ts = str(int(time.time()))
     msg2 = f"{bad_body}.{ts}"
-    sig2 = cookie_mod._sign(msg2, "k")  # noqa: SLF001
+    sig2 = signing._sign(msg2, "k")  # noqa: SLF001
     assert unsign_payload(f"{bad_body}.{ts}.{sig2}", key="k") is None
 
     # Non-dict JSON

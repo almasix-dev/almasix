@@ -60,11 +60,12 @@ class AuthServiceProvider(ServiceProvider):
                 context["__authenticated"] = manager.check()
             session = get_session()
             if session is not None:
-                for key in ("error", "status"):
+                for key in ("error", "errors", "status"):
                     if key not in context:
                         context[key] = session.get(key)
             context.setdefault("status", None)
             context.setdefault("error", None)
+            context.setdefault("errors", {})
             context.setdefault("auth_user", None)
             context.setdefault("__authenticated", False)
 

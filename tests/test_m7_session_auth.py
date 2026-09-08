@@ -8,7 +8,7 @@ from avalon.auth.guard import AuthManager, Guard, SessionGuard, auth
 from avalon.auth.passwords import Password, get_password_manager
 from avalon.auth.providers import MemoryUserProvider
 from avalon.hashing import Hash, HashManager, set_hash_manager
-from avalon.session.cookie import sign_payload, unsign_payload
+from avalon.session.signing import sign_payload, unsign_payload
 from avalon.session.encrypt import decrypt_string, encrypt_string
 from avalon.session.store import Session, set_session, reset_session
 

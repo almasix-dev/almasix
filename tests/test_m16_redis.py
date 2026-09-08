@@ -453,7 +453,7 @@ def test_redis_store_uses_manager_client(redis_manager: RedisManager, fake_redis
 
 @pytest.mark.asyncio
 async def test_redis_session_edge_cases(fake_redis: FakeRedis) -> None:
-    from avalon.session.cookie import sign_payload
+    from avalon.session.signing import sign_payload
 
     manager = RedisManager(None, {"default": "default", "connections": {"default": {}}})
     manager.set_client("default", fake_redis)
@@ -579,7 +579,7 @@ async def test_redis_queue_release_missing(fake_redis: FakeRedis) -> None:
 
 @pytest.mark.asyncio
 async def test_redis_session_corrupt_payload(fake_redis: FakeRedis) -> None:
-    from avalon.session.cookie import sign_payload
+    from avalon.session.signing import sign_payload
 
     manager = RedisManager(None, {"default": "default", "connections": {"default": {}}})
     manager.set_client("default", fake_redis)

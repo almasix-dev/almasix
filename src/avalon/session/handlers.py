@@ -5,7 +5,7 @@ from __future__ import annotations
 import secrets
 from typing import Any, Protocol
 
-from avalon.session.cookie import sign_payload, unsign_payload
+from avalon.session.signing import sign_payload, unsign_payload
 
 
 class SessionHandler(Protocol):
