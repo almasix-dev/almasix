@@ -11,6 +11,7 @@ from avalon.support.collection import (
     collect,
     data_get,
 )
+from avalon.support.lazy import AsyncLazyCollection, LazyCollection, lazy
 from avalon.support.helpers import (
     abort,
     abort_if,
@@ -60,7 +61,9 @@ from avalon.support.str import Str, Stringable, str_
 
 __all__ = [
     "Arr",
+    "AsyncLazyCollection",
     "Collection",
+    "LazyCollection",
     "DumpAndDie",
     "ItemNotFoundError",
     "MultipleItemsFoundError",
@@ -89,6 +92,7 @@ __all__ = [
     "head",
     "lang_path",
     "last",
+    "lazy",
     "literal",
     "now",
     "object_get",

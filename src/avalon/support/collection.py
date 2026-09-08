@@ -186,6 +186,12 @@ class Collection(Generic[T]):
     def to_json(self, **kwargs: Any) -> str:
         return json.dumps(self.to_array(), default=str, **kwargs)
 
+    def lazy(self) -> Any:
+        """A :class:`~avalon.support.lazy.LazyCollection` over these items."""
+        from avalon.support.lazy import LazyCollection
+
+        return LazyCollection(self._values_list())
+
     def dump(self) -> Self:
         """Print the collection's contents and keep going (Laravel ``dump``)."""
         from avalon.debug import dump

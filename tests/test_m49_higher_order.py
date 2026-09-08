@@ -121,7 +121,7 @@ def test_an_empty_collection_answers_value_reads() -> None:
     assert int(empty.sum.votes) == 0
     assert float(empty.sum.votes) == 0.0
     assert bool(empty.sum.votes) is False
-    assert empty.max.votes is None or empty.max.votes == None  # noqa: E711
+    assert empty.max.votes == None  # noqa: E711 - EmptyMessage, not None itself
     assert empty.map.votes.all() == []
     assert len(empty.map.votes) == 0
     assert list(empty.map.votes) == []
@@ -150,7 +150,7 @@ def test_a_chain_past_a_message_survives_an_empty_collection() -> None:
 
     # The same chain over no rows resolves to nothing rather than raising, since
     # whether the result set is empty is not the caller's business here.
-    assert collect([]).first.vip.name == None  # noqa: E711
+    assert collect([]).first.vip.name == None  # noqa: E711 - reads as nothing
     assert collect([]).first.vip.mark_as_vip() is None
 
     # `.all` does exist on the result, so it is delegated rather than swallowed.

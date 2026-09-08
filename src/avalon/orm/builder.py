@@ -15,6 +15,7 @@ from sqlalchemy.sql.selectable import TableClause
 
 from avalon.orm.collection import Collection
 from avalon.orm.pagination import Paginator, SimplePaginator
+from avalon.support.lazy import AsyncLazyCollection
 
 if TYPE_CHECKING:
     from avalon.orm.model import Model
@@ -1101,8 +1102,7 @@ class QueryBuilder:
 
         return await self.chunk_by_id(size, handle, column)
 
-    async def lazy(self, size: int = 1000) -> AsyncIterator[Any]:
-        """Iterate the whole result set in chunks, yielding one row at a time."""
+    async def _stream_lazy(self, size: int = 1000) -> AsyncIterator[Any]:
         page = 1
         while True:
             results = await self.clone().for_page(page, size).get()
@@ -1114,8 +1114,7 @@ class QueryBuilder:
                 return
             page += 1
 
-    async def lazy_by_id(self, size: int = 1000, column: str | None = None) -> AsyncIterator[Any]:
-        """Like :meth:`lazy`, but paged by ascending id."""
+    async def _stream_lazy_by_id(self, size: int = 1000, column: str | None = None) -> AsyncIterator[Any]:
         key = column or self._key_column()
         last: Any = None
         while True:
@@ -1131,16 +1130,31 @@ class QueryBuilder:
             if len(results) < size:
                 return
 
-    async def cursor(self, size: int = 100) -> AsyncIterator[Any]:
+    async def _stream_cursor(self, size: int = 100) -> AsyncIterator[Any]:
+        connection = self.get_connection()
+        async for row in connection.stream(self.to_select(), chunk_size=size):
+            yield self.model._hydrate(row, casts=self._casts) if self.model else row
+
+    def lazy(self, size: int = 1000) -> AsyncLazyCollection:
+        """Walk the whole result set one row at a time, a chunk per query.
+
+        Returns a lazy collection, so ``async for`` reads rows as they arrive
+        and `map` / `filter` / `chunk` apply without buffering the result set.
+        """
+        return AsyncLazyCollection(functools.partial(self._stream_lazy, size))
+
+    def lazy_by_id(self, size: int = 1000, column: str | None = None) -> AsyncLazyCollection:
+        """Like :meth:`lazy`, but paged by ascending id."""
+        return AsyncLazyCollection(functools.partial(self._stream_lazy_by_id, size, column))
+
+    def cursor(self, size: int = 100) -> AsyncLazyCollection:
         """Stream rows from the database, hydrating one model at a time.
 
         Unlike :meth:`lazy`, this holds a single result set open instead of
         issuing one query per chunk, so nothing but the current row is in
         memory. Eager loads need the whole set, so they are not applied here.
         """
-        connection = self.get_connection()
-        async for row in connection.stream(self.to_select(), chunk_size=size):
-            yield self.model._hydrate(row, casts=self._casts) if self.model else row
+        return AsyncLazyCollection(functools.partial(self._stream_cursor, size))
 
     def _key_column(self) -> str:
         """The column keyset paging should walk."""
