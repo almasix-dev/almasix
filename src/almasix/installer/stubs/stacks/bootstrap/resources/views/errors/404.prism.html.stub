@@ -1,0 +1,11 @@
+@extends('layouts.minimal')
+
+@section('title', '{{ status }} — {{ name }}')
+
+@section('content')
+  <div class="container py-5 text-center" style="max-width: 32rem">
+    <p class="display-3 fw-semibold text-brand mb-0">{{ status }}</p>
+    <p class="lead text-secondary mt-3">{{ message }}</p>
+    <a href="/" class="btn btn-link">Back to {{ name }}</a>
+  </div>
+@endsection

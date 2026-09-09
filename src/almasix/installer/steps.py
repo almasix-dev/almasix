@@ -64,7 +64,7 @@ def git_init(plan: InstallPlan, root: Path) -> StepResult:
                 "git",
                 ran=True,
                 ok=False,
-                detail=_first_error(completed) or f"`{' '.join(command)}` failed",
+                detail=_failure_detail(completed, f"`{' '.join(command)}` failed"),
             )
     return StepResult("git", ran=True, detail=f"branch {plan.branch}, one commit")
 
@@ -92,7 +92,7 @@ def create_venv(plan: InstallPlan, root: Path) -> StepResult:
             "venv",
             ran=True,
             ok=False,
-            detail=_first_error(completed) or "venv creation failed",
+            detail=_failure_detail(completed, "venv creation failed"),
         )
     if not python.is_file():
         return StepResult(
@@ -131,7 +131,7 @@ def install_dependencies(plan: InstallPlan, root: Path) -> StepResult:
             "install",
             ran=True,
             ok=False,
-            detail=_first_error(completed) or "dependency install failed",
+            detail=_failure_detail(completed, "dependency install failed"),
         )
     return StepResult("install", ran=True, detail=" ".join(command))
 
@@ -148,7 +148,7 @@ def install_node(plan: InstallPlan, root: Path) -> StepResult:
                 "npm",
                 ran=True,
                 ok=False,
-                detail=_first_error(completed) or f"`{' '.join(command)}` failed",
+                detail=_failure_detail(completed, f"`{' '.join(command)}` failed"),
             )
     return StepResult("npm", ran=True, detail="npm install && npm run build")
 
@@ -163,7 +163,7 @@ def migrate(plan: InstallPlan, root: Path) -> StepResult:
             "migrate",
             ran=True,
             ok=False,
-            detail=_first_error(completed) or "smith migrate failed",
+            detail=_failure_detail(completed, "smith migrate failed"),
         )
     return StepResult(
         "migrate",
@@ -216,12 +216,22 @@ def _python_install_command(plan: InstallPlan, root: Path) -> tuple[str, ...] | 
 
 
 def _run(command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    """Run a step command with live stdout/stderr (not captured silently)."""
+    printable = " ".join(str(part) for part in command)
+    print(f"$ {printable}", flush=True)
+    completed = subprocess.run(
         list(command),
         cwd=cwd,
-        capture_output=True,
+        capture_output=False,
         text=True,
         check=False,
+    )
+    # Streams were inherited; keep empty captured bodies for callers of _first_error.
+    return subprocess.CompletedProcess(
+        args=completed.args,
+        returncode=completed.returncode,
+        stdout=completed.stdout or "",
+        stderr=completed.stderr or "",
     )
 
 
@@ -231,3 +241,7 @@ def _first_error(completed: subprocess.CompletedProcess[str]) -> str:
             if line.strip():
                 return line.strip()
     return ""
+
+
+def _failure_detail(completed: subprocess.CompletedProcess[str], fallback: str) -> str:
+    return _first_error(completed) or f"{fallback} (see output above)"

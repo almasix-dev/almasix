@@ -18,7 +18,7 @@ import pytest
 
 from almasix.testing import database as db
 from almasix.testing.client import TestClient
-from almasix.testing.console import PendingCommand, artisan
+from almasix.testing.console import PendingCommand, smith
 from almasix.testing.response import TestResponse
 
 
@@ -148,8 +148,8 @@ class TestCase:
 
     # --- the console ---------------------------------------------------------------
 
-    def artisan(self, command: str, arguments: Mapping[str, Any] | None = None) -> PendingCommand:
-        return artisan(command, arguments, app=self.app)
+    def smith(self, command: str, arguments: Mapping[str, Any] | None = None) -> PendingCommand:
+        return smith(command, arguments, app=self.app)
 
     # --- authentication -------------------------------------------------------------
 

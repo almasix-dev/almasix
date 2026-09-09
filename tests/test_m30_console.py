@@ -1,4 +1,4 @@
-"""M30 — Smith Console exhaust (Artisan parity)."""
+"""M30 — Smith Console exhaust (Smith parity)."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from almasix.console.command import (
 )
 from almasix.console.events import CommandFinished, CommandStarting, ConsoleStarting
 from almasix.console.exceptions import CommandFailed, CommandNotFound
-from almasix.console.facade import Artisan, _pending
+from almasix.console.facade import Smith, _pending
 from almasix.console.kernel import ConsoleKernel, _parse_argv
 from almasix.events.facade import Event
 from almasix.framework import Application
@@ -24,12 +24,12 @@ from almasix.framework import Application
 
 @pytest.fixture(autouse=True)
 def _isolated_facades() -> Any:
-    """Each test gets a clean Artisan kernel, closure registry, and listeners."""
-    Artisan.set_kernel(None)
+    """Each test gets a clean Smith kernel, closure registry, and listeners."""
+    Smith.set_kernel(None)
     _pending.clear()
     Event.flush()
     yield
-    Artisan.set_kernel(None)
+    Smith.set_kernel(None)
     _pending.clear()
     Event.flush()
 
@@ -44,7 +44,7 @@ def kernel_for(tmp_path: Path, *commands: type[Command]) -> ConsoleKernel:
     kernel = ConsoleKernel(Application(tmp_path))
     for command_cls in commands:
         kernel.register(command_cls)
-    Artisan.set_kernel(kernel)
+    Smith.set_kernel(kernel)
     return kernel
 
 
@@ -262,7 +262,7 @@ def test_trap_registers_and_survives_unavailable_signals(monkeypatch: pytest.Mon
     command.trap([signal.SIGUSR1, signal.SIGUSR2], seen.append)  # no raise
 
 
-# --- Artisan façade -----------------------------------------------------
+# --- Smith façade -----------------------------------------------------
 
 
 class EchoCommand(Command):
@@ -278,67 +278,67 @@ class EchoCommand(Command):
         return self.SUCCESS
 
 
-def test_artisan_call_with_argv_string(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_smith_call_with_argv_string(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     kernel_for(tmp_path, EchoCommand)
-    assert Artisan.call("echo hello --upper") == 0
-    assert Artisan.output().strip() == "HELLO"
+    assert Smith.call("echo hello --upper") == 0
+    assert Smith.output().strip() == "HELLO"
     assert capsys.readouterr().out.strip() == "HELLO"
 
 
-def test_artisan_call_with_parameters_including_arrays_and_booleans(tmp_path: Path) -> None:
+def test_smith_call_with_parameters_including_arrays_and_booleans(tmp_path: Path) -> None:
     kernel_for(tmp_path, EchoCommand)
-    code = Artisan.call(
+    code = Smith.call(
         "echo",
         {"word": "hi", "--upper": True, "--tag": ["a", "b"]},
         silent=True,
     )
     assert code == 0
-    assert Artisan.output().splitlines() == ["HI", "tag:a", "tag:b"]
-    Artisan.call("echo", {"word": "hi", "--upper": False}, silent=True)
-    assert Artisan.output().strip() == "hi"
-    Artisan.call("echo", {"word": ["listed"]}, silent=True)
-    assert Artisan.output().strip() == "listed"
-    Artisan.call("echo", {"word": "tagged", "--tag": "solo"}, silent=True)
-    assert Artisan.output().splitlines() == ["tagged", "tag:solo"]
+    assert Smith.output().splitlines() == ["HI", "tag:a", "tag:b"]
+    Smith.call("echo", {"word": "hi", "--upper": False}, silent=True)
+    assert Smith.output().strip() == "hi"
+    Smith.call("echo", {"word": ["listed"]}, silent=True)
+    assert Smith.output().strip() == "listed"
+    Smith.call("echo", {"word": "tagged", "--tag": "solo"}, silent=True)
+    assert Smith.output().splitlines() == ["tagged", "tag:solo"]
 
 
-def test_artisan_call_silently_produces_no_output(
+def test_smith_call_silently_produces_no_output(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     kernel_for(tmp_path, EchoCommand)
-    assert Artisan.call_silently("echo quiet") == 0
+    assert Smith.call_silently("echo quiet") == 0
     assert capsys.readouterr().out == ""
-    assert Artisan.output().strip() == "quiet"
+    assert Smith.output().strip() == "quiet"
 
 
-def test_artisan_registry_helpers(tmp_path: Path) -> None:
+def test_smith_registry_helpers(tmp_path: Path) -> None:
     kernel_for(tmp_path, EchoCommand)
-    assert Artisan.has("echo") is True
-    assert Artisan.has("missing") is False
-    assert "echo" in Artisan.all()
+    assert Smith.has("echo") is True
+    assert Smith.has("missing") is False
+    assert "echo" in Smith.all()
     with pytest.raises(ValueError, match="command name is required"):
-        Artisan.call("   ")
+        Smith.call("   ")
 
 
-def test_artisan_kernel_resolves_from_application(tmp_path: Path) -> None:
+def test_smith_kernel_resolves_from_application(tmp_path: Path) -> None:
     application = Application(tmp_path)
     kernel = ConsoleKernel(application)
     application.container.instance(ConsoleKernel, kernel)
-    Artisan.set_kernel(None)
-    assert Artisan.kernel(application) is kernel
+    Smith.set_kernel(None)
+    assert Smith.kernel(application) is kernel
 
 
-def test_artisan_kernel_boots_from_cwd_when_nothing_is_bound(
+def test_smith_kernel_boots_from_cwd_when_nothing_is_bound(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     booted = ConsoleKernel(Application(tmp_path))
     monkeypatch.setattr(ConsoleKernel, "from_cwd", classmethod(lambda _cls: booted))
 
-    Artisan.set_kernel(None)
-    assert Artisan.kernel() is booted
+    Smith.set_kernel(None)
+    assert Smith.kernel() is booted
 
-    Artisan.set_kernel(None)
-    assert Artisan.kernel(Application(tmp_path)) is booted
+    Smith.set_kernel(None)
+    assert Smith.kernel(Application(tmp_path)) is booted
 
 
 def test_signature_parameters_gives_up_on_unsupported_callables() -> None:
@@ -374,7 +374,7 @@ def test_closure_commands_register_and_receive_input(tmp_path: Path) -> None:
         seen["command"] = command.name()
         return 0
 
-    handle = Artisan.command("closure:send {user} {--queue=default}", send)
+    handle = Smith.command("closure:send {user} {--queue=default}", send)
     handle.purpose("Send a thing")
     assert kernel.commands["closure:send"].description == "Send a thing"
     assert kernel.run_argv("closure:send", ["7", "--queue=bulk"]) == 0
@@ -382,13 +382,13 @@ def test_closure_commands_register_and_receive_input(tmp_path: Path) -> None:
 
 
 def test_closure_commands_queue_until_a_kernel_exists(tmp_path: Path) -> None:
-    Artisan.set_kernel(None)
-    Artisan.command("closure:later {--flag}", lambda flag: 0)
+    Smith.set_kernel(None)
+    Smith.command("closure:later {--flag}", lambda flag: 0)
     assert _pending
     kernel = ConsoleKernel(Application(tmp_path))
     from almasix.console.facade import drain_pending
 
-    Artisan.set_kernel(kernel)
+    Smith.set_kernel(kernel)
     drain_pending(kernel)
     assert "closure:later" in kernel.commands
     assert not _pending
@@ -405,7 +405,7 @@ def test_closure_command_uses_docstring_and_resolves_dependencies(tmp_path: Path
         seen["missing"] = missing
         return 0
 
-    Artisan.command("closure:deps", run)
+    Smith.command("closure:deps", run)
     assert kernel.commands["closure:deps"].description == "Documented closure."
     assert kernel.run_argv("closure:deps", []) == 0
     assert seen == {"service": "injected", "missing": "fallback"}
@@ -424,14 +424,14 @@ def test_closure_command_falls_back_when_an_annotation_cannot_be_evaluated(
         seen["thing"] = thing
         return 0
 
-    Artisan.command("closure:local", run)
+    Smith.command("closure:local", run)
     assert kernel.run_argv("closure:local", []) == 0
     assert seen == {"thing": None}
 
 
 def test_closure_command_reports_parameters_it_cannot_fill(tmp_path: Path) -> None:
     kernel = kernel_for(tmp_path)
-    Artisan.command("closure:mystery", lambda mystery: 0)
+    Smith.command("closure:mystery", lambda mystery: 0)
     with pytest.raises(TypeError, match="mystery"):
         kernel.run_argv("closure:mystery", [])
 
@@ -444,7 +444,7 @@ def test_closure_command_skips_unresolvable_parameters(tmp_path: Path) -> None:
         calls.append("ran")
         return 0
 
-    Artisan.command("closure:varargs", run)
+    Smith.command("closure:varargs", run)
     assert kernel.run_argv("closure:varargs", []) == 0
     assert calls == ["ran"]
 
@@ -684,7 +684,7 @@ def test_isolated_exit_code_falls_back_for_unparsable_values() -> None:
 # --- queueing commands --------------------------------------------------
 
 
-def test_artisan_queue_dispatches_a_job(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_smith_queue_dispatches_a_job(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import asyncio
 
     from almasix.console.queued import CallQueuedCommand
@@ -698,7 +698,7 @@ def test_artisan_queue_dispatches_a_job(tmp_path: Path, monkeypatch: pytest.Monk
 
     monkeypatch.setattr("almasix.queue.helpers.dispatch", fake_dispatch)
     result = asyncio.run(
-        Artisan.queue("echo hi", {"--upper": True}, connection="redis", queue="bulk")
+        Smith.queue("echo hi", {"--upper": True}, connection="redis", queue="bulk")
     )
     assert result == "queued"
     job = dispatched[0]
@@ -706,7 +706,7 @@ def test_artisan_queue_dispatches_a_job(tmp_path: Path, monkeypatch: pytest.Monk
     assert (job.connection_name(), job.queue_name()) == ("redis", "bulk")
     assert job.should_queue() is True
     assert job.handle() == 0
-    assert Artisan.output().strip() == "HI"
+    assert Smith.output().strip() == "HI"
 
 
 def test_queued_command_defaults(tmp_path: Path) -> None:

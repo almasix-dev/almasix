@@ -5,7 +5,7 @@
 > Last aligned: 2026-09-09 (**Laravel 13** is the parity reference; user-facing docs are
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
-> closed — package line **0.4.0** ready to tag; **M39** docs journey + Prologue
+> closed; package line **0.5.0** ready to tag; **M39** docs journey + Prologue
 > closed; stability track continues with M37).
 
 ## Working identity
@@ -142,7 +142,7 @@ almasix/
 - later: `from almasix.process import Process`
 - later: `from almasix.concurrency import Concurrency`
 - `from almasix.exceptions import Handler`
-- `from almasix.log import log`
+- `from almasix.log import Log`  # not stdlib ``logging``
 - `from almasix.console import Command, schedule`
 
 ### Subpackage boundaries
@@ -158,7 +158,7 @@ almasix/
 | `almasix.translation` | Translator, `lang/` catalogs, `__()` / `trans()` / `trans_choice()`, namespaces, Number/date helpers, locale resolution (M4) |
 | `almasix.smith` | In-app CLI entrypoint (`python smith …`) — thin Typer surface over console kernel |
 | `almasix.exceptions` | Handler (`report`/`render`), debug page, error views (M8) — distinct from `almasix.http.exceptions`, which holds the `HttpException` classes |
-| `almasix.log` | Log channels + `log()` helper (M8) |
+| `almasix.log` | Log channels + `Log` façade / `log()` helper (M8) |
 | `almasix.console` | Command base, discovery, scheduler (M9) |
 | `almasix.filesystem` | Disks, Storage façade, FlySystem-shaped drivers (M10) |
 | `almasix.queue` | Jobs, queues, workers, failed-job handling (M11) |
@@ -264,7 +264,7 @@ App-facing docs live in Astro Starlight under [`website/`](../website/). `PLAN.m
 
 ### Audience (binding — 2026-09-09)
 
-1. **Assume zero Laravel background.** The majority of readers will not know Laravel, Blade, Artisan, Eloquent, or Echo. Never require that knowledge to understand a page. Comparing to Laravel is optional colour for contributors in `PLAN.md`, not a crutch in Starlight.
+1. **Assume zero Laravel background.** The majority of readers will not know Laravel, Blade, Smith, Eloquent, or Echo. Never require that knowledge to understand a page. Comparing to Laravel is optional colour for contributors in `PLAN.md`, not a crutch in Starlight.
 2. **Assume zero Almasix background.** Every page is part of a **journey**: what this is → why you need it → the smallest working example → the full surface → pitfalls. Do not be sketchy. Spell out nouns on first use (`smith` is the in-app CLI; Prism is the template engine; Articulate is the ORM).
 3. **No milestone numbers in user-facing docs.** Do not write “M35”, “as of M7”, or “this milestone.” Users do not care about the framework’s internal roadmap. Version the docs with Almasix releases (`0.x`, `1.x`), not with milestone IDs.
 4. **Milestones stay in `PLAN.md` / `SMOKE.md` / the progress board only** — those are developer-of-the-framework surfaces.
@@ -875,7 +875,7 @@ Turns M2's minimal kernel behavior into a real handler layer. See the decision a
 
 **Depends on:** M2 route polarity (done) and M6 Prism for error views. Do not start before M6 — HTML error pages without a view engine is exactly the placeholder trap.
 
-**Status (M8):** Ladder shipped — `Handler` (`report`/`render`, hooks, `dont_report`); polarity-aware HTML vs JSON; unmatched-route path polarity; status mapping (`ModelNotFoundError` → 404, …); `APP_DEBUG` web debug page; production `errors/{status}` views + framework / Prism-off fallbacks; `errors:publish` (`default`/`tailwind`/`bootstrap`, CDN-free); `almasix.log` channels + `log().with_()` context; `lang/en/errors.py`; `ServiceUnavailableHttpException`; scaffold + progress `/boom` + `/api/explode`; smoke + Error Handling / Logging docs.
+**Status (M8):** Ladder shipped — `Handler` (`report`/`render`, hooks, `dont_report`); polarity-aware HTML vs JSON; unmatched-route path polarity; status mapping (`ModelNotFoundError` → 404, …); `APP_DEBUG` web debug page; production `errors/{status}` views + framework / Prism-off fallbacks; `errors:publish` (`default`/`tailwind`/`bootstrap`, CDN-free); `almasix.log` channels + `Log` façade (`Log.info` / `Log.success` / …) and `log().with_()` context; `lang/en/errors.py`; `ServiceUnavailableHttpException`; scaffold + progress `/boom` + `/api/explode`; smoke + Error Handling / Logging docs.
 
 ### M9 — Console + scheduler (`almasix.console`)
 
@@ -895,7 +895,7 @@ Smith today is a thin Typer entry (`version`, `serve`, `make:*`, `migrate`, …)
 
 **Depends on:** solid Application boot (done); M8 for console exception rendering. Does **not** require queues — scheduled closures/commands run in-process; queue integration is M11. The REPL may land with M9 or as a fast follow once the console kernel exists — it must not be forgotten.
 
-**Status (M9):** Ladder shipped, **page not exhausted** — the Artisan surface is finished in **M30** (one command surface, closure commands, `Artisan.call` / `queue`, isolatable commands, signal traps, console events, signature shortcuts / arrays / descriptions, stub publishing, missing built-ins) and the scheduler in **M31** (full frequency + hook vocabulary, `schedule:list` / `schedule:test`). What M9 delivered: `Command` base + discovery (`app/console/commands`, `almasix.console.commands`); `smith list` / `make:command` / `inspire`; schedule DSL (`every_minute` / `hourly` / `daily` / cron) + `schedule:run` / `schedule:work` + filesystem mutex; console exceptions report through M8 Handler; **`smith loupe`** REPL (IPython preferred → ptpython → Rich fallback); **Almasix Prompts** (`almasix.console.prompts` — Laravel Prompts-shaped `text`/`select`/`confirm`/`spin`/`progress` + Command `ask`/`choice`/`secret`/`anticipate`); **`dump()` / `dd()`** (`almasix.debug` — Rich CLI + HTML/JSON HTTP dump pages); progress `progress:hello` / `progress:prompts` + `/dd` · `/api/dd` + `routes/console.py`; smoke + docs.
+**Status (M9):** Ladder shipped, **page not exhausted** — the Smith surface is finished in **M30** (one command surface, closure commands, `Smith.call` / `queue`, isolatable commands, signal traps, console events, signature shortcuts / arrays / descriptions, stub publishing, missing built-ins) and the scheduler in **M31** (full frequency + hook vocabulary, `schedule:list` / `schedule:test`). What M9 delivered: `Command` base + discovery (`app/console/commands`, `almasix.console.commands`); `smith list` / `make:command` / `inspire`; schedule DSL (`every_minute` / `hourly` / `daily` / cron) + `schedule:run` / `schedule:work` + filesystem mutex; console exceptions report through M8 Handler; **`smith loupe`** REPL (IPython preferred → ptpython → Rich fallback); **Almasix Prompts** (`almasix.console.prompts` — Laravel Prompts-shaped `text`/`select`/`confirm`/`spin`/`progress` + Command `ask`/`choice`/`secret`/`anticipate`); **`dump()` / `dd()`** (`almasix.debug` — Rich CLI + HTML/JSON HTTP dump pages); progress `progress:hello` / `progress:prompts` + `/dd` · `/api/dd` + `routes/console.py`; smoke + docs.
 
 ### M10 — Filesystem (`almasix.filesystem`)
 
@@ -1219,7 +1219,7 @@ Expand beyond the current pytest + smoke/regression baseline toward Laravel’s 
 
 **Gate:** HTTP + console helpers used by framework tests themselves; docs published. **Met.**
 
-**Status (M28):** `almasix.testing` — a `TestCase` written for pytest, whose autouse lifecycle boots the application (through the app's own `bootstrap/app.py`, so a test drives the middleware a server would), migrates with `use_refresh_database`, wraps a test in `use_database_transactions`, and takes an `almasix_base_path` fixture when the path is a fixture's to decide, with `boot_application()` for the same outside a case; a `TestClient` driving the ASGI app in-process over `httpx.ASGITransport` — every verb and its `*_json` twin, headers, bearer and basic tokens, cookies that persist between requests, `with_session`, `acting_as`, `following_redirects`, and `from_`; a `TestResponse` with the Laravel assertion set in full — nineteen status assertions, headers, cookies, content type, downloads, `assert_see` / `assert_see_text` / `assert_see_in_order` with HTML escaping, ten JSON assertions including dotted `assert_json_path` and `*`-wildcard `assert_json_structure`, validation (`assert_valid` / `assert_invalid`), session, and view assertions reading what Prism was actually given; `artisan()` returning a `PendingCommand` with `expects_question` / `expects_confirmation` / `expects_choice` / `expects_output` / `doesnt_expect_output` / `expects_table` and `assert_exit_code` / `assert_successful` / `assert_failed` / `assert_output_contains` / `assert_asked`, answered through an `AnswerSink` the console's own prompts consult; database helpers — `assert_database_has` / `missing` / `count` / `empty`, `assert_model_exists` / `missing`, `assert_soft_deleted` / `not_soft_deleted`, `refresh_database()`, and `database_transactions()`; `fake()` / `fakeable()` / `restore_fakes()` as one door to nine fakes, three of them new (`FakeQueue`, `FakeNotifications`, `FakeDisk`); `without_middleware()` / `with_middleware()` on the back of `HttpKernel.skip_middleware()`; `travel` / `travel_to` / `freeze_time` / `frozen_time` moving the clock that `now()` and model timestamps read; `tests/` with a `conftest.py` and two example tests in the scaffold, `pytest` configured in its `pyproject.toml`, `smith make:test [--unit]`, and `smith test`; Starlight **Testing** with HTTP / Console / Database / Mocking subpages; the progress app's own suite and `progress:testing`.
+**Status (M28):** `almasix.testing` — a `TestCase` written for pytest, whose autouse lifecycle boots the application (through the app's own `bootstrap/app.py`, so a test drives the middleware a server would), migrates with `use_refresh_database`, wraps a test in `use_database_transactions`, and takes an `almasix_base_path` fixture when the path is a fixture's to decide, with `boot_application()` for the same outside a case; a `TestClient` driving the ASGI app in-process over `httpx.ASGITransport` — every verb and its `*_json` twin, headers, bearer and basic tokens, cookies that persist between requests, `with_session`, `acting_as`, `following_redirects`, and `from_`; a `TestResponse` with the Laravel assertion set in full — nineteen status assertions, headers, cookies, content type, downloads, `assert_see` / `assert_see_text` / `assert_see_in_order` with HTML escaping, ten JSON assertions including dotted `assert_json_path` and `*`-wildcard `assert_json_structure`, validation (`assert_valid` / `assert_invalid`), session, and view assertions reading what Prism was actually given; `smith()` returning a `PendingCommand` with `expects_question` / `expects_confirmation` / `expects_choice` / `expects_output` / `doesnt_expect_output` / `expects_table` and `assert_exit_code` / `assert_successful` / `assert_failed` / `assert_output_contains` / `assert_asked`, answered through an `AnswerSink` the console's own prompts consult; database helpers — `assert_database_has` / `missing` / `count` / `empty`, `assert_model_exists` / `missing`, `assert_soft_deleted` / `not_soft_deleted`, `refresh_database()`, and `database_transactions()`; `fake()` / `fakeable()` / `restore_fakes()` as one door to nine fakes, three of them new (`FakeQueue`, `FakeNotifications`, `FakeDisk`); `without_middleware()` / `with_middleware()` on the back of `HttpKernel.skip_middleware()`; `travel` / `travel_to` / `freeze_time` / `frozen_time` moving the clock that `now()` and model timestamps read; `tests/` with a `conftest.py` and two example tests in the scaffold, `pytest` configured in its `pyproject.toml`, `smith make:test [--unit]`, and `smith test`; Starlight **Testing** with HTTP / Console / Database / Mocking subpages; the progress app's own suite and `progress:testing`.
 
 **Deliberate deviations (M28):** the toolkit is pytest's, not xUnit's — a `TestCase` is a class pytest collects, `setup()` / `teardown()` are coroutines run by an autouse fixture, and nothing here replaces `assert`, because a Python suite that fought pytest would be a worse suite; `RefreshDatabase` and `DatabaseTransactions` are class attributes rather than traits, and are also plain functions, since a test that is not a `TestCase` deserves them too; there is no browser-test surface — Playwright is a better Dusk than anything this framework should ship, and the honest answer is to point at it; `TestResponse` reads the session and the rendered views out of recorders the client installs, because a response object here is `httpx`'s and knows nothing of either; `boot_application()` is an addition, since Laravel's `createApplication` has a `bootstrap/app.php` to require and Python needs a loader for the same thing.
 
@@ -1240,12 +1240,12 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 
 Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the ladder (`Command` base, discovery, prompts, REPL, scheduler seed) but did **not** exhaust the page. M30 closes it and unifies the two console surfaces.
 
-- **One command surface:** migrate the ~28 hard-coded Typer callbacks in `almasix/smith/cli.py` to `Command` classes so signatures, events, isolation, `Artisan.call`, and test helpers apply uniformly. Typer stays the argv front door only.
+- **One command surface:** migrate the ~28 hard-coded Typer callbacks in `almasix/smith/cli.py` to `Command` classes so signatures, events, isolation, `Smith.call`, and test helpers apply uniformly. Typer stays the argv front door only.
 - **Signature parser:** option shortcuts (`{--Q|queue=}`), input arrays (`{user*}`, `{--id=*}`), argument/option descriptions (`{user : The user ID}`) feeding `smith help`
 - **Command surface:** exit-code constants (`SUCCESS` / `FAILURE` / `INVALID`), `fail()`, `arguments()` / `options()`, `question()` / `alert()` / `new_line()`, progress bars on the command (`with_progress_bar`), `choice(multiple=…)`
 - **Prompting for missing input:** `PromptsForMissingInput`-class hook + `prompt_for_missing_arguments_using` (dogfoods M9 prompts)
-- **Closure commands:** `Artisan.command("mail:send {user}", callback)` in `routes/console.py` with `purpose()` descriptions and container-resolved parameters
-- **Programmatic execution:** `Artisan` façade — `call` (dict or string argv, array/bool values), `output`, `queue` (→ M11), plus `self.call` / `self.call_silently` between commands
+- **Closure commands:** `Smith.command("mail:send {user}", callback)` in `routes/console.py` with `purpose()` descriptions and container-resolved parameters
+- **Programmatic execution:** `Smith` façade — `call` (dict or string argv, array/bool values), `output`, `queue` (→ M11), plus `self.call` / `self.call_silently` between commands
 - **Isolatable commands:** `--isolated` with lock id / expiry, sharing the M15 cache lock and the M9 filesystem mutex fallback
 - **Signal handling:** `trap(SIGTERM, …)` (single + multiple signals), honored by long-running commands (`queue:work`, `schedule:work`, `serve`)
 - **Events:** `CommandStarting` / `CommandFinished` (+ a startup event) through the M18 dispatcher
@@ -1253,16 +1253,16 @@ Laravel [Artisan Console](https://laravel.com/docs/artisan) — M9 shipped the l
 - **Missing built-ins** (only where the underlying feature exists): `about`, `help`, `route:list`, `config:show`, `db:wipe`, `db:show`/`db:table`, `queue:restart` / `queue:clear` / `queue:monitor`, `env:encrypt` / `env:decrypt`, `optimize` / `optimize:clear` + `config:cache` / `view:cache` and their `:clear` pairs (cache targets may land with M31/M15 work), `vendor:publish`, and the `make:*` set for shipped features (`make:job`, `make:mail`, `make:notification`, `make:rule`, `make:cast`, `make:exception`, `make:view`, `make:class`, `make:enum`, `make:interface`, `make:observer`). Generators for unshipped features stay with their milestone (`make:test` → M28); `make:factory` (M24), `make:resource` (M23), `make:document` (M25), and `make:channel` (M26) shipped with theirs.
 - **Discovery is all-or-nothing:** one command file that fails to import aborts discovery for the whole directory, and the notice only prints on `smith list` — invoking a command shows "No such command" with no hint why. Report the failing module, keep the rest, and say so on every run
 - **Loupe allow-list:** Tinker-class `commands` / `dont_alias` configuration for the REPL
-- Docs: rewrite Starlight **Smith Console** to the Artisan section order; document every built-in command
+- Docs: rewrite Starlight **Smith Console** to the Smith section order; document every built-in command
 - Living example: progress app gains a closure command, an isolatable command, and a signal-trapping worker demo
 
 **Depends on:** M9 (base), M11 (queueing commands), M15 cache (isolation locks), M18 (events). Console **test** helpers land with M28 and must be able to drive everything M30 adds.
 
-**Gate:** every section of Laravel's Artisan page either implemented or listed as a deliberate deviation with a reason; one command surface (no command reachable only through Typer); `almasix.console` + `almasix.smith` at 100% coverage; docs published.
+**Gate:** every section of Laravel's Smith page either implemented or listed as a deliberate deviation with a reason; one command surface (no command reachable only through Typer); `almasix.console` + `almasix.smith` at 100% coverage; docs published.
 
 **Status (M30):** **Complete** (2026-09-08).
 
-- **Shipped in M9's wake:** signature parser (option shortcuts `{--Q|queue=}`, argument/option arrays, `:` descriptions, argv terminator `--`); exit-code constants + `fail()`; `arguments()` / `options()` / `has_option()`; `question` / `alert` / `new_line` / `with_progress_bar` / `choice(multiple=…)`; `PromptsForMissingInput`; closure commands via `Artisan.command(...).purpose(...)` in `routes/console.py` with container-resolved parameters; `Artisan.call` / `call_silently` / `output` / `queue` / `has` / `all` and `self.call` / `self.call_silently`; `Isolatable` + `--isolated[=CODE]` on cache lock with mutex fallback; `trap()` signal handling; `ConsoleStarting` / `CommandStarting` / `CommandFinished`; `CommandNotFound` / `CommandFailed`.
+- **Shipped in M9's wake:** signature parser (option shortcuts `{--Q|queue=}`, argument/option arrays, `:` descriptions, argv terminator `--`); exit-code constants + `fail()`; `arguments()` / `options()` / `has_option()`; `question` / `alert` / `new_line` / `with_progress_bar` / `choice(multiple=…)`; `PromptsForMissingInput`; closure commands via `Smith.command(...).purpose(...)` in `routes/console.py` with container-resolved parameters; `Smith.call` / `call_silently` / `output` / `queue` / `has` / `all` and `self.call` / `self.call_silently`; `Isolatable` + `--isolated[=CODE]` on cache lock with mutex fallback; `trap()` signal handling; `ConsoleStarting` / `CommandStarting` / `CommandFinished`; `CommandNotFound` / `CommandFailed`.
 - **Shipped in M30:** the ~30 Typer callbacks are `Command` classes and `cli.py` is 45 lines of front door — **84 commands, no second way in**; signature-derived `--help`; discovery that reports a broken module and keeps the rest; command aliases; `boots_application` so generators run in a bare directory; the stub tree behind `smith stub:publish`; `ServiceProvider.publishes()` + `vendor:publish`; the Loupe allow-list (`config/loupe.py`); and the built-ins — `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:clear` / `cache:forget`, `view:cache` / `view:clear`, `optimize` / `optimize:clear`, `storage:unlink`, and the eleven missing `make:*` generators.
 
 **Deliberate deviations** (Laravel has these; Almasix does not, with reasons):
@@ -1294,7 +1294,7 @@ Laravel [Task Scheduling](https://laravel.com/docs/scheduling) — M9 shipped a 
 - ~~**Commands:** `schedule:list`, `schedule:test`, `schedule:work`, `schedule:interrupt`, `schedule:clear-cache`~~ **shipped (part 2)** — plus `smith down` / `smith up`, without which the maintenance-mode constraint would be unreachable
 - ~~**Docs:** rewrite Starlight **Task Scheduling**~~ **shipped (part 3)** — 640 lines against the old 55, in Laravel's section order, with a smoke contract that fails if a documented method loses its mention or a command loses its registration
 
-**Two more entry points came with it, both from the Laravel page:** `Artisan.command(...).schedule([...])` schedules a closure command with its arguments, and `Application.configure(...).with_schedule(callback)` defines the schedule in `bootstrap/app.py` instead of `routes/console.py`.
+**Two more entry points came with it, both from the Laravel page:** `Smith.command(...).schedule([...])` schedules a closure command with its arguments, and `Application.configure(...).with_schedule(callback)` defines the schedule in `bootstrap/app.py` instead of `routes/console.py`.
 
 **Named deviations:** background tasks run in a worker thread rather than a detached OS process, so `schedule:run` waits for them before exiting — a thread cannot outlive its interpreter, and Python has no `schedule:finish` to hand a detached process. Commands are scheduled by name, not by class. The `L` / `W` / `#` cron extensions are not implemented. In Almasix's favour: a scheduled callback may be `async` and is awaited, which Laravel has no need for but Almasix's awaitable ORM, queue, and client do.
 
@@ -1330,7 +1330,7 @@ Laravel [Installation](https://laravel.com/docs/installation) — `laravel new` 
 - **The default migrations Laravel ships.** `users` + `password_reset_tokens` + `sessions`, `cache` + `cache_locks`, `jobs` + `failed_jobs` — plus `app/models/user.py` and `database/factories/user_factory.py`, without which `config/auth.py` pointed at a model that did not exist. Five commands write the same stubs for an application that dropped one or switched a driver: `cache:table`, `queue:table`, `queue:failed-table`, `session:table`, `notifications:table` (the `*:table` set M30 deferred to here).
 - **A `database` session driver**, because a `sessions` table nothing reads would have been theater: `SESSION_DRIVER=database` stores the payload in the table with `user_id` / `ip_address` / `user_agent` / `last_activity`, expires rows on read, and deletes on logout.
 - **Post-create steps:** git init and first commit (`--branch`), `uv pip install` when uv is present and `pip install -e .` otherwise, `npm install && npm run build`, and `smith migrate --force`. A step that fails is reported and the exit code says so; it never leaves a half-created application behind an exception. The next-step output lists only what is still owed.
-- **Living example:** `smith progress:install` scaffolds all four stacks and all four databases, migrates one, boots it over HTTP, and forks the stub tree — and `examples/progress` now uses the default migrations itself, so it stays the superset of the scaffold its own smoke test requires.
+- **Living example:** `smith progress:install` scaffolds all four stacks and all installer databases (SQL engines + MongoDB for documents), migrates one, boots it over HTTP, and forks the stub tree — and `examples/progress` now uses the default migrations itself, so it stays the superset of the scaffold its own smoke test requires.
 
 **Deliberate deviations (M32):** there is no `--pest` / test-runner *choice*, because pytest is the only runner Almasix's toolkit targets — the question is whether to scaffold `tests/` at all; the SPA stack stays with **M36** where the kits live, as planned; `job_batches` has no migration because the queue has no batching feature to read it, and shipping the table would promise one; the installer prefers `uv` when it finds it, which Laravel has no equivalent of.
 
@@ -1445,11 +1445,11 @@ Laravel [Deployment](https://laravel.com/docs/deployment) — how an Almasix app
 - `optimize` / cache-warm story tied to M30; env/secrets, logs, migrate + queue workers
 - Container sketch: `examples/deploy/` (Dockerfile + compose with Postgres + `queue:work`)
 - Docs: Starlight **Deployment** (`website/.../deployment.md`)
-- **Releasing Almasix:** `.github/workflows/publish.yml` (OIDC Trusted Publishing). Bump version → tag `vX.Y.Z` matching `pyproject.toml` → GitHub Release. Rehearse with workflow_dispatch → TestPyPI. Tree version is **0.4.0** ready to tag.
+- **Releasing Almasix:** `.github/workflows/publish.yml` (OIDC Trusted Publishing). Bump version → tag `vX.Y.Z` matching `pyproject.toml` → GitHub Release. Rehearse with workflow_dispatch → TestPyPI. Tree version is **0.5.0** ready to tag (0.4.0 already published).
 
 **Depends on:** M30 (optimize commands), M11 (workers), M34 (headers behind a proxy).
 
-**Gate:** documented and reproducible for container + bare-metal paths; `--workers` shipped; `pip install almasix` already works from PyPI (0.3.0 live; 0.4.0 prepared).
+**Gate:** documented and reproducible for container + bare-metal paths; `--workers` shipped; `pip install almasix` already works from PyPI (0.4.0 live; 0.5.0 prepared).
 
 ### M39 — Docs site: user journey rewrite + versioning + Prologue
 
@@ -1736,7 +1736,7 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 | 1 | ~~**M44** — Multi-engine database CI~~ **complete** | SQLite-only CI is a lie for claimed PG/MySQL support |
 | 2 | ~~**M25 revisit** — audit Articulate documents vs Laravel 13 Mongo page~~ **complete** | Honest NoSQL parity; gaps named in `articulate/documents/compared` |
 | 3 | ~~**M51** — Lint / format gate~~ **complete** | CI that matches README claims |
-| 4 | ~~**M38** — Deployment + production ops~~ **complete** (0.3.0 already on PyPI; 0.4.0 ready to tag) | Installable, operable release |
+| 4 | ~~**M38** — Deployment + production ops~~ **complete** (0.4.0 on PyPI; 0.5.0 ready to tag) | Installable, operable release |
 | 5 | ~~**M39** — Docs journey rewrite + Prologue~~ **complete** | Users can learn the framework without insider context |
 | 6 | **M37** — API tokens (Sanctum-class first) | Production auth for API / SPA |
 | 7 | **M52** — Echo-class client | Completes broadcasting for real apps |
@@ -1760,7 +1760,7 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Suggested next:** **M37 — API tokens (Sanctum-class first)**. Confirm before starting.
 
-**Recently closed:** M39 docs journey + Prologue; M38 deployment + production ops (0.4.0 package line ready); M51 lint/format gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
+**Recently closed:** M39 docs journey + Prologue; M38 deployment + production ops (0.5.0 package line ready); M51 lint/format gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
 
 **M39** — Prologue published; Basics teaching order; no milestone IDs in Starlight; header version switcher is **latest major** + `main` (never defaulting to `main`) with an older-docs banner when not on latest.
 

@@ -56,9 +56,24 @@ class ProgressInstallCommand(Command):
             files = sum(1 for path in root.rglob("*") if path.is_file())
             self.line(f"stack {stack.name:<10} -> {frontend}, {files} files")
             self.line(f"  errors:publish bundle -> {stack.error_bundle}")
+            for rel in (
+                "resources/views/layouts/minimal.prism.html",
+                "resources/views/layouts/app.prism.html",
+                "resources/views/auth/login.prism.html",
+                "resources/views/auth/register.prism.html",
+                "resources/views/dashboard.prism.html",
+            ):
+                assert (root / rel).is_file(), rel
+            welcome = (root / "resources" / "views" / "welcome.prism.html").read_text(
+                encoding="utf-8"
+            )
+            assert "Build something remarkable" in welcome
+            self.line("  ui kit -> layouts + auth + dashboard")
 
     def every_database(self, workspace: Path) -> None:
         """The choice writes .env and config/database.py, and touches SQLite's file."""
+        from almasix.installer.scaffold import sql_connection_name
+
         for database in DATABASES:
             root = scaffold_app(
                 f"db_{database.name}",
@@ -70,7 +85,19 @@ class ProgressInstallCommand(Command):
                 line for line in env.splitlines() if line.startswith("DB_CONNECTION=")
             )
             file_made = (root / "database" / "database.sqlite").is_file()
-            self.line(f"database {database.name:<8} -> {connection}, sqlite file: {file_made}")
+            config = (root / "config" / "database.py").read_text(encoding="utf-8")
+            sql_default = sql_connection_name(database)
+            assert f'env("DB_CONNECTION", "{sql_default}")' in config
+            if database.name == "mongodb":
+                assert "MONGODB_HOST=" in env
+                assert "MONGODB_DATABASE=db_mongodb" in env
+                assert database.extra == "almasix[mongodb]"
+                self.line(
+                    f"database {database.name:<8} -> {connection} + MONGODB_*, "
+                    f"sqlite file: {file_made}, sql default: {sql_default}"
+                )
+            else:
+                self.line(f"database {database.name:<8} -> {connection}, sqlite file: {file_made}")
 
     def the_default_migrations(self, workspace: Path) -> None:
         """The tables auth, sessions, cache, and the queue read — and they run."""
@@ -78,7 +105,7 @@ class ProgressInstallCommand(Command):
         for filename, _stub, class_name in DEFAULT_MIGRATIONS:
             self.line(f"migration -> {filename} ({class_name})")
 
-        completed = subprocess.run(  # noqa: S603 - fixed argv
+        completed = subprocess.run(
             [sys.executable, "smith", "migrate", "--force"],
             cwd=root,
             capture_output=True,
@@ -108,9 +135,9 @@ class ProgressInstallCommand(Command):
             "sys.path.insert(0, '.');"
             "module = importlib.import_module('bootstrap.app');"
             "response = TestClient(module.asgi).get('/');"
-            "print(response.status_code, 'Welcome to Almasix' in response.text)"
+            "print(response.status_code, 'Build something remarkable' in response.text)"
         )
-        completed = subprocess.run(  # noqa: S603 - fixed argv
+        completed = subprocess.run(
             [sys.executable, "-c", script],
             cwd=root,
             capture_output=True,

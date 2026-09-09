@@ -3,13 +3,22 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{{ status }} — {{ message }}</title>
-  {{-- Starter kits should compile Tailwind into public/; this stub uses utility class names only. --}}
+  <title>{{ status }} — {{ name }}</title>
+  {{-- Utility classes; load your compiled Tailwind (Vite) from the app layout when customizing. --}}
+  <style>
+    :root { --brand:#f1511b; --ink:#0f172a; --muted:#64748b; --paper:#f8fafc; }
+    body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.5 system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+    main{text-align:center;padding:2rem}
+    .code{margin:0;font-size:3.5rem;font-weight:600;letter-spacing:-.04em;color:var(--brand)}
+    p{margin:.75rem 0 0;color:var(--muted)}
+    a{color:var(--brand);font-weight:600;text-decoration:none}
+  </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-900 antialiased flex items-center justify-center">
-  <main class="text-center px-6">
-    <p class="text-6xl font-semibold tracking-tight">{{ status }}</p>
-    <p class="mt-3 text-slate-500">{{ message }}</p>
+<body>
+  <main>
+    <p class="code">{{ status }}</p>
+    <p>{{ message }}</p>
+    <p><a href="/">Back to {{ name }}</a></p>
   </main>
 </body>
 </html>

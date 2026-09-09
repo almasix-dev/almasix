@@ -174,12 +174,16 @@ def test_accept_json_on_web_still_html(
 def test_errors_publish_bundles(tmp_path: Path) -> None:
     dest = publish_errors(tmp_path, bundle="default")
     assert (dest / "404.prism.html").is_file()
+    assert "--brand:#f1511b" in (dest / "404.prism.html").read_text(encoding="utf-8")
     publish_errors(tmp_path, bundle="tailwind", force=True)
-    assert "text-6xl" in (dest / "404.prism.html").read_text(encoding="utf-8")
-    assert "cdn.tailwindcss.com" not in (dest / "404.prism.html").read_text(encoding="utf-8")
+    body = (dest / "404.prism.html").read_text(encoding="utf-8")
+    assert "--brand:#f1511b" in body
+    assert "Back to {{ name }}" in body
+    assert "cdn.tailwindcss.com" not in body
     publish_errors(tmp_path, bundle="bootstrap", force=True)
-    assert "display-3" in (dest / "404.prism.html").read_text(encoding="utf-8")
-    assert "cdn.jsdelivr.net" not in (dest / "404.prism.html").read_text(encoding="utf-8")
+    body = (dest / "404.prism.html").read_text(encoding="utf-8")
+    assert "--brand:#f1511b" in body
+    assert "cdn.jsdelivr.net" not in body
     with pytest.raises(ErrorsPublishError):
         publish_errors(tmp_path, bundle="nope")
 

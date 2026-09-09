@@ -297,7 +297,7 @@ def test_the_cli_module_declares_no_commands_of_its_own() -> None:
     """The M30 gate: nothing is reachable through Typer alone.
 
     Smith's CLI module is the front door and nothing else — a hand-written
-    ``@app.command`` there would be a command that ``Artisan.call`` and the
+    ``@app.command`` there would be a command that ``Smith.call`` and the
     scheduler cannot see, which is the split M30 closed.
     """
     source = Path("src/almasix/smith/cli.py").read_text(encoding="utf-8")

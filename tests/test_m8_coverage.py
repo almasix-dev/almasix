@@ -181,11 +181,38 @@ def test_log_channels(tmp_path: Path) -> None:
     writer = LogWriter("stderr")
     writer.debug("d")
     writer.info("i")
+    writer.notice("n")
+    writer.success("s")
     writer.warning("w")
     writer.error("e")
     writer.critical("c")
+    writer.alert("a")
+    writer.emergency("em")
     writer.log(20, "l")
     log("null").info("via-helper")
+    from almasix.log import Log
+
+    Log.info("via-facade")
+    Log.debug("via-facade-debug")
+    Log.success("via-facade-success")
+    Log.notice("via-facade-notice")
+    Log.warning("via-facade-warn")
+    Log.error("via-facade-error")
+    Log.critical("via-facade-critical")
+    Log.alert("via-facade-alert")
+    Log.emergency("via-facade-emergency")
+    Log.channel("null").info("via-facade-channel")
+    Log.stack(["null", "stderr"]).info("via-facade-stack")
+    Log.stack("null").info("via-facade-stack-str")
+    Log.build("null").info("via-facade-build")
+    Log.with_(rid=1).info("via-facade-with")
+    Log.with_context({"job": "x"}).info("via-facade-ctx")
+    Log.log(20, "via-facade-log")
+    try:
+        raise RuntimeError("boom")
+    except RuntimeError:
+        Log.exception("via-facade-exc")
+        writer.exception("writer-exc")
     # absolute path branch
     abs_path = tmp_path / "abs.log"
     app.config.set(

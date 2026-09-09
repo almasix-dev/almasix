@@ -27,7 +27,8 @@ DEFAULTS = {
     "tests": True,
     "git": False,
     "install": False,
-    "npm": False,
+    # Vite stacks need assets on disk; without this a fresh ``-n`` app is unstyled.
+    "npm": True,
     "migrate": False,
 }
 

@@ -1,4 +1,4 @@
-"""``Artisan`` façade — run, queue, and define console commands."""
+"""``Smith`` façade — run, queue, and define console commands."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ _pending: list[type[Command]] = []
 
 
 class ClosureCommand:
-    """Handle returned by ``Artisan.command()`` for fluent descriptions."""
+    """Handle returned by ``Smith.command()`` for fluent descriptions."""
 
     def __init__(self, command_cls: type[Command]) -> None:
         self.command_cls = command_cls
@@ -37,15 +37,15 @@ class ClosureCommand:
         """Schedule this closure command, with arguments (Laravel ``schedule()``).
 
         Returns the scheduled task, so the frequency is chained onto it:
-        ``Artisan.command(...).purpose(...).schedule(["taylor"]).daily()``.
+        ``Smith.command(...).purpose(...).schedule(["taylor"]).daily()``.
         """
         from almasix.console.scheduling import schedule as task_schedule
 
         return task_schedule.command(self.command_cls.name(), arguments)
 
 
-class Artisan:
-    """Static façade over the console kernel (Laravel's ``Artisan``)."""
+class Smith:
+    """Static façade over the console kernel (Smith — Laravel ``Artisan`` parity)."""
 
     _kernel: ConsoleKernel | None = None
     _output: str = ""
@@ -70,7 +70,7 @@ class Artisan:
 
     @classmethod
     def command(cls, signature: str, callback: Callable[..., Any]) -> ClosureCommand:
-        """Laravel ``Artisan::command()`` — define a command from a callable."""
+        """Laravel ``Artisan::command()`` parity — define a command from a callable."""
         command_cls = _closure_command(signature, callback)
         if cls._kernel is not None:
             cls._kernel.register(command_cls)
@@ -88,7 +88,7 @@ class Artisan:
         silent: bool = False,
         kernel: ConsoleKernel | None = None,
     ) -> int:
-        """Laravel ``Artisan::call()`` — run a command programmatically.
+        """Laravel ``Artisan::call()`` parity — run a command programmatically.
 
         ``command`` may carry its own argv (``"mail:send 1 --queue=bulk"``) or
         the values may be passed as ``parameters``. A command calling another
@@ -120,7 +120,7 @@ class Artisan:
 
     @classmethod
     def output(cls) -> str:
-        """Laravel ``Artisan::output()`` — output captured by the last ``call``."""
+        """Laravel ``Artisan::output()`` parity — output captured by the last ``call``."""
         return cls._output
 
     @classmethod
@@ -132,7 +132,7 @@ class Artisan:
         connection: str | None = None,
         queue: str | None = None,
     ) -> Any:
-        """Laravel ``Artisan::queue()`` — run a command on a queue worker.
+        """Laravel ``Artisan::queue()`` parity — run a command on a queue worker.
 
         Awaitable because Almasix's queue dispatch is async.
         """

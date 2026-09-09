@@ -104,13 +104,13 @@ definition, passing any arguments the closure needs:
 
 ```python
 # routes/console.py
-from almasix.console import Artisan
+from almasix.console import Smith
 
-Artisan.command("delete:recent-users", clear_recent_users).purpose(
+Smith.command("delete:recent-users", clear_recent_users).purpose(
     "Delete recent users"
 ).schedule().daily()
 
-Artisan.command("emails:send {user} {--force}", send_emails).purpose(
+Smith.command("emails:send {user} {--force}", send_emails).purpose(
     "Send emails to the given user"
 ).schedule(["taylor", "--force"]).daily()
 ```
@@ -557,8 +557,11 @@ A hook that takes a parameter is handed the task's output as a
 [`Stringable`](/strings/):
 
 ```python
+from almasix.log import Log
+
+
 def notify(output) -> None:
-    log().error(f"emails:send failed: {output.limit(500)}")
+    Log.error(f"emails:send failed: {output.limit(500)}")
 
 
 schedule.command("emails:send").daily().on_failure(notify)
@@ -612,11 +615,11 @@ and the captured output:
 ```python
 from almasix.console.scheduling import ScheduledTaskFailed
 from almasix.events import Event
-from almasix.log import log
+from almasix.log import Log
 
 Event.listen(
     ScheduledTaskFailed,
-    lambda event: log().error(f"{event.task.summary()} exited {event.exit_code}"),
+    lambda event: Log.error(f"{event.task.summary()} exited {event.exit_code}"),
 )
 ```
 

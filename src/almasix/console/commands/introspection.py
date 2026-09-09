@@ -68,13 +68,13 @@ class AboutCommand(Command):
         for index, (title, rows) in enumerate(sections):
             if index:
                 self.new_line()
-            self.comment(title)
+            self.output.label(title)
             if not rows:
-                self.line("  (nothing configured)")
+                self.comment("  (nothing configured)")
                 continue
             width = max(len(label) for label, _ in rows)
             for label, value in rows:
-                self.line(f"  {label:<{width}}  {value}")
+                self.output.definition(label, str(value), width=width)
         return self.SUCCESS
 
     def _environment(self) -> list[tuple[str, str]]:
@@ -133,7 +133,7 @@ class EnvironmentCommand(Command):
 
     def handle(self) -> int:
         environment = self.app.config.get("app.env") or "production"
-        self.line(f"Current application environment: {environment}")
+        self.info(f"Current application environment: {environment}")
         return self.SUCCESS
 
 
@@ -166,13 +166,17 @@ class HelpCommand(Command):
             return self.FAILURE
 
         if command_cls.description:
-            self.comment("Description:")
+            self.output.label("Description:")
             self.line(f"  {command_cls.description}")
             self.new_line()
-        self.comment("Usage:")
-        self.line(f"  smith {usage(command_cls)}")
+        self.output.label("Usage:")
+        self.info(f"  smith {usage(command_cls)}")
         for line in _help_body(command_cls):
-            self.line(line)
+            heading = line.strip()
+            if heading in {"Arguments:", "Options:", "Aliases:"}:
+                self.output.label(heading)
+            else:
+                self.line(line)
         return self.SUCCESS
 
 

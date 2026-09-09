@@ -27,7 +27,7 @@ from almasix.testing import (
     PendingCommand,
     TestClient,
     TestResponse,
-    artisan,
+    smith,
     assert_database_count,
     assert_database_has,
     assert_database_missing,
@@ -863,7 +863,7 @@ class TestCaseAsPytestCollectsIt(TestCaseBase):
 
     async def test_the_transaction_took_the_last_test_back(self) -> None:
         await self.assert_database_count("gadgets", 0)
-        self.artisan("list").assert_successful()
+        self.smith("list").assert_successful()
 
 
 class TestCaseThatTakesTheDirectoryItIsRunIn(TestCaseBase):
@@ -976,7 +976,7 @@ def kernel(app_root: Path) -> Any:
 
 def test_a_command_answers_the_questions_a_test_gives_it(kernel: Any) -> None:
     pending = (
-        artisan("demo:greet", kernel=kernel)
+        smith("demo:greet", kernel=kernel)
         .expects_question("What is your name?", "Ada")
         .expects_confirmation("Shout it?", "yes")
         .expects_choice("Which colour?", "green", ["red", "green"])
@@ -994,12 +994,12 @@ def test_a_command_answers_the_questions_a_test_gives_it(kernel: Any) -> None:
 
 
 def test_a_question_with_no_answer_takes_its_default(kernel: Any) -> None:
-    artisan("demo:greet", kernel=kernel).expects_output("hello nobody in red").assert_successful()
+    smith("demo:greet", kernel=kernel).expects_output("hello nobody in red").assert_successful()
 
 
 def test_a_confirmation_can_be_refused(kernel: Any) -> None:
     (
-        artisan("demo:greet", kernel=kernel)
+        smith("demo:greet", kernel=kernel)
         .expects_question("What is your name?", "Ada")
         .expects_confirmation("Shout it?", False)
         .expects_output("hello Ada")
@@ -1008,45 +1008,45 @@ def test_a_confirmation_can_be_refused(kernel: Any) -> None:
 
 
 def test_a_failing_command_is_a_failure(kernel: Any) -> None:
-    pending = artisan("demo:fail", kernel=kernel).assert_failed()
+    pending = smith("demo:fail", kernel=kernel).assert_failed()
 
     pending.assert_exit_code(1)
     with pytest.raises(AssertionError, match=r"\[demo:fail\] exited 1, not 0"):
-        artisan("demo:fail", kernel=kernel).assert_successful()
+        smith("demo:fail", kernel=kernel).assert_successful()
     with pytest.raises(AssertionError, match="succeeded, and should not have"):
-        artisan("demo:greet", kernel=kernel).assert_failed()
+        smith("demo:greet", kernel=kernel).assert_failed()
     with pytest.raises(AssertionError, match=r"exited 1, and should not have"):
-        artisan("demo:fail", kernel=kernel).assert_not_exit_code(1)
+        smith("demo:fail", kernel=kernel).assert_not_exit_code(1)
 
 
 def test_an_expectation_the_command_does_not_meet_says_what_it_printed(kernel: Any) -> None:
     with pytest.raises(AssertionError, match=r"never printed \[goodbye\]"):
-        artisan("demo:greet", kernel=kernel).expects_output("goodbye").run()
+        smith("demo:greet", kernel=kernel).expects_output("goodbye").run()
     with pytest.raises(AssertionError, match=r"printed \[hello\], and should not have"):
         (
-            artisan("demo:greet", kernel=kernel)
+            smith("demo:greet", kernel=kernel)
             .doesnt_expect_output("farewell")
             .doesnt_expect_output("hello")
             .run()
         )
     with pytest.raises(AssertionError, match=r"printed no column \[age\]"):
-        artisan("demo:greet", kernel=kernel).expects_table(["age"], []).run()
+        smith("demo:greet", kernel=kernel).expects_table(["age"], []).run()
     with pytest.raises(AssertionError, match=r"printed no cell \[99\]"):
-        artisan("demo:greet", kernel=kernel).expects_table(["name"], [[99]]).run()
+        smith("demo:greet", kernel=kernel).expects_table(["name"], [[99]]).run()
     with pytest.raises(AssertionError, match=r"never printed \[goodbye\]"):
-        artisan("demo:greet", kernel=kernel).assert_output_contains("goodbye")
+        smith("demo:greet", kernel=kernel).assert_output_contains("goodbye")
     with pytest.raises(AssertionError, match=r"never asked \[Your age\?\]"):
-        artisan("demo:greet", kernel=kernel).assert_asked("Your age?")
+        smith("demo:greet", kernel=kernel).assert_asked("Your age?")
     with pytest.raises(AssertionError, match="asked: What is your name"):
-        artisan("demo:greet", kernel=kernel).assert_nothing_asked()
+        smith("demo:greet", kernel=kernel).assert_nothing_asked()
 
 
 def test_a_command_that_asks_nothing_asked_nothing(kernel: Any) -> None:
-    artisan("demo:fail", kernel=kernel).assert_nothing_asked()
+    smith("demo:fail", kernel=kernel).assert_nothing_asked()
 
 
 def test_a_command_runs_once_however_many_assertions_follow(kernel: Any) -> None:
-    pending = artisan("demo:greet", kernel=kernel).expects_question("name", "Ada")
+    pending = smith("demo:greet", kernel=kernel).expects_question("name", "Ada")
     pending.run()
     first = pending.output
     pending.run()
@@ -1056,7 +1056,7 @@ def test_a_command_runs_once_however_many_assertions_follow(kernel: Any) -> None
 
 
 def test_arguments_and_options_are_spelled_the_way_laravel_spells_them(kernel: Any) -> None:
-    pending = artisan("demo:greet", {"who": "Grace", "--shout": True}, kernel=kernel)
+    pending = smith("demo:greet", {"who": "Grace", "--shout": True}, kernel=kernel)
     pending.expects_output("hello Grace").run()
 
     assert pending.exit_code == 0
@@ -1064,7 +1064,7 @@ def test_arguments_and_options_are_spelled_the_way_laravel_spells_them(kernel: A
 
 def test_an_answer_is_matched_to_its_question_whatever_the_order(kernel: Any) -> None:
     (
-        artisan("demo:greet", kernel=kernel)
+        smith("demo:greet", kernel=kernel)
         .expects_question("Which planet?", "Earth")
         .expects_question("What is your name?", "Ada")
         .expects_output("hello Ada")
@@ -1073,13 +1073,13 @@ def test_an_answer_is_matched_to_its_question_whatever_the_order(kernel: Any) ->
 
 
 def test_the_console_helper_finds_the_kernel_itself(app_root: Path) -> None:
-    from almasix.console.facade import Artisan
+    from almasix.console.facade import Smith
 
-    Artisan.set_kernel(None)
+    Smith.set_kernel(None)
     try:
-        artisan("list").assert_successful()
+        smith("list").assert_successful()
     finally:
-        Artisan.set_kernel(None)
+        Smith.set_kernel(None)
 
 
 # --- the database ----------------------------------------------------------------------

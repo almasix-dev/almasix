@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from almasix import __version__
 from almasix.console.command import Command
-from almasix.console.facade import Artisan
+from almasix.console.facade import Smith
 
 
 class ListCommand(Command):
@@ -20,17 +20,17 @@ class ListCommand(Command):
         commands = self._canonical()
         width = max((len(name) for name, _ in commands), default=0)
 
-        self.line(f"Almasix {__version__}")
+        self.output.title(f"Almasix {__version__}")
         self.line()
-        self.line("Usage:")
-        self.line("  smith <command> [options] [arguments]")
+        self.output.label("Usage:")
+        self.comment("  smith <command> [options] [arguments]")
         self.line()
-        self.line("Available commands:")
+        self.output.label("Available commands:")
         for namespace, group in _grouped(commands):
             if namespace:
-                self.line(f" {namespace}")
+                self.output.namespace(namespace)
             for name, command_cls in group:
-                self.line(f"  {name:<{width}}  {_summary(command_cls)}".rstrip())
+                self.output.two_column(name, _summary(command_cls), width=width)
 
         self._report_failures()
         return self.SUCCESS
@@ -42,7 +42,7 @@ class ListCommand(Command):
         is listed under its own ``name()`` once and says what else it answers
         to in its description.
         """
-        registry = self.kernel.commands if self.kernel else Artisan.all(self.app)
+        registry = self.kernel.commands if self.kernel else Smith.all(self.app)
         listable = [
             (name, command_cls)
             for name, command_cls in registry.items()
@@ -52,7 +52,7 @@ class ListCommand(Command):
 
     def _report_failures(self) -> None:
         """Repeat the discovery notices, so a broken module is visible here."""
-        failures = (self.kernel or Artisan.kernel(self.app)).failures
+        failures = (self.kernel or Smith.kernel(self.app)).failures
         if not failures:
             return
         self.line()

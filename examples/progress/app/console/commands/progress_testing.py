@@ -11,7 +11,7 @@ from almasix.queue import dispatch
 from almasix.support.helpers import now
 from almasix.testing import (
     TestClient,
-    artisan,
+    smith,
     assert_database_has,
     boot_application,
     database_transactions,
@@ -56,7 +56,7 @@ class ProgressTestingCommand(Command):
         self.info(f"acting_as -> signed in as {ada.email} for one request")
 
         # Console commands run for real; only the terminal is a fake.
-        listed = artisan("progress:hello", {"name": "Toolkit"}).assert_successful()
+        listed = smith("progress:hello", {"name": "Toolkit"}).assert_successful()
         listed.assert_output_contains("Hello, Toolkit")
         self.info("console -> progress:hello greeted the test and exited 0")
 

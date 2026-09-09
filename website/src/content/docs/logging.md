@@ -1,7 +1,52 @@
 ---
 title: Logging
-description: Log channels and the log() helper — wired to the exception Handler.
+description: Log channels and the Log façade — wired to the exception Handler.
 ---
+
+## Import from `almasix.log`
+
+Application logging lives in **`almasix.log`**, not Python's stdlib `logging`
+module. The names look similar; the APIs do not:
+
+```python
+# Correct — Almasix façade (autocomplete: info, debug, success, …)
+from almasix.log import Log
+
+Log.info("Application started")
+
+# Wrong — stdlib. `logging.log` requires a level and has no Log.info / success.
+import logging
+logging.log(...)   # not what you want in an Almasix app
+```
+
+Prefer the `Log` façade the way Laravel uses `Log::info()`.
+
+## Writing log lines
+
+```python
+from almasix.log import Log
+
+Log.info("Application started")
+Log.debug("cache miss", extra={"key": "users.1"})
+Log.warning("Something odd")
+Log.error("Checkout failed")
+Log.success("Migration finished")
+Log.channel("stderr").warning("noisy channel")
+Log.with_(request_id="abc", user_id=7).info("Checked out")
+```
+
+There is also a function form — `from almasix.log import log` then
+`log().info(...)` — which is the same writer. Prefer `Log` in application
+code so editors resolve the façade methods.
+
+| Method | Severity |
+| --- | --- |
+| `debug` | DEBUG |
+| `info` / `notice` | INFO |
+| `success` | SUCCESS (between info and warning) |
+| `warning` | WARNING |
+| `error` / `exception` | ERROR (`exception` attaches a traceback) |
+| `critical` / `alert` / `emergency` | CRITICAL |
 
 ## Configuration
 
@@ -15,14 +60,8 @@ description: Log channels and the log() helper — wired to the exception Handle
 | `stderr` | Stream to stderr |
 | `null` | Discard (tests) |
 
-```python
-from almasix.log import log
-
-log().info("Application started")
-log("stderr").warning("Something odd")
-log().with_(request_id="abc", user_id=7).info("Checked out")
-log().with_context({"job": "mail"}).error("Failed")
-```
+A fresh app defaults to the `stack` → `single` channel, so the first
+`Log.info(...)` creates `storage/logs/almasix.log`.
 
 ## Exception reporting
 
@@ -31,3 +70,4 @@ log().with_context({"job": "mail"}).error("Failed")
 ## Related
 
 - [Error Handling](/errors/)
+- [Helpers](/helpers/) (`info()`, `logger()`)

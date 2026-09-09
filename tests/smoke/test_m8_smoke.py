@@ -78,7 +78,7 @@ def test_m8_errors_publish_and_log_context(tmp_path: Path, monkeypatch: pytest.M
     from typer.testing import CliRunner
 
     from almasix.exceptions import publish_errors
-    from almasix.log import log
+    from almasix.log import Log
     from almasix.smith.cli import app as smith_app
 
     dest = publish_errors(tmp_path, bundle="default")
@@ -89,4 +89,8 @@ def test_m8_errors_publish_and_log_context(tmp_path: Path, monkeypatch: pytest.M
     assert result.exit_code == 0
 
     # Context helper must not raise when no manager is installed.
-    log().with_(request_id="m8").info("smoke-context")
+    Log.with_(request_id="m8").info("smoke-context")
+    Log.info("smoke-info")
+    Log.success("smoke-success")
+    Log.debug("smoke-debug")
+    Log.channel("stderr").warning("smoke-channel")

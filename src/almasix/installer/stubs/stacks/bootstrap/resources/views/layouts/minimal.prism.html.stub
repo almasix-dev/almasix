@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>@yield('title', '{{ app_display }}')</title>
+  @vite(['resources/css/app.scss', 'resources/js/app.js'])
+</head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+  <header class="border-bottom bg-white">
+    <div class="container py-3 d-flex align-items-center justify-content-between">
+      <a href="/" class="fs-5 fw-semibold text-decoration-none text-dark">{{ name }}</a>
+      <nav class="d-flex align-items-center gap-3 small fw-medium">
+        @guest
+          <a class="text-secondary text-decoration-none" href="/login">Log in</a>
+          <a class="btn btn-brand btn-sm" href="/register">Sign up</a>
+        @else
+          <a class="text-secondary text-decoration-none" href="/dashboard">Dashboard</a>
+        @endguest
+      </nav>
+    </div>
+  </header>
+  <main class="flex-grow-1">
+    @yield('content')
+  </main>
+  <footer class="border-top py-4 text-center text-secondary small">
+    Built with Almasix · {{ name }}
+  </footer>
+</body>
+</html>

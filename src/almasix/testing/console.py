@@ -126,9 +126,9 @@ class PendingCommand:
     def _kernel(self) -> Any:
         if self.kernel is not None:
             return self.kernel
-        from almasix.console.facade import Artisan
+        from almasix.console.facade import Smith
 
-        return Artisan.kernel(app=self.app)
+        return Smith.kernel(app=self.app)
 
     def _verify(self) -> None:
         for text in self._expected_output:
@@ -222,12 +222,12 @@ def _split(given: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     return arguments, options
 
 
-def artisan(
+def smith(
     command: str,
     arguments: Mapping[str, Any] | None = None,
     *,
     app: Any = None,
     kernel: Any = None,
 ) -> PendingCommand:
-    """Run a Smith command under test (Laravel's `$this->artisan()`)."""
+    """Run a Smith command under test (Laravel's `$this->artisan()` parity)."""
     return PendingCommand(command, arguments, app=app, kernel=kernel)

@@ -53,7 +53,7 @@ def test_m1_s2_welcome_uses_config(tmp_path: Path, monkeypatch: pytest.MonkeyPat
         client = TestClient(module.asgi)
         response = client.get("/")
         assert response.status_code == 200
-        assert "Welcome to Almasix" in response.text
+        assert "Build something remarkable" in response.text
         # Web page and API both read app.name from config.
         assert "ConfigSmoke" in response.text
         assert client.get("/api/health").json()["app"] == "ConfigSmoke"

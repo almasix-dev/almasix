@@ -5,27 +5,27 @@ description: Run Smith commands from a test — answer their prompts, read their
 
 ## Introduction
 
-`artisan()` runs a command for real: the same kernel, the same signature
+`smith()` runs a command for real: the same kernel, the same signature
 parsing, the same `handle()`. Only the terminal is a fake — questions are
 answered from a queue the test fills, and output goes to a buffer the
 assertions read.
 
 ```python
-from almasix.testing import artisan
+from almasix.testing import smith
 
 
 def test_the_importer_reports_what_it_did() -> None:
-    artisan("app:import", {"file": "posts.csv"}).assert_successful()
+    smith("app:import", {"file": "posts.csv"}).assert_successful()
 ```
 
-Inside a `TestCase`, `self.artisan(...)` is the same call against the
+Inside a `TestCase`, `self.smith(...)` is the same call against the
 application the case booted.
 
 ## Expectations
 
 ```python
 (
-    artisan("mail:send")
+    smith("mail:send")
     .expects_question("Who is it for?", "ada@example.com")
     .expects_confirmation("Send it now?", True)
     .expects_choice("Which mailer?", "smtp", ["smtp", "log"])
@@ -52,7 +52,7 @@ a test only has to say what it cares about.
 ## Assertions
 
 ```python
-pending = artisan("app:import").assert_successful()
+pending = smith("app:import").assert_successful()
 
 pending.assert_exit_code(0)
 pending.assert_not_exit_code(1)
@@ -73,7 +73,7 @@ Arguments and options are spelled the way Laravel spells them — one mapping,
 with options carrying their dashes:
 
 ```python
-artisan("app:import", {"file": "posts.csv", "--chunk": 100, "--dry-run": True})
+smith("app:import", {"file": "posts.csv", "--chunk": 100, "--dry-run": True})
 ```
 
 `--dry-run` reaches the command as `dry_run`, the way the signature parser
@@ -81,12 +81,12 @@ names it.
 
 ## Which kernel
 
-`artisan()` finds the console kernel the way `smith` does. Pass one explicitly
+`smith()` finds the console kernel the way `smith` does. Pass one explicitly
 when a test builds its own:
 
 ```python
-artisan("demo:greet", kernel=kernel).assert_successful()
-artisan("demo:greet", app=application).assert_successful()
+smith("demo:greet", kernel=kernel).assert_successful()
+smith("demo:greet", app=application).assert_successful()
 ```
 
 ## Testing the command class
@@ -101,5 +101,5 @@ async def test_the_importer_skips_rows_without_a_title() -> None:
     assert imported == 1
 ```
 
-Keep `handle()` thin enough that this is possible, and use `artisan()` for what
+Keep `handle()` thin enough that this is possible, and use `smith()` for what
 only the console can prove: the signature, the prompts, and the exit code.

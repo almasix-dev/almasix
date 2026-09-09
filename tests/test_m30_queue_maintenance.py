@@ -351,7 +351,7 @@ def test_prune_failed_says_when_nothing_is_old_enough_to_go(
 def test_prune_failed_falls_back_to_the_default_window_when_called_in_process(
     build: Build, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """``Artisan.call`` passes the options it was given, not the signature's."""
+    """``Smith.call`` passes the options it was given, not the signature's."""
     kernel = build()
     recent = fail_job(kernel, hours_ago=2)
     fail_job(kernel, hours_ago=30)

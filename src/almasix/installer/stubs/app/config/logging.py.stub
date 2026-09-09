@@ -1,4 +1,8 @@
-"""Logging channels."""
+"""Logging channels.
+
+App code writes with ``from almasix.log import Log`` then ``Log.info(...)``.
+Do not use Python's stdlib ``logging`` module for application messages.
+"""
 
 from almasix.config import env
 

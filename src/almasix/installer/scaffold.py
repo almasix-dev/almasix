@@ -146,6 +146,21 @@ DATABASES: tuple[Database, ...] = (
         ),
         extra="almasix[mariadb]",
     ),
+    Database(
+        name="mongodb",
+        label="MongoDB (documents)",
+        # Documents via Motor; SQLite remains the SQL default so migrate works.
+        env=(
+            "DB_CONNECTION=sqlite",
+            "DB_DATABASE=database/database.sqlite",
+            "MONGODB_HOST=127.0.0.1",
+            "MONGODB_PORT=27017",
+            "MONGODB_DATABASE={database}",
+            "MONGODB_USERNAME=",
+            "MONGODB_PASSWORD=",
+        ),
+        extra="almasix[mongodb]",
+    ),
 )
 
 DATABASE_NAMES = tuple(database.name for database in DATABASES)
@@ -187,6 +202,18 @@ def database_env(database: Database, *, app_name: str) -> str:
     return "\n".join(line.format(database=app_name) for line in database.env)
 
 
+def sql_connection_name(database: Database) -> str:
+    """SQL default for ``config/database.py`` — not always ``database.name``.
+
+    MongoDB configures document-store env while keeping SQLite as the SQL
+    connection so auth/session/cache/queue migrations still run.
+    """
+    for line in database.env:
+        if line.startswith("DB_CONNECTION="):
+            return line.split("=", 1)[1]
+    return database.name
+
+
 def scaffold_app(
     name: str,
     destination: Path | None = None,
@@ -200,6 +227,7 @@ def scaffold_app(
     name = validate_app_name(name)
     chosen_stack = find_stack(stack)
     chosen_database = find_database(database)
+    sql_default = sql_connection_name(chosen_database)
 
     root = (destination or Path.cwd() / name).resolve()
     if root.exists() and any(root.iterdir()):
@@ -215,7 +243,7 @@ def scaffold_app(
         "app_display": title_case(name),
         "app_key": _fresh_key(),
         "stack": chosen_stack.name,
-        "db_connection": chosen_database.name,
+        "db_connection": sql_default,
         "db_label": chosen_database.label,
         "db_env": database_env(chosen_database, app_name=name),
         "frontend_section": _frontend_section(tree, chosen_stack),
@@ -228,7 +256,7 @@ def scaffold_app(
 
     _write_default_migrations(root)
     publish_errors(root, bundle=chosen_stack.error_bundle)
-    if chosen_database.name == "sqlite":
+    if sql_default == "sqlite":
         _create_sqlite_file(root)
 
     # A published tree is the team's to edit, and one that dropped `smith` is

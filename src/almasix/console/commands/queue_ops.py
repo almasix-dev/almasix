@@ -51,7 +51,7 @@ class QueueOperation(Command):
         """An option's text, or ``None`` when what arrived cannot be one.
 
         The parser turns a bare ``--queue`` into ``True``, and a queue named
-        "True" is not what anybody meant. ``fallback`` covers ``Artisan.call``,
+        "True" is not what anybody meant. ``fallback`` covers ``Smith.call``,
         which passes the options it was given rather than the signature's.
         """
         value = self.option(key, fallback)

@@ -392,7 +392,7 @@ def test_queue_clear_clears_production_when_forced(build: Build) -> None:
 def test_queue_clear_falls_back_to_the_default_queue_when_called_in_process(
     build: Build, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """``Artisan.call`` passes the options it was given, not the signature's."""
+    """``Smith.call`` passes the options it was given, not the signature's."""
     kernel = build()
     push(kernel, QuietJob())
 

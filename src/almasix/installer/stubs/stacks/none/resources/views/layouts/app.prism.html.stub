@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>@yield('title', '{{ app_display }}')</title>
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}"/>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/dashboard">{{ name }}</a>
+    <nav class="site-nav">
+      <a class="muted" href="/">Home</a>
+      <a class="muted" href="/dashboard">Dashboard</a>
+      <form method="post" action="/logout" style="display:inline">
+        @csrf
+        <button type="submit" class="btn-link">Log out</button>
+      </form>
+    </nav>
+  </header>
+  <main class="wrap">
+    @yield('content')
+  </main>
+</body>
+</html>

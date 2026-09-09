@@ -1,0 +1,15 @@
+@extends('layouts.app')
+
+@section('title', 'Dashboard — {{ app_display }}')
+
+@section('content')
+  @isset(status)
+    <p class="flash flash-status" role="status">{{ status }}</p>
+  @endisset
+  <h1>Hello, {{ user_name }}</h1>
+  <p class="lede">You are signed in to {{ name }}. This page uses the app layout.</p>
+  <div class="card" style="margin-top:1.5rem">
+    <h2>Next steps</h2>
+    <p>Edit <code>resources/views/</code> and <code>routes/web.py</code>, then run <code>python smith make:model</code>.</p>
+  </div>
+@endsection

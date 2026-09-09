@@ -94,9 +94,16 @@ def build_namespace(app: Application) -> dict[str, Any]:
     except Exception:
         pass
     try:
-        from almasix.log import log
+        from almasix.log import Log, log
 
         ns["log"] = log
+        ns["Log"] = Log
+    except Exception:
+        pass
+    try:
+        from almasix.console import Smith
+
+        ns["Smith"] = Smith
     except Exception:
         pass
     refused = set(config("loupe.dont_alias", []) or [])
@@ -170,9 +177,9 @@ def _add_commands(ns: dict[str, Any]) -> None:
     reads Python, so each name becomes a callable instead:
     ``inspire()``, or ``queue_work(once=True)``.
     """
-    from almasix.console.facade import Artisan
+    from almasix.console.facade import Smith
 
-    available = Artisan.all()
+    available = Smith.all()
     for name in _config_list("loupe.commands"):
         if name not in available:
             typer.secho(f"loupe.commands {name}: no such command", fg=typer.colors.YELLOW)
@@ -182,12 +189,12 @@ def _add_commands(ns: dict[str, Any]) -> None:
 
 def _command_caller(name: str) -> Any:
     """A callable that runs one command with keyword arguments as options."""
-    from almasix.console.facade import Artisan
+    from almasix.console.facade import Smith
 
     def call(*arguments: Any, **options: Any) -> int:
         parameters = {f"--{key.replace('_', '-')}": value for key, value in options.items()}
         line = " ".join([name, *(str(argument) for argument in arguments)])
-        return Artisan.call(line, parameters)
+        return Smith.call(line, parameters)
 
     call.__name__ = name.replace(":", "_")
     call.__doc__ = f"Run the {name!r} command."

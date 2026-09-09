@@ -26,7 +26,7 @@
 Python has excellent HTTP libraries and very few opinions about what an application looks like.
 Almasix supplies the opinions. It takes the conventions that make a Laravel codebase legible on
 first read — the directory layout, service providers, facades, fluent builders, `Route` groups,
-Eloquent-style models, Blade-style templates, Artisan-style commands — and implements them in
+Eloquent-style models, Blade-style templates, Smith console commands — and implements them in
 modern Python. Requests, the ORM, queue workers, and the scheduler all run on `asyncio`, and the
 FastAPI application underneath is never taken away from you.
 
@@ -115,7 +115,7 @@ Console commands and scheduled work are declared together, and run under `smith`
 
 ```python
 # routes/console.py
-from almasix.console import Artisan, schedule
+from almasix.console import Smith, schedule
 
 
 def send_digest(command) -> int:
@@ -123,7 +123,7 @@ def send_digest(command) -> int:
     return 0
 
 
-Artisan.command("digest:send", send_digest).purpose("Mail yesterday's digest")
+Smith.command("digest:send", send_digest).purpose("Mail yesterday's digest")
 
 schedule.command("digest:send").daily_at("07:00").timezone("Africa/Nairobi").without_overlapping()
 schedule.command("model:prune").daily().on_one_server()
@@ -222,7 +222,7 @@ Currently **1,886 tests** at **99.38%** coverage.
 
 ## Status
 
-**M39 docs journey** and **M38 deployment ops** closed on the stability track (after M51, M44, and the M25 Mongo audit). Package version is **0.4.0** in-tree — tag/publish when you cut the GitHub Release. Next up: **M37 — API tokens**. See [`docs/PLAN.md`](docs/PLAN.md).
+**M39 docs journey** and **M38 deployment ops** closed on the stability track (after M51, M44, and the M25 Mongo audit). Package version is **0.5.0** in-tree — tag/publish when you cut the GitHub Release. Next up: **M37 — API tokens**. See [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Repository layout
 

@@ -177,9 +177,9 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M26** | `smith progress:broadcast` + `GET /api/broadcast` — `ShouldBroadcast`, channel auth, the websocket at `/broadcasting/socket`, `channel:list` |
 | **M27** | `smith progress:search` + `GET /api/search` — `Searchable` posts, the `database` and `collection` engines, `Scout.fake()`, `scout:status` |
 | **M28** | `smith progress:testing` + `smith test` — `tests/` drives the app in-process: HTTP and console assertions, database helpers, `fake()`, time travel |
-| **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 126 commands |
+| **M30** | `smith progress:console` / `progress:import` — signatures, `Smith.call`, `--isolated`; `smith list` shows all 126 commands |
 | **M31** | `smith progress:schedule` — frequencies, constraints, hooks, a tick; `smith schedule:list` / `test` / `interrupt` |
-| **M32** | `smith progress:install` — `almasix new` across four stacks and four databases, the default migrations running, `--stubs` from a published tree |
+| **M32** | `smith progress:install` — `almasix new` across four stacks (rich layouts/auth) and SQL + MongoDB databases, default migrations, `--stubs` |
 | **M33** | `smith progress:routing` — every verb and shape, constraints, groups, resource / singleton routing, model binding, `route()` and signed URLs |
 | **M34** | `smith progress:security` — default security headers, `config/cors.py`, `smith down --secret` with a 503 and a bypass cookie |
 | **M35** | `smith progress:rate-limiting` — `RateLimiter`, `throttle` middleware, login lockout, `/api/throttle-demo` |

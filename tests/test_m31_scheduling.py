@@ -1151,13 +1151,13 @@ def test_installing_the_camel_aliases_twice_changes_nothing() -> None:
 
 
 def test_a_closure_command_can_schedule_itself_with_arguments() -> None:
-    from almasix.console.facade import Artisan
+    from almasix.console.facade import Smith
     from almasix.console.scheduling import schedule as task_schedule
 
     task_schedule.clear()
     try:
         event = (
-            Artisan.command("emails:send {user} {--force}", lambda user: None)
+            Smith.command("emails:send {user} {--force}", lambda user: None)
             .purpose("Send emails to the given user")
             .schedule(["taylor", "--force"])
             .daily()
@@ -1168,7 +1168,7 @@ def test_a_closure_command_can_schedule_itself_with_arguments() -> None:
         assert task_schedule.events == [event]
     finally:
         task_schedule.clear()
-        Artisan.set_kernel(None)
+        Smith.set_kernel(None)
 
 
 def test_the_application_builder_can_define_the_schedule(tmp_path: Path, monkeypatch: Any) -> None:

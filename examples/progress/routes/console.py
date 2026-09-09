@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from almasix.console import Artisan, schedule
+from almasix.console import Smith, schedule
 
 
 def _greet(name: str, loud: bool, command) -> int:
@@ -14,7 +14,7 @@ def _greet(name: str, loud: bool, command) -> int:
     return 0
 
 
-Artisan.command("progress:greet {name=world} {--loud}", _greet).purpose(
+Smith.command("progress:greet {name=world} {--loud}", _greet).purpose(
     "M30 living example — closure command"
 )
 

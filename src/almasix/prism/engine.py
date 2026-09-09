@@ -255,7 +255,10 @@ class Engine:
             from almasix.routing.url import asset
 
             ctx["asset"] = asset
-        if "route" not in ctx:
+        # Inject each helper only when the view did not pass the same name —
+        # otherwise ``{{ action }}`` becomes the ``action()`` controller URL
+        # helper and forms POST to ``/<function action at 0x…>``.
+        if "route" not in ctx or "signed_route" not in ctx or "action" not in ctx:
             from almasix.routing.url import (
                 action,
                 route,
@@ -264,11 +267,11 @@ class Engine:
                 signed_route,
             )
 
-            ctx["route"] = route
-            ctx["signed_route"] = signed_route
-            ctx["action"] = action
-            ctx["secure_url"] = secure_url
-            ctx["secure_asset"] = secure_asset
+            ctx.setdefault("route", route)
+            ctx.setdefault("signed_route", signed_route)
+            ctx.setdefault("action", action)
+            ctx.setdefault("secure_url", secure_url)
+            ctx.setdefault("secure_asset", secure_asset)
         if "route_is" not in ctx:
             from almasix.routing.router import Route
 

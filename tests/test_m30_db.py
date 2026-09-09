@@ -180,7 +180,7 @@ def test_db_wipe_says_which_database_name_it_could_not_read(
 
 
 def test_db_wipe_can_be_called_in_process(build: Build, capsys: pytest.CaptureFixture[str]) -> None:
-    """``Artisan.call`` passes no options, so every flag has to be optional."""
+    """``Smith.call`` passes no options, so every flag has to be optional."""
     kernel = build()
     make_tables("posts")
     options: dict[str, Any] = {"force": True}

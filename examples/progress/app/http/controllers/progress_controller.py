@@ -307,7 +307,7 @@ def _milestones() -> list[dict]:
             "proof": [
                 "TestCase + in-process TestClient over the real middleware",
                 "TestResponse — status, headers, JSON, session, view assertions",
-                "artisan() — expects_question / expects_output / assert_exit_code",
+                "smith() — expects_question / expects_output / assert_exit_code",
                 "assert_database_has, refresh_database, database_transactions",
                 "fake() — mail, queue, notification, storage, event, http, "
                 "process, broadcast, scout",
@@ -329,7 +329,7 @@ def _milestones() -> list[dict]:
             "proof": [
                 "102 commands, every one a Command class",
                 "full signature parser + option shortcuts",
-                "Artisan.call / queue / output + closure commands",
+                "Smith.call / queue / output + closure commands",
                 "--isolated locks · trap · with_progress_bar",
                 "stub:publish · vendor:publish · cache/view/optimize",
                 "db:show / db:table / model:show · migrate:reset / refresh",
@@ -355,8 +355,8 @@ def _milestones() -> list[dict]:
             "proof": [
                 "smith progress:install",
                 "almasix new asks: stack, database, tests, git, install",
-                "tailwind / bootstrap / plain / none — a stub tree, not strings",
-                "sqlite / pgsql / mysql / mariadb write .env + config",
+                "tailwind / bootstrap / plain / none — layouts, auth, dashboard",
+                "sqlite / pgsql / mysql / mariadb / mongodb write .env + config",
                 "default migrations: users, sessions, cache, jobs",
                 "@vite tags · cache:table / queue:table / session:table",
             ],
@@ -420,7 +420,7 @@ def _milestones() -> list[dict]:
                 "smith serve --workers",
                 "GET /up health probe",
                 "docs/deployment + examples/deploy",
-                "PyPI Trusted Publishing (0.4.0 ready)",
+                "PyPI Trusted Publishing (0.5.0)",
             ],
         },
         {

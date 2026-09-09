@@ -5,7 +5,7 @@ description: Exception Handler, polarity-aware pages, APP_DEBUG, and publishable
 
 ## Handler
 
-Unhandled exceptions pass through `almasix.exceptions.Handler` — `report(exc)` for logging, `render(request, exc)` for the HTTP response. Apps override at `app/exceptions/handler.py` (resolved from the container).
+Unhandled exceptions pass through `almasix.exceptions.Handler` — `report(exc)` for logging via [`almasix.log`](/logging/) (`Log.info` / …), `render(request, exc)` for the HTTP response. Apps override at `app/exceptions/handler.py` (resolved from the container).
 
 ```python
 # app/exceptions/handler.py

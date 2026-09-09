@@ -35,13 +35,22 @@ ONE_SERVER_PREFIX = "schedule-one-server:"
 class Outcome:
     """What one task did, in the shape the hooks and events want."""
 
-    __slots__ = ("code", "event", "output", "skipped")
+    __slots__ = ("code", "event", "output", "runtime", "skipped")
 
-    def __init__(self, event: Event, code: int, output: str, skipped: bool = False) -> None:
+    def __init__(
+        self,
+        event: Event,
+        code: int,
+        output: str,
+        skipped: bool = False,
+        *,
+        runtime: float | None = None,
+    ) -> None:
         self.event = event
         self.code = code
         self.output = output
         self.skipped = skipped
+        self.runtime = runtime
 
     def __repr__(self) -> str:
         state = "skipped" if self.skipped else f"exit {self.code}"
@@ -303,7 +312,7 @@ def _execute(event: Event, *, base: Path, runner: Runner | None) -> Outcome:
         _dispatch(ScheduledTaskFinished(event, runtime, code, output))
         if code != 0:
             _dispatch(ScheduledTaskFailed(event, None, code, output))
-    return Outcome(event, code, output)
+    return Outcome(event, code, output, runtime=runtime)
 
 
 def _invoke(event: Event, runner: Runner | None) -> int:

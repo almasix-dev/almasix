@@ -1,0 +1,26 @@
+@extends('layouts.minimal')
+
+@section('title', 'Log in — {{ app_display }}')
+
+@section('content')
+  <div class="wrap auth-panel">
+    <h1>Log in to {{ name }}</h1>
+    <p class="lede">Welcome back. Use the account you registered with.</p>
+    @isset(error)
+      <p class="flash flash-error" role="alert">{{ error }}</p>
+    @endisset
+    @isset(status)
+      <p class="flash flash-status" role="status">{{ status }}</p>
+    @endisset
+    <form method="post" action="{{ form_action }}">
+      @csrf
+      <label>Email<input type="email" name="email" required autocomplete="username"/></label>
+      <label>Password<input type="password" name="password" required autocomplete="current-password"/></label>
+      <label class="remember"><input type="checkbox" name="remember" value="1"/> Remember me</label>
+      <button type="submit" class="btn" style="width:100%">Log in</button>
+    </form>
+    <p style="text-align:center;color:var(--muted);font-size:0.9rem;margin-top:1.5rem">
+      No account? <a href="{{ register_url }}">Sign up</a>
+    </p>
+  </div>
+@endsection

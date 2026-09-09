@@ -16,7 +16,7 @@ Project creation uses ``almasix new``, not Smith.
 There is nothing else in this module on purpose. Every command is a
 :class:`~almasix.console.command.Command` under ``almasix/console/commands``, and
 :func:`almasix.console.front_door.install` puts them all behind Typer — so the
-terminal, ``Artisan.call``, and the scheduler reach the same command the same
+terminal, ``Smith.call``, and the scheduler reach the same command the same
 way. See ``docs/PLAN.md`` M30.
 """
 

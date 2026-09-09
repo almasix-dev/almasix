@@ -1,10 +1,10 @@
-"""M30 living example — the Artisan-shaped console surface."""
+"""M30 living example — the Smith-shaped console surface."""
 
 from __future__ import annotations
 
 import signal
 
-from almasix.console import Artisan, Command, Isolatable, PromptsForMissingInput
+from almasix.console import Smith, Command, Isolatable, PromptsForMissingInput
 
 
 class ProgressConsoleCommand(PromptsForMissingInput, Command):
@@ -12,7 +12,7 @@ class ProgressConsoleCommand(PromptsForMissingInput, Command):
         "progress:console {report : Which report to build} "
         "{--T|tag=* : Tags to attach} {--dry-run : Skip the write}"
     )
-    description = "M30 living example — signatures, output, and Artisan.call"
+    description = "M30 living example — signatures, output, and Smith.call"
 
     def prompt_for_missing_arguments_using(self) -> dict[str, str]:
         return {"report": "Which report should we build?"}
@@ -26,7 +26,7 @@ class ProgressConsoleCommand(PromptsForMissingInput, Command):
         self.line(f"  steps -> {rows}")
 
         self.call_silently("progress:hello")
-        self.comment(f"  called progress:hello -> {Artisan.output().strip()}")
+        self.comment(f"  called progress:hello -> {Smith.output().strip()}")
         self._show_the_one_surface()
 
         if self.dry_run:
@@ -39,7 +39,7 @@ class ProgressConsoleCommand(PromptsForMissingInput, Command):
         """What ``smith`` is made of: commands, stubs, and publishable files.
 
         Every command below is a ``Command`` class, including this one — the
-        CLI has no second way in, which is what makes ``Artisan.call`` and the
+        CLI has no second way in, which is what makes ``Smith.call`` and the
         scheduler able to reach all of them.
         """
         from almasix.console import stub

@@ -104,7 +104,7 @@ class ConsoleKernel:
         self.app._bootstrapped = True
 
     def discover(self) -> None:
-        from almasix.console.facade import Artisan, drain_pending
+        from almasix.console.facade import Smith, drain_pending
 
         self.discover_framework_commands()
         # An app's command directory is usually an importable package. When it
@@ -112,7 +112,7 @@ class ConsoleKernel:
         # is reported twice.
         if not self._load_package("app.console.commands"):
             self._load_path(self.app.path("app", "console", "commands"))
-        Artisan.set_kernel(self)
+        Smith.set_kernel(self)
         drain_pending(self)
         self._dispatch(ConsoleStarting(sorted(self.commands)))
 
@@ -190,16 +190,16 @@ class ConsoleKernel:
                 self.register(obj)
 
     def load_console_routes(self) -> None:
-        """Load ``routes/console.py`` (schedule DSL + ``Artisan.command`` closures).
+        """Load ``routes/console.py`` (schedule DSL + ``Smith.command`` closures).
 
         The file is executed again on every call, because each kernel needs the
         closure commands it defines. The scheduled tasks from the previous run
         are dropped first, so loading twice does not schedule everything twice.
         """
-        from almasix.console.facade import Artisan, drain_pending
+        from almasix.console.facade import Smith, drain_pending
         from almasix.console.scheduling import schedule
 
-        Artisan.set_kernel(self)
+        Smith.set_kernel(self)
         path = self.app.path("routes", "console.py")
         if not path.is_file():
             return
