@@ -98,6 +98,7 @@ export default defineConfig({
 						{ label: 'Middleware', slug: 'middleware' },
 						{ label: 'CSRF Protection', slug: 'csrf' },
 						{ label: 'Security headers & CORS', slug: 'security' },
+						{ label: 'Rate Limiting', slug: 'rate-limiting' },
 						{ label: 'Controllers', slug: 'controllers' },
 						{ label: 'Requests', slug: 'requests' },
 						{ label: 'Responses', slug: 'responses' },

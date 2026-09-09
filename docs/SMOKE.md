@@ -859,6 +859,26 @@ pytest -q tests/test_m50_*.py tests/smoke/test_m50_smoke.py
 
 ---
 
+## M35 — Rate limiting
+
+```bash
+pytest -q tests/test_m35_*.py tests/smoke/test_m35_smoke.py
+```
+
+### M35 exit criteria
+
+- [x] `RateLimiter` façade: `attempt`, `too_many_attempts`, `hit` / `increment`, `remaining`, `available_in`, `clear`, `reset_attempts`
+- [x] Optional `cache.limiter` store; shared cache = shared budgets across workers
+- [x] Named limiters via `RateLimiter.for_`; `Limit.per_second` / `per_minute` / `per_hour` / `per_day` / `none`, `.by`, `.response`, `.after`
+- [x] `throttle` middleware: `throttle:60,1`, `throttle:api`, `throttle:10|60`; headers `X-RateLimit-*`, `Retry-After`, `X-RateLimit-Reset`
+- [x] `middleware.throttle_api()` prepends `throttle:api` to the api group
+- [x] `LoginRateLimiter` + `attempt_login` with `auth.throttle` message
+- [x] Living example: `smith progress:rate-limiting`; board marks M35 complete
+- [x] Docs: Starlight **Rate Limiting**
+- [x] Deviations named: `for_` vs `for`; no separate Redis sliding-window middleware class
+
+---
+
 ## M34 — Security headers + CORS
 
 ```bash

@@ -28,6 +28,8 @@ with Route.group(prefix="/api", middleware=["api"]):
     Route.get("/me", [HealthController, "me"], middleware=["auth:api"])
     Route.get("/ping", [DemoController, "ping"])
     Route.get("/progress", [ProgressController, "data"])
+    # M35 — tight limiter so `smith progress:rate-limiting` can prove a 429.
+    Route.get("/throttle-demo", lambda: {"ok": True}, middleware=["throttle:progress"])
     Route.get("/locale", [LocaleController, "index"])
     Route.get("/orm", [OrmTourController, "index"])
 

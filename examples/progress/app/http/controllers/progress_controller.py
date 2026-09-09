@@ -388,8 +388,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M35",
             "name": "Rate limiting",
-            "status": "planned",
-            "proof": ["RateLimiter façade", "throttle middleware"],
+            "status": "complete",
+            "proof": [
+                "smith progress:rate-limiting",
+                "RateLimiter.attempt / hit / remaining / clear",
+                "throttle:60,1 · throttle:api · named Limit.per_*",
+                "X-RateLimit-* + Retry-After on 429",
+                "LoginRateLimiter + attempt_login",
+            ],
         },
         {
             "id": "M36",

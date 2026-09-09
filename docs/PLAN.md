@@ -1365,14 +1365,17 @@ Post-M3 hardening pack, secure-by-default for the web stack.
 
 Laravel [Rate Limiting](https://laravel.com/docs/rate-limiting) — the cache-backed limiter plus the `throttle` middleware.
 
-- `RateLimiter` façade (`attempt`, `too_many_attempts`, `remaining`, `available_in`, `clear`) on M15 cache
-- `throttle` middleware with named limiters, per-user / per-IP keys, `Retry-After` + `X-RateLimit-*` headers
-- Login throttling wired into M7 auth; queue/worker friendliness documented
+- `RateLimiter` façade (`attempt`, `too_many_attempts`, `hit` / `increment`, `remaining`, `available_in`, `clear`) on M15 cache; optional `cache.limiter` store
+- `throttle` middleware with named limiters, `Limit.per_*` / `none` / `response` / `after`, per-user / per-IP keys, guest`|`auth rates, `Retry-After` + `X-RateLimit-*` headers; `middleware.throttle_api()`
+- Login throttling via `LoginRateLimiter` + `attempt_login` into M7 auth
 - Docs: Starlight **Rate Limiting**
+- **Living example:** `smith progress:rate-limiting`
 
 **Depends on:** M15 cache (locks/counters), M16 Redis for the production driver.
 
-**Gate:** limiter + middleware + auth throttling shipped with fakes; docs published.
+**Gate:** limiter + middleware + auth throttling shipped with fakes; docs published. **Done.**
+
+**Deliberate deviations (M35):** the registrar is `RateLimiter.for_` because `for` is a Python keyword (attribute `RateLimiter.for` is also set); Redis-native sliding-window `ThrottleRequestsWithRedis` is not a separate class — point `cache.limiter` at Redis and the same middleware is atomic enough for production.
 
 ### M36 — Starter kits
 
