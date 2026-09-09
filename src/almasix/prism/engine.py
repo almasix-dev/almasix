@@ -300,6 +300,10 @@ class Engine:
             from almasix.session.helpers import old
 
             ctx["old"] = old
+        if "csp_nonce" not in ctx:
+            from almasix.http.security import csp_nonce
+
+            ctx["csp_nonce"] = csp_nonce
         if "__" not in ctx:
             from almasix.translation import __, trans_choice
 

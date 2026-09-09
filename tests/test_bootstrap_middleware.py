@@ -49,9 +49,12 @@ def test_with_middleware_merges_into_http_config(tmp_path: Path) -> None:
 
     app = Application.configure(tmp_path).with_middleware(configure).create()
     assert app.config.get("http.middleware_aliases")["tag"] is _TagMiddleware
-    assert app.config.get("http.middleware_groups")["web"] == ["tag"]
+    # Framework defaults ride underneath: security.headers on web, maintenance
+    # on the global stack. The application's own entries append / prepend onto
+    # those rather than wiping them.
+    assert app.config.get("http.middleware_groups")["web"] == ["security.headers", "tag"]
     assert app.config.get("http.middleware_groups")["api"] == ["tag"]
-    assert app.config.get("http.middleware") == ["tag"]
+    assert app.config.get("http.middleware") == ["maintenance", "tag"]
 
 
 def test_scaffold_bootstrap_registers_locale_via_fluent_api(tmp_path: Path) -> None:

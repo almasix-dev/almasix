@@ -1269,7 +1269,7 @@ Laravel [Task Scheduling](https://laravel.com/docs/scheduling) — M9 shipped a 
 
 **Named deviations:** background tasks run in a worker thread rather than a detached OS process, so `schedule:run` waits for them before exiting — a thread cannot outlive its interpreter, and Python has no `schedule:finish` to hand a detached process. Commands are scheduled by name, not by class. The `L` / `W` / `#` cron extensions are not implemented. In Almasix's favour: a scheduled callback may be `async` and is awaited, which Laravel has no need for but Almasix's awaitable ORM, queue, and client do.
 
-**Owed by a later milestone:** maintenance mode is only the scheduler's half — `smith down` writes `storage/framework/down` and the scheduler honours it, but HTTP requests are still served normally. The 503 response, the secret bypass, `--render`, and `--retry` need the HTTP middleware that belongs with **M34**.
+**Closed by M34:** the HTTP half of maintenance mode — 503, secret bypass, `--render`, `--retry`, `--redirect`, `--refresh`, `--status`. The scheduler half here and the HTTP half there share the same marker file.
 
 **Depends on:** M30 (command surface), M11 (queued jobs), M15/M16 (locks), M12 (output email), M20 (pings).
 
@@ -1349,7 +1349,17 @@ Post-M3 hardening pack, secure-by-default for the web stack.
 
 **Depends on:** M2 middleware (done), M7 web stack (done).
 
-**Gate:** defaults on in the scaffold, documented opt-outs, smoke asserts the headers.
+**Gate met (2026-09-09):** defaults on in the scaffold, documented opt-outs, smoke asserts the headers; the HTTP half of `smith down` answers 503 with secret bypass, `--render`, and `--retry`.
+
+**Status (M34):** **Complete** (2026-09-09).
+
+- **Security headers on the web stack by default.** `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `X-XSS-Protection`, `Permissions-Policy`. CSP and HSTS are opt-in (a CSP the application did not plan for breaks every page; HSTS on local HTTP is a trap). `{nonce}` in a CSP template is replaced per request; `csp_nonce()` reads it from Prism.
+- **CORS via `config/cors.py`.** Laravel-shaped defaults; paths that do not match `paths` get no `Access-Control-*` headers. Starlette writes the headers; Almasix decides which paths see them. Set `cors = False` to disable.
+- **Maintenance mode's HTTP half.** `smith down` writes a JSON marker (`--secret`, `--with-secret`, `--retry`, `--refresh`, `--redirect`, `--render`, `--status`); the middleware answers 503 (or redirects, or renders a view); `?secret=` sets a bypass cookie. The M31 plaintext `down` marker still means down. `smith up` removes it.
+- **Seeded, not asked for.** `maintenance` is prepended to the global stack and `security.headers` to the web group even for an application that never opened `bootstrap/app.py` — `apply_middleware_callbacks` always runs the configurator. Opt out with `middleware.use([])` / `middleware.web(replace=[…])`.
+- **Living example:** `smith progress:security`.
+
+**Deliberate deviations (M34):** security headers stay off the API stack by default (a JSON API that never embeds has no need for them); CSP and HSTS are opt-in rather than on-by-default.
 
 ### M35 — Rate limiting
 

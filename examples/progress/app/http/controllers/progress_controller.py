@@ -376,8 +376,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M34",
             "name": "Security headers + CORS",
-            "status": "planned",
-            "proof": ["header middleware", "CORS middleware"],
+            "status": "complete",
+            "proof": [
+                "smith progress:security",
+                "X-Content-Type-Options / X-Frame-Options / Referrer-Policy",
+                "CSP nonce · HSTS opt-in · csp_nonce() in Prism",
+                "config/cors.py · HandleCors on api/*",
+                "smith down --secret --retry · 503 + bypass cookie",
+            ],
         },
         {
             "id": "M35",

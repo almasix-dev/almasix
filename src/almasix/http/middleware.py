@@ -19,6 +19,8 @@ NextCall = Callable[["Request"], Awaitable[StarletteResponse]]
 FRAMEWORK_ALIASES: dict[str, str] = {
     "signed": "almasix.routing.middleware.ValidateSignature",
     "url.defaults": "almasix.routing.middleware.SetUrlDefaults",
+    "security.headers": "almasix.http.security.SecurityHeaders",
+    "maintenance": "almasix.http.maintenance.PreventRequestsDuringMaintenance",
 }
 
 
