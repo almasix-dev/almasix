@@ -25,7 +25,7 @@ For how these docs relate to package versions, see
 - **Multi-engine database CI** — conformance on SQLite, PostgreSQL, and MySQL
 - **Document stores** — Articulate Mongo / memory docs under Database and Articulate
 - Also on this line since 0.3.0: installer stacks, named routing, security headers /
-  CORS, rate limiting (M32–M35)
+  CORS, and rate limiting
 
 Published on [PyPI](https://pypi.org/project/almasix/0.4.0/) after the `v0.4.0`
 GitHub Release.
