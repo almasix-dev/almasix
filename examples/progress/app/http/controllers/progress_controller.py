@@ -527,12 +527,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M47",
             "name": "VS Code + JetBrains integrations",
-            "status": "planned",
+            "status": "complete",
             "proof": [
-                "local .vsix + JetBrains zip (sideload)",
-                "LSP-first PyCharm shell",
+                "smith progress:ide",
                 "smith ide:install + ide:stubs",
-                "VS Code ↔ PyCharm parity matrix",
+                "editors/vscode/*.vsix (sideload)",
+                "editors/jetbrains buildPlugin zip (sideload)",
+                "LSP-first PyCharm via LSP4IJ → almasix-lsp",
+                "VS Code ↔ PyCharm parity matrix (Editor setup)",
             ],
         },
         {

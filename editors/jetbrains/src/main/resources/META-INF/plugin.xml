@@ -1,0 +1,43 @@
+<idea-plugin>
+  <id>com.almasix.ide</id>
+  <name>Almasix</name>
+  <vendor url="https://github.com/almasix-dev/almasix">Almasix</vendor>
+  <description><![CDATA[
+    <p>Almasix editor support for PyCharm / IntelliJ:</p>
+    <ul>
+      <li>Prism (<code>.prism.html</code>) file type + TextMate highlighting</li>
+      <li>LSP-first intelligence via <code>almasix-lsp</code> (LSP4IJ)</li>
+      <li>Smith run configuration templates</li>
+    </ul>
+    <p>Install from Disk (sideload). Marketplace publish comes later.</p>
+  ]]></description>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.plugins.textmate</depends>
+  <depends>com.redhat.devtools.lsp4ij</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType
+        name="Prism"
+        implementationClass="com.almasix.ide.PrismFileType"
+        fieldName="INSTANCE"
+        language="Prism"
+        extensions="prism.html"/>
+
+    <configurationType implementation="com.almasix.ide.SmithConfigurationType"/>
+    <textMate.bundleProvider implementation="com.almasix.ide.PrismTextMateBundleProvider"/>
+  </extensions>
+
+  <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+    <server
+        id="almasixLsp"
+        name="Almasix Language Server"
+        factoryClass="com.almasix.ide.AlmasixLanguageServerFactory">
+      <description><![CDATA[
+        Boots almasix-lsp from the project virtualenv for Prism and Python.
+      ]]></description>
+    </server>
+    <languageMapping language="Prism" serverId="almasixLsp"/>
+    <languageMapping language="Python" serverId="almasixLsp"/>
+  </extensions>
+</idea-plugin>

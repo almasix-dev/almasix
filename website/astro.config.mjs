@@ -216,6 +216,7 @@ export default defineConfig({
 						{ label: 'Stacks & Directives', slug: 'prism/stacks' },
 						{ label: 'Language support', slug: 'prism-language' },
 						{ label: 'Language server', slug: 'language-server' },
+						{ label: 'Editor setup', slug: 'editor-setup' },
 					],
 				},
 				{

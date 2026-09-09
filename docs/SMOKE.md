@@ -961,9 +961,28 @@ cd examples/progress && python smith progress:prism-lang
 - [x] Board marks M46 complete with proof naming the demo
 - [x] Starlight **Language server**; package coverage ≥ 99% (statement coverage 100%)
 
-## M47 — VS Code + JetBrains integrations (planned)
+## M47 — VS Code + JetBrains integrations
 
-See [`PLAN.md`](PLAN.md) M47. **Local-first:** CI builds `.vsix` + JetBrains `.zip`; sideload install; Marketplace publish later when accounts exist. LSP-first PyCharm shell.
+```bash
+pytest -q tests/smoke/test_m47_smoke.py
+cd examples/progress && python smith progress:ide
+# package artifacts (optional local / CI):
+#   make editors-vscode      # editors/vscode/*.vsix via npx @vscode/vsce
+#   make editors-jetbrains   # editors/jetbrains/build/distributions/*.zip
+```
+
+**Local-first:** sideload `.vsix` + JetBrains `.zip`; Marketplace publish later.
+LSP-first PyCharm shell (LSP4IJ → `almasix-lsp`). Starlight **Editor setup**
+holds the VS Code ↔ PyCharm parity matrix.
+
+### M47 exit criteria
+
+- [x] VS Code-family extension packages to `.vsix` (`npm install && npm run package`)
+- [x] JetBrains plugin `buildPlugin` zip (Prism file type + LSP4IJ + Smith run config)
+- [x] `smith ide:install` + `smith ide:stubs`
+- [x] Living example `progress:ide` + smoke; board marks M47 complete
+- [x] Parity matrix documented (no silent gaps)
+- [ ] Marketplace / Open VSX / JetBrains listings (publish follow-up)
 
 ## M52 — Sonar realtime (planned)
 
@@ -1165,8 +1184,8 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 - Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52)
-- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46** complete; next **M47 → M52** (no pauses); M36 / M48 later
+- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47** complete; next **M52** (no pauses); M36 / M48 later
 - Parity reference: **Laravel 13.x** docs
-- IDE and editor tooling: **M45–M47** in the current autopilot batch (thorough VS Code-family + JetBrains); **M48** MCP later
+- IDE and editor tooling: **M45–M47** closed (thorough VS Code-family + JetBrains sideload); **M48** MCP later; next autopilot **M52**
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

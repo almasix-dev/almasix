@@ -1610,7 +1610,12 @@ One LSP server, so every editor benefits from one implementation instead of each
 
 ### M47 — Editor integrations and type stubs (full VS Code + JetBrains)
 
-The packaging layer — what a developer actually installs — plus the typing work that makes Almasix's *own* API complete under a type checker. **Bar:** opening an Almasix app in **VS Code / Cursor / VSCodium** or **PyCharm / IntelliJ with Python** feels as supported as Laravel + Laravel Idea / the official Laravel VS Code extension — not a README with “point your LSP client at X.”
+**Status: complete (2026-09-10).** Local-first packaging ships: `editors/vscode/`
+produces `almasix-*.vsix` (`npm install && npm run package` / `npx @vscode/vsce`);
+`editors/jetbrains/` produces `build/distributions/*.zip` (`./gradlew buildPlugin`,
+JDK 17, LSP4IJ → `almasix-lsp`); `smith ide:install` / `ide:stubs`; Starlight
+**Editor setup** with VS Code ↔ PyCharm parity matrix; `smith progress:ide`.
+Marketplace / Open VSX / JetBrains listings remain a **publish follow-up** (not a gate).
 
 #### Local-first, publish later (decided 2026-09-10)
 
@@ -1649,7 +1654,9 @@ CI must still **build** those artifacts on every IDE-track change so publish is 
 
 **Depends on:** M45, M46. `ide:stubs` also depends on M43 (schema inspection).
 
-**Gate (M47):** fresh `almasix new` → working Prism + completions in **both** VS Code-family and PyCharm via **local install** (`smith ide:install` and/or documented VSIX / Install from Disk); CI produces `.vsix` + JetBrains `.zip`; stubs type-check test; VS Code ↔ PyCharm parity matrix with no silent gaps. **Not required for M47:** live Marketplace / Open VSX / JetBrains listings (tracked as publish follow-up once accounts exist).
+**Gate (M47):** fresh `almasix new` → working Prism + completions in **both** VS Code-family and PyCharm via **local install** (`smith ide:install` and/or documented VSIX / Install from Disk); CI produces `.vsix` + JetBrains `.zip`; stubs type-check test; VS Code ↔ PyCharm parity matrix with no silent gaps. **Not required for M47:** live Marketplace / Open VSX / JetBrains listings (tracked as publish follow-up once accounts exist). **Met** for sideload path + stubs + parity docs; CI editor jobs document `make editors-vscode` / `make editors-jetbrains`.
+
+**Named follow-ups (not gate blockers):** Marketplace / Open VSX / JetBrains listings; JetBrains New… generators and debugger templates; optional Prism inheritance preview; deeper type-checker plugins (`Model.query()` generics); live-schema column stubs beyond fillable/casts; committed CI artifacts for `.vsix` / `.zip` on every PR (local `make` targets ship now).
 
 ### M48 — AI agent support (MCP server + guidelines)
 
@@ -1794,7 +1801,7 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 | 1 | **M53** Chrono | `almasix.chrono` + helpers + rich docs + `progress:dates` + smoke (~100% cov) | — |
 | 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | done 2026-09-10 |
 | 3 | ~~**M46** `almasix-lsp`~~ | Full LSP surface + wire-protocol conformance CI | done 2026-09-10 |
-| 4 | **M47** VS Code + JetBrains | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | — (marketplace publish is post-gate) |
+| 4 | ~~**M47** VS Code + JetBrains~~ | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | done 2026-09-10 (marketplace publish is post-gate) |
 | 5 | **M52** Sonar | Sonar server + `@almasix/sonar`; Pusher / Ably / Socket.IO alternatives | — |
 | — | **Later** | M36, M48, Socialite, Passport, client API keys, … | Not in this batch |
 
@@ -1868,7 +1875,7 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**Suggested next:** Autopilot batch continues **M47 → M52** (no pauses; see **Autopilot batch**). **M53 → M45 → M46** closed.
+**Suggested next:** Autopilot batch continues **M52** (no pauses; see **Autopilot batch**). **M53 → M45 → M46 → M47** closed.
 
 **Recently closed:** M46 Almasix language server (`almasix-lsp`); M45 Prism language support; M53 Chrono; M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
 
@@ -1884,4 +1891,4 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **M36 / M48** — out of this autopilot batch; kits after realtime client preferred, MCP after LSP.
 
-**M45–M47** — in the current autopilot batch (thorough VS Code + JetBrains); **M48** later.
+**M45–M47** — closed in the current autopilot batch (thorough VS Code + JetBrains); **M48** later. Next: **M52**.

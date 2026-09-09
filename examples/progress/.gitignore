@@ -7,6 +7,9 @@ venv/
 .ruff_cache/
 .mypy_cache/
 .prism_cache/
+.almasix/
+.vscode/
+.idea/
 storage/framework/views/
 storage/framework/schedule/
 storage/framework/schedule-heartbeat.txt

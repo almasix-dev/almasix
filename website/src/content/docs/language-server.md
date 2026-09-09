@@ -77,25 +77,22 @@ by saving a document. Creating a view via the code action refreshes the index.
 
 ### VS Code / Cursor / VSCodium
 
-Until the official extension ships, a minimal `settings.json` / task:
+Install the official extension from a local VSIX (see [Editor setup](/editor-setup/)):
+
+```bash
+cd editors/vscode && npm install && npm run package
+# Extensions → Install from VSIX… → almasix-*.vsix
+```
+
+Or, until the extension is installed, a minimal `settings.json`:
 
 ```json
 {
-  "almasix.lsp.path": "${workspaceFolder}/.venv/bin/almasix-lsp"
+  "almasix.pythonPath": "${workspaceFolder}/.venv/bin/python"
 }
 ```
 
-Or register a generic LSP client (e.g. [vscode-languageclient](https://github.com/microsoft/vscode-languageserver-node))
-with:
-
-```text
-command: almasix-lsp
-args: []
-filetypes: python, prism-html, html
-root: directory containing bootstrap/app.py
-```
-
-Associate `*.prism.html` with a Prism language id so hover on directives works
+Associate `*.prism.html` with language id `prism-html` so hover on directives works
 (see [Prism language support](/prism-language/)).
 
 ### Neovim (nvim-lspconfig)
@@ -169,4 +166,4 @@ Shipped for day-to-day editing: views, routes, config, translations,
 middleware aliases, find-references for views, and a create-view code action.
 Still on the roadmap: disk / queue / cache / gate / relation / column /
 component completions, Prism structural diagnostics, rename, Starlight-sourced
-hover, and filesystem watchers. Editor packaging is separate.
+hover, and filesystem watchers. Editor packaging is on [Editor setup](/editor-setup/).

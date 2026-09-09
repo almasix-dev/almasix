@@ -1,4 +1,4 @@
-.PHONY: help smoke regression test test-cov test-cov-prism test-cov-lsp test-orm-engines lint docs docs-build
+.PHONY: help smoke regression test test-cov test-cov-prism test-cov-lsp test-cov-ide test-orm-engines lint docs docs-build editors-vscode editors-jetbrains
 
 PYTHON ?= .venv/bin/python
 PYTEST ?= $(PYTHON) -m pytest
@@ -10,10 +10,13 @@ help:
 	@echo "make test-cov           - full suite with coverage fail-under 98% (aim 100%)"
 	@echo "make test-cov-prism  - M6 Prism package coverage fail-under 100%"
 	@echo "make test-cov-lsp       - M46 language server coverage fail-under 98%"
+	@echo "make test-cov-ide       - M47 ide package coverage fail-under 98%"
 	@echo "make test-orm-engines   - M44 dialect conformance (ALMASIX_TEST_DB=sqlite|pgsql|mysql)"
 	@echo "make lint               - ruff check + format --check (pinned)"
 	@echo "make docs               - Starlight docs site (dev server)"
 	@echo "make docs-build         - build Starlight docs site"
+	@echo "make editors-vscode     - package editors/vscode/*.vsix (npx @vscode/vsce)"
+	@echo "make editors-jetbrains  - package JetBrains plugin zip (./gradlew buildPlugin)"
 
 smoke:
 	$(PYTEST) -q tests/smoke -m smoke
@@ -33,6 +36,9 @@ test-cov-prism:
 test-cov-lsp:
 	$(PYTEST) -q tests/test_m46_lsp*.py tests/smoke/test_m46_smoke.py --cov=almasix.lsp --cov-report=term-missing --cov-fail-under=99
 
+test-cov-ide:
+	$(PYTEST) -q tests/test_m47_ide.py tests/smoke/test_m47_smoke.py --cov=almasix.ide --cov-report=term-missing --cov-fail-under=98
+
 # Defaults to SQLite. For Postgres/MySQL set ALMASIX_TEST_DB and the usual DB_*.
 test-orm-engines:
 	$(PYTEST) -q tests/test_m44_conformance.py
@@ -46,3 +52,9 @@ docs:
 
 docs-build:
 	cd website && npm run build
+
+editors-vscode:
+	cd editors/vscode && npm install && npm run package
+
+editors-jetbrains:
+	cd editors/jetbrains && ./gradlew buildPlugin --no-daemon

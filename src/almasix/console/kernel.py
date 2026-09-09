@@ -129,6 +129,14 @@ class ConsoleKernel:
             self.register(LspServeCommand)
         except ImportError:  # pragma: no cover - package always present in-tree
             pass
+        try:
+            from almasix.ide.commands.install import IdeInstallCommand
+            from almasix.ide.commands.stubs import IdeStubsCommand
+
+            self.register(IdeInstallCommand)
+            self.register(IdeStubsCommand)
+        except ImportError:  # pragma: no cover - package always present in-tree
+            pass
 
     def register(self, command_cls: type[Command]) -> None:
         if not command_cls.signature:

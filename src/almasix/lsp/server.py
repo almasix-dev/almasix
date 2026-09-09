@@ -242,6 +242,23 @@ def create_server() -> AlmasixLanguageServer:
             f"{len(ls.index.config_keys)} config keys."
         )
 
+    @server.command("almasix.showAppInfo")
+    def show_app_info(ls: AlmasixLanguageServer, _args: list[Any] | None = None) -> str:
+        index = ls.index
+        if index.error:
+            return index.error
+        message = (
+            f"Almasix app: {index.base_path}\n"
+            f"  views={len(index.views)} routes={len(index.routes)} "
+            f"config={len(index.config_keys)} models={len(index.models)} "
+            f"middleware={len(index.middleware_aliases)} "
+            f"translations={len(index.translation_keys)}"
+        )
+        ls.window_show_message(
+            types.ShowMessageParams(type=types.MessageType.Info, message=message)
+        )
+        return message
+
     @server.command("almasix.createView")
     def create_view(ls: AlmasixLanguageServer, path: str, name: str = "") -> str:
         target = Path(str(path))

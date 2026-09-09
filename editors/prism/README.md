@@ -4,8 +4,9 @@ Editor assets for Almasix **Prism** templates (``.prism.html``): TextMate gramma
 language configuration, snippets, a minimal tree-sitter grammar, and the
 ``smith prism:format`` CLI (library: ``almasix.prism.formatter.format_prism``).
 
-Full packaging into VS Code / JetBrains extensions is **M47**. This directory is
-the shared source those extensions will ship.
+Full packaging into VS Code / JetBrains extensions is under `editors/vscode/`
+and `editors/jetbrains/` (see those READMEs and Starlight **Editor setup**).
+This directory is the shared grammar source those packages sync from.
 
 ## VS Code / Cursor (manual load)
 
