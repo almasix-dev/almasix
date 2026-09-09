@@ -87,9 +87,7 @@ def test_m39_no_milestone_ids_in_user_docs() -> None:
 
 
 def test_m39_version_switcher_in_header() -> None:
-    header = (ROOT / "website" / "src" / "components" / "Header.astro").read_text(
-        encoding="utf-8"
-    )
+    header = (ROOT / "website" / "src" / "components" / "Header.astro").read_text(encoding="utf-8")
     select = (ROOT / "website" / "src" / "components" / "VersionSelect.astro").read_text(
         encoding="utf-8"
     )

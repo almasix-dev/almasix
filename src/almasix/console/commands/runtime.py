@@ -67,9 +67,7 @@ class ServeCommand(Command):
         try:
             workers = 1 if workers_raw is None else int(str(workers_raw))
         except ValueError:
-            self.error(
-                f"Invalid value for '--workers': {workers_raw!r} is not a valid integer."
-            )
+            self.error(f"Invalid value for '--workers': {workers_raw!r} is not a valid integer.")
             return self.INVALID
         if workers < 1:
             self.error("--workers must be at least 1.")

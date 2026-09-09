@@ -200,15 +200,11 @@ def _next_steps(plan: object, root: Path, results: list[StepResult]) -> None:
     if "venv" not in done and "install" not in done:
         lines.append("  python -m venv .venv && source .venv/bin/activate")
         extra = plan.database_info.extra
-        lines.append(
-            f"  pip install -e . {'&& pip install ' + extra if extra else ''}".rstrip()
-        )
+        lines.append(f"  pip install -e . {'&& pip install ' + extra if extra else ''}".rstrip())
     elif "install" not in done:
         lines.append("  source .venv/bin/activate")
         extra = plan.database_info.extra
-        lines.append(
-            f"  pip install -e . {'&& pip install ' + extra if extra else ''}".rstrip()
-        )
+        lines.append(f"  pip install -e . {'&& pip install ' + extra if extra else ''}".rstrip())
     else:
         lines.append("  source .venv/bin/activate")
     if "migrate" not in done:
