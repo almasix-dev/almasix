@@ -178,22 +178,24 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M32** | `smith progress:install` — `almasix new` across four stacks and four databases, the default migrations running, `--stubs` from a published tree |
 | **M33** | `smith progress:routing` — every verb and shape, constraints, groups, resource / singleton routing, model binding, `route()` and signed URLs |
 | **M34** | `smith progress:security` — default security headers, `config/cors.py`, `smith down --secret` with a 503 and a bypass cookie |
+| **M35** | `smith progress:rate-limiting` — `RateLimiter`, `throttle` middleware, login lockout, `/api/throttle-demo` |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M42** | `smith progress:queries` — JSON wheres and updates, `join_sub`, unions, `having_between`, `sole`, locking, `DB.listen` / `pretend` / `after_commit`; `smith db` |
 | **M43** | `smith progress:schema` — the column catalogue, `change()` and the drops, `Schema.rename`, index and foreign-key inspection, `migrate --pretend` / `--step`, all three paginators |
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
-| **M29, M35–M39, M44–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M29, M36–M39, M44–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M28, M30–M34, M40–M43, M49, and M50 are closed — M5's query builder was
+M0–M28, M30–M35, M40–M43, M49, and M50 are closed — M5's query builder was
 exhausted in M42 and its schema layer in M43, M32 gave `almasix new` its
 prompts, its four stacks, and the default migrations Laravel ships and Almasix
-did not, M33 closed routing, and M34 put security headers and CORS on by
-default and finished the HTTP half of `smith down`. Next is **M35 — rate
-limiting**. The board on `/progress` lists the full **M0–M51** roadmap with a
+did not, M33 closed routing, M34 put security headers and CORS on by
+default and finished the HTTP half of `smith down`, and M35 shipped
+cache-backed rate limiting with the `throttle` middleware and login lockout.
+Next is **M36 — starter kits**. The board on `/progress` lists the full **M0–M51** roadmap with a
 status and proof for each milestone.
 ## CLI
 
@@ -210,6 +212,7 @@ smith progress:schema
 smith progress:install
 smith progress:routing
 smith progress:security
+smith progress:rate-limiting
 smith progress:cache
 smith progress:redis
 smith progress:encryption

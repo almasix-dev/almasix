@@ -27,6 +27,8 @@ from almasix.http.response import (
     redirect,
 )
 from almasix.http.cors import HandleCors, cors_settings
+from almasix.http.rate_limiting import Limit, RateLimiter, parse_rate
+from almasix.http.throttle import ThrottleRequests
 from almasix.http.maintenance import (
     PreventRequestsDuringMaintenance,
     clear_marker,
@@ -64,12 +66,15 @@ __all__ = [
     "NotFoundHttpException",
     "PreventRequestsDuringMaintenance",
     "SecurityHeaders",
+    "RateLimiter",
     "Redirect",
+    "Limit",
     "Request",
     "Response",
     "ResponseFactory",
     "ServiceUnavailableHttpException",
     "TooManyRequestsHttpException",
+    "ThrottleRequests",
     "TrustHosts",
     "UnauthorizedHttpException",
     "UnprocessableEntityHttpException",
@@ -83,6 +88,7 @@ __all__ = [
     "html",
     "json",
     "make_response",
+    "parse_rate",
     "redirect",
     "request",
     "response",

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from almasix.auth.login_throttle import LoginRateLimiter, attempt_login
 from almasix.auth.access import (
     AccessGate,
     Authorizable,
@@ -73,6 +74,7 @@ __all__ = [
     "Guard",
     "HandlesAuthorization",
     "Login",
+    "LoginRateLimiter",
     "Logout",
     "MemoryUserProvider",
     "OtherDeviceLogout",
@@ -86,6 +88,7 @@ __all__ = [
     "TokenGuard",
     "UserProvider",
     "Validated",
+    "attempt_login",
     "auth",
     "authorize",
     "dispatch",

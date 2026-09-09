@@ -46,10 +46,12 @@ class Middleware:
         web = self._groups.setdefault("web", [])
         if "security.headers" not in web:
             web.insert(0, "security.headers")
+        self._groups.setdefault("api", [])
         self._aliases: dict[str, Any] = {
             **FRAMEWORK_ALIASES,
             **dict(http.get("middleware_aliases") or {}),
         }
+        self._api_limiter: str | None = None
         self._trusted_proxies: list[str] | str | None = http.get("trusted_proxies")
         self._trusted_headers: int = int(
             http.get("trusted_headers", HEADER_X_FORWARDED_ALL) or HEADER_X_FORWARDED_ALL
@@ -113,6 +115,20 @@ class Middleware:
         if append:
             current = [*current, *list(append)]
         self._groups[name] = current
+        return self
+
+    def throttle_api(self, limiter: str = "api") -> Self:
+        """Attach ``throttle:<limiter>`` to the ``api`` group (Laravel ``throttleApi``).
+
+        Register the named limiter in a service provider first::
+
+            RateLimiter.for_("api", lambda request: Limit.per_minute(60).by(...))
+        """
+        self._api_limiter = str(limiter or "api")
+        api = self._groups.setdefault("api", [])
+        name = f"throttle:{self._api_limiter}"
+        if name not in api and "throttle" not in api:
+            api.insert(0, name)
         return self
 
     def trust_proxies(

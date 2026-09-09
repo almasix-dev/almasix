@@ -21,6 +21,7 @@ FRAMEWORK_ALIASES: dict[str, str] = {
     "url.defaults": "almasix.routing.middleware.SetUrlDefaults",
     "security.headers": "almasix.http.security.SecurityHeaders",
     "maintenance": "almasix.http.maintenance.PreventRequestsDuringMaintenance",
+    "throttle": "almasix.http.throttle.ThrottleRequests",
 }
 
 

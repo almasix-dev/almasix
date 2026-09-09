@@ -48,6 +48,8 @@ def configure_middleware(middleware: Middleware) -> None:
         append=["locale"],
     )
     middleware.api(prepend=["auth.start"], append=["locale", "demo.tag"])
+    # Rate limiting is opt-in per route / via middleware.throttle_api() (M35).
+    # The named `api` and `progress` limiters are registered in AppServiceProvider.
 
 
 application = (

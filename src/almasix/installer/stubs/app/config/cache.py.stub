@@ -4,6 +4,8 @@ from almasix.config import env
 
 config = {
     "default": env("CACHE_STORE", "file"),
+    # Optional dedicated store for RateLimiter / throttle (Laravel `limiter`).
+    "limiter": env("CACHE_LIMITER_STORE", None),
     "prefix": env("CACHE_PREFIX", "almasix_cache_"),
     "stores": {
         "array": {"driver": "array"},

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from almasix.auth import auth
+from almasix.auth import attempt_login, auth
 from almasix.prism import view
 from almasix.hashing import Hash
 from almasix.http import Controller, Request, Response, redirect
@@ -28,8 +28,9 @@ class AuthController(Controller):
             request.session.flash("error", "Email and password are required.")
             return redirect("/login")
 
-        ok = await auth().attempt(
+        ok = await attempt_login(
             {"email": email, "password": password},
+            request=request,
             remember=remember,
         )
         if not ok:
