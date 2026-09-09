@@ -941,7 +941,7 @@ See [`PLAN.md`](PLAN.md) M46. LSP wire-protocol conformance suite in CI.
 
 ## M47 — VS Code + JetBrains integrations (planned)
 
-See [`PLAN.md`](PLAN.md) M47. Marketplace / Open VSX / JetBrains artifacts; parity matrix; `smith ide:install` + stubs.
+See [`PLAN.md`](PLAN.md) M47. **Local-first:** CI builds `.vsix` + JetBrains `.zip`; sideload install; Marketplace publish later when accounts exist. LSP-first PyCharm shell.
 
 ## M52 — First-party realtime client (planned)
 

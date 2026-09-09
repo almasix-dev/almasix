@@ -1606,41 +1606,44 @@ One LSP server, so every editor benefits from one implementation instead of each
 
 The packaging layer — what a developer actually installs — plus the typing work that makes Almasix's *own* API complete under a type checker. **Bar:** opening an Almasix app in **VS Code / Cursor / VSCodium** or **PyCharm / IntelliJ with Python** feels as supported as Laravel + Laravel Idea / the official Laravel VS Code extension — not a README with “point your LSP client at X.”
 
+#### Local-first, publish later (decided 2026-09-10)
+
+Publisher accounts for Visual Studio Marketplace / Open VSX / JetBrains Marketplace are **not** required to close M47. Develop and QA by **sideloading**:
+
+- VS Code family: `vsce package` → install the `.vsix` (Extensions → Install from VSIX…). Cursor / VSCodium same path; Open VSX publish waits until an account exists.
+- JetBrains: Gradle `buildPlugin` → **Install Plugin from Disk…** on the `.zip`. Marketplace upload waits until an account exists.
+
+CI must still **build** those artifacts on every IDE-track change so publish is a later upload, not a rewrite. Starlight documents sideload first; marketplace badges land when listings go live (follow-up, not a gate).
+
 #### VS Code family (VS Code, Cursor, VSCodium)
 
-- **Published extension** on the **Visual Studio Marketplace** and **Open VSX** (Cursor / VSCodium consume Open VSX)
-- Bundles TextMate grammar, snippets, language configuration, and the **LSP client** wired to `almasix-lsp` from the project venv (with a clear status-bar error if the server binary / module is missing)
+- Extension project in-repo (or sibling package) producing a installable `.vsix`
+- Bundles TextMate grammar, snippets, language configuration, and the **LSP client** wired to `almasix-lsp` from the project venv (clear status-bar error if missing)
 - Prism language mode: highlighting, folding, comment toggle, Emmet in markup, format-on-save via `smith prism:format` / LSP formatting
-- Command palette: run common Smith commands, open `routes/*.py`, clear / rebuild LSP index, “Almasix: Show application info”
-- Debug: checked-in / generated `launch.json` snippets for `smith serve`, `smith queue:work`, pytest
-- Tasks: migrate, test, serve
-- Optional Prism inheritance preview (resolved `@extends` / sections) — ship if stable; otherwise named deferred inside M47 notes, not silently dropped
-- Settings: docs-linked defaults; trust workspace prompts documented
-- CI: extension package builds; smoke that activates against `examples/progress`
+- Command palette: common Smith commands, open `routes/*.py`, rebuild LSP index, “Almasix: Show application info”
+- Debug / tasks: `launch.json` + tasks for `smith serve`, `smith queue:work`, migrate, pytest
+- Optional Prism inheritance preview — ship if stable; else named deferred in M47 notes
+- CI: package `.vsix`; smoke activation against `examples/progress`
 
 #### JetBrains (PyCharm Professional / Community, IntelliJ + Python)
 
-- **Published plugin** on the **JetBrains Marketplace**
-- Prism **file type** + highlighter (TextMate import or native), directive completion, commenter, formatter integration
-- Same string-key completions / navigation as the LSP (prefer speaking LSP from the plugin; reimplement only where the platform requires it — document which)
-- Smith **run configurations** and **New…** generators for `make:controller`, `make:model`, `make:migration`, `make:command`, `make:channel`, etc.
-- Inspections mirroring LSP diagnostics (unknown view / route / config) so PyCharm users are not second-class
-- Debugger: templates for serve / queue / tests
-- CI: plugin builds on a supported IDE version matrix; basic UI-less tests where the Platform allows
+- **Architecture (decided):** **LSP-first** — the plugin is a thin Platform shell (Prism file type, highlighter, run configurations, New… generators, settings) that **runs `almasix-lsp`** for completions / diagnostics / navigation. Reimplement on native APIs only where LSP cannot express the UX; document any native-only pieces in the parity matrix. Avoid a second full intelligence stack.
+- Plugin project producing an installable `.zip` via Gradle
+- Smith **run configurations** and **New…** for `make:controller`, `make:model`, `make:migration`, `make:command`, `make:channel`, etc.
+- Debugger templates for serve / queue / tests
+- CI: `buildPlugin` on a supported IDE version; UI-less tests where the Platform allows
 
 #### Shared / other editors
 
-- **`smith ide:stubs`** — `.pyi` for model columns (migrations + live schema), façade proxies, config key literals, route name unions (laravel-ide-helper analogue)
-- **`smith ide:install`** — detect editors/agents present and write config (extensions recommendations, LSP client config, stub paths) in one command
-- **Type-checker plugins** (mypy + pyright/pylance): `Model.query()` generic in the model, cast-aware attributes, relation descriptors → related model / collection
-- **Generic LSP recipes** for Neovim, Zed, Helix, Sublime — documented and CI-checked so they cannot rot
-- Starlight **Editor setup** page (no milestone IDs): install both ecosystems from zero
+- **`smith ide:stubs`** — `.pyi` for model columns (migrations + live schema), façade proxies, config key literals, route name unions
+- **`smith ide:install`** — write local editor config + recommend / path-to the sideload artifacts (and later marketplace IDs when published)
+- **Type-checker plugins** (mypy + pyright/pylance): `Model.query()` generic in the model, cast-aware attributes, relation descriptors
+- **Generic LSP recipes** for Neovim, Zed, Helix, Sublime — documented and CI-checked
+- Starlight **Editor setup**: sideload VS Code + PyCharm from zero; marketplace section marked “when published”
 
 **Depends on:** M45, M46. `ide:stubs` also depends on M43 (schema inspection).
 
-**Gate:** fresh `almasix new` → working Prism + completions in **both** VS Code-family and PyCharm with `smith ide:install` (or one documented click-install path); Marketplace / Open VSX / JetBrains listing artifacts buildable in CI; stubs verified by a type-check test that fails if the dynamic surface drifts; feature parity matrix published (VS Code vs PyCharm) with no silent gaps — any gap is named in PLAN/SMOKE.
-
-**Discuss before shipping if:** Marketplace publisher accounts, paid JetBrains verification, or LSP-vs-native PyCharm architecture needs a product call — stop and ask rather than shipping a half plugin.
+**Gate (M47):** fresh `almasix new` → working Prism + completions in **both** VS Code-family and PyCharm via **local install** (`smith ide:install` and/or documented VSIX / Install from Disk); CI produces `.vsix` + JetBrains `.zip`; stubs type-check test; VS Code ↔ PyCharm parity matrix with no silent gaps. **Not required for M47:** live Marketplace / Open VSX / JetBrains listings (tracked as publish follow-up once accounts exist).
 
 ### M48 — AI agent support (MCP server + guidelines)
 
@@ -1784,8 +1787,8 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 | 1 | **M53** Carbon-class dates | Fluent date type + helpers + docs + `progress:dates` + smoke | — (provisional name OK) |
 | 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | — |
 | 3 | **M46** `almasix-lsp` | Full LSP surface + wire-protocol conformance CI | — |
-| 4 | **M47** VS Code + JetBrains | Marketplace-ready extension + plugin, stubs, `ide:install`, parity matrix | Publisher accounts / JetBrains vs LSP architecture / paid listing |
-| 5 | **M52** First-party realtime client | Default = Almasix server + first-party JS client; Pusher/Ably documented as alternatives | Client package name |
+| 4 | **M47** VS Code + JetBrains | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | — (marketplace publish is post-gate) |
+| 5 | **M52** First-party realtime client | Default = Almasix server + first-party JS client; Pusher/Ably alternatives | — if package name pre-decided; else provisional OK |
 | — | **Later** | M36, M48, Socialite, Passport, client API keys, … | Not in this batch |
 
 ### Per-milestone checklist (non-negotiable)
@@ -1796,6 +1799,16 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 4. Starlight user docs (no milestone IDs); PLAN/SMOKE in sync
 5. Lint green; do not weaken CI to pass
 6. Commit + PR + wait for green CI, then continue to the next row immediately
+
+### Decisions locked for this batch (2026-09-10)
+
+| Topic | Decision |
+| --- | --- |
+| Marketplace accounts | **Not blocking.** Sideload locally / from CI artifacts; publish when accounts exist |
+| PyCharm architecture | **LSP-first** thin shell + `almasix-lsp`; native only where required |
+| Realtime default | Almasix socket server + first-party JS client; Pusher.js / Ably optional |
+| Carbon-class name | Provisional OK at start of M53 (rename before tag if needed) |
+| Realtime client package name | Provisional OK at start of M52 (e.g. `@almasix/realtime`) |
 
 ### Autopilot rules
 
