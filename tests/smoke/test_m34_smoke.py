@@ -42,7 +42,7 @@ def test_m34_demo_command_covers_headers_cors_and_maintenance() -> None:
         "X-Content-Type-Options       nosniff",
         "X-Frame-Options              SAMEORIGIN",
         "csp_nonce()",
-        "paths              -> ['api/*', 'sanctum/csrf-cookie']",
+        "paths              -> ['api/*', 'signet/csrf-cookie']",
         "'secret': 'demo-secret'",
         "'retry': 60",
         "marker after up     -> gone",

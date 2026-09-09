@@ -2,11 +2,11 @@
 
 > **Status:** Binding. This document is the source of truth for architecture and milestones.
 > Change it deliberately (PR / explicit decision), not casually mid-implementation.
-> Last aligned: 2026-09-09 (**Laravel 13** is the parity reference; user-facing docs are
+> Last aligned: 2026-09-10 (**Laravel 13** is the parity reference; user-facing docs are
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
-> closed; package line **0.5.0** ready to tag; **M39** docs journey + Prologue
-> closed; stability track continues with M37).
+> closed; package line **0.5.0** published; **M39** docs journey + Prologue closed;
+> **M37** Signet-class tokens closed; stability track continues with M52).
 
 ## Working identity
 
@@ -850,14 +850,14 @@ Eloquent-shaped Active Record on SQLAlchemy Core — see the ORM decision above 
 | Item | Home |
 | --- | --- |
 | Starter-kit auth UI (Breeze-class scaffolds) | Starter kits (**M36**) |
-| Sanctum / Passport / Socialite | First-party packages (**M37**) |
+| Signet / Passport / Socialite | First-party packages (**M37**) |
 | Authorization (Gates / Policies) | **M19** (Laravel’s separate Authorization docs) |
 | Email verification | **M13** notifications (+ mail channel) |
 | Real outbound reset mail | **M12** mail / **M13** notifications — broker + token API ships now |
 
 **Gate:** ladder exhausted, Auth/Hashing/Passwords docs published, progress uses real credentials, coverage ≥ 98% (auth + hashing + passwords packages aim 100%).
 
-**Status (M7):** Ladder shipped — session/CSRF/EncryptCookies; `Hash` (bcrypt + optional `argon2`/`argon2id`); session + token guards (`attempt`/`login`/`logout`/`once*`/`login_using_id`, remember-me **Set-Cookie**, rehash-on-login); `auth`/`guest`/`password.confirm`/`auth.basic`/`auth.start`; `Request.user()`; intended URL; auth events; `Password` broker (memory + optional DB table); catalogs; scaffold `config/auth.py` + `config/hashing.py`; Starlight Authentication/Hashing/Passwords; progress login + `/api/me`. **Deferred by design:** Sanctum/Passport/Socialite; Gates/Policies → **M19**; email verification → **M13**; outbound reset mail → **M12**/**M13**.
+**Status (M7):** Ladder shipped — session/CSRF/EncryptCookies; `Hash` (bcrypt + optional `argon2`/`argon2id`); session + token guards (`attempt`/`login`/`logout`/`once*`/`login_using_id`, remember-me **Set-Cookie**, rehash-on-login); `auth`/`guest`/`password.confirm`/`auth.basic`/`auth.start`; `Request.user()`; intended URL; auth events; `Password` broker (memory + optional DB table); catalogs; scaffold `config/auth.py` + `config/hashing.py`; Starlight Authentication/Hashing/Passwords; progress login + `/api/me`. **Deferred by design:** Signet/Passport/Socialite; Gates/Policies → **M19**; email verification → **M13**; outbound reset mail → **M12**/**M13**.
 
 ### M8 — Error handling (`almasix.exceptions` + `almasix.log`)
 
@@ -1422,17 +1422,21 @@ Laravel [Starter Kits](https://laravel.com/docs/starter-kits) — opt-in applica
 
 ### M37 — API tokens, OAuth, and social auth
 
-First-party packages in Laravel: [Sanctum](https://laravel.com/docs/sanctum), [Passport](https://laravel.com/docs/passport), [Socialite](https://laravel.com/docs/socialite).
+First-party packages in Laravel: [Sanctum](https://laravel.com/docs/sanctum), [Passport](https://laravel.com/docs/passport), [Socialite](https://laravel.com/docs/socialite). Almasix ships the Sanctum-class surface as **Signet**.
 
-- **Sanctum-class** first: personal access tokens, ability scopes, SPA cookie auth, `auth:api` guard
-- **Socialite-class** provider abstraction (OAuth2 redirect / callback / user mapping) with a couple of real providers
-- **Passport-class** full OAuth2 server evaluated on demand — heavier, may stay an optional extra
-- Shipped as optional extras (`almasix[tokens]`, …) following M29 package guidelines
-- Docs: Starlight page per shipped package
+**Status: Signet-class complete (2026-09-10).** Socialite / Passport remain named deferred.
 
-**Depends on:** M7 auth, M19 authorization, M20 HTTP client (Socialite), M29 guidelines.
+- **Signet-class (shipped):** `almasix.signet` / `almasix[tokens]` — `HasApiTokens`, `personal_access_tokens`, hashed PATs (`{id}|secret`), abilities + `abilities` / `ability` middleware, `auth:signet` guard (SPA session first, then Bearer), `GET /signet/csrf-cookie`, `middleware.stateful_api()`, `signet:prune-expired`, `Signet.acting_as` for tests, Starlight **API Tokens**
+- **Explicitly out of scope for Signet:** client-credentials / application API keys **not tied to a user** — separate surface later; do not stretch PATs into machine clients
+- **Socialite-class** provider abstraction (OAuth2 redirect / callback / user mapping) — deferred
+- **Passport-class** full OAuth2 server — deferred / on demand
+- Living example: `smith progress:tokens`; `GET /api/user` + `POST /api/signet/token`
 
-**Gate:** tokens exhausted and used by the M36 API kit; social auth proven with at least two providers; anything unshipped named explicitly.
+**Depends on:** M7 auth, M19 authorization (abilities pair with policies), M20 HTTP client (Socialite later).
+
+**Gate (Signet half):** tokens exhausted with progress proof + smoke + docs; Socialite / Passport / client API keys named explicitly as unshipped.
+
+**Deliberate deviations:** `PersonalAccessToken.find_token` is async (Articulate queries are async); morph aliases auto-register on `create_token` so short class names resolve without a global morph map.
 
 ### M38 — Deployment + production ops
 
@@ -1670,7 +1674,7 @@ Not milestones — outstanding pages for code that already shipped (write for be
 
 ### Later (still deferred)
 
-Everything that had a foreseeable shape has been promoted to **M30–M52** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
+Everything that had a foreseeable shape has been promoted to **M30–M53** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
 
 - Additional NoSQL engines beyond Mongo (Cosmos API, Dynamo-shaped, …) — same M25 store abstraction; exhaust per driver when demanded
 - Full Prism advanced parity — an ongoing **M6 track** by design, not a one-shot milestone
@@ -1717,6 +1721,22 @@ Laravel ships [Echo](https://laravel.com/docs/13.x/broadcasting#client-side-inst
 
 **Gate:** `npm`/`pnpm` installable client; smoke proves subscribe + private channel; docs teach it from zero.
 
+## Dates and time (M53)
+
+### M53 — Carbon-class dates + date/time helpers
+
+Laravel's [Carbon](https://carbon.nesbot.com/) (and the framework's date helpers) is how apps reason about instants, intervals, and human strings without fighting `datetime`. Almasix today has a thin clock (`now` / `today` / `set_test_now` in support helpers) — not a manipulation library.
+
+- First-party Carbon-class type (working name TBD) — immutable-friendly fluent API over aware datetimes: parse, add/sub, start/end of period, compare, diff for humans, format localization hooks
+- Test time travel that freezes / travels / returns (`set_test_now` grows into the Carbon-class surface; existing helpers remain thin aliases)
+- Extend support helpers with the Laravel date/time helper set worth porting (`now`, `today`, and peers once the library exists)
+- Starlight page (no milestone IDs); living example `smith progress:dates` (or extend `progress:helpers`)
+- Progress board marks M53 complete with proof naming the demo
+
+**Depends on:** M50 helpers (clock primitives already ship).
+
+**Gate:** library + helpers exhausted with progress proof + smoke + docs; coverage ≥ 98% on the new package.
+
 ## Follow-up plan (binding — 2026-09-09)
 
 Recorded from product direction after M35:
@@ -1738,9 +1758,10 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 | 3 | ~~**M51** — Lint / format gate~~ **complete** | CI that matches README claims |
 | 4 | ~~**M38** — Deployment + production ops~~ **complete** (0.4.0 on PyPI; 0.5.0 ready to tag) | Installable, operable release |
 | 5 | ~~**M39** — Docs journey rewrite + Prologue~~ **complete** | Users can learn the framework without insider context |
-| 6 | **M37** — API tokens (Sanctum-class first) | Production auth for API / SPA |
+| 6 | ~~**M37** — API tokens (Signet-class first)~~ **complete** (Socialite / Passport / client API keys deferred) | Production auth for API / SPA / mobile |
 | 7 | **M52** — Echo-class client | Completes broadcasting for real apps |
-| 8 | **M36** — Starter kits | Growth — after tokens + client exist to wire into kits |
+| 8 | **M53** — Carbon-class dates + helpers | Everyday date math without ad-hoc `datetime` |
+| 9 | **M36** — Starter kits | Growth — after tokens + client exist to wire into kits |
 
 **Still one-at-a-time:** finish the current row’s gate (code + progress proof + smoke + user docs without milestone IDs) before starting the next.
 
@@ -1758,9 +1779,9 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**Suggested next:** **M37 — API tokens (Sanctum-class first)**. Confirm before starting.
+**Suggested next:** **M52 — Echo-class browser client**. Confirm before starting. **M53** (Carbon-class dates) is scheduled after M52 unless you want dates sooner.
 
-**Recently closed:** M39 docs journey + Prologue; M38 deployment + production ops (0.5.0 package line ready); M51 lint/format gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
+**Recently closed:** M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
 
 **M39** — Prologue published; Basics teaching order; no milestone IDs in Starlight; header version switcher is **latest major** + `main` (never defaulting to `main`) with an older-docs banner when not on latest.
 

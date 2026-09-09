@@ -335,6 +335,10 @@ class AuthManager:
                 input_key=str(spec.get("input_key") or "api_token"),
                 storage_key=str(spec.get("storage_key") or "api_token"),
             )
+        if driver == "signet":
+            from almasix.signet.guard import SignetGuard
+
+            return SignetGuard(name, provider, manager=self)
         return Guard(name, provider)
 
     def _resolve_provider(self, name: str) -> Any | None:

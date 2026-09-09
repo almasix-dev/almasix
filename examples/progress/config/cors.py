@@ -6,7 +6,7 @@ does not sprout `Access-Control-Allow-Origin`. Defaults match Laravel's
 """
 
 config = {
-    "paths": ["api/*", "sanctum/csrf-cookie"],
+    "paths": ["api/*", "signet/csrf-cookie"],
     "allowed_methods": ["*"],
     "allowed_origins": ["*"],
     "allowed_origins_patterns": [],

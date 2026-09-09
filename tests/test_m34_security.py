@@ -204,7 +204,7 @@ def test_cors_path_patterns(pattern: str, path: str, matches: bool) -> None:
 def test_cors_settings_merge_onto_the_defaults() -> None:
     assert cors_settings({"allowed_origins": ["https://a.test"]})["paths"] == [
         "api/*",
-        "sanctum/csrf-cookie",
+        "signet/csrf-cookie",
     ]
     assert cors_settings()["allowed_origins"] == ["*"]
 

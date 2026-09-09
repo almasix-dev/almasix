@@ -67,6 +67,19 @@ class StartAuth(Middleware):
                     # Soft-fail: missing schema / provider errors must not 500 public routes
                     # that happen to send Authorization (M2 demo Bearer on /api/items/…).
                     await _safe_resolve(lambda g=guard, t=token: g.set_user_from_request_token(t))
+            from almasix.signet.guard import SignetGuard
+
+            if isinstance(guard, SignetGuard):
+                session_guard = None
+                try:
+                    candidate = manager.guard("web")
+                    if isinstance(candidate, SessionGuard):
+                        session_guard = candidate
+                except Exception:
+                    session_guard = None
+                await _safe_resolve(
+                    lambda g=guard, r=request, s=session_guard: g.hydrate(r, session_guard=s)
+                )
             if guard._via_request is not None and guard.guest():
                 try:
                     resolved = guard._via_request(request)
