@@ -31,10 +31,21 @@ class Middleware:
         self._config = config
         http = dict(config.get("http", {}) or {})
         self._global = list(http.get("middleware") or [])
+        # Maintenance is global by default — an application that wants traffic
+        # during `smith down` removes it with `middleware.use([...])` or by
+        # listing every other global middleware without it.
+        if "maintenance" not in self._global:
+            self._global.insert(0, "maintenance")
         groups = http.get("middleware_groups") or {}
         self._groups: dict[str, list[Any]] = {
             str(name): list(members or []) for name, members in dict(groups).items()
         }
+        # Security headers ride the web stack by default. API responses that
+        # want them opt in; a JSON API that never embeds in a page usually
+        # does not need X-Frame-Options.
+        web = self._groups.setdefault("web", [])
+        if "security.headers" not in web:
+            web.insert(0, "security.headers")
         self._aliases: dict[str, Any] = {
             **FRAMEWORK_ALIASES,
             **dict(http.get("middleware_aliases") or {}),

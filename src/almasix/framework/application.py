@@ -95,9 +95,13 @@ class Application:
         set_repository(self.config)
 
     def apply_middleware_callbacks(self) -> None:
-        """Run ``with_middleware`` callbacks against ``config/http`` (Laravel 11 shape)."""
-        if not self._middleware_callbacks:
-            return
+        """Run ``with_middleware`` callbacks against ``config/http`` (Laravel 11 shape).
+
+        Always constructs the configurator, even with no callbacks — that is
+        what seeds the framework's own defaults (`maintenance`,
+        `security.headers`) into an application that never opened
+        `bootstrap/app.py`.
+        """
         configurator = Middleware(self.config)
         for callback in self._middleware_callbacks:
             callback(configurator)

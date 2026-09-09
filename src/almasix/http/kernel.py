@@ -164,6 +164,14 @@ class HttpKernel:
             # Starlette middleware runs before the router, which is the whole
             # point: the verb has to be right by the time a path is matched.
             asgi.add_middleware(SpoofMethodASGI)
+            # CORS sits outside the router so a preflight OPTIONS never has to
+            # match a route. Paths that are not listed in config/cors.py pass
+            # straight through without Access-Control headers.
+            cors = self.app.config.get("cors")
+            if cors is not False:
+                from almasix.http.cors import HandleCors
+
+                asgi.add_middleware(HandleCors, settings=dict(cors or {}))
 
         from almasix.http.subpath import mount_asgi
 

@@ -859,6 +859,30 @@ pytest -q tests/test_m50_*.py tests/smoke/test_m50_smoke.py
 
 ---
 
+## M34 — Security headers + CORS
+
+```bash
+pytest -q tests/test_m34_*.py tests/smoke/test_m34_smoke.py
+```
+
+### M34 exit criteria
+
+- [x] Security headers on the web stack by default: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `X-XSS-Protection`, `Permissions-Policy`
+- [x] API routes do not get those headers unless opted in
+- [x] CSP and HSTS are opt-in; `{nonce}` is replaced per request; `csp_nonce()` works in Prism
+- [x] `config/cors.py` ships in the scaffold with Laravel-shaped defaults; paths outside `paths` stay quiet
+- [x] `cors = False` disables the middleware
+- [x] `maintenance` is on the global stack and `security.headers` on web even without `bootstrap/app.py`
+- [x] `smith down` writes a JSON marker with `--secret` / `--with-secret` / `--retry` / `--refresh` / `--redirect` / `--render` / `--status`
+- [x] While down: 503 with `Retry-After`, or a redirect, or a rendered view; `?secret=` sets a bypass cookie
+- [x] The M31 plaintext `down` marker still means down
+- [x] `smith up` clears the marker
+- [x] Living example: `smith progress:security`; board marks M34 complete
+- [x] Docs: Starlight **Security headers & CORS**
+- [x] Deviations named: headers off API by default; CSP/HSTS opt-in
+
+---
+
 ## M33 — Routing DX + named routes
 
 ```bash

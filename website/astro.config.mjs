@@ -97,6 +97,7 @@ export default defineConfig({
 						{ label: 'Routing', slug: 'routing' },
 						{ label: 'Middleware', slug: 'middleware' },
 						{ label: 'CSRF Protection', slug: 'csrf' },
+						{ label: 'Security headers & CORS', slug: 'security' },
 						{ label: 'Controllers', slug: 'controllers' },
 						{ label: 'Requests', slug: 'requests' },
 						{ label: 'Responses', slug: 'responses' },
