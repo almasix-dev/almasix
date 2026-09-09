@@ -1,4 +1,4 @@
-.PHONY: help smoke regression test test-cov test-cov-prism test-orm-engines lint docs docs-build
+.PHONY: help smoke regression test test-cov test-cov-prism test-cov-lsp test-orm-engines lint docs docs-build
 
 PYTHON ?= .venv/bin/python
 PYTEST ?= $(PYTHON) -m pytest
@@ -9,6 +9,7 @@ help:
 	@echo "make test               - full unit + smoke suite (no coverage)"
 	@echo "make test-cov           - full suite with coverage fail-under 98% (aim 100%)"
 	@echo "make test-cov-prism  - M6 Prism package coverage fail-under 100%"
+	@echo "make test-cov-lsp       - M46 language server coverage fail-under 98%"
 	@echo "make test-orm-engines   - M44 dialect conformance (ALMASIX_TEST_DB=sqlite|pgsql|mysql)"
 	@echo "make lint               - ruff check + format --check (pinned)"
 	@echo "make docs               - Starlight docs site (dev server)"
@@ -28,6 +29,9 @@ test-cov:
 
 test-cov-prism:
 	$(PYTEST) -q tests/test_m6_*.py tests/smoke/test_m6_smoke.py --cov=almasix.prism --cov-report=term-missing --cov-fail-under=100
+
+test-cov-lsp:
+	$(PYTEST) -q tests/test_m46_lsp*.py tests/smoke/test_m46_smoke.py --cov=almasix.lsp --cov-report=term-missing --cov-fail-under=99
 
 # Defaults to SQLite. For Postgres/MySQL set ALMASIX_TEST_DB and the usual DB_*.
 test-orm-engines:

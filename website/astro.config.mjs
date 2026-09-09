@@ -215,6 +215,7 @@ export default defineConfig({
 						{ label: 'Including Subviews', slug: 'prism/includes' },
 						{ label: 'Stacks & Directives', slug: 'prism/stacks' },
 						{ label: 'Language support', slug: 'prism-language' },
+						{ label: 'Language server', slug: 'language-server' },
 					],
 				},
 				{

@@ -123,6 +123,12 @@ class ConsoleKernel:
     def discover_framework_commands(self) -> None:
         """Register the commands Almasix itself ships — no application needed."""
         self._load_package("almasix.console.commands")
+        try:
+            from almasix.lsp.commands.serve import LspServeCommand
+
+            self.register(LspServeCommand)
+        except ImportError:  # pragma: no cover - package always present in-tree
+            pass
 
     def register(self, command_cls: type[Command]) -> None:
         if not command_cls.signature:

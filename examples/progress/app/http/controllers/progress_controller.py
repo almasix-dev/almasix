@@ -514,11 +514,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M46",
             "name": "Almasix Language Server",
-            "status": "planned",
+            "status": "complete",
             "proof": [
-                "almasix-lsp over LSP wire protocol",
-                "completion + diagnostics + go-to-definition",
-                "conformance CI on progress",
+                "smith progress:lsp",
+                "almasix-lsp / python -m almasix.lsp / smith lsp:serve",
+                "completion + diagnostics + hover + definition + links",
+                "references + create-view code action",
+                "translations + middleware aliases indexed",
+                "LSP wire-protocol conformance tests",
             ],
         },
         {

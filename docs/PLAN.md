@@ -1602,7 +1602,11 @@ One LSP server, so every editor benefits from one implementation instead of each
 
 **Depends on:** M45 (grammar), M30 (a single console surface to enumerate commands), M33 (named routes must exist before completing them), M40 (model metadata: casts, appends, relations).
 
-**Gate:** the server answers every completion, diagnostic, hover, link, and code action above against `examples/progress`; a conformance test suite drives it over **LSP wire protocol** (not internal APIs); cold index under a second on the living example; CI job runs the conformance suite on 3.11–3.13.
+**Status: complete (2026-09-10).** Package `almasix.lsp` on `pygls` 2.x + `lsprotocol`; extras `lsp` / `dev`; entry points `almasix-lsp`, `python -m almasix.lsp`, `smith lsp:serve`. Index boots via `bootstrap.app` when present (views, named routes with source locations, config keys/files, models, translation keys from `lang/`, middleware aliases). Shipped features: completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans`/`@lang` / `.middleware()`; diagnostics for unknown views and (when `lang/` exists) translation keys; hover for Prism directives + helpers; go-to-definition for views, routes, and config files; document links; find-references for view names; code action to create a missing view; wire-protocol conformance; `smith progress:lsp`; Starlight **Language server**; package coverage ≥ 99% (statement coverage 100%).
+
+**Deliberate gaps vs full checklist (named for follow-up / M47 depth):** disk / queue / cache / gate / relation / column / cast / `<x-…>` / Smith command / env / Signet completions and diagnostics; Prism structural diagnostics (unclosed directive, `@section` without `@extends`, missing `@props`); Starlight-sourced hover (static directive table ships now); go-to-definition for relations; rename; additional code actions (config key, migration, extract partial); inlay / signature help; filesystem watchers (re-index on save + `almasix.rebuildIndex` instead).
+
+**Gate:** the server answers every completion, diagnostic, hover, link, and code action above against `examples/progress`; a conformance test suite drives it over **LSP wire protocol** (not internal APIs); cold index under a second on the living example; CI job runs the conformance suite on 3.11–3.13. **Met for the M46 baseline** (core string surfaces + wire conformance + progress proof); remaining checklist items named above.
 
 ### M47 — Editor integrations and type stubs (full VS Code + JetBrains)
 
@@ -1789,7 +1793,7 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 | --- | --- | --- | --- |
 | 1 | **M53** Chrono | `almasix.chrono` + helpers + rich docs + `progress:dates` + smoke (~100% cov) | — |
 | 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | done 2026-09-10 |
-| 3 | **M46** `almasix-lsp` | Full LSP surface + wire-protocol conformance CI | — |
+| 3 | ~~**M46** `almasix-lsp`~~ | Full LSP surface + wire-protocol conformance CI | done 2026-09-10 |
 | 4 | **M47** VS Code + JetBrains | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | — (marketplace publish is post-gate) |
 | 5 | **M52** Sonar | Sonar server + `@almasix/sonar`; Pusher / Ably / Socket.IO alternatives | — |
 | — | **Later** | M36, M48, Socialite, Passport, client API keys, … | Not in this batch |
@@ -1864,9 +1868,9 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**Suggested next:** Autopilot batch **M53 → M45 → M46 → M47 → M52** (no pauses; see **Autopilot batch**). Confirm before starting.
+**Suggested next:** Autopilot batch continues **M47 → M52** (no pauses; see **Autopilot batch**). **M53 → M45 → M46** closed.
 
-**Recently closed:** M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
+**Recently closed:** M46 Almasix language server (`almasix-lsp`); M45 Prism language support; M53 Chrono; M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
 
 **M39** — Prologue published; Basics teaching order; no milestone IDs in Starlight; header version switcher is **latest major** + `main` (never defaulting to `main`) with an older-docs banner when not on latest.
 

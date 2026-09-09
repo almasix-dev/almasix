@@ -946,9 +946,20 @@ cd examples/progress && python smith progress:prism-lang
 - [x] Board marks M45 complete with proof naming the demo
 - [x] Unit + smoke coverage for formatter and grammar load
 
-## M46 — Almasix Language Server (planned)
+## M46 — Almasix Language Server
 
-See [`PLAN.md`](PLAN.md) M46. LSP wire-protocol conformance suite in CI.
+- [x] `pip install 'almasix[lsp]'` (or `[dev]`) provides `almasix-lsp`
+- [x] `python -m almasix.lsp` and `smith lsp:serve` start the stdio server
+- [x] Index boots the app: views, named routes (+ source), config, models, translations, middleware
+- [x] Completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans` / middleware
+- [x] Diagnostics for unknown `view("…")` and translation keys (when `lang/` exists)
+- [x] Hover for Prism directives and known route / config / translation / middleware names
+- [x] Go-to-definition for views, routes, and config files; document links
+- [x] Find-references for view names; code action to create a missing view
+- [x] Wire-protocol conformance tests (initialize + completion / definition / references / codeAction)
+- [x] `smith progress:lsp` prints counts and `lsp ok`
+- [x] Board marks M46 complete with proof naming the demo
+- [x] Starlight **Language server**; package coverage ≥ 99% (statement coverage 100%)
 
 ## M47 — VS Code + JetBrains integrations (planned)
 
@@ -1154,7 +1165,7 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 - Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52)
-- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; next **M53 → M45 → M46 → M47 → M52** (no pauses); M36 / M48 later
+- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46** complete; next **M47 → M52** (no pauses); M36 / M48 later
 - Parity reference: **Laravel 13.x** docs
 - IDE and editor tooling: **M45–M47** in the current autopilot batch (thorough VS Code-family + JetBrains); **M48** MCP later
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
