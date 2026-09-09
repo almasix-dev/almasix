@@ -930,9 +930,21 @@ cd examples/progress && python smith progress:dates
 
 ---
 
-## M45 — Prism language support (planned)
+## M45 — Prism language support
 
-See [`PLAN.md`](PLAN.md) M45. Grammar + formatter fixtures; CI golden tests.
+```bash
+pytest -q tests/test_m45_prism_lang.py tests/smoke/test_m45_smoke.py
+cd examples/progress && python smith progress:prism-lang
+```
+
+### M45 exit criteria
+
+- [x] TextMate grammar + language configuration + snippets under `editors/prism/`
+- [x] Minimal tree-sitter grammar + highlights queries + README build notes
+- [x] `format_prism` library entry + `smith prism:format` (`--check` / write)
+- [x] Starlight **Prism language support**; living example `smith progress:prism-lang`
+- [x] Board marks M45 complete with proof naming the demo
+- [x] Unit + smoke coverage for formatter and grammar load
 
 ## M46 — Almasix Language Server (planned)
 

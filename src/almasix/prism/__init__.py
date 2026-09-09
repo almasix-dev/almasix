@@ -10,6 +10,7 @@ from almasix.prism.attributes import AttributeBag
 from almasix.prism.component import Component
 from almasix.prism.engine import Engine, ViewNotFoundError
 from almasix.prism.escape import HtmlString, e
+from almasix.prism.formatter import format_prism
 from almasix.prism.helpers import (
     ViewFactory,
     csrf_field,
@@ -34,6 +35,7 @@ __all__ = [
     "Vite",
     "csrf_field",
     "e",
+    "format_prism",
     "method_field",
     "render",
     "set_engine",

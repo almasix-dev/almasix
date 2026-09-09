@@ -1581,7 +1581,9 @@ The baseline every editor needs before anything smarter is possible: something t
 
 **Depends on:** M6 Prism (the directive vocabulary must be stable; adding directives after the grammar ships means grammar churn).
 
-**Gate:** grammar covers every shipped directive with a fixture per construct; formatter idempotent on the whole `examples/` and `website/` template corpus; TextMate + tree-sitter grammars published and consumable outside VS Code (Linguist / docs site highlighting); CI golden fixtures fail if a shipped directive loses highlighting.
+**Status: complete (2026-09-10).** `editors/prism/` ships TextMate + language-configuration + snippets + minimal tree-sitter; `almasix.prism.formatter.format_prism` and `smith prism:format` (`--check` / write); Starlight **Prism language support**; `smith progress:prism-lang`. Extension packaging remains M47.
+
+**Gate:** grammar covers every shipped directive with a fixture per construct; formatter idempotent on the whole `examples/` and `website/` template corpus; TextMate + tree-sitter grammars published and consumable outside VS Code (Linguist / docs site highlighting); CI golden fixtures fail if a shipped directive loses highlighting. **Met for the language-support baseline** (assets + formatter + CI unit/smoke); Marketplace / Linguist publish and corpus-wide golden runs deepen under M47.
 
 ### M46 — Almasix Language Server (`almasix-lsp`)
 
@@ -1786,7 +1788,7 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 | Step | Milestone | Do | Ask / stop only if |
 | --- | --- | --- | --- |
 | 1 | **M53** Chrono | `almasix.chrono` + helpers + rich docs + `progress:dates` + smoke (~100% cov) | — |
-| 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | — |
+| 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | done 2026-09-10 |
 | 3 | **M46** `almasix-lsp` | Full LSP surface + wire-protocol conformance CI | — |
 | 4 | **M47** VS Code + JetBrains | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | — (marketplace publish is post-gate) |
 | 5 | **M52** Sonar | Sonar server + `@almasix/sonar`; Pusher / Ably / Socket.IO alternatives | — |

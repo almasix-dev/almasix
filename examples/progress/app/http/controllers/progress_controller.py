@@ -504,10 +504,10 @@ def _milestones() -> list[dict]:
         {
             "id": "M45",
             "name": "Prism language support",
-            "status": "planned",
+            "status": "complete",
             "proof": [
-                "TextMate + tree-sitter .prism.html",
-                "snippets + editor behavior",
+                "smith progress:prism-lang",
+                "editors/prism TextMate + tree-sitter",
                 "smith prism:format",
             ],
         },

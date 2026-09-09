@@ -214,6 +214,7 @@ export default defineConfig({
 						{ label: 'Control Structures', slug: 'prism/control' },
 						{ label: 'Including Subviews', slug: 'prism/includes' },
 						{ label: 'Stacks & Directives', slug: 'prism/stacks' },
+						{ label: 'Language support', slug: 'prism-language' },
 					],
 				},
 				{

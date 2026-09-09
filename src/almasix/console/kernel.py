@@ -100,6 +100,10 @@ class ConsoleKernel:
         self.app.load_configuration()
         self.app.apply_middleware_callbacks()
         self.app.register_configured_providers()
+        # Providers (Signet, Prism, …) register commands onto ``app.make(ConsoleKernel)``.
+        # Bind this FrontDoor kernel so those registrations land on the CLI kernel,
+        # not a second instance created by the container factory.
+        self.app.container.instance(ConsoleKernel, self)
         self.app.boot()
         self.app._bootstrapped = True
 
