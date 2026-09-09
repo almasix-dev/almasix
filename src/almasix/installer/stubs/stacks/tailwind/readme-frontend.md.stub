@@ -1,0 +1,8 @@
+
+## Frontend (Vite + Tailwind CSS)
+
+```bash
+npm install
+npm run dev      # Vite HMR during development
+npm run build    # emit into public/build
+```

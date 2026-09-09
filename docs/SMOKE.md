@@ -859,6 +859,30 @@ pytest -q tests/test_m50_*.py tests/smoke/test_m50_smoke.py
 
 ---
 
+## M32 — Installer + scaffold stacks
+
+```bash
+pytest -q tests/test_m32_*.py tests/smoke/test_m32_smoke.py
+```
+
+### M32 exit criteria
+
+- [x] The scaffold is a stub tree under `almasix/installer/stubs/`, rendered through M30's placeholder engine in three layers (`app/`, `stacks/_node/`, `stacks/<stack>/`) — no `path -> content` dict
+- [x] `smith stub:publish --scaffold` publishes it and `almasix new --stubs DIR` scaffolds from the published copy
+- [x] Every question has a flag and a documented `--no-interaction` default: `--stack`, `--database`, `--tests/--no-tests`, `--git` / `--branch`, `--install` / `--installer`, `--npm`, `--migrate`, `--path`, `--stubs`
+- [x] npm and the migrations are skipped rather than asked about when the answer could only be one thing (no Node / no `package.json`; dependencies not being installed)
+- [x] Four stacks boot: `tailwind`, `bootstrap`, `plain`, `none` — each with its own frontend and its own `errors:publish` bundle
+- [x] Four databases write `.env` and `config/database.py`; SQLite's file is created; a real `APP_KEY` is generated
+- [x] `@vite` / `@viteReactRefresh`: the dev server while `public/hot` exists, the manifest once it does not, one link for a stylesheet a JS entry imports, a comment under `APP_DEBUG` and an error without it when nothing has been built
+- [x] The default migrations ship and run: `users`, `password_reset_tokens`, `sessions`, `cache`, `cache_locks`, `jobs`, `failed_jobs` — plus `app/models/user.py` and a `UserFactory`
+- [x] `cache:table`, `queue:table`, `queue:failed-table`, `session:table`, `notifications:table` render the same stubs the scaffold does
+- [x] `SESSION_DRIVER=database` reads and writes the `sessions` table, expires rows on read, and deletes on destroy
+- [x] Post-create steps report rather than raise: git init and commit, `uv` or `pip` install, `npm install && npm run build`, `smith migrate --force`; the next steps printed are only the ones still owed
+- [x] Living example: `smith progress:install` scaffolds every stack and database, migrates one, boots it over HTTP, and forks the stub tree; the board marks M32 complete with proof naming the command
+- [x] Deviations named: no test-runner choice (pytest is the only one), no `job_batches` table (no batching feature to read it), the SPA stack stays with M36
+
+---
+
 ## M31 — Task Scheduling exhaust
 
 ```bash

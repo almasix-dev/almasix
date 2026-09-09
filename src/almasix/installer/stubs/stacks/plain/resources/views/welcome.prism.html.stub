@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ name }}</title>
+  {{-- Points at the Vite dev server while `npm run dev` runs, and at the
+       built files in public/build once `npm run build` has. --}}
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body>
+  <main>
+    <h1>Welcome to Almasix</h1>
+    <p>{{ name }} is running in {{ env }}.</p>
+    <p>
+      Web routes render HTML; API routes return JSON — try
+      <a href="{{ health_url }}">{{ health_url }}</a>.
+    </p>
+  </main>
+</body>
+</html>

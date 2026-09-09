@@ -1,0 +1,7 @@
+"""Web routes — browser facing, stateful, HTML responses."""
+
+from app.http.controllers.welcome_controller import WelcomeController
+from almasix.routing import Route
+
+with Route.group(middleware=["web"]):
+    Route.get("/", [WelcomeController, "index"])

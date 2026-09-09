@@ -498,6 +498,7 @@ def make_migration(
     table: str | None = None,
     create: bool = False,
     base_path: Path | None = None,
+    stub: str | None = None,
 ) -> Path:
     """Write a timestamped migration stub and return its path.
 
@@ -509,7 +510,9 @@ def make_migration(
 
     The generated class is always StudlyCase of the full slug
     (``CreateUsersTable``, ``AddDescriptionColumnToPostsTable``).
-    ``--create`` / ``--table`` (passed as ``create`` / ``table``) override inference.
+    ``--create`` / ``--table`` (passed as ``create`` / ``table``) override inference,
+    and ``stub`` names a stub outright — which is how ``cache:table`` and the rest
+    of the ``*:table`` commands write the schema the framework itself reads.
     """
     # Imported here, not at module scope: the console is a layer above the ORM,
     # and importing down from up makes the two mutually importing.
@@ -526,12 +529,13 @@ def make_migration(
         table, create = guess_migration(slug)
 
     class_name = studly(slug)
-    if table and create:
-        stub = "migration.create.stub"
-    elif table:
-        stub = "migration.update.stub"
-    else:
-        stub = "migration.stub"
+    if stub is None:
+        if table and create:
+            stub = "migration.create.stub"
+        elif table:
+            stub = "migration.update.stub"
+        else:
+            stub = "migration.stub"
     body = render(stub, {"class": class_name, "table": table or ""}, base_path=base_path)
     path.write_text(body, encoding="utf-8")
     return path

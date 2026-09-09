@@ -1,0 +1,23 @@
+"""Welcome controller — web routes render Prism views."""
+
+from __future__ import annotations
+
+from almasix.config import config
+from almasix.http import Controller, Response
+from almasix.prism import view
+from almasix.routing import url
+
+
+class WelcomeController(Controller):
+    """Welcome page — HTML entry for web routes."""
+
+    async def index(self) -> Response:
+        return view(
+            "welcome",
+            {
+                "name": str(config("app.name", "Almasix")),
+                "env": str(config("app.env", "local")),
+                # url() keeps links correct when the app is hosted under APP_BASE_PATH.
+                "health_url": url("/api/health", absolute=False),
+            },
+        )

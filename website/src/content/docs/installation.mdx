@@ -15,6 +15,7 @@ with **Smith** — Almasix’s in-app CLI:
 almasix new blog
 cd blog
 pip install -e .
+smith migrate
 smith serve
 ```
 
@@ -30,8 +31,8 @@ and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**
 ## Requirements
 
 - Python **3.11** or higher
-- `pip` and a virtual environment
-- Node.js **18+** (optional but recommended) for the default Vite + Tailwind toolchain
+- `pip` and a virtual environment (or [uv](https://docs.astral.sh/uv/), which the installer prefers when it finds it)
+- Node.js **18+** for the Vite stacks — the `none` stack needs no Node at all
 
 ## Creating an Almasix project
 
@@ -45,36 +46,64 @@ and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**
    pip install -e /path/to/almasix
    ```
 
-2. **Create a new application:**
+2. **Create a new application.** Run it bare and it asks; pass flags and it
+   asks only about what you left out:
 
    ```bash
    almasix new blog
-   cd blog
    ```
 
-3. **Create a virtual environment and install dependencies:**
+   ```text
+   Which frontend stack?
+     ● Tailwind CSS — Vite + Tailwind CSS 4 (Laravel's default)
+       Bootstrap — Vite + Bootstrap 5 Sass
+       Plain CSS — Vite, no CSS framework
+       No frontend build — Server-rendered Prism only — no Node, no build step
+   Which database will this application use?
+     ● SQLite
+       PostgreSQL
+       MySQL
+       MariaDB
+   Scaffold a pytest suite (tests/)?          smith test runs it
+   Initialize a git repository?
+   Install Python dependencies now?           uv when available, otherwise pip
+   Run npm install and npm run build?
+   Run the default migrations?                creates users, sessions, cache, and the queue tables
+   ```
+
+3. **Create a virtual environment and install dependencies** — unless you
+   answered yes to `Install Python dependencies now?`, which did it for you:
 
    ```bash
+   cd blog
    python -m venv .venv
    source .venv/bin/activate
-   pip install -e .                 # your app
-   pip install almasix               # or -e /path/to/almasix during local development
+   pip install -e .
    ```
 
-4. **Install frontend dependencies (Vite + Tailwind):**
+4. **Run the migrations.** A new application ships the same default migrations
+   Laravel does, so this is what creates `users`, `password_reset_tokens`,
+   `sessions`, `cache`, `cache_locks`, `jobs`, and `failed_jobs`:
+
+   ```bash
+   smith migrate
+   ```
+
+5. **Build the frontend** (any stack except `none`):
 
    ```bash
    npm install
+   npm run dev      # dev server with hot reload, while you work
+   npm run build    # hashed files in public/build, for a deploy
    ```
 
-5. **Start the development server:**
+6. **Start the development server:**
 
    ```bash
    smith serve
    ```
 
-   Visit the URL Smith prints (typically `http://127.0.0.1:3000`). In another
-   terminal, run `npm run dev` while iterating on CSS/JS.
+   Visit the URL Smith prints (typically `http://127.0.0.1:3000`).
 
 </Steps>
 
@@ -89,6 +118,99 @@ the `almasix` command only, so one application's CLI never leaks onto your
 `PATH` system-wide.
 :::
 
+## Every question, and its flag
+
+Every prompt has a command-line option and a documented default, so the same
+`almasix new` is usable by a person and by a CI job. `--no-interaction` (or
+`-n`) asks nothing and takes the defaults below.
+
+| Question | Flag | Default without interaction |
+| --- | --- | --- |
+| Frontend stack | `--stack tailwind\|bootstrap\|plain\|none` | `tailwind` |
+| Database | `--database sqlite\|pgsql\|mysql\|mariadb` | `sqlite` |
+| pytest suite under `tests/` | `--tests` / `--no-tests` | scaffolded |
+| git repository | `--git` / `--no-git`, `--branch NAME` | not initialized |
+| Python dependencies | `--install` / `--no-install`, `--installer auto\|uv\|pip` | not installed |
+| `npm install && npm run build` | `--npm` / `--no-npm` | not run |
+| Default migrations | `--migrate` / `--no-migrate` | not run |
+| Where the app is created | `--path DIR` | the working directory |
+| Which stubs to scaffold from | `--stubs DIR` | Almasix's own |
+
+```bash
+# Scripted, start to finish: a Bootstrap app on PostgreSQL, in a git repo,
+# with dependencies installed and migrations run.
+almasix new shop -n --stack bootstrap --database pgsql --git --install --migrate
+```
+
+Two questions are skipped rather than asked when the answer could only be one
+thing: `npm` when the stack has no `package.json` or `npm` is not installed, and
+the migrations when the dependencies they need are not being installed.
+
+`almasix stacks` lists the stacks and databases without creating anything.
+
+## Frontend stacks
+
+| Stack | Ships | Error views |
+| --- | --- | --- |
+| `tailwind` | `package.json`, `vite.config.js`, `resources/css/app.css` importing Tailwind 4 | Tailwind-classed |
+| `bootstrap` | Bootstrap 5 through Sass in `resources/css/app.scss` | Bootstrap-classed |
+| `plain` | Vite with a hand-written stylesheet — no framework | unstyled defaults |
+| `none` | no Node, no build; `public/css/app.css` is served as it is written | unstyled defaults |
+
+The three Vite stacks ship `vite-plugin-almasix.js`, a dozen lines that write
+`public/hot` while the dev server runs. Prism's `@vite` directive reads that
+file: while it exists the tags point at the dev server, and once it is gone they
+point at the manifest `npm run build` wrote. See
+[Asset Bundling](/asset-bundling/).
+
+The stack also picks which error-view bundle is published into
+`resources/views/errors/`, so a 404 page matches the CSS the application
+actually loads. Change your mind later with `smith errors:publish --bundle`.
+
+## Databases
+
+SQLite works out of the box, and the installer creates
+`database/database.sqlite` for you. The other engines need their driver:
+
+```bash
+pip install almasix[pgsql]    # PostgreSQL
+pip install almasix[mysql]    # MySQL
+pip install almasix[mariadb]  # MariaDB
+pip install almasix[sqlsrv]   # SQL Server
+pip install almasix[oracle]   # Oracle (optional)
+pip install almasix[db]       # all of the above
+```
+
+`--database` writes the matching `.env` block and points
+`config/database.py`'s default at it; every other connection stays in the file,
+ready for an environment variable to select it. See
+[Database: Getting Started](/database/).
+
+## The default migrations
+
+`database/migrations/` in a new application is not empty. Three migrations
+create the tables the framework itself reads:
+
+| Migration | Tables | Read by |
+| --- | --- | --- |
+| `0001_01_01_000000_create_users_table` | `users`, `password_reset_tokens`, `sessions` | auth guards, the password broker, `SESSION_DRIVER=database` |
+| `0001_01_01_000001_create_cache_table` | `cache`, `cache_locks` | `CACHE_STORE=database`, and cache locks |
+| `0001_01_01_000002_create_jobs_table` | `jobs`, `failed_jobs` | `QUEUE_CONNECTION=database`, failed-job commands |
+
+If you removed one and want it back — or you switched a driver and now need a
+table you did not before — each has a command:
+
+```bash
+smith cache:table              # cache, cache_locks
+smith queue:table              # jobs
+smith queue:failed-table       # failed_jobs
+smith session:table            # sessions
+smith notifications:table      # notifications (the database notification channel)
+```
+
+Those commands and the scaffold render the same stub, so a generated migration
+cannot disagree with what the driver expects.
+
 ## Directory structure at a glance
 
 A fresh application looks like this:
@@ -97,40 +219,47 @@ A fresh application looks like this:
 blog/
   app/
     http/controllers/
-    models/
+    models/user.py
     providers/
   bootstrap/app.py
   config/
-  database/migrations/
+  database/factories/user_factory.py
+  database/migrations/       # three default migrations
   database/seeders/
   resources/css/
   resources/js/
+  resources/views/welcome.prism.html
   routes/web.py
   routes/api.py
+  tests/
   package.json
   vite.config.js
+  vite-plugin-almasix.js
   smith
 ```
 
 Read more in [Directory Structure](/structure/) and [Asset Bundling](/asset-bundling/).
 
-## Database drivers
+## Scaffolding from your own stubs
 
-SQLite works out of the box. For other engines, install the matching optional extra:
+The scaffold is a stub tree, not strings inside the installer, so a team can
+publish it, edit it, and create every future application from its own copy:
 
 ```bash
-pip install almasix[pgsql]    # PostgreSQL
-pip install almasix[mysql]    # MySQL / MariaDB
-pip install almasix[sqlsrv]   # SQL Server
-pip install almasix[oracle]   # Oracle (optional)
-pip install almasix[db]       # all of the above
+smith stub:publish --scaffold        # stubs/scaffold/{app,stacks}/…
+# edit stubs/scaffold/app/routes/web.py.stub, then:
+almasix new next-app --stubs stubs/scaffold
 ```
 
-Configure connections in `config/database.py` — see [Database: Getting Started](/database/).
+Placeholders are the same ones the `make:*` generators use — `{{ app_name }}`,
+`{{ app_display }}`, `{{ db_connection }}`, `{{ db_env }}`,
+`{{ frontend_section }}` — and an unknown one is left as written, so a Prism
+template's own `{{ slot }}` survives being scaffolded.
 
 ## Next steps
 
 - [Directory Structure](/structure/)
+- [Asset Bundling](/asset-bundling/)
 - [Middleware](/middleware/)
 - [Articulate](/articulate/)
 - [Smith Console](/console/)

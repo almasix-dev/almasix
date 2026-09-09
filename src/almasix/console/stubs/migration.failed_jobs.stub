@@ -1,0 +1,26 @@
+"""Create the {{ table }} table — where a job lands when it gives up."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Migration, Schema
+
+
+class {{ class }}(Migration):
+    """{{ class }}."""
+
+    async def up(self) -> None:
+        await Schema.create("{{ table }}", self.failed_jobs)
+
+    async def down(self) -> None:
+        await Schema.drop_if_exists("{{ table }}")
+
+    def failed_jobs(self, table: Any) -> None:
+        table.id()
+        table.uuid("uuid").unique()
+        table.text("connection")
+        table.text("queue")
+        table.text("payload")
+        table.text("exception")
+        table.timestamp("failed_at")

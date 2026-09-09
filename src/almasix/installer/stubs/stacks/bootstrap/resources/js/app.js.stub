@@ -1,0 +1,4 @@
+import "../css/app.scss";
+import "bootstrap";
+
+console.log("{{ app_display }} is running on Bootstrap");

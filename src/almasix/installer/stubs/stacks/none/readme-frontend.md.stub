@@ -1,0 +1,7 @@
+
+## Frontend (no Node)
+
+There is no `package.json` and no build step. `public/css/app.css` is served as
+it is written, and the welcome view links it with `asset()`. Add `--stack
+tailwind` (or `bootstrap`, or `plain`) on a future `almasix new` if you want
+Vite.

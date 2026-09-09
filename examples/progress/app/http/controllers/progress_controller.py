@@ -349,8 +349,15 @@ def _milestones() -> list[dict]:
         {
             "id": "M32",
             "name": "Installer + scaffold stacks",
-            "status": "planned",
-            "proof": ["interactive almasix new", "tailwind / bootstrap / plain CSS"],
+            "status": "complete",
+            "proof": [
+                "smith progress:install",
+                "almasix new asks: stack, database, tests, git, install",
+                "tailwind / bootstrap / plain / none — a stub tree, not strings",
+                "sqlite / pgsql / mysql / mariadb write .env + config",
+                "default migrations: users, sessions, cache, jobs",
+                "@vite tags · cache:table / queue:table / session:table",
+            ],
         },
         {
             "id": "M33",

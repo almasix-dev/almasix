@@ -9,16 +9,7 @@ class CreateDemoTables(Migration):
     """Schema for the living-example ORM tour."""
 
     async def up(self) -> None:
-        await Schema.create(
-            "users",
-            lambda table: (
-                table.id(),
-                table.string("email"),
-                table.string("name"),
-                table.timestamps(),
-                table.unique_index(["email"]),
-            ),
-        )
+        # `users` comes from the default migration every scaffolded app ships.
         await Schema.create(
             "posts",
             lambda table: (
@@ -57,4 +48,3 @@ class CreateDemoTables(Migration):
         await Schema.drop_if_exists("role_user")
         await Schema.drop_if_exists("roles")
         await Schema.drop_if_exists("posts")
-        await Schema.drop_if_exists("users")

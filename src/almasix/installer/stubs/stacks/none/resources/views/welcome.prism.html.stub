@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ name }}</title>
+  {{-- No Node in this stack: the stylesheet is served straight from public/. --}}
+  <link rel="stylesheet" href="{{ asset('css/app.css', absolute=False) }}"/>
+</head>
+<body>
+  <main>
+    <h1>Welcome to Almasix</h1>
+    <p>{{ name }} is running in {{ env }}.</p>
+    <p>
+      Web routes render HTML; API routes return JSON — try
+      <a href="{{ health_url }}">{{ health_url }}</a>.
+    </p>
+  </main>
+</body>
+</html>

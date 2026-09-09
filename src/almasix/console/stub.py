@@ -45,21 +45,26 @@ def path_for(name: str, *, base_path: Path | None = None) -> Path:
     return framework
 
 
+def render_text(body: str, replacements: Mapping[str, str] | None = None) -> str:
+    """Fill the placeholders in ``body``.
+
+    An unknown placeholder is left as it was written, so a hand-edited stub
+    keeps whatever the author meant by it instead of collapsing to an empty
+    string — and a Prism template's own ``{{ slot }}`` survives being generated.
+    """
+    values = dict(replacements or {})
+    return _PLACEHOLDER_RE.sub(lambda match: values.get(match.group(1), match.group(0)), body)
+
+
 def render(
     name: str,
     replacements: Mapping[str, str] | None = None,
     *,
     base_path: Path | None = None,
 ) -> str:
-    """Read a stub and fill its placeholders.
-
-    An unknown placeholder is left as it was written, so a hand-edited stub
-    keeps whatever the author meant by it instead of collapsing to an empty
-    string.
-    """
-    values = dict(replacements or {})
+    """Read a stub and fill its placeholders."""
     body = path_for(name, base_path=base_path).read_text(encoding="utf-8")
-    return _PLACEHOLDER_RE.sub(lambda match: values.get(match.group(1), match.group(0)), body)
+    return render_text(body, replacements)
 
 
 def publish(base_path: Path | str, *, force: bool = False) -> list[Path]:

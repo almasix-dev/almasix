@@ -1,0 +1,3 @@
+import "../css/app.css";
+
+console.log("{{ app_display }} is running on plain CSS");

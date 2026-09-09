@@ -20,6 +20,7 @@ from almasix.prism.helpers import (
 )
 from almasix.prism.loop import Loop
 from almasix.prism.provider import PrismServiceProvider
+from almasix.prism.vite import Vite, vite, vite_react_refresh
 
 __all__ = [
     "AttributeBag",
@@ -30,10 +31,13 @@ __all__ = [
     "PrismServiceProvider",
     "ViewFactory",
     "ViewNotFoundError",
+    "Vite",
     "csrf_field",
     "e",
     "method_field",
     "render",
     "set_engine",
     "view",
+    "vite",
+    "vite_react_refresh",
 ]
