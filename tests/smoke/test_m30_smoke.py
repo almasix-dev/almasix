@@ -116,7 +116,9 @@ def test_the_page_follows_laravels_artisan_doc_order() -> None:
     """Someone reading both pages side by side should not have to hunt."""
     sections = page_sections()
 
-    assert [name for name in sections if name in LARAVEL_ARTISAN_DOC_ORDER] == LARAVEL_ARTISAN_DOC_ORDER
+    assert [
+        name for name in sections if name in LARAVEL_ARTISAN_DOC_ORDER
+    ] == LARAVEL_ARTISAN_DOC_ORDER
 
 
 def test_every_command_the_framework_ships_is_in_the_reference() -> None:
