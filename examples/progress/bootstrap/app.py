@@ -16,6 +16,7 @@ from almasix.auth import (
 )
 from almasix.auth.middleware import StartAuth
 from almasix.framework import Application, Middleware
+from almasix.signet import CheckAbilities, CheckForAnyAbility
 from almasix.session import EncryptCookies, StartSession, VerifyCsrfToken
 from almasix.translation import SetLocaleMiddleware
 
@@ -41,6 +42,8 @@ def configure_middleware(middleware: Middleware) -> None:
             "verified": EnsureEmailIsVerified,
             "can": Authorize,
             "demo.tag": DemoTagMiddleware,
+            "abilities": CheckAbilities,
+            "ability": CheckForAnyAbility,
         }
     )
     middleware.web(

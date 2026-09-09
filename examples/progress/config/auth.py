@@ -18,6 +18,10 @@ config = {
             "input_key": "api_token",
             "storage_key": "api_token",
         },
+        "signet": {
+            "driver": "signet",
+            "provider": "users",
+        },
     },
     "providers": {
         "users": {

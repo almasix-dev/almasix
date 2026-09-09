@@ -408,8 +408,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M37",
             "name": "API tokens + social auth",
-            "status": "planned",
-            "proof": ["Sanctum-class tokens", "Socialite-class providers"],
+            "status": "complete",
+            "proof": [
+                "smith progress:tokens",
+                "HasApiTokens · personal_access_tokens · abilities",
+                "auth:signet · GET /api/user · POST /api/signet/token",
+                "GET /signet/csrf-cookie · signet:prune-expired",
+                "Socialite / Passport / client API keys — named deferred",
+            ],
         },
         {
             "id": "M38",
@@ -557,6 +563,16 @@ def _milestones() -> list[dict]:
             "name": "Echo-class broadcasting client",
             "status": "planned",
             "proof": ["browser client package", "private/presence auth", "Vite install path"],
+        },
+        {
+            "id": "M53",
+            "name": "Carbon-class dates + helpers",
+            "status": "planned",
+            "proof": [
+                "fluent date/time type",
+                "test time travel",
+                "date/time helpers + progress demo",
+            ],
         },
     ]
 

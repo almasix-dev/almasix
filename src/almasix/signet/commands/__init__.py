@@ -1,0 +1,1 @@
+"""Signet console commands package."""

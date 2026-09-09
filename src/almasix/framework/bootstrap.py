@@ -131,6 +131,32 @@ class Middleware:
             api.insert(0, name)
         return self
 
+    def stateful_api(self) -> Self:
+        """Enable Signet SPA cookie auth on the ``api`` group (Laravel ``statefulApi``).
+
+        Prepends ``signet.stateful`` so first-party SPA requests keep session
+        semantics while third-party clients still use Bearer tokens.
+        """
+        from almasix.signet.middleware import (
+            CheckAbilities,
+            CheckForAnyAbility,
+            EnsureFrontendRequestsAreStateful,
+        )
+
+        self.alias(
+            {
+                "signet.stateful": EnsureFrontendRequestsAreStateful,
+                "abilities": CheckAbilities,
+                "ability": CheckForAnyAbility,
+            }
+        )
+        api = self._groups.setdefault("api", [])
+        if "signet.stateful" not in api:
+            for name in ("cookies.encrypt", "session.start", "csrf", "signet.stateful"):
+                if name not in api:
+                    api.insert(0, name)
+        return self
+
     def trust_proxies(
         self,
         at: Any = "*",

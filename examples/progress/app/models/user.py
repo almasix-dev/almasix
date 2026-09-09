@@ -5,9 +5,10 @@ from __future__ import annotations
 from almasix.auth import AuthenticatableMixin
 from almasix.notifications import MustVerifyEmail, Notifiable
 from almasix.orm import Attribute, HasFactory, Model, relation
+from almasix.signet import HasApiTokens
 
 
-class User(HasFactory, AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):
+class User(HasFactory, HasApiTokens, AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):
     fillable = ("email", "name", "password", "remember_token", "api_token", "email_verified_at")
     hidden = ("password", "remember_token")
     appends = ("display_name",)  # noqa: RUF012

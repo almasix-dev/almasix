@@ -893,6 +893,50 @@ cd examples/progress && python smith progress:docs
 
 ---
 
+## M37 — Signet-class API tokens
+
+```bash
+pytest -q tests/test_m37_signet.py tests/smoke/test_m37_smoke.py
+cd examples/progress && python smith progress:tokens
+```
+
+Laravel [Sanctum](https://laravel.com/docs/13.x/sanctum) parity as Almasix **Signet** — personal access tokens, abilities, SPA cookie auth, mobile Bearer flow. Client-credentials API keys (no user), Socialite, and Passport are **named deferred**.
+
+### M37 exit criteria
+
+- [x] `HasApiTokens` + `personal_access_tokens` (hashed `{id}|secret`), abilities, revoke, expiration + `signet:prune-expired`
+- [x] `auth:signet` guard (stateful SPA session then Bearer PAT); `GET /signet/csrf-cookie`; `middleware.stateful_api()`
+- [x] `abilities` / `ability` middleware; `Signet.acting_as` for tests; `almasix[tokens]` / `almasix[signet]` extras
+- [x] Starlight **API Tokens** — no milestone IDs; out-of-scope section for client API keys / Socialite / Passport
+- [x] Living example: `smith progress:tokens`; board marks M37 complete with proof naming the command
+- [x] Smoke + unit coverage for the Signet package
+
+---
+
+## M52 — Echo-class broadcasting client (planned)
+
+See [`PLAN.md`](PLAN.md) M52. Smoke + progress proof land when the client ships.
+
+## M53 — Carbon-class dates + helpers (planned)
+
+```bash
+# when implemented:
+# pytest -q tests/test_m53_*.py tests/smoke/test_m53_smoke.py
+# cd examples/progress && python smith progress:dates
+```
+
+Laravel [Carbon](https://carbon.nesbot.com/) parity — fluent date/time type, test time travel, and date/time helpers extending the M50 clock primitives (`now` / `today` / `set_test_now`).
+
+### M53 exit criteria
+
+- [ ] Carbon-class fluent type (working name TBD) over aware datetimes
+- [ ] Test freeze / travel / return wired through helpers
+- [ ] Support date/time helpers documented; Starlight page without milestone IDs
+- [ ] Living example (`smith progress:dates` or extended `progress:helpers`); board marks M53 complete
+- [ ] Coverage ≥ 98% on the new package
+
+---
+
 ## M49 — Support Collections exhaust
 
 ```bash
@@ -1072,8 +1116,8 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 ## Out of scope until later milestones
 
 - Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
-- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Echo-class client (M52)
-- **Stability track (2026-09-09):** M44 + M25 L13 Mongo audit + M51 lint gate + M38 deployment + **M39** docs journey complete; prefer M37 → M52 → M36; one milestone at a time
+- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Echo-class client (M52), Carbon-class dates (M53)
+- **Stability track (2026-09-10):** M44 + M25 L13 Mongo audit + M51 lint gate + M38 deployment + M39 docs + **M37** Signet tokens complete; prefer M52 → M53 → M36; one milestone at a time
 - Parity reference: **Laravel 13.x** docs
 - IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)

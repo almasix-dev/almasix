@@ -1,0 +1,22 @@
+"""Default published ``config/signet.py``."""
+
+from almasix.config import env
+from almasix.signet import Signet
+
+config = {
+    # First-party SPA domains that may use cookie session auth against the API.
+    "stateful": [
+        Signet.current_application_url_with_port(),
+        "localhost",
+        "localhost:3000",
+        "127.0.0.1",
+        "127.0.0.1:8000",
+        "::1",
+        Signet.current_request_host(),
+    ],
+    # Guards checked before falling back to a Bearer personal access token.
+    "guard": ["web"],
+    # Minutes until a token expires (``None`` = never, revoke only).
+    "expiration": env("SIGNET_EXPIRATION", None),
+    "token_prefix": env("SIGNET_TOKEN_PREFIX", ""),
+}

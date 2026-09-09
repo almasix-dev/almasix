@@ -107,6 +107,10 @@ Unauthenticated JSON/API clients receive **401**; browser `web` routes redirect
 to `/login`. Unknown bearer tokens do **not** invent a guest identity — only a
 provider hit authenticates the `api` guard.
 
+For **personal access tokens**, SPA cookie auth, abilities, and mobile Bearer
+flows, see [API Tokens](/api-tokens/) (`auth:signet`). The classic
+`driver: "token"` / `users.api_token` column remains for simple demos.
+
 ## Email verification
 
 ```python

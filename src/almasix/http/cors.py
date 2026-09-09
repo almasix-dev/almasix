@@ -19,7 +19,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 #: Defaults mirror Laravel's `config/cors.php` so an application that never
 #: opens the file still gets a working API that any origin may call.
 DEFAULTS: dict[str, Any] = {
-    "paths": ["api/*", "sanctum/csrf-cookie"],
+    "paths": ["api/*", "signet/csrf-cookie"],
     "allowed_methods": ["*"],
     "allowed_origins": ["*"],
     "allowed_origins_patterns": [],

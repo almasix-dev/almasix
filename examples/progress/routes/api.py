@@ -18,6 +18,7 @@ from app.http.controllers.orm_tour_controller import OrmTourController
 from app.http.controllers.post_controller import PostController
 from app.http.controllers.progress_controller import ProgressController
 from app.http.controllers.resource_controller import ResourceController
+from app.http.controllers.signet_controller import SignetController
 from app.http.controllers.search_controller import SearchController
 from app.http.controllers.user_controller import UserController
 
@@ -26,6 +27,8 @@ from almasix.routing import Route
 with Route.group(prefix="/api", middleware=["api"]):
     Route.get("/health", [HealthController, "index"])
     Route.get("/me", [HealthController, "me"], middleware=["auth:api"])
+    Route.get("/user", [SignetController, "user"], middleware=["auth:signet"])
+    Route.post("/signet/token", [SignetController, "issue_token"])
     Route.get("/ping", [DemoController, "ping"])
     Route.get("/progress", [ProgressController, "data"])
     # M35 — tight limiter so `smith progress:rate-limiting` can prove a 429.

@@ -72,6 +72,9 @@ class FoundationServiceProvider(ServiceProvider):
         ConcurrencyServiceProvider(app).register()
         ScoutServiceProvider(app).register()
         BroadcastServiceProvider(app).register()
+        from almasix.signet.provider import SignetServiceProvider
+
+        SignetServiceProvider(app).register()
 
     def boot(self) -> None:
         from almasix.auth.provider import AuthServiceProvider
@@ -117,3 +120,6 @@ class FoundationServiceProvider(ServiceProvider):
         ScoutServiceProvider(self.app).boot()
         # Last: its routes must land on a router the rest of boot has finished with.
         BroadcastServiceProvider(self.app).boot()
+        from almasix.signet.provider import SignetServiceProvider
+
+        SignetServiceProvider(self.app).boot()

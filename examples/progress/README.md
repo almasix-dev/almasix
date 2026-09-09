@@ -183,6 +183,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M33** | `smith progress:routing` — every verb and shape, constraints, groups, resource / singleton routing, model binding, `route()` and signed URLs |
 | **M34** | `smith progress:security` — default security headers, `config/cors.py`, `smith down --secret` with a 503 and a bypass cookie |
 | **M35** | `smith progress:rate-limiting` — `RateLimiter`, `throttle` middleware, login lockout, `/api/throttle-demo` |
+| **M37** | `smith progress:tokens` — Signet PATs, abilities, `/api/user`, `/signet/csrf-cookie` |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M42** | `smith progress:queries` — JSON wheres and updates, `join_sub`, unions, `having_between`, `sole`, locking, `DB.listen` / `pretend` / `after_commit`; `smith db` |
@@ -193,7 +194,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M51** | `smith progress:lint` — pinned `ruff==0.16.6`, `make lint`, CI lint job |
 | **M38** | `smith progress:deploy` — `serve --workers`, `/up`, Deployment docs, `examples/deploy`, Trusted Publishing |
 | **M39** | `smith progress:docs` — Prologue, Basics teaching order, latest-major+main switcher, older-docs banner |
-| **M29, M36–M37, M45–M48, M52** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M29, M36, M45–M48, M52–M53** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
@@ -201,7 +202,8 @@ M0–M28, M30–M35, M38–M44, M49–M51 are closed on the ladder. M32–M35
 closed the installer, routing, security headers/CORS, and rate limiting; M25’s
 Laravel 13 Mongo audit, M51’s lint gate, M38’s deployment ops, and M39’s docs
 journey are closed with them. **Stability track next** (see `docs/PLAN.md`):
-API tokens (**M37**), then Echo-class client, then starter kits. The board on
+API tokens (**M37**, Signet-class) are closed; next is Echo-class client (**M52**),
+then Carbon-class dates (**M53**), then starter kits. The board on
 `/progress` lists the full roadmap with a status and proof for each milestone.
 
 ## CLI
@@ -221,6 +223,7 @@ smith progress:install
 smith progress:routing
 smith progress:security
 smith progress:rate-limiting
+smith progress:tokens
 smith progress:cache
 smith progress:redis
 smith progress:encryption

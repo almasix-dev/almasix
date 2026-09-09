@@ -159,6 +159,7 @@ export default defineConfig({
 					collapsed: true,
 					items: [
 						{ label: 'Authorization', slug: 'authorization' },
+						{ label: 'API Tokens', slug: 'api-tokens' },
 						{ label: 'Encryption', slug: 'encryption' },
 					],
 				},
