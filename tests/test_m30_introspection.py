@@ -373,7 +373,7 @@ def test_route_list_loads_the_http_routes_the_console_kernel_skipped(
         "/partial",
         "/posts/{post}",
     ]
-    assert "GET|POST" in body[1]
+    assert "GET|HEAD|POST" in body[1]
     assert "legacy.index" in body[1]
     assert "LegacyController@index" in body[1]
     assert "ProbeController@store" in body[3]
@@ -429,7 +429,8 @@ def test_route_list_json_carries_every_column(
         "/partial",
         "/posts/{post}",
     ]
-    assert payload[1]["methods"] == ["GET", "POST"]
+    # A route answering GET answers HEAD, and M33 lists it that way.
+    assert payload[1]["methods"] == ["GET", "HEAD", "POST"]
     assert payload[1]["name"] == "legacy.index"
     assert payload[1]["action"] == "LegacyController@index"
     assert payload[2]["name"] is None

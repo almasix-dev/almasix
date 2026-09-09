@@ -282,7 +282,7 @@ Mirror Laravel’s Basics **order and coverage**. Deep Prism how-tos stay in the
 | Views | `views` | **Shipped (M6)** — `view()` / `ViewFactory` | **Done** — overview + link to Prism |
 | Blade Templates | *(Prism section)* | **Shipped (M6)** | **Done** as Prism group (not duplicated under Basics) |
 | Asset Bundling | `asset-bundling` | **Partial (M6)** — `asset()` / `@asset` + `public/` on `smith serve`; default `almasix new` ships **Vite + Tailwind** → `public/build`; Python core stays Node-free; starter kits may replace/extend | **Partial** — default scaffold + docs; full `@vite` helper follow-up |
-| URL Generation | `urls` | **Partial (M3)** — `url()`, `asset()`, `redirect()`; named `route()` = **M33** | **Update with M33** |
+| URL Generation | `urls` | **Shipped (M33)** — `url()`, `asset()`, `secure_*`, named `route()`, signed URLs, `action()`, `to_route()`, request introspection, per-request defaults | **Done** |
 | Session | `session` | **Shipped (M7 foundation)** — cookie driver, encrypt, flash | **Done** |
 | Authentication | `authentication` | **Shipped (M7)** — guards, remember-me, events, docs | **Done** |
 | Hashing | `hashing` | **Shipped (M7)** — bcrypt + optional argon2id | **Done** |
@@ -510,9 +510,9 @@ Group DX is deliberately **context-manager only**. Laravel's fluent `Route::midd
 
 | Item | Home |
 | --- | --- |
-| `head`, `redirect` / `permanentRedirect`, `fallback`, named `route()` helper | Small DX pass after M3 (or end of M3 if `make:*` is light) |
-| **Group options: `name=` (name prefixing), `controller=`, `domain=`, `where=` constraints, `without_middleware`** | Same post-M3 DX pass; `name=` should land with `route()` since they pair |
-| `resource` / `apiResource` | **M33** |
+| `head`, `redirect` / `permanentRedirect`, `fallback`, named `route()` helper | **Shipped (M33)** |
+| **Group options: `name=` (name prefixing), `controller=`, `domain=`, `where=` constraints, `without_middleware`** | **Shipped (M33)** |
+| `resource` / `apiResource` | **Shipped (M33)** — plus singletons, nesting, shallow, scoped |
 | `view` routes | Prism (M6) |
 
 ## Decision: Security roadmap
@@ -1317,7 +1317,26 @@ Completes Laravel [Routing](https://laravel.com/docs/routing) and [URL Generatio
 
 **Depends on:** M2/M3 (done), M30 for `route:list`.
 
-**Gate:** named routes usable from routes, controllers, redirects, and templates; resource routing exhausted; docs updated.
+**Gate met (2026-09-09):** named routes usable from routes, controllers, redirects, and templates; resource routing exhausted against the Laravel page; docs published; 100% line and branch coverage on `almasix.routing`.
+
+**Status (M33):** **Complete** (2026-09-09).
+
+- **Every verb and shape.** `head`, `match`, `any` alongside the five that shipped in M2, plus the three that need no controller — `redirect` / `permanent_redirect` (302 / 301), `view`, and `fallback`, which is registered last wherever it is written so it only catches what nothing else claimed. A GET route answers HEAD, as Laravel's does, which is why `route:list` prints `GET|HEAD`.
+- **A fluent route.** `name`, `middleware`, `without_middleware`, `can`, `where` (+ `where_number` / `where_alpha` / `where_alpha_numeric` / `where_uuid` / `where_ulid` / `where_in`), `defaults`, `domain`, `missing`, `scope_bindings`, `with_trashed`. Constraints are enforced *while routing*, not inside the handler: `/{id}` constrained to digits does not match `/posts/hello`, so a `/posts/{slug}` registered after it still can. Each distinct regex registers one Starlette convertor named after a hash of the pattern, so the same constraint on a thousand routes costs one.
+- **Optional parameters.** Starlette has no optional segment, so `/greet/{name?}` compiles to two paths — `/greet/{name}` and `/greet` — and the handler's own default fills the shorter one.
+- **Named routes end to end.** `name()` on routes and groups, `Route.has`, and a `DuplicateRouteName` that names both URIs rather than letting the second route quietly win. `route()` accepts a scalar, a list, a tuple, a mapping, or keyword arguments, reads a model for its route key, and puts what the URI does not name into the query string. Its own arguments are positional-only, because `{name}` is an ordinary thing to call a parameter and `route("hello", name="ada")` has to mean the parameter.
+- **Resource routing.** `resource` / `api_resource` / `singleton` / `api_singleton` and the plural registrations, with `only`, `except_`, `names`, `parameters`, `shallow`, `scoped`, `middleware`, `without_middleware`, `where`, `missing`, `with_trashed`, and `creatable` / `destroyable` for singletons. Nesting is by dot (`photos.comments`); a slash is where the resource *lives*, so `api_resource("api/tags")` answers at `/api/tags` and is named `tags.*`, as Laravel names it. `set_resource_verbs` translates the `create` and `edit` segments. Laravel registers these from a destructor so a bare statement works; Almasix registers immediately and rewrites in place on each fluent call, which needs no guarantee about when an object is collected.
+- **Implicit model binding.** A type hint is the whole declaration: `def show(post: Post)` receives a `Post`. The key is `get_route_key_name()` or the primary key, `{post:slug}` overrides it per route, backed enums bind by value or name (int-backed included), nothing found is a 404 or whatever `missing()` returns, and `with_trashed()` lets binding see a soft-deleted row. A scoped binding resolves a child *through* its parent, so `/posts/{post}/comments/{comment}` cannot return a comment on another post. `Route.model` and `Route.bind` win over the hint.
+- **Domain routing**, with `{subdomain}` parameters reaching the handler like any other. Starlette matches on the path alone, so the host is checked in the endpoint and a mismatch is handed to the fallback — a host-scoped route another host reached is not that route at all.
+- **Form method spoofing.** A browser form sends GET and POST and nothing else, so `_method` (and `X-HTTP-Method-Override`) is read in ASGI middleware and `scope["method"]` is rewritten *before* routing — inside a handler would be too late, the router having already answered 405. Only a POST may spoof, only into PUT / PATCH / DELETE, and `request.real_method` still reports what arrived.
+- **URL generation.** `secure_url`, `secure_asset`, `route`, `signed_route`, `temporary_signed_route`, `action`, `to_route`, `to_action`, `current`, `full`, `previous`, `previous_path`, `query`, `force_scheme`, `force_root_url` — the family M50 left owed to this milestone. Signed URLs are an HMAC over the URL with the signature removed and the query sorted, so a mail client that reorders parameters does not break the link; absolute and relative shapes both exist, and an expired link and an edited one are distinguishable rather than both "invalid".
+- **URL defaults are request-scoped.** Laravel keeps them on a singleton, which is safe because a PHP process serves one request at a time. An ASGI process serves many at once, so the `url.defaults` middleware opens a `ContextVar` overlay that dies with the request — a French visitor's locale cannot reach the links generated for an English one. A default fills a parameter a URI names and never becomes a query string.
+- **Tooling.** `route:list` gains name, domain, and middleware columns and filters (`--except-path`, `--domain`, `--action`, `--sort`, `--reverse`, `--middleware`, `--except-vendor` / `--only-vendor`); `make:controller` gains `--resource`, `--api`, `--model`, `--singleton`, `--invokable` with a stub for each; Prism gains `@route` and `@signedRoute`.
+- **Living example:** `smith progress:routing` walks the whole surface — verbs, constraints, groups, all six resource shapes, binding, every `route()` parameter shape, signed URLs, and defaults — printing what each one produces.
+
+**Deliberate deviations (M33):** a route's parameters are positional-only on `route()` and friends so a parameter may be named `name`; a resource registers on the statement rather than from a finalizer; leftover *positional* parameters raise instead of being appended as path segments, because a count that does not match the URI is far likelier a mistake than an intention; URL defaults are per request rather than per process.
+
+**Found and fixed on the way (M33):** the container resolved an annotated constructor parameter even when it had a default, so a middleware declaring `mode: str | None = None` could not be built unless `str` was bound — a parameter that says both what it wants and what to do without it is optional. `view:cache` / `view:clear` relied on that failure to detect an unconfigured application and now ask whether an engine is *bound*, since a bare `Engine` autowires into one with no template paths.
 
 ### M34 — Security headers + CORS
 
@@ -1584,11 +1603,11 @@ Laravel [Helpers](https://laravel.com/docs/helpers) + [Strings](https://laravel.
 - ~~**`Stringable` (27/117):** the fluent wrapper hand-writes a subset~~ **shipped (part 1)** — the hand-written proxy list is gone; `Stringable` delegates the whole `Str` surface generically, binding the subject wherever it sits in the signature, so a new `Str` method is fluent the day it lands. The fluent-only methods came with it: `new_line`, `strip_tags`, `split`, `test`, `to_base` / `from_base`, `hash`, `encrypt` / `decrypt`, and the `when_*` conditional family. It was also **mutating in place** — a real parity bug, since Laravel's is immutable; every method now returns a new instance
 - ~~**`Arr` (42/57):** typed getters, `every`, `some`, `sole`, `partition`, `push`, `select`, `from`, `has_all`, `only_values`, `except_values`~~ **shipped (part 1)** — 59 methods now; Laravel's `from` is `from_`, because `from` is a Python keyword
 - ~~**`Number` (17/20):** `parse_int`, `parse_float`, `spell_ordinal`~~ **shipped (part 1)**
-- ~~**Global helpers:** the wrappers over surfaces that already ship~~ **shipped (part 2)** — `app`, `resolve`, `request`, `response`, `back`, `session`, `old`, `cookie`, `logger`, `info`, `report`, `bcrypt`, `csrf_field`, `method_field`, `validator`, `policy`. Several needed the plumbing under them first: a request `ContextVar` set by the kernel, a `ResponseFactory` and a `Redirect` that can flash input and errors, a cookie jar, and a global application accessor. `broadcast`, `context`, and `fake` stay honestly absent; the URL family still belongs to **M33**
+- ~~**Global helpers:** the wrappers over surfaces that already ship~~ **shipped (part 2)** — `app`, `resolve`, `request`, `response`, `back`, `session`, `old`, `cookie`, `logger`, `info`, `report`, `bcrypt`, `csrf_field`, `method_field`, `validator`, `policy`. Several needed the plumbing under them first: a request `ContextVar` set by the kernel, a `ResponseFactory` and a `Redirect` that can flash input and errors, a cookie jar, and a global application accessor. `broadcast`, `context`, and `fake` stay honestly absent; the URL family landed with **M33**
 - ~~**Docs:** rewrite `strings` and `helpers` to a section per method~~ **shipped (part 3)** — 3,260 and 2,980 lines against the old 180 and 154, 377 sections in Laravel's grouping, with the same smoke contract collections got. Laravel's Other Utilities (Benchmarking, Dates, Deferred Functions, Lottery, Pipeline, Sleep, Timebox) are named as deferred rather than left unmentioned
 - ~~**Parity gaps the rewrite exposed**~~ **shipped (part 4)** — writing an example per method found five behaviours that quietly differed: `data_get` ignored `*` wildcards, `data_set` replaced a list with a dict keyed by the index as a string, `Arr.to_css_styles` did not read Laravel's switched-style shape, the pad family used only the first character of the pad string, and `Str.char_at` refused a negative index
 
-**Depends on:** M33 for the URL helper family only; everything else is standalone.
+**Depends on:** M33 for the URL helper family only (shipped); everything else is standalone.
 
 **Gate met (2026-09-08):** both pages exhausted or deviations named; `Stringable` delegates every `Str` method, with a test proving the fluent and static forms agree; every method has its own documented section with a verified example.
 

@@ -1,0 +1,22 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from almasix.http import Controller, Request
+
+
+class {{ class }}(Controller):
+    """The three actions `Route.singleton` registers.
+
+    A singleton has exactly one member — a profile, a site setting — so the
+    URIs carry no id and there is nothing to list.
+    """
+
+    async def show(self):
+        """GET — the one of it there is."""
+
+    async def edit(self):
+        """GET /edit — the form that updates it."""
+
+    async def update(self, request: Request):
+        """PUT|PATCH — persist a change."""

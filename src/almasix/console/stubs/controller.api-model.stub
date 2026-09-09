@@ -1,0 +1,28 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from almasix.http import Controller, Request
+
+from {{ namespacedModel }} import {{ model }}
+
+
+class {{ class }}(Controller):
+    """The five actions `Route.api_resource` registers, bound to {{ model }}."""
+
+    async def index(self):
+        """GET — a listing."""
+        return await {{ model }}.query().get()
+
+    async def store(self, request: Request):
+        """POST — persist a new {{ modelVariable }}."""
+
+    async def show(self, {{ modelVariable }}: {{ model }}):
+        """GET /{id} — one {{ modelVariable }}."""
+        return {{ modelVariable }}
+
+    async def update(self, request: Request, {{ modelVariable }}: {{ model }}):
+        """PUT|PATCH /{id} — persist a change."""
+
+    async def destroy(self, {{ modelVariable }}: {{ model }}):
+        """DELETE /{id} — remove one."""

@@ -6,6 +6,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Self
 
+from almasix.http.middleware import FRAMEWORK_ALIASES
 from almasix.http.trust import (
     HEADER_X_FORWARDED_ALL,
     normalize_hosts,
@@ -34,7 +35,10 @@ class Middleware:
         self._groups: dict[str, list[Any]] = {
             str(name): list(members or []) for name, members in dict(groups).items()
         }
-        self._aliases: dict[str, Any] = dict(http.get("middleware_aliases") or {})
+        self._aliases: dict[str, Any] = {
+            **FRAMEWORK_ALIASES,
+            **dict(http.get("middleware_aliases") or {}),
+        }
         self._trusted_proxies: list[str] | str | None = http.get("trusted_proxies")
         self._trusted_headers: int = int(
             http.get("trusted_headers", HEADER_X_FORWARDED_ALL) or HEADER_X_FORWARDED_ALL

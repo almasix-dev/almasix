@@ -1,0 +1,28 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from almasix.http import Controller, Request
+
+
+class {{ class }}(Controller):
+    """The five actions `Route.api_resource` registers.
+
+    `create` and `edit` are missing on purpose: they exist to serve an HTML
+    form, and an API has no form to serve.
+    """
+
+    async def index(self):
+        """GET /resource — a listing."""
+
+    async def store(self, request: Request):
+        """POST /resource — persist a new one."""
+
+    async def show(self, id: str):
+        """GET /resource/{id} — one of them."""
+
+    async def update(self, request: Request, id: str):
+        """PUT|PATCH /resource/{id} — persist a change."""
+
+    async def destroy(self, id: str):
+        """DELETE /resource/{id} — remove one."""

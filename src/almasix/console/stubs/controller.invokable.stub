@@ -1,0 +1,15 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from almasix.http import Controller, Request
+
+
+class {{ class }}(Controller):
+    """A controller with one action, so the route names the class.
+
+        Route.post("/reports", ReportController)
+    """
+
+    async def __call__(self, request: Request):
+        """The only action this controller has."""

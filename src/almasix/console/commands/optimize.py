@@ -48,7 +48,29 @@ class CacheForgetCommand(Command):
         return self.SUCCESS
 
 
-class ViewCacheCommand(Command):
+class ViewCommand(Command):
+    """Shared by `view:cache` and `view:clear`: finding the view engine."""
+
+    def _engine(self):
+        """The application's view engine, or `None` with a message printed.
+
+        This asks whether one is *bound* rather than trying to build one: a
+        bare `Engine` autowires into an object with no template paths, and
+        `view:cache` would then report success on having compiled nothing.
+        """
+        from almasix.prism.engine import Engine
+
+        if not self.app.bound(Engine):
+            self.error("No view engine is configured: bootstrap the application first.")
+            return None
+        try:
+            return self.app.make(Engine)
+        except Exception as exc:
+            self.error(f"No view engine is configured: {exc}")
+            return None
+
+
+class ViewCacheCommand(ViewCommand):
     signature = "view:cache"
     description = "Compile every Prism template"
 
@@ -75,27 +97,14 @@ class ViewCacheCommand(Command):
         self.comment("Compiled views live in the process, so this warms this run and checks the rest.")
         return self.SUCCESS
 
-    def _engine(self):
-        from almasix.prism.engine import Engine
 
-        try:
-            return self.app.make(Engine)
-        except Exception as exc:
-            self.error(f"No view engine is configured: {exc}")
-            return None
-
-
-class ViewClearCommand(Command):
+class ViewClearCommand(ViewCommand):
     signature = "view:clear"
     description = "Drop the compiled Prism templates"
 
     def handle(self) -> int:
-        from almasix.prism.engine import Engine
-
-        try:
-            engine = self.app.make(Engine)
-        except Exception as exc:
-            self.error(f"No view engine is configured: {exc}")
+        engine = self._engine()
+        if engine is None:
             return self.FAILURE
         engine.clear_cache()
         self.success("Compiled views cleared.")

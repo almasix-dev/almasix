@@ -103,14 +103,9 @@ class Vite:
     # -- resolution ----------------------------------------------------------
 
     def asset_url(self, path: str) -> str:
-        from almasix.routing.url import UrlGenerator, asset
+        from almasix.routing.url import asset
 
-        try:
-            return asset(path, absolute=False)
-        except RuntimeError:
-            # No application booted (a script, or a unit test): there is no
-            # APP_BASE_PATH to honour, so the plain public path is correct.
-            return UrlGenerator().to(path, absolute=False)
+        return asset(path, absolute=False)
 
     def entry_url(self, entry: str) -> str:
         """The URL a single entry point is served from."""

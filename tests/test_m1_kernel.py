@@ -34,6 +34,18 @@ class CycleB:
         self.other = other
 
 
+class OptionalCycleA:
+    """A cycle whose parameters both have defaults."""
+
+    def __init__(self, other: "OptionalCycleB" = None) -> None:  # type: ignore[assignment]
+        self.other = other
+
+
+class OptionalCycleB:
+    def __init__(self, other: OptionalCycleA = None) -> None:  # type: ignore[assignment]
+        self.other = other
+
+
 class NeedsHint:
     def __init__(self, value) -> None:  # noqa: ANN001
         self.value = value
@@ -128,6 +140,54 @@ def test_container_autowire_and_cycle() -> None:
     container.alias(Greeter, "greeter")
     assert container.has("greeter")
     assert container.resolve("greeter").suffix == "!!"
+
+
+def test_an_annotated_parameter_with_a_default_may_go_unfilled() -> None:
+    # A parameter that says both what it wants and what to do without it is
+    # optional. Middleware written `def __init__(self, mode: str | None = None)`
+    # must build even though nobody bound `str`.
+    class Optional:
+        def __init__(self, mode: str | None = None, greeter: Greeter | None = None) -> None:
+            self.mode = mode
+            self.greeter = greeter
+
+    container = Container()
+
+    built = container.resolve(Optional)
+
+    assert built.mode is None
+    assert built.greeter is None
+
+
+def test_the_container_still_fills_a_default_when_something_is_bound() -> None:
+    class Optional:
+        def __init__(self, greeter: Greeter = None) -> None:  # type: ignore[assignment]
+            self.greeter = greeter
+
+    container = Container()
+    container.singleton(Greeter, lambda c: Greeter("?"))
+
+    assert container.resolve(Optional).greeter.suffix == "?"
+
+
+def test_a_cycle_is_reported_even_when_the_parameter_has_a_default() -> None:
+    # A default cannot stand in for a cycle: that is a mistake in the wiring
+    # rather than a name nobody registered, and silence would hide it.
+    from almasix.framework import CircularDependencyError
+
+    with pytest.raises(CircularDependencyError, match="Circular"):
+        Container().resolve(OptionalCycleA)
+
+
+def test_bound_reports_registration_rather_than_buildability() -> None:
+    class Plain:
+        pass
+
+    container = Container()
+
+    assert container.bound(Plain) is False
+    # ...and yet it builds, which is exactly why the two questions differ.
+    assert isinstance(container.resolve(Plain), Plain)
 
 
 def test_application_bootstrap(tmp_path: Path, monkeypatch) -> None:

@@ -450,7 +450,7 @@ async def test_kernel_parameterized_and_invoke(tmp_path: Path) -> None:
 
 def test_trust_and_router_and_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from almasix.framework.application import Application
-    from almasix.routing.router import Router
+    from almasix.routing.router import Router, _GroupOptions
 
     assert peer_is_trusted("not-an-ip", ["not-an-ip"]) is True
     assert _scope_peer({}) is None
@@ -482,7 +482,7 @@ def test_trust_and_router_and_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     TrustProxiesASGI(lambda *a: None, proxies="*", headers=0)._apply(scope, {"x-forwarded-for": "1.1.1.1"})  # noqa: SLF001
 
     router = Router()
-    router._group_stack.append(SimpleNamespace(prefix="api", middleware=[]))  # noqa: SLF001
+    router._group_stack.append(_GroupOptions(prefix="api"))  # noqa: SLF001
     assert router.add(["GET"], "items", lambda: None).uri.startswith("/")
 
     root = tmp_path / "app"

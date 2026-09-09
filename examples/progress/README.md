@@ -176,20 +176,23 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M30** | `smith progress:console` / `progress:import` — signatures, `Artisan.call`, `--isolated`; `smith list` shows all 126 commands |
 | **M31** | `smith progress:schedule` — frequencies, constraints, hooks, a tick; `smith schedule:list` / `test` / `interrupt` |
 | **M32** | `smith progress:install` — `almasix new` across four stacks and four databases, the default migrations running, `--stubs` from a published tree |
+| **M33** | `smith progress:routing` — every verb and shape, constraints, groups, resource / singleton routing, model binding, `route()` and signed URLs |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M42** | `smith progress:queries` — JSON wheres and updates, `join_sub`, unions, `having_between`, `sole`, locking, `DB.listen` / `pretend` / `after_commit`; `smith db` |
 | **M43** | `smith progress:schema` — the column catalogue, `change()` and the drops, `Schema.rename`, index and foreign-key inspection, `migrate --pretend` / `--step`, all three paginators |
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
-| **M29, M33–M39, M44–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M29, M34–M39, M44–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M28, M30–M32, M40–M43, M49, and M50 are closed — M5's query builder was
-exhausted in M42 and its schema layer in M43, and M32 gave `almasix new` its
+M0–M28, M30–M33, M40–M43, M49, and M50 are closed — M5's query builder was
+exhausted in M42 and its schema layer in M43, M32 gave `almasix new` its
 prompts, its four stacks, and the default migrations Laravel ships and Almasix
-did not. Next is **M33 — routing DX and named routes**. The board on
+did not, and M33 closed routing: a route can now be named, constrained,
+grouped, signed, and resolved into a model, and `route()` generates its URL
+from anywhere. Next is **M34 — security headers and CORS**. The board on
 `/progress` lists the full **M0–M51** roadmap with a status and proof for each
 milestone.
 ## CLI
@@ -205,6 +208,7 @@ smith progress:collections
 smith progress:queries
 smith progress:schema
 smith progress:install
+smith progress:routing
 smith progress:cache
 smith progress:redis
 smith progress:encryption

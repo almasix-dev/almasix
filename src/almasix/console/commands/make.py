@@ -83,12 +83,48 @@ class Generator(Command):
 
 
 class MakeControllerCommand(Generator):
+    """Laravel's ``make:controller``, including the resource shapes.
+
+    ``--model`` implies ``--resource``: a controller bound to a model is a
+    resource controller, and asking for both is the same request twice.
+    """
+
     signature = (
         "make:controller {name : Class name, e.g. PostController or Admin/PostController} "
+        "{--resource : The seven actions Route.resource registers} "
+        "{--api : The five an API needs, without the two that serve forms} "
+        "{--model= : Type-hint the actions with this model, for implicit binding} "
+        "{--singleton : The three actions Route.singleton registers} "
+        "{--invokable : One action, called through __call__} "
         "{--force : Overwrite an existing file}"
     )
     description = "Create a controller in app/http/controllers"
     kind = "controller"
+
+    def stub(self) -> str | None:
+        model = str(self.option("model") or "")
+        api = bool(self.option("api"))
+        if self.option("invokable"):
+            return "controller.invokable.stub"
+        if self.option("singleton"):
+            return "controller.singleton.stub"
+        if model:
+            return "controller.api-model.stub" if api else "controller.model.stub"
+        if api:
+            return "controller.api.stub"
+        if self.option("resource"):
+            return "controller.resource.stub"
+        return None
+
+    def replacements(self) -> dict[str, str]:
+        model = studly(str(self.option("model") or "").replace("/", "_"))
+        if not model:
+            return {}
+        return {
+            "model": model,
+            "modelVariable": snake(model),
+            "namespacedModel": f"app.models.{snake(model)}",
+        }
 
 
 class MakeMiddlewareCommand(Generator):

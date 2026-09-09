@@ -424,11 +424,11 @@ def test_prism_can_cannot_canany() -> None:
 def test_route_can_appends_middleware() -> None:
     route = RouteDefinition(methods=("GET",), uri="/x", action=lambda: None)
     route.can("update", "post")
-    assert "can:update,post" in route.middleware
+    assert "can:update,post" in route.middleware_names
     route.can("view-dashboard")
-    assert "can:view-dashboard" in route.middleware
+    assert "can:view-dashboard" in route.middleware_names
     route.can("create", Post)
-    assert any(item.startswith("can:create,") for item in route.middleware)
+    assert any(item.startswith("can:create,") for item in route.middleware_names)
 
 
 @pytest.mark.asyncio
