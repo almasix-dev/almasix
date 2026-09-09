@@ -526,8 +526,8 @@ def _milestones() -> list[dict]:
             "name": "VS Code + JetBrains integrations",
             "status": "planned",
             "proof": [
-                "Marketplace + Open VSX extension",
-                "JetBrains Marketplace plugin",
+                "local .vsix + JetBrains zip (sideload)",
+                "LSP-first PyCharm shell",
                 "smith ide:install + ide:stubs",
                 "VS Code ↔ PyCharm parity matrix",
             ],
