@@ -634,7 +634,7 @@ pytest -q tests/test_m26_*.py tests/smoke/test_m26_smoke.py
 - [x] `smith make:channel`, `channel:list`, and `config/broadcasting.py` + `routes/channels.py` in the scaffold
 - [x] Living example: `PostPublished`, a broadcasting `Comment`, `smith progress:broadcast`, `GET /api/broadcast`; the board marks M26 complete
 - [x] Docs + smoke; 100% line and branch coverage on `almasix.broadcasting`
-- [ ] **Still owed:** Echo compatibility (**M52**) — native socket must speak Pusher so `laravel-echo` works; server alone is not the full product
+- [ ] **Still owed:** first-party browser client for the native Almasix socket (**M52**); Pusher.js / Ably are alternatives — server alone is not the full product
 
 ---
 
@@ -913,24 +913,6 @@ Laravel [Sanctum](https://laravel.com/docs/13.x/sanctum) parity as Almasix **Sig
 
 ---
 
-## M52 — Echo compatibility (planned)
-
-```bash
-# when implemented:
-# pytest -q tests/smoke/test_m52_smoke.py
-# cd examples/progress && python smith progress:broadcast
-```
-
-Native `/broadcasting/socket` speaks Pusher protocol; browsers use `laravel-echo` + `pusher-js` (no `@almasix/echo`). See [`PLAN.md`](PLAN.md) Autopilot batch.
-
-### M52 exit criteria
-
-- [ ] Native websocket frames use `pusher:*` (public + private + presence as documented)
-- [ ] Echo auth handshake against `/broadcasting/auth` works
-- [ ] Starlight Broadcasting documents Echo install against Almasix
-- [ ] Living example / smoke proves Echo subscribe (not raw WebSocket only)
-- [ ] Explicitly no first-party Echo package
-
 ## M53 — Carbon-class dates + helpers (planned)
 
 ```bash
@@ -939,8 +921,6 @@ Native `/broadcasting/socket` speaks Pusher protocol; browsers use `laravel-echo
 # cd examples/progress && python smith progress:dates
 ```
 
-Laravel [Carbon](https://carbon.nesbot.com/) parity — fluent date/time type, test time travel, and date/time helpers extending the M50 clock primitives (`now` / `today` / `set_test_now`).
-
 ### M53 exit criteria
 
 - [ ] Carbon-class fluent type (working name TBD) over aware datetimes
@@ -948,6 +928,38 @@ Laravel [Carbon](https://carbon.nesbot.com/) parity — fluent date/time type, t
 - [ ] Support date/time helpers documented; Starlight page without milestone IDs
 - [ ] Living example (`smith progress:dates` or extended `progress:helpers`); board marks M53 complete
 - [ ] Coverage ≥ 98% on the new package
+
+---
+
+## M45 — Prism language support (planned)
+
+See [`PLAN.md`](PLAN.md) M45. Grammar + formatter fixtures; CI golden tests.
+
+## M46 — Almasix Language Server (planned)
+
+See [`PLAN.md`](PLAN.md) M46. LSP wire-protocol conformance suite in CI.
+
+## M47 — VS Code + JetBrains integrations (planned)
+
+See [`PLAN.md`](PLAN.md) M47. Marketplace / Open VSX / JetBrains artifacts; parity matrix; `smith ide:install` + stubs.
+
+## M52 — First-party realtime client (planned)
+
+```bash
+# when implemented:
+# pytest -q tests/smoke/test_m52_smoke.py
+# cd examples/progress && python smith progress:broadcast
+```
+
+Default = Almasix websocket server + first-party JS client. Pusher.js / Ably documented as alternatives.
+
+### M52 exit criteria
+
+- [ ] First-party client package speaks to native `/broadcasting/socket` (public + private)
+- [ ] Default docs/demo do **not** require `pusher-js`
+- [ ] Pusher / Ably (or Echo) alternative paths documented
+- [ ] Living example + smoke; board marks M52 complete
+
 
 ---
 
@@ -1130,9 +1142,9 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 ## Out of scope until later milestones
 
 - Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
-- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Echo compatibility (M52), Carbon-class dates (M53)
-- **Stability track (2026-09-10):** M44 + M25 L13 Mongo audit + M51 lint gate + M38 deployment + M39 docs + **M37** Signet tokens complete; prefer M52 → M53 → M36; one milestone at a time
+- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52)
+- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; next **M53 → M45 → M46 → M47 → M52** (no pauses); M36 / M48 later
 - Parity reference: **Laravel 13.x** docs
-- IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
+- IDE and editor tooling: **M45–M47** in the current autopilot batch (thorough VS Code-family + JetBrains); **M48** MCP later
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

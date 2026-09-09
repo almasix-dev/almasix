@@ -283,7 +283,7 @@ def _milestones() -> list[dict]:
                 "make:channel; channel:list",
                 "GET /api/broadcast",
                 "progress:broadcast",
-                "Echo compatibility → M52 (laravel-echo, not a first-party client)",
+                "First-party realtime client → M52 (Pusher/Ably optional)",
             ],
         },
         {
@@ -505,19 +505,32 @@ def _milestones() -> list[dict]:
             "id": "M45",
             "name": "Prism language support",
             "status": "planned",
-            "proof": [".prism.html grammar", "syntax highlighting"],
+            "proof": [
+                "TextMate + tree-sitter .prism.html",
+                "snippets + editor behavior",
+                "smith prism:format",
+            ],
         },
         {
             "id": "M46",
             "name": "Almasix Language Server",
             "status": "planned",
-            "proof": ["almasix-lsp", "completion + go-to-definition"],
+            "proof": [
+                "almasix-lsp over LSP wire protocol",
+                "completion + diagnostics + go-to-definition",
+                "conformance CI on progress",
+            ],
         },
         {
             "id": "M47",
-            "name": "Editor integrations + stubs",
+            "name": "VS Code + JetBrains integrations",
             "status": "planned",
-            "proof": ["VS Code + JetBrains plugins", "smith ide:stubs"],
+            "proof": [
+                "Marketplace + Open VSX extension",
+                "JetBrains Marketplace plugin",
+                "smith ide:install + ide:stubs",
+                "VS Code ↔ PyCharm parity matrix",
+            ],
         },
         {
             "id": "M48",
@@ -560,12 +573,12 @@ def _milestones() -> list[dict]:
         },
         {
             "id": "M52",
-            "name": "Echo compatibility (laravel-echo)",
+            "name": "First-party realtime client",
             "status": "planned",
             "proof": [
-                "Pusher-protocol /broadcasting/socket",
-                "laravel-echo + pusher-js",
-                "private channel auth handshake",
+                "Almasix socket server (default)",
+                "first-party JS client",
+                "Pusher.js / Ably as alternatives",
             ],
         },
         {
