@@ -283,7 +283,7 @@ def _milestones() -> list[dict]:
                 "make:channel; channel:list",
                 "GET /api/broadcast",
                 "progress:broadcast",
-                "First-party realtime client → M52 (Pusher/Ably optional)",
+                "Sonar realtime → M52 (@almasix/sonar; Pusher/Ably/Socket.IO optional)",
             ],
         },
         {
@@ -573,22 +573,23 @@ def _milestones() -> list[dict]:
         },
         {
             "id": "M52",
-            "name": "First-party realtime client",
+            "name": "Sonar realtime (server + @almasix/sonar)",
             "status": "planned",
             "proof": [
-                "Almasix socket server (default)",
-                "first-party JS client",
-                "Pusher.js / Ably as alternatives",
+                "Sonar websocket server (default)",
+                "@almasix/sonar client",
+                "Pusher / Ably / Socket.IO alternatives",
             ],
         },
         {
             "id": "M53",
-            "name": "Carbon-class dates + helpers",
-            "status": "planned",
+            "name": "Chrono dates + helpers",
+            "status": "complete",
             "proof": [
-                "fluent date/time type",
-                "test time travel",
-                "date/time helpers + progress demo",
+                "smith progress:dates",
+                "almasix.chrono / Chrono",
+                "now() / today() return Chrono",
+                "freeze / travel / return_time",
             ],
         },
     ]

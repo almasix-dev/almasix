@@ -913,21 +913,20 @@ Laravel [Sanctum](https://laravel.com/docs/13.x/sanctum) parity as Almasix **Sig
 
 ---
 
-## M53 — Carbon-class dates + helpers (planned)
+## M53 — Chrono dates + helpers
 
 ```bash
-# when implemented:
-# pytest -q tests/test_m53_*.py tests/smoke/test_m53_smoke.py
-# cd examples/progress && python smith progress:dates
+pytest -q tests/test_m53_chrono.py tests/smoke/test_m53_smoke.py
+cd examples/progress && python smith progress:dates
 ```
 
 ### M53 exit criteria
 
-- [ ] Carbon-class fluent type (working name TBD) over aware datetimes
-- [ ] Test freeze / travel / return wired through helpers
-- [ ] Support date/time helpers documented; Starlight page without milestone IDs
-- [ ] Living example (`smith progress:dates` or extended `progress:helpers`); board marks M53 complete
-- [ ] Coverage ≥ 98% on the new package
+- [x] `Chrono` in `almasix.chrono` over aware datetimes
+- [x] Test freeze / travel / return wired through helpers
+- [x] Starlight **Dates (Chrono)** + helpers page updates
+- [x] `smith progress:dates`; board marks M53 complete
+- [x] Coverage **100%** on `almasix.chrono`
 
 ---
 
@@ -943,7 +942,7 @@ See [`PLAN.md`](PLAN.md) M46. LSP wire-protocol conformance suite in CI.
 
 See [`PLAN.md`](PLAN.md) M47. **Local-first:** CI builds `.vsix` + JetBrains `.zip`; sideload install; Marketplace publish later when accounts exist. LSP-first PyCharm shell.
 
-## M52 — First-party realtime client (planned)
+## M52 — Sonar realtime (planned)
 
 ```bash
 # when implemented:
@@ -951,13 +950,13 @@ See [`PLAN.md`](PLAN.md) M47. **Local-first:** CI builds `.vsix` + JetBrains `.z
 # cd examples/progress && python smith progress:broadcast
 ```
 
-Default = Almasix websocket server + first-party JS client. Pusher.js / Ably documented as alternatives.
+Default = **Sonar** server + `@almasix/sonar`. Pusher.js / Ably / Socket.IO documented as alternatives.
 
 ### M52 exit criteria
 
-- [ ] First-party client package speaks to native `/broadcasting/socket` (public + private)
+- [ ] `@almasix/sonar` speaks to native Sonar `/broadcasting/socket` (public + private)
 - [ ] Default docs/demo do **not** require `pusher-js`
-- [ ] Pusher / Ably (or Echo) alternative paths documented
+- [ ] Pusher / Ably / Socket.IO alternative paths documented
 - [ ] Living example + smoke; board marks M52 complete
 
 

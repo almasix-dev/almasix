@@ -1453,7 +1453,7 @@ def test_the_clock_can_be_moved_and_put_back() -> None:
     traveller = travel(days=2)
     try:
         assert now() - real >= timedelta(days=2) - timedelta(seconds=1)
-        assert today() == now().date()
+        assert today().date() == now().date()
         assert "TimeTraveller(" in repr(traveller)
     finally:
         traveller.back()

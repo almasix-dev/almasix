@@ -143,6 +143,7 @@ export default defineConfig({
 						{ label: 'Notifications', slug: 'notifications' },
 						{ label: 'Collections', slug: 'collections' },
 						{ label: 'Helpers', slug: 'helpers' },
+						{ label: 'Dates (Chrono)', slug: 'dates' },
 						{ label: 'Strings', slug: 'strings' },
 						{ label: 'Cache', slug: 'cache' },
 						{ label: 'Redis', slug: 'redis' },

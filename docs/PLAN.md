@@ -1738,35 +1738,34 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 ## Broadcasting client (M52)
 
-### M52 — First-party realtime client + alternative connectors
+### M52 — Sonar (first-party realtime server + `@almasix/sonar`)
 
-Almasix M26 already ships a **first-class in-process websocket server** (`BROADCAST_CONNECTION=websocket`, `/broadcasting/socket`). That server is the **default** realtime path for Almasix apps — not an afterthought behind Pusher.
+Almasix M26 already ships a **first-class in-process websocket server** (`BROADCAST_CONNECTION=websocket`, `/broadcasting/socket`). That server is the **default** realtime path — product name **Sonar** (same brand as the browser client).
 
 **Product decision (2026-09-10, revised):**
 
-1. **Default stack:** Almasix socket server + a **first-party browser client** (working name TBD: `@almasix/echo`, `almasix-realtime`, …) that speaks the server’s protocol, with private/presence auth against `/broadcasting/auth`.
-2. **Alternatives (supported, not default):** [Pusher](https://pusher.com/) via `pusher-js`, [Ably](https://ably.com/), and other Laravel-Echo-compatible connectors when the app’s broadcaster is `pusher` / Ably / Redis→Soketi — document how to point `laravel-echo` (or the vendor SDK) at those backends.
-3. Protocol work may still **align with Pusher’s frame shapes** where it reduces connector cost, but interoperability must not demote the native server or force every app through `pusher-js`.
+1. **Default stack:** **Sonar** server + **`@almasix/sonar`** client speaking Sonar’s protocol, with private/presence auth against `/broadcasting/auth`.
+2. **Alternatives (supported, not default):** [Pusher](https://pusher.com/) (`pusher-js`), [Ably](https://ably.com/), and [Socket.IO](https://socket.io/) — document how to point those clients / Echo connectors at the matching broadcaster backends.
+3. Protocol may align with familiar frame shapes where useful, but the default path must **not** require `pusher-js`, Ably, or Socket.IO.
 
 Ship:
 
-- First-party JS/TS client package installable from npm; defaults to Almasix host + `/broadcasting/socket` + CSRF/session or Bearer auth as documented
-- Public / private / presence subscribe; `toOthers` / socket id header; client events if the server enables them
-- Starlight **Broadcasting**: default path (Almasix server + first-party client) first; Pusher / Ably / Echo as secondary sections
-- Progress demo uses the **first-party client** against the native server; optional smoke that the pusher driver still publishes
-- Living Vite example under `examples/` or progress assets
+- Brand the native websocket surface as Sonar in docs/config comments (driver may remain `websocket` internally with a `sonar` alias if clean)
+- npm package **`@almasix/sonar`**: public / private / presence; socket id / `toOthers`; client events when enabled
+- Starlight **Broadcasting / Sonar**: default path first; Pusher / Ably / Socket.IO as secondary sections
+- Progress demo uses `@almasix/sonar` against the native server
 
 **Depends on:** M26 (server + auth endpoints).
 
-**Gate:** default docs and demo use Almasix server + first-party client; private channel works; alternatives documented; smoke + progress proof; no requirement that apps install `pusher-js` for the default path.
+**Gate:** default docs and demo use Sonar server + `@almasix/sonar`; private channel works; Pusher / Ably / Socket.IO alternatives documented; smoke + progress proof.
 
 ## Dates and time (M53)
 
-### M53 — Carbon-class dates + date/time helpers
+### M53 — Chrono (`almasix.chrono`) + date/time helpers
 
 Laravel's [Carbon](https://carbon.nesbot.com/) (and the framework's date helpers) is how apps reason about instants, intervals, and human strings without fighting `datetime`. Almasix today has a thin clock (`now` / `today` / `set_test_now` in support helpers) — not a manipulation library.
 
-- First-party Carbon-class type (working name TBD — pick in-milestone; do not block on branding) — immutable-friendly fluent API over aware datetimes: parse, add/sub, start/end of period, compare, diff for humans, format localization hooks
+- First-party **`Chrono`** type in **`almasix.chrono`** — immutable-friendly fluent API over aware datetimes: parse, add/sub, start/end of period, compare, diff for humans, format localization hooks
 - Test time travel that freezes / travels / returns (`set_test_now` grows into the Carbon-class surface; existing helpers remain thin aliases)
 - Extend support helpers with the Laravel date/time helper set worth porting (`now`, `today`, and peers once the library exists)
 - Starlight page (no milestone IDs); living example `smith progress:dates` (or extend `progress:helpers`)
@@ -1774,7 +1773,9 @@ Laravel's [Carbon](https://carbon.nesbot.com/) (and the framework's date helpers
 
 **Depends on:** M50 helpers (clock primitives already ship).
 
-**Gate:** library + helpers exhausted with progress proof + smoke + docs; coverage ≥ 98% on the new package.
+**Status: complete (2026-09-10).** `almasix.chrono.Chrono` subclasses `datetime`; helpers `now` / `today` / `set_test_now` share the test clock; Starlight **Dates (Chrono)**; `smith progress:dates`; package coverage **100%**.
+
+**Gate:** library + helpers exhausted with progress proof + smoke + docs; coverage ≥ 98% on the new package. **Met at 100%.**
 
 ## Autopilot batch (M53 → M45 → M46 → M47 → M52)
 
@@ -1784,11 +1785,11 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 
 | Step | Milestone | Do | Ask / stop only if |
 | --- | --- | --- | --- |
-| 1 | **M53** Carbon-class dates | Fluent date type + helpers + docs + `progress:dates` + smoke | — (provisional name OK) |
+| 1 | **M53** Chrono | `almasix.chrono` + helpers + rich docs + `progress:dates` + smoke (~100% cov) | — |
 | 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | — |
 | 3 | **M46** `almasix-lsp` | Full LSP surface + wire-protocol conformance CI | — |
 | 4 | **M47** VS Code + JetBrains | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | — (marketplace publish is post-gate) |
-| 5 | **M52** First-party realtime client | Default = Almasix server + first-party JS client; Pusher/Ably alternatives | — if package name pre-decided; else provisional OK |
+| 5 | **M52** Sonar | Sonar server + `@almasix/sonar`; Pusher / Ably / Socket.IO alternatives | — |
 | — | **Later** | M36, M48, Socialite, Passport, client API keys, … | Not in this batch |
 
 ### Per-milestone checklist (non-negotiable)
@@ -1806,14 +1807,16 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 | --- | --- |
 | Marketplace accounts | **Not blocking.** Sideload locally / from CI artifacts; publish when accounts exist |
 | PyCharm architecture | **LSP-first** thin shell + `almasix-lsp`; native only where required |
-| Realtime default | Almasix socket server + first-party JS client; Pusher.js / Ably optional |
-| Carbon-class name | Provisional OK at start of M53 (rename before tag if needed) |
-| Realtime client package name | Provisional OK at start of M52 (e.g. `@almasix/realtime`) |
+| Dates library | **`almasix.chrono`** / class **`Chrono`** (Carbon-class) |
+| Realtime brand | **Sonar** — first-party websocket **server** and **`@almasix/sonar`** client share the name |
+| Optional realtime clients | **pusher-js**, **Ably**, and **Socket.IO** — documented alternatives, not default |
+| Autopilot cadence | **No pauses** between M53→M45→M46→M47→M52; coverage aim **~100%**; rich organized Starlight docs |
 
 ### Autopilot rules
 
 - **Do not** start M36, M48, Socialite, Passport, or client-credentials API keys
-- **Do not** make `pusher-js` required for the default broadcasting path
+- **Do not** make `pusher-js`, Ably, or Socket.IO required for the default Sonar path
+- Aim for **~100% coverage** on new packages; docs must be rich and well organized
 - Prefer stacked branches off merged main: `m53-dates` → `m45-prism-lang` → `m46-lsp` → `m47-editors` → `m52-realtime-client`
 - Be **thorough** on M45–M47 — full VS Code-family and JetBrains support as specified; thin stubs that only work in one editor fail the gate
 - If blocked >15 minutes on an ambiguous product call listed in “Ask / stop”, stop and ask; otherwise keep going

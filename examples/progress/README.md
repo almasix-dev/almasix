@@ -184,6 +184,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M34** | `smith progress:security` — default security headers, `config/cors.py`, `smith down --secret` with a 503 and a bypass cookie |
 | **M35** | `smith progress:rate-limiting` — `RateLimiter`, `throttle` middleware, login lockout, `/api/throttle-demo` |
 | **M37** | `smith progress:tokens` — Signet PATs, abilities, `/api/user`, `/signet/csrf-cookie` |
+| **M53** | `smith progress:dates` — Chrono parse / add / freeze |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M42** | `smith progress:queries` — JSON wheres and updates, `join_sub`, unions, `having_between`, `sole`, locking, `DB.listen` / `pretend` / `after_commit`; `smith db` |
@@ -203,8 +204,8 @@ closed the installer, routing, security headers/CORS, and rate limiting; M25’s
 Laravel 13 Mongo audit, M51’s lint gate, M38’s deployment ops, and M39’s docs
 journey are closed with them. **Stability track next** (see `docs/PLAN.md`):
 API tokens (**M37**, Signet-class) are closed; next autopilot batch is
-**M53** (dates) → **M45–M47** (thorough IDE) → **M52** (first-party realtime
-client). No pauses; M36 / M48 later. The board on
+**M53** (Chrono) → **M45–M47** (IDE) → **M52** (Sonar). No pauses; M36 / M48 later.
+The board on
 `/progress` lists the full roadmap with a status and proof for each milestone.
 
 ## CLI
@@ -225,6 +226,7 @@ smith progress:routing
 smith progress:security
 smith progress:rate-limiting
 smith progress:tokens
+smith progress:dates
 smith progress:cache
 smith progress:redis
 smith progress:encryption

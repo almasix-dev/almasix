@@ -6,7 +6,7 @@ import asyncio
 import inspect
 import time
 from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from datetime import UTC, date, datetime, timezone
+from datetime import datetime, timezone
 from typing import Any, TypeVar
 
 from almasix.support.arr import Arr
@@ -322,28 +322,31 @@ def object_get(obj: Any, key: str, default: Any = None) -> Any:
 
 
 #: What a test froze the clock at, if one did (`almasix.testing.travel_to`).
-_test_now: datetime | None = None
-
-
 def set_test_now(moment: datetime | None) -> None:
-    """Freeze what ``now()`` answers, or thaw it again with ``None``."""
-    global _test_now
-    _test_now = moment
+    """Freeze what ``now()`` / ``Chrono.now()`` answer, or thaw with ``None``."""
+    from almasix.chrono import Chrono
+
+    Chrono.set_test_now(moment)
 
 
 def get_test_now() -> datetime | None:
-    return _test_now
+    from almasix.chrono import Chrono
+
+    return Chrono.get_test_now()
 
 
-def now(tz: timezone | None = None) -> datetime:
-    if _test_now is not None:
-        frozen = _test_now if _test_now.tzinfo else _test_now.replace(tzinfo=UTC)
-        return frozen.astimezone(tz or UTC)
-    return datetime.now(tz or UTC)
+def now(tz: timezone | str | None = None) -> Any:
+    """Current instant as ``Chrono`` (a ``datetime`` subclass)."""
+    from almasix.chrono import Chrono
+
+    return Chrono.now(tz)
 
 
-def today(tz: timezone | None = None) -> date:
-    return now(tz).date()
+def today(tz: timezone | str | None = None) -> Any:
+    """Start of today as ``Chrono``."""
+    from almasix.chrono import Chrono
+
+    return Chrono.today(tz)
 
 
 def literal(**kwargs: Any) -> Any:
