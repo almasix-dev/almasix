@@ -149,7 +149,9 @@ class MemoryStore(DocumentStore):
     async def find(self, query: Query) -> list[dict[str, Any]]:
         rows = self._matching(query)
         for order in reversed(query.orders):
-            rows.sort(key=lambda row, o=order: _Sortable(dotted(row, o.column)), reverse=order.descending)
+            rows.sort(
+                key=lambda row, o=order: _Sortable(dotted(row, o.column)), reverse=order.descending
+            )
         if query.distinct:
             seen: set[Any] = set()
             unique: list[dict[str, Any]] = []

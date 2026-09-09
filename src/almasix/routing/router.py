@@ -287,9 +287,7 @@ class Router:
 
     def named_routes(self) -> dict[str, RouteDefinition]:
         """Every named route, by name."""
-        return {
-            route.route_name: route for route in self.routes if route.route_name is not None
-        }
+        return {route.route_name: route for route in self.routes if route.route_name is not None}
 
     def has(self, *names: str) -> bool:
         """Whether every name has a route (Laravel ``Route::has``)."""
@@ -487,8 +485,7 @@ class Router:
 
     def api_singletons(self, mapping: Mapping[str, Any], **kwargs: Any) -> list[Any]:
         return [
-            self.api_singleton(name, controller, **kwargs)
-            for name, controller in mapping.items()
+            self.api_singleton(name, controller, **kwargs) for name, controller in mapping.items()
         ]
 
     # -- global patterns and explicit binding --------------------------------

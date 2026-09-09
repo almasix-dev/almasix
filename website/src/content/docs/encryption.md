@@ -7,7 +7,7 @@ description: Crypt.encrypt / decrypt — JSON-safe payloads, APP_KEY, and key ro
 
 Almasix encrypts values with an authenticated stream cipher keyed by `APP_KEY`.
 Encrypted payloads are MAC-signed so tampering fails closed. Cookie encryption
-(M7) and the app-facing `Crypt` façade share the same cipher.
+and the app-facing `Crypt` façade share the same cipher.
 
 ```python
 from almasix.encryption import Crypt, DecryptException, encrypt, decrypt

@@ -114,7 +114,9 @@ def render_markdown_component(markdown_body: str) -> str:
             flush()
             label, _, rest = line[1:].partition("](")
             href = rest[:-1]
-            blocks.append(f'<p><a class="button" href="{html.escape(href)}">{_inline(label)}</a></p>')
+            blocks.append(
+                f'<p><a class="button" href="{html.escape(href)}">{_inline(label)}</a></p>'
+            )
         else:
             paragraph.append(line.strip())
     flush()
@@ -157,7 +159,9 @@ def render_content(content: Content) -> tuple[str | None, str | None]:
                         alt = view_name.rsplit(".", 1)
                         if len(alt) == 2:
                             text_rendered = _render_view_file(f"{alt[0]}/{alt[1]}.text")
-                    text_body = text_rendered if text_rendered is not None else _strip_html(plain_source)
+                    text_body = (
+                        text_rendered if text_rendered is not None else _strip_html(plain_source)
+                    )
             elif view_name.endswith(".html") or ".prism.html" in view_name:
                 html_body = rendered
             else:

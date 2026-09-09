@@ -36,23 +36,19 @@ class UserProvider(Protocol):
 
     async def retrieve_by_token(  # pragma: no cover - protocol
         self, identifier: Any, token: str
-    ) -> Any | None:
-        ...
+    ) -> Any | None: ...
 
     async def update_remember_token(  # pragma: no cover - protocol
         self, user: Any, token: str | None
-    ) -> None:
-        ...
+    ) -> None: ...
 
     async def retrieve_by_credentials(  # pragma: no cover - protocol
         self, credentials: dict[str, Any]
-    ) -> Any | None:
-        ...
+    ) -> Any | None: ...
 
     async def validate_credentials(  # pragma: no cover - protocol
         self, user: Any, credentials: dict[str, Any]
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     async def rehash_password_if_required(  # pragma: no cover - protocol
         self,
@@ -60,5 +56,4 @@ class UserProvider(Protocol):
         credentials: dict[str, Any],
         *,
         force: bool = False,
-    ) -> None:
-        ...
+    ) -> None: ...

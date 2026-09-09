@@ -94,6 +94,14 @@ class HttpKernel:
         debug = bool(self.app.config.get("app.debug", False))
         asgi = FastAPI(title=title, debug=debug)
 
+        health = self.app.config.get("http.health")
+        if health:
+            # Registered on FastAPI directly — not through the Almasix router —
+            # so global middleware such as maintenance never wraps the probe.
+            @asgi.get(str(health), include_in_schema=False)
+            async def health_check() -> StarletteResponse:
+                return StarletteResponse(status_code=200)
+
         from starlette.exceptions import HTTPException as StarletteHTTPException
 
         @asgi.exception_handler(StarletteHTTPException)
@@ -494,9 +502,7 @@ class HttpKernel:
             elif param.default is not inspect.Parameter.empty:
                 continue
             else:
-                raise TypeError(
-                    f"Cannot resolve controller parameter {name!r} for {handler!r}"
-                )
+                raise TypeError(f"Cannot resolve controller parameter {name!r} for {handler!r}")
 
         self._authorize_controller_resource(handler, request, kwargs)
 
@@ -638,6 +644,7 @@ class _Unbound:
 
 
 _UNBOUND = _Unbound()
+
 
 def _domain_matches(route: RouteDefinition, request: Request) -> bool:
     """Whether the request's host is the one a `domain()` route answers on.

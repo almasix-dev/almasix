@@ -496,7 +496,9 @@ def _invoke(callback: Any, user: Any, arguments: Sequence[Any], *, container: An
         )
         and p.name != "self"
     ]
-    has_varargs = any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in signature.parameters.values())
+    has_varargs = any(
+        p.kind == inspect.Parameter.VAR_POSITIONAL for p in signature.parameters.values()
+    )
     args: list[Any] = [user, *list(arguments)]
     if not has_varargs:
         args = args[: len(params)] if params else []
@@ -524,7 +526,9 @@ def _call_after(
         )
         and p.name != "self"
     ]
-    has_varargs = any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in signature.parameters.values())
+    has_varargs = any(
+        p.kind == inspect.Parameter.VAR_POSITIONAL for p in signature.parameters.values()
+    )
     args: list[Any] = [user, ability, result, arguments]
     if not has_varargs:
         args = args[: len(params)] if params else []

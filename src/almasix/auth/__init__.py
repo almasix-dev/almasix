@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from almasix.auth.login_throttle import LoginRateLimiter, attempt_login
 from almasix.auth.access import (
     AccessGate,
     Authorizable,
@@ -41,6 +40,7 @@ from almasix.auth.guard import (
     pull_intended_url,
     store_intended_url,
 )
+from almasix.auth.login_throttle import LoginRateLimiter, attempt_login
 from almasix.auth.middleware import (
     Authenticate,
     AuthenticateWithBasicAuth,

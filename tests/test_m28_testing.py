@@ -1318,7 +1318,9 @@ async def test_the_notification_fake_records_who_would_have_been_told() -> None:
 
     notifications.assert_sent_to(ada, Shipped)
     notifications.assert_sent_to(ada, "Shipped")
-    notifications.assert_sent_to(ada, Shipped, lambda notification: isinstance(notification, Shipped))
+    notifications.assert_sent_to(
+        ada, Shipped, lambda notification: isinstance(notification, Shipped)
+    )
     notifications.assert_sent_to(
         grace,
         Shipped,
@@ -1473,7 +1475,7 @@ def test_the_clock_can_be_set_to_a_moment() -> None:
     finally:
         travel_back()
 
-    naive = datetime(2031, 1, 1)  # noqa: DTZ001 — a naive datetime is the point
+    naive = datetime(2031, 1, 1)
     travel_to(naive)
     try:
         assert now().year == 2031

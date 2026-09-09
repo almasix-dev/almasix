@@ -3,7 +3,9 @@ title: Controllers
 description: Organize request handling into controller classes.
 ---
 
-Instead of defining all route logic as closures, you may organize related actions into controller classes under `app/http/controllers`.
+A **controller** is a class that answers one or more routes. Instead of putting
+every handler inline in `routes/web.py`, group related actions under
+`app/http/controllers` so each file stays small and testable.
 
 ## Basic controllers
 

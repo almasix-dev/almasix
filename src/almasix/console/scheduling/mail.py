@@ -30,9 +30,7 @@ def mail_output(event: Event, output: str, exit_code: int) -> None:
     """Send one task's output to the addresses it named."""
     from almasix.mail.mailer import Mail
 
-    Mail.to(*event.email_addresses).send(
-        ScheduledTaskOutput(event.summary(), output, exit_code)
-    )
+    Mail.to(*event.email_addresses).send(ScheduledTaskOutput(event.summary(), output, exit_code))
 
 
 __all__ = ["ScheduledTaskOutput", "mail_output"]

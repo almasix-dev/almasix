@@ -55,9 +55,7 @@ class FakeQuery:
         for row in pool:
             # Compared as strings because a path segment is a string and the
             # real driver coerces it against the column type.
-            if all(
-                str(getattr(row, key, None)) == str(value) for key, value in self.filters
-            ):
+            if all(str(getattr(row, key, None)) == str(value) for key, value in self.filters):
                 return row
         return None
 
@@ -235,9 +233,7 @@ async def test_a_relationship_that_is_not_callable_is_read_as_the_query() -> Non
 async def test_a_scoped_binding_may_also_look_in_the_trash() -> None:
     parent = Author([])
 
-    found = await resolve(
-        Comment, "9", parent=parent, relationship="comments", trashed=True
-    )
+    found = await resolve(Comment, "9", parent=parent, relationship="comments", trashed=True)
 
     assert found.slug == "gone"
 
@@ -334,8 +330,6 @@ async def test_a_scoped_lookup_may_also_have_no_trash_to_include() -> None:
 
             return Plain()
 
-    found = await resolve(
-        Comment, "1", parent=Parent(), relationship="comments", trashed=True
-    )
+    found = await resolve(Comment, "1", parent=Parent(), relationship="comments", trashed=True)
 
     assert found.slug == "mine"

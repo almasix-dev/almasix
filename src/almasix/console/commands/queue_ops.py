@@ -128,7 +128,7 @@ class QueueClearCommand(Confirmable, QueueOperation):
 
         try:
             deleted = asyncio.run(clear(queue))
-        except Exception as exc:  # noqa: BLE001 - the backing store is the user's to fix
+        except Exception as exc:
             self.error(f"Could not clear [{name}] queue [{queue}]: {exc}")
             return self.FAILURE
         self.success(f"Cleared {deleted} job(s) from [{name}] queue [{queue}].")
@@ -197,7 +197,7 @@ class QueueMonitorCommand(QueueOperation):
                 continue
             try:
                 size = int(await size_of(entry["queue"]) or 0)
-            except Exception as exc:  # noqa: BLE001 - an unreachable store is not a crash
+            except Exception as exc:
                 self.error(
                     f"Could not size [{entry['connection']}] queue [{entry['queue']}]: {exc}"
                 )

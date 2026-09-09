@@ -119,7 +119,9 @@ class FakeEngine(Engine):
 
     # --- assertions -----------------------------------------------------
 
-    def written(self, action: str | None = None, index: str | None = None) -> list[RecordedIndexWrite]:
+    def written(
+        self, action: str | None = None, index: str | None = None
+    ) -> list[RecordedIndexWrite]:
         return [
             write
             for write in self.writes

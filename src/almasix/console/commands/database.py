@@ -189,8 +189,7 @@ class MigrateInstallCommand(DatabaseCommand):
     """
 
     signature = (
-        "migrate:install "
-        "{--database= : Connection to install on (default: the configured default)}"
+        "migrate:install {--database= : Connection to install on (default: the configured default)}"
     )
     description = "Create the migration repository table"
 

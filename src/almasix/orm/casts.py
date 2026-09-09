@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from enum import Enum
 from typing import Any
@@ -77,7 +77,7 @@ def _parse_datetime(value: Any) -> datetime | None:
     if isinstance(value, date):
         return datetime(value.year, value.month, value.day)
     if isinstance(value, (int, float)) and not isinstance(value, bool):
-        return datetime.fromtimestamp(value, tz=timezone.utc).replace(tzinfo=None)
+        return datetime.fromtimestamp(value, tz=UTC).replace(tzinfo=None)
     text = str(value)
     try:
         return datetime.fromisoformat(text)

@@ -70,7 +70,7 @@ async def schema(memory_db) -> None:
             table.timestamps(),
         ),
     )
-    for name, model in (("uuid_docs", UuidDoc), ("ulid_docs", UlidDoc)):
+    for name, _model in (("uuid_docs", UuidDoc), ("ulid_docs", UlidDoc)):
         await Schema.create(
             name,
             lambda table: (

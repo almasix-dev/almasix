@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlencode
 
@@ -20,11 +20,11 @@ class MustVerifyEmail:
         return value is not None
 
     async def mark_email_as_verified(self) -> bool:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if hasattr(self, "set_attribute"):
             self.set_attribute("email_verified_at", now)  # type: ignore[misc]
         else:
-            setattr(self, "email_verified_at", now)
+            self.email_verified_at = now
         if hasattr(self, "save"):
             result = self.save()
             if hasattr(result, "__await__"):

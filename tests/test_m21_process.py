@@ -167,11 +167,18 @@ def test_when_and_unless_configure_conditionally() -> None:
     assert Process.when(True, lambda p, _v: p.timeout(1)).timeout_seconds() == 1
     assert Process.when(False, lambda p, _v: p.timeout(1)).timeout_seconds() == 60
     assert (
-        Process.when(False, lambda p, _v: p.timeout(1), lambda p, _v: p.timeout(2)).timeout_seconds()
+        Process.when(
+            False, lambda p, _v: p.timeout(1), lambda p, _v: p.timeout(2)
+        ).timeout_seconds()
         == 2
     )
     assert Process.unless(False, lambda p, _v: p.timeout(3)).timeout_seconds() == 3
-    assert Process.when(lambda p: p.timeout_seconds() == 60, lambda p, _v: p.timeout(4)).timeout_seconds() == 4
+    assert (
+        Process.when(
+            lambda p: p.timeout_seconds() == 60, lambda p, _v: p.timeout(4)
+        ).timeout_seconds()
+        == 4
+    )
     # A callback that returns nothing leaves the process untouched.
     assert Process.when(True, lambda _p, _v: None).timeout_seconds() == 60
 
@@ -383,9 +390,7 @@ def test_pool_signal_and_stop_reach_every_process() -> None:
     invoked.wait()
     assert invoked.running().is_empty()
 
-    invoked = Process.pool(
-        lambda pool: pool.command(python("import time; time.sleep(30)"))
-    ).start()
+    invoked = Process.pool(lambda pool: pool.command(python("import time; time.sleep(30)"))).start()
     invoked.stop(timeout=1)
     assert invoked.running().is_empty()
 
@@ -400,7 +405,7 @@ def test_pool_proxies_non_callable_attributes() -> None:
     pool = Process.pool(lambda pool: pool.command("echo hi"))
     assert pool.pending()[0].described_command == "echo hi"
     with pytest.raises(AttributeError):
-        pool._missing  # noqa: B018
+        pool._missing
 
 
 def test_pool_process_rejects_private_attributes() -> None:
@@ -408,7 +413,7 @@ def test_pool_process_rejects_private_attributes() -> None:
     process = pool.process()
     assert process.described_command == ""
     with pytest.raises(AttributeError):
-        process._nope  # noqa: B018
+        process._nope
 
 
 # --- pipes --------------------------------------------------------------
@@ -429,7 +434,9 @@ def test_pipe_accepts_a_callable_and_names_stages() -> None:
     result = Process.pipe(
         lambda pipe: [
             pipe.as_("greet").command(python("print('hi')")),
-            pipe.as_("shout").command(python("import sys; print(sys.stdin.read().upper().strip())")),
+            pipe.as_("shout").command(
+                python("import sys; print(sys.stdin.read().upper().strip())")
+            ),
         ],
         lambda _kind, _chunk, key: seen.append(key),
     )
@@ -453,7 +460,7 @@ def test_pipe_rejects_private_attributes() -> None:
 
     pipe = Pipe(get_factory())
     with pytest.raises(AttributeError):
-        pipe._nope  # noqa: B018
+        pipe._nope
 
 
 # --- fakes --------------------------------------------------------------

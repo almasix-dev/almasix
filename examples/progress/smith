@@ -1,8 +1,13 @@
 #!/usr/bin/env python
-"""Smith — Almasix in-application CLI (Laravel artisan equivalent).
+"""Smith — Almasix in-application CLI.
+
+From the application root, the reliable form is always:
 
     python smith version
     python smith serve
+
+After ``pip install -e .`` of this application, bare ``smith …`` also works
+in the active virtualenv. Framework-only installs do not put ``smith`` on PATH.
 """
 
 from __future__ import annotations

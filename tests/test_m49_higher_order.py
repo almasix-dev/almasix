@@ -183,7 +183,7 @@ def test_a_message_repr_names_the_method() -> None:
 
 def test_dunder_lookups_do_not_become_messages() -> None:
     with pytest.raises(AttributeError):
-        collect([1]).map.__deepcopy__  # noqa: B018
+        collect([1]).map.__deepcopy__
 
 
 def test_model_collections_still_answer_messages() -> None:

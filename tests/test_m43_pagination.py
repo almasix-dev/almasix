@@ -184,9 +184,10 @@ def test_the_json_a_simple_paginator_produces() -> None:
 
 
 def test_the_links_a_paginator_renders(tmp_path) -> None:
+    from pathlib import Path as FilePath
+
     from almasix.prism.engine import Engine
     from almasix.prism.helpers import set_engine
-    from pathlib import Path as FilePath
 
     engine = Engine(paths=[FilePath("src/almasix/prism/views")], cache_enabled=False)
     set_engine(engine)
@@ -243,7 +244,7 @@ def test_a_cursor_that_is_not_one() -> None:
 async def test_cursor_paging_walks_forwards_and_back(memory_db) -> None:
     await Schema.create("posts", lambda table: (table.id(), table.string("title")))
     await DB.table("posts").insert([{"title": f"Post {number}"} for number in range(1, 8)])
-    query = lambda: DB.table("posts").order_by("id")  # noqa: E731
+    query = lambda: DB.table("posts").order_by("id")
 
     first = await query().cursor_paginate(3)
     assert [row["title"] for row in first] == ["Post 1", "Post 2", "Post 3"]
@@ -294,7 +295,7 @@ async def test_a_cursor_over_several_ordered_columns(memory_db) -> None:
             {"author": "Grace", "title": "A"},
         ]
     )
-    query = lambda: DB.table("posts").order_by("author").order_by("title", "desc")  # noqa: E731
+    query = lambda: DB.table("posts").order_by("author").order_by("title", "desc")
 
     first = await query().cursor_paginate(2)
     assert [(row["author"], row["title"]) for row in first] == [("Ada", "B"), ("Ada", "A")]
@@ -447,5 +448,10 @@ def test_the_link_bar_elides_the_middle_of_a_long_run() -> None:
     assert [link["label"] for link in back].count("...") == 1
     short = Paginator(page_of(["a"]), 40, 10, 1, path="/u").link_collection()
     assert [link["label"] for link in short] == [
-        "&laquo; Previous", "1", "2", "3", "4", "Next &raquo;"
+        "&laquo; Previous",
+        "1",
+        "2",
+        "3",
+        "4",
+        "Next &raquo;",
     ]

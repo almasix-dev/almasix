@@ -177,6 +177,9 @@ class ApplicationBuilder:
         self._base_path = Path(base_path or Path.cwd()).resolve()
         self._middleware_callbacks: list[MiddlewareCallback] = []
         self._schedule_callbacks: list[Callable[[Any], None]] = []
+        # Load-balancer probe path (Laravel ``withRouting(health: '/up')``).
+        # Outside the Almasix middleware stacks so ``smith down`` does not 503 it.
+        self._health: str | None = "/up"
 
     def with_middleware(self, callback: MiddlewareCallback) -> Self:
         self._middleware_callbacks.append(callback)
@@ -191,12 +194,22 @@ class ApplicationBuilder:
         self._schedule_callbacks.append(callback)
         return self
 
+    def with_health(self, path: str | None = "/up") -> Self:
+        """Register a bare GET probe that returns 200 with an empty body.
+
+        Pass ``None`` to disable. The default path is ``/up``.
+        """
+        self._health = path
+        return self
+
     def create(self) -> Application:
         from almasix.framework.application import Application
 
         app = Application(self._base_path)
-        app._middleware_callbacks = list(self._middleware_callbacks)  # noqa: SLF001
+        app._middleware_callbacks = list(self._middleware_callbacks)
         booted = app.bootstrap()
+        if self._health is not None:
+            booted.config.set("http.health", self._health)
         if self._schedule_callbacks:
             from almasix.console.scheduling import schedule
 

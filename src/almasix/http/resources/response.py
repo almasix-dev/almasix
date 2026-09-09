@@ -126,9 +126,7 @@ def _links_for(path: str | None, paginated: Any) -> dict[str, str | None] | None
         "prev": _page_url(path, paginated.current_page - 1)
         if not paginated.on_first_page()
         else None,
-        "next": _page_url(path, paginated.current_page + 1)
-        if paginated.has_more_pages()
-        else None,
+        "next": _page_url(path, paginated.current_page + 1) if paginated.has_more_pages() else None,
     }
     return links
 

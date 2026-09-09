@@ -70,7 +70,12 @@ class Note(SoftDeletes, Searchable, Model):
 async def schema() -> None:
     await Schema.create(
         "posts",
-        lambda t: (t.id(), t.string("title"), t.text("body").nullable(), t.integer("author_id").nullable()),
+        lambda t: (
+            t.id(),
+            t.string("title"),
+            t.text("body").nullable(),
+            t.integer("author_id").nullable(),
+        ),
     )
     await Schema.create(
         "drafts",
@@ -83,12 +88,16 @@ async def schema() -> None:
 
 
 @pytest.fixture
-async def posts(memory_db: Any) -> AsyncIterator[list[Post]]:  # noqa: F811
+async def posts(memory_db: Any) -> AsyncIterator[list[Post]]:
     del memory_db
     await schema()
     rows = [
-        await Post.force_create({"title": "Almasix ships search", "body": "Scout parity", "author_id": 1}),
-        await Post.force_create({"title": "Broadcasting", "body": "websockets and pusher", "author_id": 1}),
+        await Post.force_create(
+            {"title": "Almasix ships search", "body": "Scout parity", "author_id": 1}
+        ),
+        await Post.force_create(
+            {"title": "Broadcasting", "body": "websockets and pusher", "author_id": 1}
+        ),
         await Post.force_create({"title": "Documents", "body": "mongo and memory", "author_id": 2}),
     ]
     yield rows
@@ -279,7 +288,7 @@ async def test_deleting_a_model_removes_it(posts: list[Post]) -> None:
     fake.assert_removed(posts[0])
 
 
-async def test_a_model_that_should_not_be_searchable_is_taken_out(memory_db: Any) -> None:  # noqa: F811
+async def test_a_model_that_should_not_be_searchable_is_taken_out(memory_db: Any) -> None:
     del memory_db
     await schema()
     fake = Scout.fake()
@@ -293,7 +302,7 @@ async def test_a_model_that_should_not_be_searchable_is_taken_out(memory_db: Any
     fake.assert_synced(draft)
 
 
-async def test_a_write_that_changes_nothing_worth_indexing_is_skipped(memory_db: Any) -> None:  # noqa: F811
+async def test_a_write_that_changes_nothing_worth_indexing_is_skipped(memory_db: Any) -> None:
     del memory_db
     await schema()
 
@@ -342,7 +351,7 @@ async def test_a_whole_query_and_a_collection_can_be_indexed(posts: list[Post]) 
     fake.assert_removed(Post, [1, 2, 3])
 
 
-async def test_indexing_a_query_of_something_unsearchable_says_so(memory_db: Any) -> None:  # noqa: F811
+async def test_indexing_a_query_of_something_unsearchable_says_so(memory_db: Any) -> None:
     del memory_db
     await schema()
 
@@ -376,7 +385,7 @@ async def test_importing_and_flushing_a_whole_model(posts: list[Post]) -> None:
     fake.assert_flushed(Post)
 
 
-async def test_an_import_can_be_shaped_and_filtered(memory_db: Any) -> None:  # noqa: F811
+async def test_an_import_can_be_shaped_and_filtered(memory_db: Any) -> None:
     del memory_db
     await schema()
     await Draftable.force_create({"title": "One", "published": True})
@@ -405,7 +414,7 @@ async def test_an_import_can_be_shaped_and_filtered(memory_db: Any) -> None:  # 
 # --- soft deletes -----------------------------------------------------------
 
 
-async def test_a_trashed_row_leaves_the_index_by_default(memory_db: Any) -> None:  # noqa: F811
+async def test_a_trashed_row_leaves_the_index_by_default(memory_db: Any) -> None:
     del memory_db
     await schema()
     note = await Note.force_create({"body": "temporary"})
@@ -416,7 +425,7 @@ async def test_a_trashed_row_leaves_the_index_by_default(memory_db: Any) -> None
 
 
 async def test_a_trashed_row_can_stay_in_the_index_flagged(
-    memory_db: Any,  # noqa: F811
+    memory_db: Any,
     fresh_manager: EngineManager,
 ) -> None:
     del memory_db
@@ -434,7 +443,7 @@ async def test_a_trashed_row_can_stay_in_the_index_flagged(
 
 
 async def test_trashed_rows_are_searchable_when_they_are_indexed(
-    memory_db: Any,  # noqa: F811
+    memory_db: Any,
     fresh_manager: EngineManager,
 ) -> None:
     del memory_db
@@ -475,7 +484,7 @@ async def test_the_database_engine_takes_the_query_callback_as_a_filter(
 
 
 async def test_the_database_engine_matches_a_prefix_when_told_to(
-    memory_db: Any,  # noqa: F811
+    memory_db: Any,
     fresh_manager: EngineManager,
 ) -> None:
     del memory_db
@@ -512,7 +521,7 @@ async def test_the_database_engine_orders_filters_and_limits(
 
 
 async def test_the_database_engine_honours_trashed_searches(
-    memory_db: Any,  # noqa: F811
+    memory_db: Any,
     fresh_manager: EngineManager,
 ) -> None:
     del memory_db
@@ -528,7 +537,7 @@ async def test_the_database_engine_honours_trashed_searches(
 
 
 async def test_the_database_engine_needs_columns_to_search(
-    memory_db: Any,  # noqa: F811
+    memory_db: Any,
     fresh_manager: EngineManager,
 ) -> None:
     del memory_db
@@ -585,7 +594,9 @@ async def test_the_database_engine_indexes_nothing(posts: list[Post]) -> None:
 # --- the null engine --------------------------------------------------------
 
 
-async def test_the_null_engine_finds_nothing(posts: list[Post], fresh_manager: EngineManager) -> None:
+async def test_the_null_engine_finds_nothing(
+    posts: list[Post], fresh_manager: EngineManager
+) -> None:
     fresh_manager.set_default_driver("null")
     assert len(await Post.search("Almasix").get()) == 0
     assert await Post.search("Almasix").count() == 0
@@ -641,7 +652,7 @@ async def test_a_queued_index_write_does_the_work_when_it_runs(posts: list[Post]
     fake.assert_removed(Post, [posts[0].id])
 
 
-async def test_a_queued_write_skips_what_should_not_be_indexed(memory_db: Any) -> None:  # noqa: F811
+async def test_a_queued_write_skips_what_should_not_be_indexed(memory_db: Any) -> None:
     del memory_db
     await schema()
     draft = await Draftable.force_create({"title": "Hidden", "published": False})
@@ -668,7 +679,7 @@ async def test_without_a_queue_the_write_happens_anyway(
 async def test_indexing_can_wait_for_the_transaction(
     posts: list[Post],
     fresh_manager: EngineManager,
-    memory_db: Any,  # noqa: F811
+    memory_db: Any,
 ) -> None:
     fresh_manager.config["after_commit"] = True
     fake = Scout.fake()
@@ -801,17 +812,21 @@ async def test_meilisearch_indexes_and_deletes_documents(
 
     Http.assert_sent_count(3)
     Http.assert_sent(
-        lambda request: request.url.endswith("/indexes/posts/documents?primaryKey=id")
-        and request.method == "PUT"
-        and request.data[0]["title"] == "Almasix ships search"
+        lambda request: (
+            request.url.endswith("/indexes/posts/documents?primaryKey=id")
+            and request.method == "PUT"
+            and request.data[0]["title"] == "Almasix ships search"
+        )
     )
     Http.assert_sent(
-        lambda request: request.url.endswith("/indexes/posts/documents/delete-batch")
-        and request.data == [1]
+        lambda request: (
+            request.url.endswith("/indexes/posts/documents/delete-batch") and request.data == [1]
+        )
     )
     Http.assert_sent(
-        lambda request: request.method == "DELETE"
-        and request.url.endswith("/indexes/posts/documents")
+        lambda request: (
+            request.method == "DELETE" and request.url.endswith("/indexes/posts/documents")
+        )
     )
 
 
@@ -822,7 +837,13 @@ async def test_meilisearch_searches_with_filters_and_sorting(
 ) -> None:
     from almasix.client.facade import Http
 
-    Http.fake({"*": Http.response({"hits": [{"id": 2, "title": "Broadcasting"}], "estimatedTotalHits": 1})})
+    Http.fake(
+        {
+            "*": Http.response(
+                {"hits": [{"id": 2, "title": "Broadcasting"}], "estimatedTotalHits": 1}
+            )
+        }
+    )
 
     found = await (
         Post.search("pusher")
@@ -837,12 +858,14 @@ async def test_meilisearch_searches_with_filters_and_sorting(
     assert [post.title for post in found] == ["Broadcasting"]
 
     Http.assert_sent(
-        lambda request: request.url.endswith("/indexes/posts/search")
-        and request.data["q"] == "pusher"
-        and request.data["filter"] == 'author_id = 1 AND id IN [1, 2] AND id NOT IN [3]'
-        and request.data["sort"] == ["id:desc"]
-        and request.data["limit"] == 10
-        and request.data["attributesToHighlight"] == ["title"]
+        lambda request: (
+            request.url.endswith("/indexes/posts/search")
+            and request.data["q"] == "pusher"
+            and request.data["filter"] == "author_id = 1 AND id IN [1, 2] AND id NOT IN [3]"
+            and request.data["sort"] == ["id:desc"]
+            and request.data["limit"] == 10
+            and request.data["attributesToHighlight"] == ["title"]
+        )
     )
 
 
@@ -854,19 +877,13 @@ async def test_meilisearch_paginates_and_counts(
     from almasix.client.facade import Http
 
     Http.fake(
-        {
-            "*": Http.response(
-                {"hits": [{"id": 1, "title": "Almasix ships search"}], "totalHits": 9}
-            )
-        }
+        {"*": Http.response({"hits": [{"id": 1, "title": "Almasix ships search"}], "totalHits": 9})}
     )
 
     page = await Post.search("almasix").paginate(per_page=1, page=2)
     assert page.total == 9
     assert [post.id for post in page.items] == [1]
-    Http.assert_sent(
-        lambda request: request.data["hitsPerPage"] == 1 and request.data["page"] == 2
-    )
+    Http.assert_sent(lambda request: request.data["hitsPerPage"] == 1 and request.data["page"] == 2)
 
 
 def test_meilisearch_reads_the_totals_and_keys_it_is_given(meili: MeilisearchEngine) -> None:
@@ -895,9 +912,11 @@ async def test_meilisearch_manages_indexes_and_settings(
     await meili.delete_all_indexes()
 
     Http.assert_sent(
-        lambda request: request.method == "POST"
-        and request.url.endswith("/indexes")
-        and request.data == {"uid": "posts", "primaryKey": "id"}
+        lambda request: (
+            request.method == "POST"
+            and request.url.endswith("/indexes")
+            and request.data == {"uid": "posts", "primaryKey": "id"}
+        )
     )
     Http.assert_sent(lambda request: request.method == "DELETE")
 
@@ -906,8 +925,9 @@ async def test_meilisearch_manages_indexes_and_settings(
     meili.config["index-settings"] = {"posts": {"filterableAttributes": ["author_id"]}}
     assert await meili.sync_settings(Post) is True
     Http.assert_sent(
-        lambda request: request.method == "PATCH"
-        and request.data == {"filterableAttributes": ["author_id"]}
+        lambda request: (
+            request.method == "PATCH" and request.data == {"filterableAttributes": ["author_id"]}
+        )
     )
 
 
@@ -1127,7 +1147,7 @@ async def test_the_collection_engine_keeps_no_index_of_its_own(posts: list[Post]
 
 
 async def test_the_collection_engine_looks_inside_values_that_are_not_words(
-    memory_db: Any,  # noqa: F811
+    memory_db: Any,
 ) -> None:
     class Recipe(Searchable, Model):
         table = "posts"
@@ -1206,7 +1226,7 @@ async def test_removing_an_empty_batch_asks_the_engine_nothing(posts: list[Post]
     fake.assert_nothing_synced()
 
 
-async def test_a_pause_covers_deleting_and_restoring_too(memory_db: Any) -> None:  # noqa: F811
+async def test_a_pause_covers_deleting_and_restoring_too(memory_db: Any) -> None:
     del memory_db
     await schema()
     note = await Note.force_create({"body": "kept quiet"})

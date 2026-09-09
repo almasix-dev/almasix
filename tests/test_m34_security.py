@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from almasix.framework import Application
-from almasix.http.cors import HandleCors, _path_matches, cors_settings
+from almasix.http.cors import _path_matches, cors_settings
 from almasix.http.maintenance import (
     BYPASS_COOKIE,
     clear_marker,
@@ -241,9 +241,7 @@ def test_a_secret_grants_a_bypass_cookie(client: TestClient, app_dir: Path) -> N
         clear_marker(app_dir)
 
 
-def test_a_redirect_payload_sends_the_visitor_elsewhere(
-    client: TestClient, app_dir: Path
-) -> None:
+def test_a_redirect_payload_sends_the_visitor_elsewhere(client: TestClient, app_dir: Path) -> None:
     write_marker(app_dir, redirect="/elsewhere", retry=30)
     try:
         response = client.get("/", follow_redirects=False)
@@ -254,9 +252,7 @@ def test_a_redirect_payload_sends_the_visitor_elsewhere(
         clear_marker(app_dir)
 
 
-def test_the_legacy_plaintext_marker_still_means_down(
-    client: TestClient, app_dir: Path
-) -> None:
+def test_the_legacy_plaintext_marker_still_means_down(client: TestClient, app_dir: Path) -> None:
     # M31 wrote the word "down". An application taken down before this
     # middleware existed must still answer 503, not 500.
     marker = app_dir / "storage" / "framework" / "down"
@@ -304,9 +300,7 @@ def test_the_down_command_writes_a_json_marker(app_dir: Path) -> None:
     }
     down._arguments = {}
     assert down.handle() == 0
-    payload = json.loads(
-        (app_dir / "storage" / "framework" / "down").read_text(encoding="utf-8")
-    )
+    payload = json.loads((app_dir / "storage" / "framework" / "down").read_text(encoding="utf-8"))
     assert payload["secret"] == "x"
     assert payload["retry"] == 45
 
@@ -319,8 +313,9 @@ def test_the_down_command_writes_a_json_marker(app_dir: Path) -> None:
 
 
 async def test_security_headers_accept_overrides_and_removals() -> None:
+    from starlette.datastructures import URL, Headers
+
     from almasix.http.request import Request
-    from starlette.datastructures import Headers, URL
 
     class Fake:
         url = URL("http://shop.test/")
@@ -349,12 +344,14 @@ async def test_security_headers_accept_overrides_and_removals() -> None:
 def test_an_excepted_uri_passes_through_maintenance(app_dir: Path) -> None:
     import asyncio
 
+    from starlette.datastructures import URL, Headers
+
     from almasix.http.maintenance import PreventRequestsDuringMaintenance
     from almasix.http.request import Request
-    from starlette.datastructures import Headers, URL
 
     write_marker(app_dir)
     try:
+
         class Fake:
             url = URL("http://testserver/up")
             headers = Headers()
@@ -376,9 +373,7 @@ def test_an_excepted_uri_passes_through_maintenance(app_dir: Path) -> None:
         clear_marker(app_dir)
 
 
-def test_an_empty_marker_and_a_refresh_header(
-    client: TestClient, app_dir: Path
-) -> None:
+def test_an_empty_marker_and_a_refresh_header(client: TestClient, app_dir: Path) -> None:
     marker = app_dir / "storage" / "framework" / "down"
     marker.write_text("\n", encoding="utf-8")
     try:
@@ -414,16 +409,12 @@ def test_down_with_secret_flag_generates_one(app_dir: Path) -> None:
     }
     command._arguments = {}
     assert command.handle() == 0
-    payload = json.loads(
-        (app_dir / "storage" / "framework" / "down").read_text(encoding="utf-8")
-    )
+    payload = json.loads((app_dir / "storage" / "framework" / "down").read_text(encoding="utf-8"))
     assert payload["secret"]
     clear_marker(app_dir)
 
 
-def test_a_non_mapping_json_marker_is_treated_as_empty(
-    client: TestClient, app_dir: Path
-) -> None:
+def test_a_non_mapping_json_marker_is_treated_as_empty(client: TestClient, app_dir: Path) -> None:
     marker = app_dir / "storage" / "framework" / "down"
     marker.write_text("[]", encoding="utf-8")
     try:

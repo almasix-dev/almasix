@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import builtins
-import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from almasix.filesystem.adapter import Visibility, coerce_bytes, normalize_path
+from almasix.filesystem.adapter import Visibility, coerce_bytes
 from almasix.filesystem.drivers.local import LocalAdapter
 from almasix.filesystem.drivers.memory import MemoryAdapter
 from almasix.filesystem.drivers.s3 import S3Adapter
@@ -29,6 +28,7 @@ from almasix.mail.mailer import _dispatch_to_queue
 from almasix.mail.markdown import render_content, render_markdown_component
 from almasix.mail.message import SentMessage
 from almasix.mail.provider import MailServiceProvider
+from almasix.notifications import ensure_tables as ensure_notification_tables
 from almasix.notifications.channels import ArrayChannel, MailChannel
 from almasix.notifications.database import DatabaseNotificationStore, _notifiable_id
 from almasix.notifications.messages import ResetPasswordNotification
@@ -38,18 +38,15 @@ from almasix.notifications.provider import NotificationServiceProvider
 from almasix.notifications.sender import NotificationSender
 from almasix.notifications.verification import MustVerifyEmail
 from almasix.orm import DatabaseManager, set_manager
-from almasix.queue.connections.database import DatabaseQueue
+from almasix.queue import ShouldQueue as JobShouldQueue
+from almasix.queue import ensure_tables as ensure_queue_tables
 from almasix.queue.connections.sync import SyncQueue, _fallback_manager
 from almasix.queue.dispatcher import Dispatcher
 from almasix.queue.failed import FailedJobRepository, report_failure
 from almasix.queue.helpers import dispatch, set_dispatcher, set_manager
-from almasix.queue.job import Job, JobMiddleware, _import_job_class
+from almasix.queue.job import Job, _import_job_class
 from almasix.queue.manager import QueueManager
 from almasix.queue.worker import Worker, _backoff_delay
-from almasix.queue import ShouldQueue as JobShouldQueue, ensure_tables as ensure_queue_tables
-from almasix.notifications import ensure_tables as ensure_notification_tables
-from tests.orm_support import memory_db
-
 
 # ---------------------------------------------------------------------------
 # Filesystem — adapter, storage, manager, drivers
@@ -306,7 +303,9 @@ def test_s3_adapter_session_creation_and_branches() -> None:
     assert adapter.directories("") == ["sub"]
     assert adapter.url("a.txt") == "https://my-bucket.s3.amazonaws.com/root/a.txt"
     assert adapter.temporary_url("a.txt", timedelta(seconds=30)) == "https://signed"
-    assert adapter.temporary_url("a.txt", datetime.now(timezone.utc) + timedelta(hours=1)) == "https://signed"
+    assert (
+        adapter.temporary_url("a.txt", datetime.now(UTC) + timedelta(hours=1)) == "https://signed"
+    )
     assert adapter.temporary_url("a.txt", 120) == "https://signed"
     adapter.set_visibility("a.txt", "public")
     adapter.set_visibility("a.txt", "private")
@@ -328,7 +327,7 @@ def test_memory_adapter_edge_cases() -> None:
     disk.make_directory("empty-dir")
     assert disk.delete("empty-dir") is True
 
-    until = datetime.now(timezone.utc) + timedelta(hours=1)
+    until = datetime.now(UTC) + timedelta(hours=1)
     with pytest.raises(RuntimeError, match="temporary URLs"):
         disk.temporary_url("tree/a.txt", until)
     with pytest.raises(RuntimeError, match="temporary URLs"):
@@ -377,7 +376,7 @@ def test_local_adapter_edge_cases(tmp_path: Path) -> None:
     assert adapter.path() == str(root.resolve())
     assert adapter.path("chmod.txt").endswith("chmod.txt")
 
-    until = datetime.now(timezone.utc) + timedelta(minutes=5)
+    until = datetime.now(UTC) + timedelta(minutes=5)
     with pytest.raises(RuntimeError, match="temporary URLs"):
         adapter.temporary_url("chmod.txt", until)
     with pytest.raises(RuntimeError, match="temporary URLs"):
@@ -566,7 +565,7 @@ async def test_failed_repository_limit_flush_and_report(
         def report(self, exc: BaseException) -> None:
             reported.append(str(exc))
 
-    app.container.instance(type("HandlerMarker", (), {}), TrackingHandler())  # noqa: SLF001
+    app.container.instance(type("HandlerMarker", (), {}), TrackingHandler())
 
     from almasix.exceptions.handler import Handler
 
@@ -1013,8 +1012,8 @@ async def test_database_notification_bad_json(memory_db: DatabaseManager) -> Non
             "notifiable_id": str(user.get_key()),
             "data": "{not-json",
             "read_at": None,
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
         }
     )
     rows = await DatabaseNotificationStore().for_notifiable(user)
@@ -1061,7 +1060,9 @@ async def test_notification_provider_register_and_password_fallback(
     from almasix.auth.passwords import PasswordBroker, get_password_manager
 
     class Provider:
-        async def retrieve_by_credentials(self, credentials: dict[str, Any]) -> PlainVerifyUser | None:
+        async def retrieve_by_credentials(
+            self, credentials: dict[str, Any]
+        ) -> PlainVerifyUser | None:
             return PlainVerifyUser()
 
     class Tokens:
@@ -1074,6 +1075,6 @@ async def test_notification_provider_register_and_password_fallback(
             return "tok"
 
     manager = get_password_manager()
-    broker = PasswordBroker(Provider(), Tokens(), send_callback=manager._send_callback)  # noqa: SLF001
+    broker = PasswordBroker(Provider(), Tokens(), send_callback=manager._send_callback)
     status = await broker.send_reset_link({"email": "plain@example.com"})
     assert "sent" in status

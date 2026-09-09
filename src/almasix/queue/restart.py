@@ -38,7 +38,7 @@ def last_restart() -> float | None:
     """The last broadcast, or ``None`` when there is none — or no cache at all."""
     try:
         raw = restart_store().get(RESTART_KEY)
-    except Exception:  # noqa: BLE001 - a worker without a cache simply never restarts
+    except Exception:
         return None
     if raw is None:
         return None

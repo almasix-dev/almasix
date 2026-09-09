@@ -31,7 +31,7 @@ class ThreadDriver(Driver):
             for future in futures:
                 try:
                     outcomes.append((True, future.result()))
-                except Exception as exception:  # noqa: BLE001 - reported below
+                except Exception as exception:
                     outcomes.append((False, exception))
         first_failure(outcomes)
         return [value for _ok, value in outcomes]

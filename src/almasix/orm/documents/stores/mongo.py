@@ -210,7 +210,9 @@ class MongoStore(DocumentStore):
         rows = [row async for row in self.collection(query.collection).aggregate(pipeline)]
         return {row["_id"]: int(row["value"]) for row in rows}
 
-    async def raw_aggregate(self, collection: str, pipeline: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    async def raw_aggregate(
+        self, collection: str, pipeline: Sequence[Mapping[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Run a pipeline Almasix did not write — the escape hatch."""
         cursor = self.collection(collection).aggregate([dict(stage) for stage in pipeline])
         return [dict(row) async for row in cursor]
@@ -218,7 +220,14 @@ class MongoStore(DocumentStore):
     # --- writes -------------------------------------------------------------
 
     async def insert(self, collection: str, documents: Sequence[Mapping[str, Any]]) -> list[Any]:
-        rows = [{key: value for key, value in dict(row).items() if value is not None or key != self.key_name} for row in documents]
+        rows = [
+            {
+                key: value
+                for key, value in dict(row).items()
+                if value is not None or key != self.key_name
+            }
+            for row in documents
+        ]
         if not rows:
             return []
         if len(rows) == 1:

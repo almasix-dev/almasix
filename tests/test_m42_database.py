@@ -142,7 +142,9 @@ async def test_an_event_can_write_its_own_bindings_back_in() -> None:
         time=1.0,
         connection_name="sqlite",
     )
-    assert event.to_raw_sql().endswith("name = 'O''Hara' and votes > 10 and active = true and note = null")
+    assert event.to_raw_sql().endswith(
+        "name = 'O''Hara' and votes > 10 and active = true and note = null"
+    )
     assert _quote_binding(1.5) == "1.5"
     assert _quote_binding(False) == "false"
 

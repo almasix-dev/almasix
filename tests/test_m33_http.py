@@ -22,7 +22,7 @@ from tests.support import purge_generated_app_modules
 pytestmark = pytest.mark.usefixtures("app_dir")
 
 
-ROUTES = '''
+ROUTES = """
 from almasix.http import Request, json
 from almasix.routing import Route
 from almasix.routing.url import route as route_url
@@ -78,7 +78,7 @@ Route.get("/named", lambda request: {
 }).name("named")
 
 Route.fallback(lambda: json({"fell": "through"}, status=404))
-'''
+"""
 
 
 def _write(root: Path, relative: str, body: str) -> None:
@@ -218,9 +218,7 @@ def test_an_optional_parameter_answers_with_or_without_it(client: TestClient) ->
 
 
 @pytest.mark.parametrize("verb", ["PUT", "PATCH", "DELETE"])
-def test_a_form_field_names_the_verb_html_cannot_send(
-    client: TestClient, verb: str
-) -> None:
+def test_a_form_field_names_the_verb_html_cannot_send(client: TestClient, verb: str) -> None:
     response = client.post("/spoofed", data={"_method": verb})
 
     assert response.json() == {"method": verb, "real": "POST"}
@@ -324,9 +322,7 @@ def test_a_domain_parameter_reaches_the_handler(client: TestClient) -> None:
 
 def test_a_literal_domain_only_answers_on_that_host(client: TestClient) -> None:
     assert client.get("/panel", headers={"host": "admin.hub.test"}).json() == {"panel": True}
-    assert client.get("/panel", headers={"host": "other.hub.test"}).json() == {
-        "fell": "through"
-    }
+    assert client.get("/panel", headers={"host": "other.hub.test"}).json() == {"fell": "through"}
 
 
 # --- the current route ------------------------------------------------------
@@ -338,4 +334,3 @@ def test_a_request_knows_the_route_that_matched_it(client: TestClient) -> None:
         "is": True,
         "current": "named",
     }
-

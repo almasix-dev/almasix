@@ -20,9 +20,7 @@ class MailAssertions:
     def transport(self) -> ArrayTransport:
         transport = Mail.manager().array_transport(self.mailer_name)
         if transport is None:
-            raise RuntimeError(
-                f"Mailer [{self.mailer_name}] is not using the array transport."
-            )
+            raise RuntimeError(f"Mailer [{self.mailer_name}] is not using the array transport.")
         return transport
 
     def flush(self) -> None:

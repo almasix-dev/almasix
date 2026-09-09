@@ -50,7 +50,7 @@ rather than faked:
 | --- | --- |
 | `scan` | PHP's `sscanf` format strings; Python's parsing story is different enough that a port would be a new API rather than a port |
 | `toHtmlString` | Prism's escaper honours `__html__`, so `HtmlString` from `almasix.prism` is the equivalent — see [Views](/views/) |
-| `toUri` | The URI object lands with named routes in the routing milestone; use `url()` today |
+| `toUri` | Prefer `url()` / named routes — see [URL Generation](/urls/) |
 
 ## Strings
 

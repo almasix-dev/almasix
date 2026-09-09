@@ -231,23 +231,23 @@ def dd(*values: Any, as_json: bool = True) -> None:
 def _colorize_json(escaped: str) -> str:
     """Highlight already-escaped JSON without introducing XSS."""
     text = re.sub(
-        r'(&quot;)(.*?)(&quot;)(\s*):',
+        r"(&quot;)(.*?)(&quot;)(\s*):",
         r'<span class="k">\1\2\3</span>\4:',
         escaped,
     )
     text = re.sub(
-        r':\s*(-?\d+(?:\.\d+)?)([,\n\r\s\}\]])',
+        r":\s*(-?\d+(?:\.\d+)?)([,\n\r\s\}\]])",
         r': <span class="n">\1</span>\2',
         text,
     )
     text = re.sub(
-        r':\s*(true|false|null)([,\n\r\s\}\]])',
+        r":\s*(true|false|null)([,\n\r\s\}\]])",
         r': <span class="b">\1</span>\2',
         text,
         flags=re.IGNORECASE,
     )
     text = re.sub(
-        r':\s*(&quot;.*?&quot;)',
+        r":\s*(&quot;.*?&quot;)",
         r': <span class="s">\1</span>',
         text,
     )

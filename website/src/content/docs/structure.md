@@ -55,11 +55,11 @@ Translation catalogs for localization (`lang/en/…`, `lang/en.json`, and so on)
 The entry point for Almasix's command-line interface. Generate code, run migrations, schedule work, and open Loupe:
 
 ```bash
-smith make:controller PostController
-smith migrate
-smith schedule:run
-smith loupe
-smith serve
+python smith make:controller PostController
+python smith migrate
+python smith schedule:run
+python smith loupe
+python smith serve
 ```
 
 :::note

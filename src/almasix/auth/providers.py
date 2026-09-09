@@ -29,7 +29,7 @@ class ArticulateUserProvider:
         if hasattr(user, "set_remember_token"):
             user.set_remember_token(token)
         else:
-            setattr(user, "remember_token", token)
+            user.remember_token = token
         if hasattr(user, "save"):
             await user.save()
 

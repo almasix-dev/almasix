@@ -140,10 +140,10 @@ class _TagMatch:
         self._end = end
         self._re_match = re_match
 
-    def start(self, group: int = 0) -> int:  # noqa: ARG002
+    def start(self, group: int = 0) -> int:
         return self._start
 
-    def end(self, group: int = 0) -> int:  # noqa: ARG002
+    def end(self, group: int = 0) -> int:
         return self._end
 
     def group(self, idx: int | str = 0) -> str | None:
@@ -492,6 +492,7 @@ def _compile_child(
                             except TypeError:
                                 return override()
                         return str(override)
+
                     return _call
 
                 bag[key] = _make()
@@ -664,9 +665,7 @@ def _compile_fragment(
             end_match = matches[j - 1]
             body = source[match.end() : end_match.start()]
             body_key = f"__slot_{len(closures)}"
-            closures[body_key] = _compile_fragment(
-                body, name=f"{name}#{kind}", directives=dirs
-            )
+            closures[body_key] = _compile_fragment(body, name=f"{name}#{kind}", directives=dirs)
             if kind == "once":
                 once_key = f"{name}:once:{len(closures)}"
                 emit(f"if __stacks.once({_py_str(once_key)}):")
@@ -699,9 +698,7 @@ def _compile_fragment(
             end_match = matches[j - 1]
             body = source[match.end() : end_match.start()]
             body_key = f"__slot_{len(closures)}"
-            closures[body_key] = _compile_fragment(
-                body, name=f"{name}#cache", directives=dirs
-            )
+            closures[body_key] = _compile_fragment(body, name=f"{name}#cache", directives=dirs)
             key_expr = _paren_inner(match.group(0) or "")
             emit(
                 f"__w(engine.remember_fragment(str(__eval({_py_str(key_expr)})), "
@@ -834,10 +831,7 @@ def _compile_fragment(
                 "if isinstance(k, str) and not k.startswith('_') "
                 "and k not in ('context', 'engine')})"
             )
-            emit(
-                "context.update({k: __ns[k] for k in list(__ns) "
-                "if not str(k).startswith('__')})"
-            )
+            emit("context.update({k: __ns[k] for k in list(__ns) if not str(k).startswith('__')})")
         elif kind == "endfor":
             indent -= 1
         elif kind == "while":
@@ -849,21 +843,14 @@ def _compile_fragment(
                 "if isinstance(k, str) and not k.startswith('_') "
                 "and k not in ('context', 'engine')})"
             )
-            emit(
-                "context.update({k: __ns[k] for k in list(__ns) "
-                "if not str(k).startswith('__')})"
-            )
+            emit("context.update({k: __ns[k] for k in list(__ns) if not str(k).startswith('__')})")
         elif kind == "endwhile":
             indent -= 1
         elif kind == "stack":
             emit(f"__w(__stacks.render({_py_str(_str_arg(match, 'stack'))}))")
         elif kind == "parent":
             sec = section_name or ""
-            emit(
-                "__w(str((context.get('__parent_sections') or {}).get("
-                + _py_str(sec)
-                + ", '')))"
-            )
+            emit("__w(str((context.get('__parent_sections') or {}).get(" + _py_str(sec) + ", '')))")
         elif kind == "lang":
             args = _directive_expr(match, r"@lang\s*\((.+)\)")
             emit(f"__w(__e(str(__({args}))))")
@@ -872,20 +859,18 @@ def _compile_fragment(
             emit(f"__w(__e(str(trans_choice({args}))))")
         elif kind == "csrf":
             emit(
-                "__w('<input type=\"hidden\" name=\"_token\" value=\"' + "
+                '__w(\'<input type="hidden" name="_token" value="\' + '
                 "__e(str(context.get('csrf_token') or '')) + '\">')"
             )
         elif kind == "error":
             field = _str_arg(match, "error")
             emit(
-                f"if context.get('errors') and {_py_str(field)} in "
-                f"(context.get('errors') or {{}}):"
+                f"if context.get('errors') and {_py_str(field)} in (context.get('errors') or {{}}):"
             )
             indent += 1
             emit(f"__err = context['errors'][{_py_str(field)}]")
             emit(
-                "message = (__err[0] if isinstance(__err, (list, tuple)) "
-                "and __err else str(__err))"
+                "message = (__err[0] if isinstance(__err, (list, tuple)) and __err else str(__err))"
             )
             emit("__ns['message'] = message")
             emit("context['message'] = message")
@@ -930,10 +915,7 @@ def _compile_fragment(
             emit("from almasix.debug import render_dump_html as __dump_html")
             if args.strip():
                 emit(f"__dump_raw = __eval({_py_str(f'({args})')})")
-                emit(
-                    "__dump_vals = __dump_raw if isinstance(__dump_raw, tuple) "
-                    "else (__dump_raw,)"
-                )
+                emit("__dump_vals = __dump_raw if isinstance(__dump_raw, tuple) else (__dump_raw,)")
             else:
                 emit("__dump_vals = ()")
             emit(f"__w(__dump_html(__dump_vals, source={_py_str(name)}))")
@@ -942,10 +924,7 @@ def _compile_fragment(
             emit("from almasix.debug import dd as __almasix_dd")
             if args.strip():
                 emit(f"__dd_raw = __eval({_py_str(f'({args})')})")
-                emit(
-                    "__dd_vals = __dd_raw if isinstance(__dd_raw, tuple) "
-                    "else (__dd_raw,)"
-                )
+                emit("__dd_vals = __dd_raw if isinstance(__dd_raw, tuple) else (__dd_raw,)")
                 emit("__almasix_dd(*__dd_vals)")
             else:
                 emit("__almasix_dd()")
@@ -1014,9 +993,18 @@ def _compile_fragment(
             python_mode = True
             python_buf.clear()
         elif kind in {
-            "extends", "section_inline", "section_open", "endsection", "show",
-            "slot", "endslot", "endcomponent",
-            "endpush", "endprepend", "endonce", "endcache",
+            "extends",
+            "section_inline",
+            "section_open",
+            "endsection",
+            "show",
+            "slot",
+            "endslot",
+            "endcomponent",
+            "endpush",
+            "endprepend",
+            "endonce",
+            "endcache",
         }:
             raise SyntaxError(f"Unexpected @{kind} in this position")
         else:

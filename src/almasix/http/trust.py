@@ -176,8 +176,6 @@ def _scope_peer(scope: dict[str, Any]) -> str | None:
 
 
 def _set_header(scope: dict[str, Any], name: bytes, value: bytes) -> None:
-    headers = [
-        (key, val) for key, val in scope.get("headers", []) if key.lower() != name.lower()
-    ]
+    headers = [(key, val) for key, val in scope.get("headers", []) if key.lower() != name.lower()]
     headers.append((name, value))
     scope["headers"] = headers

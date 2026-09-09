@@ -5,22 +5,38 @@ description: Smith commands, Command classes, discovery, and the Loupe REPL.
 
 ## Smith
 
-Every Almasix application ships **Smith** — the in-app CLI. With your virtualenv active and Almasix installed, run commands as `smith …`. You can also invoke the root `smith` script with `python smith …`.
+Every Almasix application ships **Smith** — the in-app CLI. From the application
+root, the reliable invocation is:
 
 ```bash
-smith list
-smith make:command SendDigest
-smith inspire
-smith loupe
+python smith list
+python smith make:command SendDigest
+python smith inspire
+python smith loupe
 ```
 
-`smith list` prints every command Smith can reach, grouped by namespace, and `smith help <command>` describes one. [Command reference](#command-reference) lists what ships with the framework.
+That uses the root `smith` script (same idea as `php artisan`). After
+`pip install -e .` **of the application** (not only of Almasix), a `smith`
+console script is also installed into that virtualenv, so bare `smith …` works
+with the env active. Installing Almasix alone — or only the framework editable
+in a monorepo — does **not** put `smith` on `PATH`.
+
+`python smith list` prints every command Smith can reach, grouped by namespace, and `python smith help <command>` describes one. [Command reference](#command-reference) lists what ships with the framework.
 
 Framework commands (`serve`, `migrate`, `make:*`, …) live on the same surface as the `Command` classes your application declares — there is no second kind of command, which is why `Artisan.call` and the scheduler reach all of them.
 
 ## Loupe REPL
 
-`smith loupe` (or `tinker` / `repl`) boots the application and opens an interactive shell with helpers and models available.
+`python smith loupe` (or `tinker` / `repl`) boots the application and opens an
+interactive shell with helpers and models available. Install the optional extra
+for Tinker-class coloring and completion:
+
+```bash
+pip install 'almasix[loupe]'   # IPython + One Dark Pro highlighting
+```
+
+Input, completions, and matched brackets use the **One Dark Pro** Pygments theme
+(true color when the terminal supports it).
 
 Articulate is **async**. Loupe auto-resolves coroutine expression results, so these both work:
 
@@ -339,7 +355,7 @@ What the framework ships, 103 commands, as `smith list` groups them. An applicat
 | `list` | List the commands available to Smith |
 | `migrate` | Run outstanding migrations |
 | `optimize` | Cache what Almasix can cache, and say what it deliberately does not |
-| `serve` | Serve the application with Uvicorn |
+| `serve` | Serve the application with Uvicorn (`--workers`, `--proxy-headers`) |
 | `test` | Run the application's tests through pytest |
 | `up` | Bring the application out of maintenance mode |
 | `version` | Show Almasix version |

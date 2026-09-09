@@ -176,7 +176,18 @@ class Number:
             "eighteen",
             "nineteen",
         ]
-        tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+        tens = [
+            "",
+            "",
+            "twenty",
+            "thirty",
+            "forty",
+            "fifty",
+            "sixty",
+            "seventy",
+            "eighty",
+            "ninety",
+        ]
         if n < 20:
             return ones[n]
         if n < 100:

@@ -86,7 +86,7 @@ def test_paginator_and_fallback_to_dict() -> None:
 class ToDictWantsArguments:
     """A ``to_dict`` that is not the no-argument one Loupe hopes for."""
 
-    def to_dict(self, *, deep):  # noqa: ANN001 - the signature is the point
+    def to_dict(self, *, deep):
         raise AssertionError("never callable without arguments")
 
 

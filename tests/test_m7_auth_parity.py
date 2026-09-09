@@ -59,7 +59,7 @@ def _req(method="GET", path="/", *, headers=None, session=None) -> Request:
 
     request = Request(StarletteRequest(scope, receive))
     if session is not None:
-        request._session = session  # noqa: SLF001
+        request._session = session
     return request
 
 
@@ -173,8 +173,8 @@ async def test_token_guard_and_basic_auth_middleware() -> None:
     from almasix.auth.guard import AuthManager, reset_auth, set_auth
 
     manager = AuthManager()
-    manager._providers["users"] = provider  # noqa: SLF001
-    manager._guards["web"] = SessionGuard("web", provider)  # noqa: SLF001
+    manager._providers["users"] = provider
+    manager._guards["web"] = SessionGuard("web", provider)
     tok = set_auth(manager)
     try:
 
@@ -229,9 +229,7 @@ async def test_password_confirm_and_guest_named_guard() -> None:
 
 @pytest.mark.asyncio
 async def test_password_broker_edges() -> None:
-    provider = MemoryUserProvider(
-        [{"id": 1, "email": "a@b.c", "password": Hash.make("old")}]
-    )
+    provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("old")}])
     tokens = DatabaseTokenRepository(expire=60, throttle=60)
     assert await tokens.delete_expired() == 0
     broker = PasswordBroker(provider, tokens)
@@ -263,7 +261,7 @@ async def test_password_broker_edges() -> None:
         == Password.PASSWORD_RESET
     )
     await tokens.create("z@z.z")
-    tokens._tokens["z@z.z"]["created_at"] = 0  # noqa: SLF001
+    tokens._tokens["z@z.z"]["created_at"] = 0
     assert await tokens.delete_expired() >= 1
 
 
@@ -296,7 +294,7 @@ def test_authenticatable_mixin_fallback() -> None:
 
 @pytest.mark.asyncio
 async def test_remember_cookie_hydrate_and_manager_helpers() -> None:
-    from almasix.auth.guard import AuthManager, reset_auth, set_auth
+    from almasix.auth.guard import AuthManager
     from almasix.auth.middleware import StartAuth
 
     provider = MemoryUserProvider(
@@ -310,11 +308,11 @@ async def test_remember_cookie_hydrate_and_manager_helpers() -> None:
         ]
     )
     manager = AuthManager()
-    manager._providers["users"] = provider  # noqa: SLF001
+    manager._providers["users"] = provider
     web = SessionGuard("web", provider)
-    manager._guards["web"] = web  # noqa: SLF001
+    manager._guards["web"] = web
     api = TokenGuard("api", provider)
-    manager._guards["api"] = api  # noqa: SLF001
+    manager._guards["api"] = api
     await api.set_user_from_request_token("missing")
     assert not api.check()
     api.once({"id": "1", "token": "x"})
@@ -323,7 +321,8 @@ async def test_remember_cookie_hydrate_and_manager_helpers() -> None:
     assert manager.id() is not None
 
     request = _req(headers=[(b"cookie", b"remember_web=1|rem")])
-    request._session = Session()  # noqa: SLF001
+    request._session = Session()
+
     # Force StartAuth to use our provider via config-less resolve by patching guard
     async def ok(req):
         # StartAuth builds its own manager — just ensure it doesn't crash
@@ -343,12 +342,10 @@ async def test_remember_cookie_hydrate_and_manager_helpers() -> None:
 async def test_auth_manager_attempt_validate_via_auth_helper() -> None:
     from almasix.auth.guard import AuthManager, auth, reset_auth, set_auth
 
-    provider = MemoryUserProvider(
-        [{"id": 1, "email": "a@b.c", "password": Hash.make("pw")}]
-    )
+    provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("pw")}])
     manager = AuthManager()
     manager._default = "web"
-    manager._guards["web"] = SessionGuard("web", provider)  # noqa: SLF001
+    manager._guards["web"] = SessionGuard("web", provider)
     session = Session()
     token = set_session(session)
     tok = set_auth(manager)

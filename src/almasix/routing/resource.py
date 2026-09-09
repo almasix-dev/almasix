@@ -146,9 +146,7 @@ class PendingResourceRegistration:
         if isinstance(parameters, str):
             self._parameter_default = parameters
         else:
-            self._parameters.update(
-                {str(key): str(value) for key, value in parameters.items()}
-            )
+            self._parameters.update({str(key): str(value) for key, value in parameters.items()})
         return self._write()
 
     def shallow(self, shallow: bool = True) -> PendingResourceRegistration:
@@ -261,9 +259,7 @@ class PendingResourceRegistration:
             route.without_middleware(self._excluded_middleware[action])
         if self._missing is not None:
             route.missing(self._missing)
-        if self._trashed is True or (
-            isinstance(self._trashed, list) and action in self._trashed
-        ):
+        if self._trashed is True or (isinstance(self._trashed, list) and action in self._trashed):
             route.with_trashed()
         if self._scoped is not None:
             route.scope_bindings()
@@ -327,8 +323,10 @@ class PendingResourceRegistration:
         if self._parameter_default is not None:
             return self._parameter_default
         last = self.segments[-1]
-        return self._parameters.get(last) or self._parameters.get(self.name) or self.parameter_for(
-            last
+        return (
+            self._parameters.get(last)
+            or self._parameters.get(self.name)
+            or self.parameter_for(last)
         )
 
     def _binding_field(self) -> str:
@@ -355,6 +353,7 @@ class PendingResourceRegistration:
 
     def __len__(self) -> int:
         return len(self.routes)
+
 
 class PendingSingletonRegistration(PendingResourceRegistration):
     """A resource with exactly one member, so no id and no index."""

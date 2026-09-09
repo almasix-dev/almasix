@@ -98,7 +98,11 @@ class _Transaction:
         for attempt in range(1, self._attempts + 1):
             try:
                 async with self._connection.transaction() as handle:
-                    outcome = self._callback(handle) if _takes_handle(self._callback) else self._callback()
+                    outcome = (
+                        self._callback(handle)
+                        if _takes_handle(self._callback)
+                        else self._callback()
+                    )
                     if inspect.isawaitable(outcome):
                         outcome = await outcome
                     return outcome

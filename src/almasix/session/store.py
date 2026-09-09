@@ -78,7 +78,7 @@ def get_session() -> Session | None:
 def set_session(session: Session | None) -> Token[Session | None]:
     #: The session a test asserts on is the one the request finished with, and
     #: by then the contextvar has been reset. Keep the last bag for `almasix.testing`.
-    global _last  # noqa: PLW0603 — one slot, written on the way into a request
+    global _last
     if session is not None:
         _last = session
     return _current.set(session)

@@ -58,7 +58,9 @@ class ServiceProvider:
         return sorted(ServiceProvider._publish_groups)
 
     @classmethod
-    def paths_to_publish(cls, provider: str | None = None, tag: str | None = None) -> dict[Path, Path]:
+    def paths_to_publish(
+        cls, provider: str | None = None, tag: str | None = None
+    ) -> dict[Path, Path]:
         """The paths matching a provider, a tag, both, or — given neither — all of them."""
         if provider is None and tag is None:
             everything: dict[Path, Path] = {}

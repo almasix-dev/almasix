@@ -336,11 +336,17 @@ class QueryBuilder:
             clause = self._nested(column)
             return self._push_where(boolean, clause) if clause is not None else self
         if isinstance(column, Mapping):
-            return self.where(lambda query: [query.where(k, "=", v) for k, v in column.items()], boolean=boolean)
+            return self.where(
+                lambda query: [query.where(k, "=", v) for k, v in column.items()], boolean=boolean
+            )
         if isinstance(column, (list, tuple)) and column and isinstance(column[0], (list, tuple)):
-            return self.where(lambda query: [query.where(*entry) for entry in column], boolean=boolean)
+            return self.where(
+                lambda query: [query.where(*entry) for entry in column], boolean=boolean
+            )
         if operator is _MISSING:
-            raise TypeError("where() requires where(column, value) or where(column, operator, value)")
+            raise TypeError(
+                "where() requires where(column, value) or where(column, operator, value)"
+            )
         return self._push_where(boolean, self._condition(column, operator, value))
 
     def or_where(
@@ -406,7 +412,9 @@ class QueryBuilder:
         """True when *any* of the columns matches — Laravel's ``whereAny``."""
         return self._across(columns, operator, value, combine=sa.or_, negate=False, boolean=boolean)
 
-    def or_where_any(self, columns: Sequence[str], operator: Any, value: Any = _MISSING) -> QueryBuilder:
+    def or_where_any(
+        self, columns: Sequence[str], operator: Any, value: Any = _MISSING
+    ) -> QueryBuilder:
         return self.where_any(columns, operator, value, boolean="or")
 
     def where_all(
@@ -417,9 +425,13 @@ class QueryBuilder:
         boolean: str = "and",
     ) -> QueryBuilder:
         """True when *every* column matches — Laravel's ``whereAll``."""
-        return self._across(columns, operator, value, combine=sa.and_, negate=False, boolean=boolean)
+        return self._across(
+            columns, operator, value, combine=sa.and_, negate=False, boolean=boolean
+        )
 
-    def or_where_all(self, columns: Sequence[str], operator: Any, value: Any = _MISSING) -> QueryBuilder:
+    def or_where_all(
+        self, columns: Sequence[str], operator: Any, value: Any = _MISSING
+    ) -> QueryBuilder:
         return self.where_all(columns, operator, value, boolean="or")
 
     def where_none(
@@ -432,7 +444,9 @@ class QueryBuilder:
         """True when *no* column matches — Laravel's ``whereNone``."""
         return self._across(columns, operator, value, combine=sa.or_, negate=True, boolean=boolean)
 
-    def or_where_none(self, columns: Sequence[str], operator: Any, value: Any = _MISSING) -> QueryBuilder:
+    def or_where_none(
+        self, columns: Sequence[str], operator: Any, value: Any = _MISSING
+    ) -> QueryBuilder:
         return self.where_none(columns, operator, value, boolean="or")
 
     # --- membership ---------------------------------------------------------
@@ -488,7 +502,9 @@ class QueryBuilder:
     def or_where_integer_in_raw(self, column: str, values: Iterable[Any]) -> QueryBuilder:
         return self.where_integer_in_raw(column, values, boolean="or")
 
-    def where_integer_not_in_raw(self, column: str, values: Iterable[Any], boolean: str = "and") -> QueryBuilder:
+    def where_integer_not_in_raw(
+        self, column: str, values: Iterable[Any], boolean: str = "and"
+    ) -> QueryBuilder:
         return self.where_integer_in_raw(column, values, boolean=boolean, negate=True)
 
     def or_where_integer_not_in_raw(self, column: str, values: Iterable[Any]) -> QueryBuilder:
@@ -510,7 +526,9 @@ class QueryBuilder:
 
     def where_null_safe_equals(self, column: str, value: Any, boolean: str = "and") -> QueryBuilder:
         """Equality that counts two NULLs as equal — Laravel's ``whereNullSafeEquals``."""
-        return self._push_where(boolean, self._comparable(column, value).is_not_distinct_from(value))
+        return self._push_where(
+            boolean, self._comparable(column, value).is_not_distinct_from(value)
+        )
 
     def or_where_null_safe_equals(self, column: str, value: Any) -> QueryBuilder:
         return self.where_null_safe_equals(column, value, boolean="or")
@@ -560,7 +578,9 @@ class QueryBuilder:
     def or_where_between_columns(self, column: str, columns: Sequence[str]) -> QueryBuilder:
         return self.where_between_columns(column, columns, boolean="or")
 
-    def where_not_between_columns(self, column: str, columns: Sequence[str], boolean: str = "and") -> QueryBuilder:
+    def where_not_between_columns(
+        self, column: str, columns: Sequence[str], boolean: str = "and"
+    ) -> QueryBuilder:
         return self.where_between_columns(column, columns, boolean=boolean, negate=True)
 
     def or_where_not_between_columns(self, column: str, columns: Sequence[str]) -> QueryBuilder:
@@ -581,7 +601,9 @@ class QueryBuilder:
     def or_where_value_between(self, value: Any, columns: Sequence[str]) -> QueryBuilder:
         return self.where_value_between(value, columns, boolean="or")
 
-    def where_value_not_between(self, value: Any, columns: Sequence[str], boolean: str = "and") -> QueryBuilder:
+    def where_value_not_between(
+        self, value: Any, columns: Sequence[str], boolean: str = "and"
+    ) -> QueryBuilder:
         return self.where_value_between(value, columns, boolean=boolean, negate=True)
 
     def or_where_value_not_between(self, value: Any, columns: Sequence[str]) -> QueryBuilder:
@@ -625,7 +647,9 @@ class QueryBuilder:
         clause = target.ilike(pattern)
         return self._push_where(boolean, ~clause if negate else clause)
 
-    def or_where_like(self, column: str, pattern: str, case_sensitive: bool = False) -> QueryBuilder:
+    def or_where_like(
+        self, column: str, pattern: str, case_sensitive: bool = False
+    ) -> QueryBuilder:
         return self.where_like(column, pattern, case_sensitive, boolean="or")
 
     def where_not_like(
@@ -637,7 +661,9 @@ class QueryBuilder:
     ) -> QueryBuilder:
         return self.where_like(column, pattern, case_sensitive, boolean=boolean, negate=True)
 
-    def or_where_not_like(self, column: str, pattern: str, case_sensitive: bool = False) -> QueryBuilder:
+    def or_where_not_like(
+        self, column: str, pattern: str, case_sensitive: bool = False
+    ) -> QueryBuilder:
         return self.where_like(column, pattern, case_sensitive, boolean="or", negate=True)
 
     # --- dates and times ----------------------------------------------------
@@ -655,25 +681,33 @@ class QueryBuilder:
         extracted = sa.extract(part, self._comparable(column))
         return self._push_where(boolean, apply(extracted, value))
 
-    def where_year(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+    def where_year(
+        self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and"
+    ) -> QueryBuilder:
         return self._where_date_part("year", column, operator, value, boolean)
 
     def or_where_year(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
         return self._where_date_part("year", column, operator, value, "or")
 
-    def where_month(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+    def where_month(
+        self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and"
+    ) -> QueryBuilder:
         return self._where_date_part("month", column, operator, value, boolean)
 
     def or_where_month(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
         return self._where_date_part("month", column, operator, value, "or")
 
-    def where_day(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+    def where_day(
+        self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and"
+    ) -> QueryBuilder:
         return self._where_date_part("day", column, operator, value, boolean)
 
     def or_where_day(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
         return self._where_date_part("day", column, operator, value, "or")
 
-    def where_date(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+    def where_date(
+        self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and"
+    ) -> QueryBuilder:
         operator, value = self._operator_and_value(operator, value)
         apply = self._resolve_operator(operator)
         target = sa.func.date(self._comparable(column))
@@ -682,7 +716,9 @@ class QueryBuilder:
     def or_where_date(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
         return self.where_date(column, operator, value, boolean="or")
 
-    def where_time(self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and") -> QueryBuilder:
+    def where_time(
+        self, column: str, operator: Any, value: Any = _MISSING, boolean: str = "and"
+    ) -> QueryBuilder:
         operator, value = self._operator_and_value(operator, value)
         apply = self._resolve_operator(operator)
         target = sa.func.time(self._comparable(column))
@@ -790,13 +826,17 @@ class QueryBuilder:
     def or_where_json_contains(self, column: str, value: Any) -> QueryBuilder:
         return self.where_json_contains(column, value, boolean="or")
 
-    def where_json_doesnt_contain(self, column: str, value: Any, boolean: str = "and") -> QueryBuilder:
+    def where_json_doesnt_contain(
+        self, column: str, value: Any, boolean: str = "and"
+    ) -> QueryBuilder:
         return self.where_json_contains(column, value, boolean=boolean, negate=True)
 
     def or_where_json_doesnt_contain(self, column: str, value: Any) -> QueryBuilder:
         return self.where_json_contains(column, value, boolean="or", negate=True)
 
-    def where_json_contains_key(self, column: str, boolean: str = "and", negate: bool = False) -> QueryBuilder:
+    def where_json_contains_key(
+        self, column: str, boolean: str = "and", negate: bool = False
+    ) -> QueryBuilder:
         """Does the document have this key, whatever its value?"""
         name, path = split_json_path(column)
         clause = JsonContainsKey(self.column(name), path)
@@ -824,7 +864,9 @@ class QueryBuilder:
         name, path = split_json_path(column)
         return self._push_where(boolean, apply(JsonLength(self.column(name), path), value))
 
-    def or_where_json_length(self, column: str, operator: Any, value: Any = _MISSING) -> QueryBuilder:
+    def or_where_json_length(
+        self, column: str, operator: Any, value: Any = _MISSING
+    ) -> QueryBuilder:
         return self.where_json_length(column, operator, value, boolean="or")
 
     # --- full text ----------------------------------------------------------
@@ -875,7 +917,9 @@ class QueryBuilder:
             self._orders.append(distance.asc())
         return self
 
-    def select_vector_distance(self, column: str, vector: Any, alias: str = "distance") -> QueryBuilder:
+    def select_vector_distance(
+        self, column: str, vector: Any, alias: str = "distance"
+    ) -> QueryBuilder:
         """Add the cosine distance to the selected columns."""
         self._selects.append(VectorDistance(self.column(column), vector).label(alias))
         return self
@@ -890,7 +934,9 @@ class QueryBuilder:
         distance = VectorDistance(self.column(column), vector)
         return self._push_where(boolean, distance < max_distance)
 
-    def order_by_vector_distance(self, column: str, vector: Any, direction: str = "asc") -> QueryBuilder:
+    def order_by_vector_distance(
+        self, column: str, vector: Any, direction: str = "asc"
+    ) -> QueryBuilder:
         distance = VectorDistance(self.column(column), vector)
         self._orders.append(distance.desc() if direction.lower() == "desc" else distance.asc())
         return self
@@ -1022,13 +1068,17 @@ class QueryBuilder:
             self._havings.append((boolean, column))
             return self
         if operator is _MISSING:
-            raise TypeError("having() requires having(column, value) or having(column, operator, value)")
+            raise TypeError(
+                "having() requires having(column, value) or having(column, operator, value)"
+            )
         operator, value = self._operator_and_value(operator, value)
         apply = self._resolve_operator(operator)
         self._havings.append((boolean, apply(self._having_column(column), value)))
         return self
 
-    def or_having(self, column: Any, operator: Any = _MISSING, value: Any = _MISSING) -> QueryBuilder:
+    def or_having(
+        self, column: Any, operator: Any = _MISSING, value: Any = _MISSING
+    ) -> QueryBuilder:
         return self.having(column, operator, value, boolean="or")
 
     def having_between(
@@ -1739,7 +1789,7 @@ class QueryBuilder:
         """The dialect to compile for, or None before a connection exists."""
         try:
             return self.get_connection().engine.dialect
-        except Exception:  # noqa: BLE001 — compiling must work without a connection
+        except Exception:
             return None
 
     def _compiled(self, *, literal: bool) -> Any:
@@ -2005,7 +2055,9 @@ class QueryBuilder:
                 return
             page += 1
 
-    async def _stream_lazy_by_id(self, size: int = 1000, column: str | None = None) -> AsyncIterator[Any]:
+    async def _stream_lazy_by_id(
+        self, size: int = 1000, column: str | None = None
+    ) -> AsyncIterator[Any]:
         key = column or self._key_column()
         last: Any = None
         while True:
@@ -2151,9 +2203,7 @@ class QueryBuilder:
             # values, and reading backwards flips it again.
             backwards_of_here = descending == forwards
             comparison = (
-                self.column(column) < value
-                if backwards_of_here
-                else self.column(column) > value
+                self.column(column) < value if backwards_of_here else self.column(column) > value
             )
             equals = [self.column(name) == held for name, held in previous]
             clauses.append(sa.and_(*equals, comparison) if equals else comparison)
@@ -2191,7 +2241,9 @@ class QueryBuilder:
         for row in payload:
             for key in row:
                 self.column(key)
-        statement = _ignoring_insert(self._table_clause(self.table), payload, self.get_connection().dialect)
+        statement = _ignoring_insert(
+            self._table_clause(self.table), payload, self.get_connection().dialect
+        )
         result = await self.get_connection().execute(statement)
         return int(result.rowcount or 0)
 
@@ -2568,7 +2620,10 @@ def _truncate_sql(table: str, dialect: Any) -> list[str]:
     if dialect.name == "sqlite":
         return [f"DELETE FROM {quoted}"]
     if dialect.name in {"postgresql", "mssql"}:
-        return [f"TRUNCATE TABLE {quoted}" + (" RESTART IDENTITY CASCADE" if dialect.name == "postgresql" else "")]
+        return [
+            f"TRUNCATE TABLE {quoted}"
+            + (" RESTART IDENTITY CASCADE" if dialect.name == "postgresql" else "")
+        ]
     return [f"TRUNCATE TABLE {quoted}"]
 
 
@@ -2614,7 +2669,9 @@ def _value_of(row: Any, key: str) -> Any:
     return row[key]
 
 
-_SELECT_ALIAS = re.compile(r"^(?P<expression>.+?)\s+as\s+(?P<alias>[A-Za-z_][A-Za-z0-9_]*)$", re.IGNORECASE)
+_SELECT_ALIAS = re.compile(
+    r"^(?P<expression>.+?)\s+as\s+(?P<alias>[A-Za-z_][A-Za-z0-9_]*)$", re.IGNORECASE
+)
 
 
 def _split_select_alias(sql: str) -> tuple[str, str | None]:

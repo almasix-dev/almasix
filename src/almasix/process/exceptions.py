@@ -53,7 +53,7 @@ class ProcessNotStartedException(ProcessException):
 
 
 def _message_for(result: ProcessResult) -> str:
-    message = f"The command \"{result.command()}\" failed.\n\nExit Code: {result.exit_code()}"
+    message = f'The command "{result.command()}" failed.\n\nExit Code: {result.exit_code()}'
     output = result.output().strip()
     error_output = result.error_output().strip()
     if output:

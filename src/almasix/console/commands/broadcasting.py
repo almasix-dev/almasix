@@ -13,8 +13,7 @@ class MakeChannelCommand(Generator):
     """Create a channel class in `app/broadcasting`."""
 
     signature = (
-        "make:channel {name : Class name, e.g. OrderChannel} "
-        "{--force : Overwrite an existing file}"
+        "make:channel {name : Class name, e.g. OrderChannel} {--force : Overwrite an existing file}"
     )
     description = "Create a broadcast channel class in app/broadcasting"
     kind = "channel"

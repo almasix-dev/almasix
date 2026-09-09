@@ -60,9 +60,7 @@ def _req(path="/", *, headers=None, method="GET") -> Request:
 
 @pytest.mark.asyncio
 async def test_remember_me_queues_set_cookie() -> None:
-    provider = MemoryUserProvider(
-        [{"id": 1, "email": "a@b.c", "password": Hash.make("secret")}]
-    )
+    provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("secret")}])
     guard = SessionGuard("web", provider)
     session = Session()
     tok = set_session(session)
@@ -94,20 +92,20 @@ async def test_remember_cookie_hydrates_across_requests() -> None:
         ]
     )
     request = _req(headers=[(b"cookie", b"remember_web=1|tok-abc")])
-    request._session = Session()  # noqa: SLF001
-    request._cookies = {"remember_web": "1|tok-abc"}  # noqa: SLF001
+    request._session = Session()
+    request._cookies = {"remember_web": "1|tok-abc"}
 
     async def inner(req: Request) -> Response:
         # StartAuth builds its own manager; inject provider via via_request fallback
         # by patching after — instead resolve through Memory provider on manager.
         manager = auth()
-        manager._providers["users"] = provider  # noqa: SLF001
+        manager._providers["users"] = provider
         web = SessionGuard("web", provider)
-        manager._guards["web"] = web  # noqa: SLF001
+        manager._guards["web"] = web
         remembered = await provider.retrieve_by_token("1", "tok-abc")
         assert remembered is not None
         web.once(remembered)
-        web._via_remember = True  # noqa: SLF001
+        web._via_remember = True
         assert auth().via_remember() or web.via_remember()
         return Response("ok")
 
@@ -153,9 +151,7 @@ async def test_auth_events_fire_on_attempt_login_logout() -> None:
     listen(Login, on_login)
     listen(Logout, on_logout)
 
-    provider = MemoryUserProvider(
-        [{"id": 1, "email": "a@b.c", "password": Hash.make("secret")}]
-    )
+    provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("secret")}])
     guard = SessionGuard("web", provider)
     session = Session()
     tok = set_session(session)
@@ -174,15 +170,13 @@ async def test_auth_events_fire_on_attempt_login_logout() -> None:
 
 @pytest.mark.asyncio
 async def test_request_user_and_intended_url() -> None:
-    provider = MemoryUserProvider(
-        [{"id": 1, "email": "a@b.c", "password": Hash.make("secret")}]
-    )
+    provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("secret")}])
     manager = AuthManager()
     web = SessionGuard("web", provider)
-    manager._guards["web"] = web  # noqa: SLF001
+    manager._guards["web"] = web
     web.once({"id": 1, "email": "a@b.c"})
     request = _req("/settings")
-    request._auth = manager  # noqa: SLF001
+    request._auth = manager
     assert request.user()["id"] == 1
     assert request.user("web")["id"] == 1
 
@@ -208,7 +202,7 @@ async def test_authenticate_stores_intended_url() -> None:
     session = Session()
     tok = set_session(session)
     request = _req("/dashboard")
-    request._session = session  # noqa: SLF001
+    request._session = session
     try:
 
         async def ok(req):
@@ -244,11 +238,11 @@ async def test_via_request_custom_guard() -> None:
 
     manager.via_request("custom", resolve)
     request = _req()
-    request._session = Session()  # noqa: SLF001
+    request._session = Session()
 
     # Wire StartAuth path manually
     guard = manager.guard("custom")
-    assert guard._via_request is resolve  # noqa: SLF001
+    assert guard._via_request is resolve
     resolved = await resolve(request)
     guard.once(resolved)
     assert manager.guard("custom").user()["id"] == "via"
@@ -261,13 +255,13 @@ async def test_start_auth_applies_remember_cookie_from_login() -> None:
     )
     session = Session()
     request = _req()
-    request._session = session  # noqa: SLF001
+    request._session = session
 
     async def login_then(req: Request) -> Response:
         manager = auth()
-        manager._providers["users"] = provider  # noqa: SLF001
+        manager._providers["users"] = provider
         web = SessionGuard("web", provider)
-        manager._guards["web"] = web  # noqa: SLF001
+        manager._guards["web"] = web
         assert await web.attempt(
             {"email": "ada@almasix.dev", "password": "password"},
             remember=True,

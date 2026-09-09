@@ -23,11 +23,10 @@ from almasix.notifications import (
     notify,
     notify_now,
 )
-from almasix.notifications.channels import DatabaseChannel, LogChannel, MailChannel
+from almasix.notifications.channels import DatabaseChannel
 from almasix.notifications.provider import NotificationServiceProvider
 from almasix.notifications.sender import NotificationSender
-from almasix.orm import DatabaseManager, set_manager
-from tests.orm_support import memory_db
+from almasix.orm import DatabaseManager
 
 
 class FakeUser(Notifiable, MustVerifyEmail):
@@ -174,9 +173,9 @@ async def test_password_broker_uses_notification(mail_ready: Application) -> Non
 
     # Provider boot already wired create_url_using — ensure callback fires.
     manager = get_password_manager()
-    assert manager._send_callback is not None  # noqa: SLF001
+    assert manager._send_callback is not None
 
-    broker = PasswordBroker(Provider(), Tokens(), send_callback=manager._send_callback)  # noqa: SLF001
+    broker = PasswordBroker(Provider(), Tokens(), send_callback=manager._send_callback)
     status = await broker.send_reset_link({"email": "ada@example.com"})
     assert status == "passwords.sent" or "sent" in status
     transport = Mail.manager().array_transport()

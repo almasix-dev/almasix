@@ -217,9 +217,7 @@ def test_show_uses_the_default_connection_when_it_holds_documents(
     assert "memory [docs]" in capsys.readouterr().out
 
 
-def test_show_refuses_to_guess_between_stores(
-    tmp_path: Path, documents: Any, capsys: Any
-) -> None:
+def test_show_refuses_to_guess_between_stores(tmp_path: Path, documents: Any, capsys: Any) -> None:
     documents.add_connection("other", {"driver": "memory"})
     assert show(tmp_path) == 1
     captured = capsys.readouterr()
@@ -282,7 +280,9 @@ def test_make_document_reports_a_factory_it_cannot_write(
     assert "class TagFactory(Factory):" in plain
     assert "model =" not in plain
 
-    assert run(tmp_path, MakeFactoryCommand, "make:factory", ["NoteFactory", "--model", "Note"]) == 0
+    assert (
+        run(tmp_path, MakeFactoryCommand, "make:factory", ["NoteFactory", "--model", "Note"]) == 0
+    )
     bound = (tmp_path / "database" / "factories" / "note_factory.py").read_text(encoding="utf-8")
     assert "model = Note" in bound
 

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
 import pytest
 
 from almasix.console.command import Command
@@ -52,7 +50,9 @@ def test_validation_helpers() -> None:
     assert required_message(True) == "Required."
     assert required_message("Need it") == "Need it"
     assert run_validation("", required=True, validate=None) == "Required."
-    assert run_validation("ok", required=True, validate=lambda v: "bad" if v == "x" else None) is None
+    assert (
+        run_validation("ok", required=True, validate=lambda v: "bad" if v == "x" else None) is None
+    )
 
 
 def test_text_password_number_fallbacks() -> None:

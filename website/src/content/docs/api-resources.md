@@ -310,8 +310,8 @@ Dates, decimals, UUIDs, and sets serialize without a custom encoder.
 - **`with_()` and `merge()`** carry trailing or shortened names because `with`
   is a Python keyword.
 - **`links` and `meta.path` appear only when a request URL is available.**
-  Almasix's paginator has no `path` of its own yet — that is M43's job — so
-  the resource layer reads the current request instead of inventing a URL.
+  The resource layer reads the current request instead of inventing a URL when
+  the paginator has no path of its own.
 - **`status()` / `header()` / `headers()` live on the resource**, where
   Laravel chains them off `->response()`. Starlette responses have no fluent
   header setter to chain from.

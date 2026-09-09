@@ -125,9 +125,7 @@ class Schema:
             return await conn.run_sync(inspect)
 
     @staticmethod
-    async def has_columns(
-        table: str, columns: list[str], connection: str | None = None
-    ) -> bool:
+    async def has_columns(table: str, columns: list[str], connection: str | None = None) -> bool:
         present = {column["name"] for column in await Schema.columns(table, connection)}
         return set(columns).issubset(present)
 
@@ -554,9 +552,7 @@ def _change_statements(column: Column, dialect: Any, qt: str) -> list[str]:
         statements.append(f"ALTER TABLE {qt} ALTER COLUMN {quoted} SET NOT NULL")
     default = column.options.get("default")
     if column.options.get("use_current"):
-        statements.append(
-            f"ALTER TABLE {qt} ALTER COLUMN {quoted} SET DEFAULT CURRENT_TIMESTAMP"
-        )
+        statements.append(f"ALTER TABLE {qt} ALTER COLUMN {quoted} SET DEFAULT CURRENT_TIMESTAMP")
     elif default is not None:
         literal = _default_literal(default, dialect)
         statements.append(f"ALTER TABLE {qt} ALTER COLUMN {quoted} SET DEFAULT {literal}")
@@ -591,9 +587,7 @@ def _drop_constraint_statements(blueprint: Blueprint, dialect: Any, qt: str) -> 
         if name == "mysql":
             statements.append(f"ALTER TABLE {qt} DROP PRIMARY KEY")
         elif name == "sqlite":
-            raise SchemaError(
-                "SQLite cannot drop a primary key. Rebuild the table instead."
-            )
+            raise SchemaError("SQLite cannot drop a primary key. Rebuild the table instead.")
         else:
             constraint = quote_ident(dialect, f"{blueprint.table}_pkey")
             statements.append(f"ALTER TABLE {qt} DROP CONSTRAINT {constraint}")

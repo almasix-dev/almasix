@@ -90,8 +90,8 @@ def test_m41_board_covers_every_planned_milestone(progress_client: TestClient) -
     ids = {m["id"] for m in board["milestones"]}
 
     # The board tracks the whole plan, not just the milestones that shipped first.
-    assert {f"M{n}" for n in range(51)} == ids
-    assert board["total"] == 51
+    assert {f"M{n}" for n in range(53)} == ids
+    assert board["total"] == 53
     assert board["completed"] + board["in_progress"] + board["planned"] == board["total"]
 
 

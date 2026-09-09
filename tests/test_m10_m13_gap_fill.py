@@ -4,20 +4,25 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
 from almasix.filesystem.drivers.local import LocalAdapter
 from almasix.filesystem.drivers.memory import MemoryAdapter
 from almasix.filesystem.manager import Storage, StorageManager
-from almasix.mail.markdown import render_content, render_markdown_component
 from almasix.mail.mailable import Content
+from almasix.mail.markdown import render_content, render_markdown_component
 from almasix.notifications.notifiable import Notifiable
 from almasix.notifications.notification import Notification, ShouldQueue
 from almasix.notifications.sender import NotificationSender
-from almasix.queue.failed import FailedJobRepository, report_failure
-from almasix.queue.helpers import default_queue_config, get_dispatcher, get_manager, set_dispatcher, set_manager
+from almasix.queue.failed import report_failure
+from almasix.queue.helpers import (
+    default_queue_config,
+    get_dispatcher,
+    get_manager,
+    set_dispatcher,
+    set_manager,
+)
 from almasix.queue.job import Job, JobMiddleware
 
 
@@ -65,11 +70,13 @@ def test_markdown_component_and_theme_wrap() -> None:
 @pytest.mark.asyncio
 async def test_notification_should_queue_dispatches() -> None:
     from almasix.notifications.channels import ArrayChannel
+    from almasix.queue.dispatcher import Dispatcher
     from almasix.queue.helpers import set_dispatcher, set_manager
     from almasix.queue.manager import QueueManager
-    from almasix.queue.dispatcher import Dispatcher
 
-    set_manager(QueueManager(config={"default": "sync", "connections": {"sync": {"driver": "sync"}}}))
+    set_manager(
+        QueueManager(config={"default": "sync", "connections": {"sync": {"driver": "sync"}}})
+    )
     set_dispatcher(Dispatcher(get_manager()))
 
     class QueuedNote(ShouldQueue, Notification):

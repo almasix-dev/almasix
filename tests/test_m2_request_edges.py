@@ -6,15 +6,14 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from starlette.datastructures import Headers, UploadFile
+from starlette.datastructures import UploadFile
 from starlette.requests import Request as StarletteRequest
 
 from almasix.framework import Application
 from almasix.http import Request, UploadedFile
 from almasix.http.kernel import HttpKernel
 from almasix.http.request import _is_empty
-from almasix.routing import Router, set_router
-from almasix.routing import Route
+from almasix.routing import Route, Router, set_router
 from tests.support import purge_generated_app_modules
 from tests.test_m2_request import _receive, _starlette_request
 
@@ -56,7 +55,7 @@ async def test_uploaded_file_wrapper_and_multi_values() -> None:
         body=body,
     )
     request = await Request.create(raw)
-    await request._hydrate()  # noqa: SLF001 — idempotent
+    await request._hydrate()
     assert request.query("q") == ["1", "2"]
     assert request.post("tags") == ["a", "b"]
     docs = request.file("docs")
@@ -136,7 +135,7 @@ async def test_kernel_rejects_unresolvable_param() -> None:
         hydrated=True,
     )
     with pytest.raises(TypeError, match="Cannot resolve"):
-        await kernel._invoke(needs_unknown, request)  # noqa: SLF001
+        await kernel._invoke(needs_unknown, request)
 
 
 def test_controller_di_and_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -163,7 +162,7 @@ def test_controller_di_and_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPa
         return {"limit": limit}
 
     Route.get("/default", with_default)
-    app._routes_loaded = True  # noqa: SLF001
+    app._routes_loaded = True
     client = TestClient(app.asgi)
     assert client.get("/default").json() == {"limit": 5}
 

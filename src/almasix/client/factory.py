@@ -7,11 +7,11 @@ from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import urlsplit
 
-from almasix.support.arity import accepts_two_arguments
 from almasix.client.exceptions import OutOfFakeResponses
 from almasix.client.pending import PendingRequest
 from almasix.client.request import RecordedRequest
 from almasix.client.response import Response
+from almasix.support.arity import accepts_two_arguments
 
 
 class Sequence:
@@ -24,7 +24,9 @@ class Sequence:
         # ``dont_fail_when_empty`` opt out of that.
         self._fail_when_empty = True
 
-    def push(self, body: Any = None, status: int = 200, headers: dict[str, str] | None = None) -> Sequence:
+    def push(
+        self, body: Any = None, status: int = 200, headers: dict[str, str] | None = None
+    ) -> Sequence:
         self._responses.append(Response.make(body, status, headers))
         return self
 

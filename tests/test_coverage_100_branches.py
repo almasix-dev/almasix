@@ -2,35 +2,37 @@
 
 from __future__ import annotations
 
-import base64
-import os
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
+from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
 from almasix.auth.cookies import (
     apply_queued_cookies,
     begin_cookie_queue,
     queue_cookie,
-    queue_forget_cookie,
     reset_cookie_queue,
 )
-from almasix.auth.guard import Guard, SessionGuard, _session_payload, reset_auth, set_auth, AuthManager
+from almasix.auth.guard import (
+    AuthManager,
+    Guard,
+    SessionGuard,
+    _session_payload,
+)
 from almasix.auth.middleware import RedirectIfAuthenticated, StartAuth
-from almasix.auth.passwords import DatabaseTokenRepository, PasswordBroker, Password
+from almasix.auth.passwords import DatabaseTokenRepository, Password, PasswordBroker
 from almasix.auth.providers import ArticulateUserProvider, MemoryUserProvider
 from almasix.config import ConfigRepository, env, set_repository
 from almasix.hashing import Hash, HashManager, set_hash_manager
+from almasix.http.request import Request
 from almasix.orm.model import Model
 from almasix.session.store import Session, set_session
 from almasix.support.collection import Collection
 from almasix.translation.loader import FileLoader
 from almasix.translation.middleware import SetLocaleMiddleware
 from almasix.translation.translator import Translator
-from almasix.http.request import Request
-from starlette.requests import Request as StarletteRequest
 
 
 @pytest.fixture(autouse=True)
@@ -72,7 +74,7 @@ def test_model_getattr_loaded_relation() -> None:
         table = "things"
 
     t = Thing()
-    t._relations["bundle"] = {"ok": True}  # noqa: SLF001
+    t._relations["bundle"] = {"ok": True}
     assert t.bundle == {"ok": True}
 
 
@@ -172,7 +174,10 @@ async def test_middleware_via_request_await_and_guest_named() -> None:
     repo = ConfigRepository()
     repo.set(
         "auth.guards",
-        {"web": {"driver": "session", "provider": "users"}, "api": {"driver": "token", "provider": "users"}},
+        {
+            "web": {"driver": "session", "provider": "users"},
+            "api": {"driver": "token", "provider": "users"},
+        },
     )
     repo.set("auth.providers", {"users": {"driver": "memory", "users": []}})
     set_repository(repo)
@@ -190,7 +195,7 @@ async def test_middleware_via_request_await_and_guest_named() -> None:
 
     with patch.object(AuthManager, "guard", with_via):
         request = _req()
-        request._session = Session()  # noqa: SLF001
+        request._session = Session()
         set_session(request._session)
 
         async def ok(_r):
@@ -224,9 +229,9 @@ async def test_model_new_instance_and_delete_soft_false() -> None:
         appends = ()
 
     h = Hidden()
-    h._attributes["name"] = "n"  # noqa: SLF001
-    h._extra["secret"] = "x"  # noqa: SLF001
-    h._extra["ok"] = "y"  # noqa: SLF001
+    h._attributes["name"] = "n"
+    h._extra["secret"] = "x"
+    h._extra["ok"] = "y"
     data = h.attributes_to_dict()
     assert "secret" not in data
     assert data.get("ok") == "y"
@@ -256,13 +261,13 @@ async def test_translation_fallback_and_missing_handler() -> None:
     t.handle_missing_keys_using(handler)
     assert t.get("still.missing") == "handled:still.missing"
 
-    from almasix.translation.locale import reset_locale_context
     from almasix.translation.helpers import set_translator
+    from almasix.translation.locale import reset_locale_context
 
     reset_locale_context()
     set_translator(t)
     req = _req(headers=[(b"accept-language", b"xx-YY")])
-    req._session = Session()  # noqa: SLF001
+    req._session = Session()
 
     async def nxt(r):
         return Response(b"ok")
@@ -333,7 +338,7 @@ def test_lang_json_list_and_force(tmp_path) -> None:
     lang_cmd.make_lang("de", base, force=False)
     lang_cmd.make_lang("de", base, force=True)
     (base / "lang" / "de.json").write_text("[1, 2]\n", encoding="utf-8")
-    keys = lang_cmd._collect_keys(base / "lang", "de")  # noqa: SLF001
+    keys = lang_cmd._collect_keys(base / "lang", "de")
     assert isinstance(keys, set)
 
 
@@ -364,7 +369,7 @@ async def test_hydrate_none_and_sync_via() -> None:
 
     with patch.object(AuthManager, "guard", with_via):
         request = _req()
-        request._session = Session()  # noqa: SLF001
+        request._session = Session()
         set_session(request._session)
 
         async def ok(_r):

@@ -79,7 +79,7 @@ class BroadcastingSocket:
             while True:
                 raw = await websocket.receive_text()
                 await self.dispatch(connection, decode_frame(raw))
-        except Exception:  # noqa: BLE001 — every disconnect arrives as an exception
+        except Exception:
             pass
         finally:
             await self.hub.disconnect(connection)

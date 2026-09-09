@@ -38,7 +38,7 @@ class ConfigRepository:
             sys.modules.pop(module_name, None)
 
         if hasattr(module, "config"):
-            return getattr(module, "config")
+            return module.config
 
         return {
             name: getattr(module, name)

@@ -3,7 +3,10 @@ title: Views
 description: Render HTML with Prism from controllers and routes.
 ---
 
-Views separate your controller from HTML. Almasix's view engine is **Prism** — templates compiled to Python (`.prism.html`).
+A **view** turns data from a controller into HTML. Almasix’s view engine is
+**Prism**: templates under `resources/views` with a `.prism.html` extension,
+compiled to Python and cached in the process. This page is the overview; the
+full Prism tutorial lives under [Prism](/prism/).
 
 ## Creating and returning views
 

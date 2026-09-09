@@ -68,13 +68,13 @@ async def _call(callback: Callable[..., Any], *arguments: Any) -> Any:
 class Factory:
     """The base every model factory extends.
 
-        class UserFactory(Factory):
-            model = User
+    class UserFactory(Factory):
+        model = User
 
-            def definition(self):
-                return {"name": self.fake.name(), "email": self.fake.unique().safe_email()}
+        def definition(self):
+            return {"name": self.fake.name(), "email": self.fake.unique().safe_email()}
 
-        await User.factory().count(3).create()
+    await User.factory().count(3).create()
     """
 
     #: The model this factory builds; guessed from the class name when unset.
@@ -167,7 +167,9 @@ class Factory:
     def after_creating(self, callback: Callable[..., Any]) -> Factory:
         return self.new_instance(after_creating=[*self._after_creating, callback])
 
-    def recycle(self, models: Iterable[Model] | Model | Mapping[type[Model], list[Model]]) -> Factory:
+    def recycle(
+        self, models: Iterable[Model] | Model | Mapping[type[Model], list[Model]]
+    ) -> Factory:
         """Reuse these models instead of creating fresh parents."""
         if isinstance(models, Mapping):
             merged = {**self._recycle}
@@ -226,7 +228,11 @@ class Factory:
             if name.startswith("for_"):
                 return self.for_(factory.state(first or {}), relationship)
             count = first if isinstance(first, int) and not isinstance(first, bool) else 1
-            state = first if isinstance(first, Mapping) else (parameters[1] if len(parameters) > 1 else {})
+            state = (
+                first
+                if isinstance(first, Mapping)
+                else (parameters[1] if len(parameters) > 1 else {})
+            )
             return self.has(factory.count(count).state(state), relationship)
 
         return magic
@@ -316,7 +322,9 @@ class Factory:
     async def make_one(self, attributes: Mapping[str, Any] | None = None) -> Model:
         return await self.count(None).make(attributes)
 
-    async def make_many(self, records: int | Iterable[Mapping[str, Any]] | None = None) -> Collection[Any]:
+    async def make_many(
+        self, records: int | Iterable[Mapping[str, Any]] | None = None
+    ) -> Collection[Any]:
         return await self._many(records, "make")
 
     async def create(

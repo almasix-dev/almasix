@@ -15,7 +15,7 @@ def resolve_encrypter() -> Encrypter:
 
         key = str(config("app.key", "") or "") or "almasix-insecure-dev-key-change-me"
         previous = parse_previous_keys(config("app.previous_keys", []))
-    except Exception:  # noqa: BLE001 — config may be unavailable before boot
+    except Exception:
         key = "almasix-insecure-dev-key-change-me"
         previous = []
     return Encrypter(key, previous)

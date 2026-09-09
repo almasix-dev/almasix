@@ -11,8 +11,7 @@ from typer.testing import CliRunner
 from almasix.console.command import Command, parse_signature
 from almasix.console.kernel import ConsoleKernel
 from almasix.console.mutex import Mutex
-from almasix.console.scheduling import Event, Schedule, _cron_matches, run_event, schedule
-from almasix.framework import Application
+from almasix.console.scheduling import Event, _cron_matches, run_event, schedule
 from almasix.smith.cli import app as smith_app
 from tests.support import purge_generated_app_modules
 

@@ -8,7 +8,7 @@ from prompt_toolkit import prompt as pt_prompt
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.validation import ValidationError, Validator
 
-from almasix.console.prompts.style import STYLE, html_escape
+from almasix.console.prompts.style import STYLE, TRUE_COLOR, html_escape
 from almasix.console.prompts.types import Required, ValidateFn, is_interactive, run_validation
 
 
@@ -115,8 +115,8 @@ def number(
     required: Required = False,
     validate: ValidateFn | None = None,
     hint: str = "",
-    min: int | float | None = None,  # noqa: A002
-    max: int | float | None = None,  # noqa: A002
+    min: int | float | None = None,
+    max: int | float | None = None,
 ) -> int | float:
     """Prompt for a number (Laravel ``number``)."""
 
@@ -167,7 +167,7 @@ def _prompt_line(
         return default
 
     class _Validator(Validator):
-        def validate(self, document) -> None:  # noqa: ANN001
+        def validate(self, document) -> None:
             err = run_validation(document.text, required=required, validate=validate)
             if err:
                 raise ValidationError(message=err, cursor_position=len(document.text))
@@ -183,6 +183,7 @@ def _prompt_line(
         "validator": _Validator(),
         "validate_while_typing": False,
         "style": STYLE,
+        "color_depth": TRUE_COLOR,
         "is_password": password,
     }
     if placeholder:

@@ -32,9 +32,7 @@ class ModelPruneCommand(Command):
             return self.INVALID
 
         models = [
-            model
-            for model in self._prunable_models(wanted)
-            if model.__name__ not in excluded
+            model for model in self._prunable_models(wanted) if model.__name__ not in excluded
         ]
         if not models:
             self.info("No prunable models found.")
@@ -91,6 +89,6 @@ class ModelPruneCommand(Command):
         for info in pkgutil.iter_modules([str(Path(entry)) for entry in path]):
             try:
                 modules.append(importlib.import_module(f"app.models.{info.name}"))
-            except Exception as exc:  # noqa: BLE001 — one bad module must not stop pruning
+            except Exception as exc:
                 self.warn(f"Could not import app.models.{info.name}: {exc}")
         return modules

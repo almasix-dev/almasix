@@ -87,8 +87,8 @@ configuration to disable the middleware entirely.
 
 ## Maintenance mode
 
-`smith down` writes `storage/framework/down`. The scheduler already skipped
-its tasks while that file existed (M31); the HTTP half is here.
+`smith down` writes `storage/framework/down`. While that marker exists, the
+scheduler skips tasks (unless exempted) and HTTP responses answer **503**.
 
 ```bash
 smith down --secret=let-me-in --retry=60
@@ -109,9 +109,9 @@ While the marker is present:
   the response sets a cookie and redirects to the same URL without the query,
   and subsequent requests pass through.
 
-A marker written by M31 as the plain word `down` still means down — the
-middleware treats an unreadable payload as an empty one, so an application
-taken down before this page existed answers 503 rather than 500.
+A marker that is only the plain word `down` still means down — the middleware
+treats an unreadable payload as an empty one, so older markers answer 503
+rather than 500.
 
 ### Options
 

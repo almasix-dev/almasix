@@ -246,9 +246,7 @@ class PasswordBrokerManager:
             try:
                 from almasix.config import config
 
-                provider_name = str(
-                    config(f"auth.passwords.{key}.provider", key) or key
-                )
+                provider_name = str(config(f"auth.passwords.{key}.provider", key) or key)
                 table = str(
                     config(f"auth.passwords.{key}.table", "password_reset_tokens")
                     or "password_reset_tokens"
@@ -258,7 +256,7 @@ class PasswordBrokerManager:
                 use_database = bool(config(f"auth.passwords.{key}.use_database", False))
             except Exception:
                 pass
-            provider = auth()._resolve_provider(provider_name)  # noqa: SLF001
+            provider = auth()._resolve_provider(provider_name)
             tokens = DatabaseTokenRepository(
                 expire=expire,
                 throttle=throttle,

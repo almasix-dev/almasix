@@ -95,9 +95,7 @@ def test_chains_still_read_the_same() -> None:
 def test_every_str_method_is_reachable_fluently() -> None:
     """The fluent and static surfaces are the same list, not two lists."""
     for name in dir(Str):
-        if name.startswith("_") or not isinstance(
-            inspect.getattr_static(Str, name), staticmethod
-        ):
+        if name.startswith("_") or not isinstance(inspect.getattr_static(Str, name), staticmethod):
             continue
         assert hasattr(Stringable, name), name
 

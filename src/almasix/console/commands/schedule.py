@@ -149,7 +149,9 @@ class ScheduleListCommand(ScheduleCommand):
             moment = event.next_run_at(datetime.now())
             if zone is not None:
                 moment = (
-                    moment.astimezone(zone) if moment.tzinfo else moment.astimezone().astimezone(zone)
+                    moment.astimezone(zone)
+                    if moment.tzinfo
+                    else moment.astimezone().astimezone(zone)
                 )
             rows.append(
                 (

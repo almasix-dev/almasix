@@ -185,7 +185,8 @@ def test_the_page_names_its_deviations_rather_than_hiding_them() -> None:
     page = PAGE.read_text(encoding="utf-8")
 
     assert "Named deviation" in page
-    assert "Not shipped yet" in page
+    # Remaining gaps are called out inline as named deviations (no separate backlog).
+    assert page.count("Named deviation") >= 3
 
 
 # --- the living example -------------------------------------------------------

@@ -32,7 +32,9 @@ def encrypt_string(value: str, *, key: str) -> str:
     raw_key = hashlib.sha256(key.encode("utf-8")).digest()
     nonce = os.urandom(16)
     plain = value.encode("utf-8")
-    cipher = bytes(a ^ b for a, b in zip(plain, _keystream(raw_key, nonce, len(plain)), strict=True))
+    cipher = bytes(
+        a ^ b for a, b in zip(plain, _keystream(raw_key, nonce, len(plain)), strict=True)
+    )
     mac = hmac.new(raw_key, nonce + cipher, hashlib.sha256).digest()
     return f"{_b64encode(nonce)}.{_b64encode(cipher)}.{_b64encode(mac)}"
 
@@ -50,7 +52,9 @@ def decrypt_string(token: str, *, key: str) -> str | None:
     expected = hmac.new(raw_key, nonce + cipher, hashlib.sha256).digest()
     if not hmac.compare_digest(expected, mac):
         return None
-    plain = bytes(a ^ b for a, b in zip(cipher, _keystream(raw_key, nonce, len(cipher)), strict=True))
+    plain = bytes(
+        a ^ b for a, b in zip(cipher, _keystream(raw_key, nonce, len(cipher)), strict=True)
+    )
     try:
         return plain.decode("utf-8")
     except UnicodeDecodeError:

@@ -33,12 +33,11 @@ from almasix.support.helpers import (
     retry,
     retry_async,
     storage_path,
+    tap,
     throw_if,
     throw_unless,
-    trait_uses_recursive,
     when,
 )
-from almasix.support.helpers import tap
 
 
 def test_arr_edge_branches() -> None:
@@ -128,6 +127,7 @@ def test_helpers_edge_branches() -> None:
 
     def weird():
         pass
+
     weird.__signature__ = "bad"  # type: ignore[attr-defined]
     # signature may fail → fall through to zero-arg call
     try:

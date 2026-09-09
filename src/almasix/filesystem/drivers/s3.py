@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from typing import Any, BinaryIO
 from urllib.parse import quote
@@ -128,9 +128,7 @@ class S3Adapter:
         prefix = self._key(directory)
         if prefix and not prefix.endswith("/"):
             prefix += "/"
-        response = self.client.list_objects_v2(
-            Bucket=self.bucket, Prefix=prefix, Delimiter="/"
-        )
+        response = self.client.list_objects_v2(Bucket=self.bucket, Prefix=prefix, Delimiter="/")
         results: list[str] = []
         for item in response.get("CommonPrefixes") or []:
             key = item["Prefix"].rstrip("/")
@@ -159,8 +157,8 @@ class S3Adapter:
         if isinstance(expiration, timedelta):
             seconds = int(expiration.total_seconds())
         elif isinstance(expiration, datetime):
-            now = datetime.now(timezone.utc)
-            target = expiration if expiration.tzinfo else expiration.replace(tzinfo=timezone.utc)
+            now = datetime.now(UTC)
+            target = expiration if expiration.tzinfo else expiration.replace(tzinfo=UTC)
             seconds = max(1, int((target - now).total_seconds()))
         else:
             seconds = int(expiration)

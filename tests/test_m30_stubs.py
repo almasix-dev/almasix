@@ -62,7 +62,7 @@ def test_render_fills_the_placeholders() -> None:
 
 def test_an_unknown_placeholder_is_left_alone() -> None:
     """A hand-edited stub keeps what its author wrote."""
-    assert render("model.stub", {}) .count("{{ class }}") > 0
+    assert render("model.stub", {}).count("{{ class }}") > 0
 
 
 def test_an_unknown_stub_says_what_there_is() -> None:
@@ -137,12 +137,8 @@ def _generate(
     return (tmp_path / relative).read_text(encoding="utf-8")
 
 
-def test_a_bare_policy_gets_the_plain_stub(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    body = _generate(
-        tmp_path, monkeypatch, "make:policy", ["Post"], "app/policies/post_policy.py"
-    )
+def test_a_bare_policy_gets_the_plain_stub(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    body = _generate(tmp_path, monkeypatch, "make:policy", ["Post"], "app/policies/post_policy.py")
 
     assert body == render("policy.plain.stub", {"class": "PostPolicy"})
     assert "class PostPolicy(Policy):" in body
@@ -261,7 +257,9 @@ def test_a_published_listener_stub_is_read_too(
     assert body == "# SendNote handles OrderShipped from app.events.order_shipped\n"
 
 
-def test_stub_publish_reports_what_it_wrote(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_stub_publish_reports_what_it_wrote(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     kernel = ConsoleKernel.for_cwd(tmp_path)
     kernel.discover_framework_commands()

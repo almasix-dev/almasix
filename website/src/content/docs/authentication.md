@@ -3,11 +3,14 @@ title: Authentication
 description: Guards, providers, attempt(), remember-me, events, and protecting routes.
 ---
 
-Almasix authentication uses **guards** to decide how a request is authenticated,
-**providers** to retrieve users, and `auth()` as the request-scoped manager.
+**Authentication** answers “who is this request?” Almasix uses **guards** (how
+credentials are checked — session cookie, API token, …), **providers** (how
+users are loaded from the database), and the `auth()` helper as the
+request-scoped entry point.
 
-Session/CSRF for browsers live on the `web` group; the `api` group stays
-stateless and uses the token guard (bearer / `api_token`).
+Browser apps usually rely on the session guard (with [CSRF](/csrf/) and
+[Session](/session/) on the `web` middleware group). JSON APIs typically use
+the token guard on the `api` group and stay stateless.
 
 ## Config
 

@@ -398,11 +398,11 @@ smith up      # tasks resume
 schedule.command("emails:send").even_in_maintenance_mode()
 ```
 
-**Not shipped yet:** maintenance mode today is only the scheduler's side of
-Laravel's feature — a marker file at `storage/framework/down` that `smith down`
-writes and `smith up` removes. HTTP requests are still served normally; the
-503 response, the secret bypass URL, `--render`, and `--retry` are owed by
-their own milestone.
+**Note:** `smith down` writes a marker under `storage/framework/` that both the
+scheduler and the HTTP kernel honour — scheduled tasks skip (unless
+`even_in_maintenance_mode()`), and web requests answer **503** until
+`smith up`. See [Security headers & CORS](/security/) for the secret bypass URL
+and related options.
 
 ### Schedule groups
 

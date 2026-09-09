@@ -84,7 +84,9 @@ def spy(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, object]]:
         calls.append({"argv": argv, "env": env})
         return Completed()
 
-    monkeypatch.setattr("almasix.console.commands.db.shutil.which", lambda binary: f"/usr/bin/{binary}")
+    monkeypatch.setattr(
+        "almasix.console.commands.db.shutil.which", lambda binary: f"/usr/bin/{binary}"
+    )
     monkeypatch.setattr("almasix.console.commands.db.subprocess.run", fake_run)
     return calls
 
@@ -147,9 +149,7 @@ def test_the_client_s_exit_status_is_the_command_s(
         returncode = 3
 
     monkeypatch.setattr("almasix.console.commands.db.shutil.which", lambda binary: f"/bin/{binary}")
-    monkeypatch.setattr(
-        "almasix.console.commands.db.subprocess.run", lambda *a, **k: Completed()
-    )
+    monkeypatch.setattr("almasix.console.commands.db.subprocess.run", lambda *a, **k: Completed())
     kernel = build()
 
     assert kernel.run_argv("db", []) == 3
@@ -201,14 +201,28 @@ def test_every_driver_s_client_is_spelled_the_way_it_expects() -> None:
         {"driver": "mariadb", "database": "shop", "host": "h", "port": 3306, "username": "u"}
     ) == ("mysql", ["--database", "shop", "--host", "h", "--port", "3306", "--user", "u"], {})
     assert _client_command(
-        {"driver": "pgsql", "database": "app", "host": "h", "port": 5432, "username": "u", "password": "p"}
+        {
+            "driver": "pgsql",
+            "database": "app",
+            "host": "h",
+            "port": 5432,
+            "username": "u",
+            "password": "p",
+        }
     ) == (
         "psql",
         ["--dbname", "app", "--host", "h", "--port", "5432", "--username", "u"],
         {"PGPASSWORD": "p"},
     )
     assert _client_command(
-        {"driver": "sqlsrv", "database": "app", "host": "h", "port": 1433, "username": "sa", "password": "p"}
+        {
+            "driver": "sqlsrv",
+            "database": "app",
+            "host": "h",
+            "port": 1433,
+            "username": "sa",
+            "password": "p",
+        }
     ) == ("sqlcmd", ["-S", "h,1433", "-d", "app", "-U", "sa", "-P", "p"], {})
     assert _client_command({"driver": "mssql", "database": "app", "host": "h"}) == (
         "sqlcmd",

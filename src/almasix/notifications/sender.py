@@ -65,12 +65,8 @@ class NotificationSender:
         notifiable_type = f"{type(notifiable).__module__}.{type(notifiable).__qualname__}"
         key_fn = getattr(notifiable, "get_key", None)
         notifiable_id = key_fn() if callable(key_fn) else getattr(notifiable, "id", None)
-        notification_class = (
-            f"{type(notification).__module__}.{type(notification).__qualname__}"
-        )
-        queue_name = (
-            notification.queue_name() if hasattr(notification, "queue_name") else "default"
-        )
+        notification_class = f"{type(notification).__module__}.{type(notification).__qualname__}"
+        queue_name = notification.queue_name() if hasattr(notification, "queue_name") else "default"
         job = SendQueuedNotification(
             notifiable_type=notifiable_type,
             notifiable_id=notifiable_id,

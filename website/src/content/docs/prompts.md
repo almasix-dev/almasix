@@ -5,7 +5,10 @@ description: Beautiful interactive console prompts for Smith commands.
 
 ## Introduction
 
-Almasix Prompts give Smith commands rich terminal UX: styled text fields, arrow-key selects, confirmations, spinners, and progress bars.
+Almasix Prompts give Smith commands rich terminal UX: styled text fields,
+arrow-key selects, confirmations, spinners, and progress bars. Colours follow
+**One Dark Pro** (true color when the terminal supports it) so interactive
+prompts match Loupe and feel as polished as Laravel Prompts.
 
 ```python
 from almasix.console.prompts import text, select, confirm, spin, progress, intro, outro

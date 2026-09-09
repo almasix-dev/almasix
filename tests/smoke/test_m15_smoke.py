@@ -38,7 +38,7 @@ def progress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.syspath_prepend(str(PROGRESS))
     module = importlib.import_module("bootstrap.app")
     app = module.application
-    app._asgi = None  # noqa: SLF001
+    app._asgi = None
     module.asgi = app.asgi
     return TestClient(module.asgi, raise_server_exceptions=False)
 

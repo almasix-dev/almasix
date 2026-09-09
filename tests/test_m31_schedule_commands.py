@@ -215,9 +215,7 @@ def test_schedule_interrupt_signals_the_current_minute(scheduled_app: Path) -> N
 
 
 def test_schedule_clear_cache_reports_what_it_released(scheduled_app: Path) -> None:
-    write_routes(
-        scheduled_app, 'schedule.command("stuck").every_minute().without_overlapping()\n'
-    )
+    write_routes(scheduled_app, 'schedule.command("stuck").every_minute().without_overlapping()\n')
 
     from almasix.cache import set_manager
     from almasix.cache.manager import CacheManager

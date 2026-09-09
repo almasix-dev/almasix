@@ -52,9 +52,7 @@ class InvokedProcess:
         self._handle.signal(sig)
         return self
 
-    def stop(
-        self, timeout: float = DEFAULT_STOP_TIMEOUT, sig: int | None = None
-    ) -> int | None:
+    def stop(self, timeout: float = DEFAULT_STOP_TIMEOUT, sig: int | None = None) -> int | None:
         return self._handle.stop(timeout, sig)
 
     def wait(self, callback: OutputCallback | None = None) -> ProcessResult:
@@ -63,9 +61,7 @@ class InvokedProcess:
             self._handle.set_output_callback(callback)
         exit_code = self._handle.wait(self._timeout, self._idle_timeout)
         if exit_code is None:
-            kind = self._handle.timed_out_kind(
-                self._started_at, self._timeout, self._idle_timeout
-            )
+            kind = self._handle.timed_out_kind(self._started_at, self._timeout, self._idle_timeout)
             self._handle.stop(1.0)
             raise ProcessTimedOutException(
                 _timeout_message(self._handle.command, kind, self._timeout, self._idle_timeout),

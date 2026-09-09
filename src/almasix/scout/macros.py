@@ -76,9 +76,7 @@ async def _collection_unsearchable(self: Any) -> None:
 def _require_searchable(model: Any) -> None:
     if model is None or not hasattr(model, "searchable_as"):
         name = getattr(model, "__name__", model)
-        raise TypeError(
-            f"{name} is not searchable. Mix in almasix.scout.Searchable before Model."
-        )
+        raise TypeError(f"{name} is not searchable. Mix in almasix.scout.Searchable before Model.")
 
 
 def install() -> None:

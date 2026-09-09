@@ -24,14 +24,14 @@ import { Card, CardGrid, LinkCard, Tabs, TabItem } from '@astrojs/starlight/comp
 
 Almasix is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable, creative experience. Almasix eases common tasks used in many web projects — routing, validation, the database layer, views, queues, and more — with first-class `async`/`await` for ASGI.
 
-Create apps with `almasix new`. Drive them with `smith …`. Write controllers, Articulate models, Prism views, and migrations in a layout that stays navigable as the app grows.
+You do not need prior framework experience. Create apps with `almasix new`. Drive them with `python smith …`. Write controllers, Articulate models, Prism views, and migrations in a layout that stays navigable as the app grows. New here? Start with [How to read these docs](/prologue/introduction/).
 
 ```bash
 pip install almasix
 almasix new blog
 cd blog
 pip install -e .
-smith serve
+python smith serve
 ```
 
 ## Why Almasix?
@@ -142,20 +142,21 @@ migrations, serves the app, and opens Loupe — a REPL with your application
 already booted.
 
 ```bash
-smith list                     # every command available to your app
-smith make:controller PostController
-smith make:model Post -m       # model plus a migration
-smith migrate                  # run pending migrations
-smith db:seed                  # populate the database
-smith queue:work               # process queued jobs
-smith loupe                    # a REPL inside your booted app
+python smith list                     # every command available to your app
+python smith make:controller PostController
+python smith make:model Post -m       # model plus a migration
+python smith migrate                  # run pending migrations
+python smith db:seed                  # populate the database
+python smith queue:work               # process queued jobs
+python smith loupe                    # a REPL inside your booted app
 ```
 
 ## Start here
 
 <CardGrid>
+	<LinkCard title="How to read these docs" href="/prologue/introduction/" description="Nouns, journey order, and what to open first." />
 	<LinkCard title="Installation" href="/installation/" description="Create a new Almasix application and start the development server." />
 	<LinkCard title="Directory Structure" href="/structure/" description="Find your way around a fresh application." />
-	<LinkCard title="Database" href="/database/" description="Configure connections, run queries, and write migrations." />
-	<LinkCard title="Console" href="/console/" description="Write your own Smith commands, prompts, and output." />
+	<LinkCard title="Routing" href="/routing/" description="Map URLs to controllers — the first Basics page." />
+	<LinkCard title="Deployment" href="/deployment/" description="Run in production with workers, health checks, and env." />
 </CardGrid>

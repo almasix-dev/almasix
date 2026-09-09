@@ -32,9 +32,7 @@ class Pivot(Model):
         if relation is None:
             return await super().save(**kwargs)
         skip = (relation.foreign_pivot_key, relation.related_pivot_key)
-        changed = {
-            key: value for key, value in self.get_attributes().items() if key not in skip
-        }
+        changed = {key: value for key, value in self.get_attributes().items() if key not in skip}
         await relation.update_existing_pivot(self._related_id(relation), changed)
         self.sync_original()
         return self

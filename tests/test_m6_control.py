@@ -23,16 +23,12 @@ def test_foreach_loop() -> None:
 
 
 def test_foreach_loop_variable() -> None:
-    render = compile_template(
-        "@foreach(items as item)@if(loop.first)F@endif{{ item }}@endforeach"
-    )
+    render = compile_template("@foreach(items as item)@if(loop.first)F@endif{{ item }}@endforeach")
     assert render({"items": ["x", "y"]}, None) == "Fxy"
 
 
 def test_forelse_empty() -> None:
-    render = compile_template(
-        "@forelse(items as item){{ item }}@empty\nnone@endforelse"
-    )
+    render = compile_template("@forelse(items as item){{ item }}@empty\nnone@endforelse")
     assert "none" in render({"items": []}, None)
     assert "a" in render({"items": ["a"]}, None)
 

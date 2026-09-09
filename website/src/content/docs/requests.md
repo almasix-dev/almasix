@@ -67,7 +67,9 @@ if request.has_file("avatar"):
     data = await upload.read()
 ```
 
-`UploadedFile` exposes `filename`, `content_type`, `size`, and async `read` / `seek`. Storage disks arrive in a later milestone; until then handle bytes in the action or write to disk yourself.
+`UploadedFile` exposes `filename`, `content_type`, `size`, and async `read` / `seek`.
+File storage disks are covered under [File Storage](/filesystem/); until you wire a
+disk, handle bytes in the action or write to disk yourself.
 
 ## Related
 

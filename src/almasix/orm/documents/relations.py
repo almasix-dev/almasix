@@ -35,7 +35,9 @@ class EmbedsOne:
         self.parent.set_attribute(self.field, embed.to_dict())
         return embed.bind(self.parent, self.field)
 
-    async def create(self, attributes: Mapping[str, Any] | None = None, **kwargs: Any) -> EmbeddedDocument:
+    async def create(
+        self, attributes: Mapping[str, Any] | None = None, **kwargs: Any
+    ) -> EmbeddedDocument:
         embed = self.associate({**(attributes or {}), **kwargs})
         await self.parent.save()
         return embed
@@ -67,8 +69,7 @@ class EmbedsMany:
         listed = list(embeds)
         self.parent.set_attribute(self.field, [embed.to_dict() for embed in listed])
         return [
-            embed.bind(self.parent, self.field, position)
-            for position, embed in enumerate(listed)
+            embed.bind(self.parent, self.field, position) for position, embed in enumerate(listed)
         ]
 
     def associate(self, value: EmbeddedDocument | Mapping[str, Any]) -> EmbeddedDocument:
@@ -77,7 +78,9 @@ class EmbedsMany:
         assert embed is not None  # hydrate only returns None for None
         return self._write([*self.get(), embed])[-1]
 
-    async def create(self, attributes: Mapping[str, Any] | None = None, **kwargs: Any) -> EmbeddedDocument:
+    async def create(
+        self, attributes: Mapping[str, Any] | None = None, **kwargs: Any
+    ) -> EmbeddedDocument:
         embed = self.associate({**(attributes or {}), **kwargs})
         await self.parent.save()
         return embed
@@ -133,11 +136,15 @@ class EmbedsMany:
         return f"<EmbedsMany {self.field} of {type(self.parent).__name__}>"
 
 
-def embeds_one(parent: Model, related: type[EmbeddedDocument], field: str | None = None) -> EmbedsOne:
+def embeds_one(
+    parent: Model, related: type[EmbeddedDocument], field: str | None = None
+) -> EmbedsOne:
     return EmbedsOne(parent, related, field or _guess_field(related))
 
 
-def embeds_many(parent: Model, related: type[EmbeddedDocument], field: str | None = None) -> EmbedsMany:
+def embeds_many(
+    parent: Model, related: type[EmbeddedDocument], field: str | None = None
+) -> EmbedsMany:
     from almasix.support.str import Str
 
     return EmbedsMany(parent, related, field or Str.plural(_guess_field(related)))

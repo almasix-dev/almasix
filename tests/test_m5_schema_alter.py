@@ -77,9 +77,7 @@ async def test_foreign_id_constrained_on_add(memory_db) -> None:
     await Schema.create("posts", lambda table: (table.id(), table.string("title")))
     await Schema.table(
         "posts",
-        lambda table: (
-            table.foreign_id("user_id").nullable().constrained().cascade_on_delete(),
-        ),
+        lambda table: (table.foreign_id("user_id").nullable().constrained().cascade_on_delete(),),
     )
     assert await Schema.has_column("posts", "user_id")
 

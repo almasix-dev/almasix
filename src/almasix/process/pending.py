@@ -105,7 +105,10 @@ class PendingProcess:
         return cloned
 
     def when(
-        self, condition: Any, callback: Callable[..., Any], default: Callable[..., Any] | None = None
+        self,
+        condition: Any,
+        callback: Callable[..., Any],
+        default: Callable[..., Any] | None = None,
     ) -> PendingProcess:
         if callable(condition):
             condition = condition(self)
@@ -116,7 +119,10 @@ class PendingProcess:
         return self
 
     def unless(
-        self, condition: Any, callback: Callable[..., Any], default: Callable[..., Any] | None = None
+        self,
+        condition: Any,
+        callback: Callable[..., Any],
+        default: Callable[..., Any] | None = None,
     ) -> PendingProcess:
         if callable(condition):
             condition = condition(self)

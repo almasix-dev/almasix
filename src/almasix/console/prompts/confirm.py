@@ -9,7 +9,7 @@ from prompt_toolkit.layout import Layout
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
 
-from almasix.console.prompts.style import BULLET, STYLE, label_html, tagged
+from almasix.console.prompts.style import BULLET, STYLE, TRUE_COLOR, label_html, tagged
 from almasix.console.prompts.types import is_interactive
 
 
@@ -30,10 +30,14 @@ def confirm(
 
     def _render() -> HTML:
         y = tagged("selected", f"{BULLET} {yes}") if state["value"] else tagged("item", f"  {yes}")
-        n = tagged("selected", f"{BULLET} {no}") if not state["value"] else tagged("item", f"  {no}")
+        n = (
+            tagged("selected", f"{BULLET} {no}")
+            if not state["value"]
+            else tagged("item", f"  {no}")
+        )
         return HTML(
             f"{label_html(label, hint)}\n{y}\n{n}\n"
-            f"{tagged('hint', '  up/down navigate · enter select')}"
+            f"{tagged('hint', '  ↑/↓ navigate · enter select')}"
         )
 
     kb = KeyBindings()
@@ -44,7 +48,7 @@ def confirm(
     @kb.add("right")
     @kb.add("y")
     @kb.add("n")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         key = event.key_sequence[0].key
         if key in {"y", "Y"}:
             state["value"] = True
@@ -55,11 +59,11 @@ def confirm(
         event.app.invalidate()
 
     @kb.add("enter")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         event.app.exit(result=state["value"])
 
     @kb.add("c-c")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         event.app.exit(exception=KeyboardInterrupt())
 
     control = FormattedTextControl(_render, focusable=True)
@@ -67,6 +71,7 @@ def confirm(
         layout=Layout(HSplit([Window(control)])),
         key_bindings=kb,
         style=STYLE,
+        color_depth=TRUE_COLOR,
         full_screen=False,
     )
     result = app.run()

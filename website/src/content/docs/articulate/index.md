@@ -291,6 +291,9 @@ If you know Laravel Eloquent, Articulate will feel familiar — same Active Reco
 - [Serialization](/articulate/serialization/)
 - [Collections](/articulate/collections/)
 - [Soft Deletes & Events](/articulate/events/)
-- [Documents (NoSQL)](/articulate/documents/) — the same model over MongoDB
+- [Documents (NoSQL)](/articulate/documents/) — MongoDB and the memory store
+  ([getting started](/articulate/documents/getting-started/),
+  [querying](/articulate/documents/querying/),
+  [compared with Laravel](/articulate/documents/compared/))
 - [Task Scheduling](/scheduling/) — for `model:prune`
 - [Query Builder](/database/queries/)

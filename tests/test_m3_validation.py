@@ -77,9 +77,7 @@ def test_failure_messages_match_laravel_wording() -> None:
 
     with pytest.raises(ValidationException) as too_long:
         StoreRequest.validate_request(_Stub({"name": "wayyy-too-long"}))
-    assert too_long.value.errors["name"] == [
-        "The name may not be greater than 8 characters."
-    ]
+    assert too_long.value.errors["name"] == ["The name may not be greater than 8 characters."]
 
 
 def test_size_messages_differ_for_strings_and_collections() -> None:

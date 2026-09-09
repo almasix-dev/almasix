@@ -153,7 +153,7 @@ class SocketHub:
                     continue
                 try:
                     await connection.send(frame)
-                except Exception:  # noqa: BLE001 — a closed browser is not an error
+                except Exception:
                     dead.append(connection)
                 else:
                     delivered += 1

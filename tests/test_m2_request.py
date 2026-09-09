@@ -6,7 +6,7 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import JSONResponse
 
-from almasix.http import Middleware, Request, UploadedFile, make_response
+from almasix.http import Request, UploadedFile, make_response
 from almasix.http.middleware import Middleware as MiddlewareBase
 from almasix.routing import Route
 

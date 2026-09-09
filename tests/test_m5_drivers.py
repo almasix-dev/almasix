@@ -71,9 +71,7 @@ def test_ensure_async_driver_prefixes() -> None:
     assert _ensure_async_driver("oracle://u:p@h/?service_name=X").startswith(
         "oracle+oracledb_async"
     )
-    assert _ensure_async_driver("oracle+oracledb://u:p@h/").startswith(
-        "oracle+oracledb_async"
-    )
+    assert _ensure_async_driver("oracle+oracledb://u:p@h/").startswith("oracle+oracledb_async")
 
 
 @pytest.mark.parametrize(

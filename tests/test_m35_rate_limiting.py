@@ -10,7 +10,6 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from starlette.requests import Request as StarletteRequest
-from starlette.responses import JSONResponse
 
 from almasix.auth import LoginRateLimiter, attempt_login
 from almasix.framework import Application
@@ -189,7 +188,7 @@ def _fake_request(*, email: str = "a@b.c", ip: str = "10.0.0.1") -> Request:
         "server": ("test", 80),
     }
     request = Request(StarletteRequest(scope))
-    request._input = {"email": email, "password": "x"}  # noqa: SLF001
+    request._input = {"email": email, "password": "x"}
     return request
 
 
@@ -319,7 +318,9 @@ def test_login_rate_limiter_locks_out(app_dir: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_attempt_login_hits_and_clears(app_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_attempt_login_hits_and_clears(
+    app_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     Application(app_dir).bootstrap()
     request = _fake_request(email="u@example.com")
 
@@ -327,30 +328,36 @@ async def test_attempt_login_hits_and_clears(app_dir: Path, monkeypatch: pytest.
         def __init__(self) -> None:
             self.calls = 0
 
-        async def attempt(self, credentials, remember=False):  # noqa: ANN001
+        async def attempt(self, credentials, remember=False):
             self.calls += 1
             return credentials.get("password") == "secret"
 
     guard = _Guard()
 
     class _Auth:
-        def guard(self, name=None):  # noqa: ANN001
+        def guard(self, name=None):
             return guard
 
     monkeypatch.setattr("almasix.auth.auth", lambda: _Auth())
     limiter = LoginRateLimiter(max_attempts=2, decay_seconds=60)
     RateLimiter.clear(limiter.key(request, "u@example.com"))
 
-    assert await attempt_login(
-        {"email": "u@example.com", "password": "wrong"},
-        request=request,
-        limiter=limiter,
-    ) is False
-    assert await attempt_login(
-        {"email": "u@example.com", "password": "wrong"},
-        request=request,
-        limiter=limiter,
-    ) is False
+    assert (
+        await attempt_login(
+            {"email": "u@example.com", "password": "wrong"},
+            request=request,
+            limiter=limiter,
+        )
+        is False
+    )
+    assert (
+        await attempt_login(
+            {"email": "u@example.com", "password": "wrong"},
+            request=request,
+            limiter=limiter,
+        )
+        is False
+    )
     with pytest.raises(TooManyRequestsHttpException):
         await attempt_login(
             {"email": "u@example.com", "password": "wrong"},
@@ -359,11 +366,14 @@ async def test_attempt_login_hits_and_clears(app_dir: Path, monkeypatch: pytest.
         )
 
     RateLimiter.clear(limiter.key(request, "u@example.com"))
-    assert await attempt_login(
-        {"email": "u@example.com", "password": "secret"},
-        request=request,
-        limiter=limiter,
-    ) is True
+    assert (
+        await attempt_login(
+            {"email": "u@example.com", "password": "secret"},
+            request=request,
+            limiter=limiter,
+        )
+        is True
+    )
     assert RateLimiter.attempts(limiter.key(request, "u@example.com")) == 0
 
 
@@ -425,7 +435,7 @@ def test_store_falls_back_when_config_raises(
 ) -> None:
     Application(app_dir).bootstrap()
 
-    def _boom(*_a, **_k):  # noqa: ANN001
+    def _boom(*_a, **_k):
         raise RuntimeError("no config")
 
     monkeypatch.setattr("almasix.config.config", _boom)
@@ -465,13 +475,14 @@ def test_response_callback_arity_variants(app_dir: Path) -> None:
     request = _fake_request()
     assert mw._invoke_response(lambda: "zero", request, {}) == "zero"
     assert mw._invoke_response(lambda req: f"one:{req is request}", request, {}) == "one:True"
+
     # Builtins have no usable signature — fall through to zero-arg path carefully.
     class _Weird:
-        def __call__(self, *args):  # noqa: ANN001, ANN002
+        def __call__(self, *args):
             return "weird"
 
         @property
-        def __signature__(self):  # noqa: ANN204
+        def __signature__(self):
             raise TypeError("no sig")
 
     # inspect.signature on a plain object without __signature__ still works;
@@ -489,7 +500,7 @@ def test_ip_helpers() -> None:
     from almasix.http.throttle import _ip
 
     class _Req:
-        def header(self, key: str, default=None):  # noqa: ANN001
+        def header(self, key: str, default=None):
             if key == "x-forwarded-for":
                 return "203.0.113.9, 10.0.0.1"
             return default
@@ -505,7 +516,7 @@ def test_ip_helpers() -> None:
         client = _Client()
 
     class _Req2:
-        def header(self, key: str, default=None):  # noqa: ANN001
+        def header(self, key: str, default=None):
             return default
 
         raw = _Raw()
@@ -513,7 +524,7 @@ def test_ip_helpers() -> None:
     assert _ip(_Req2()) == "198.51.100.2"  # type: ignore[arg-type]
 
     class _Req3:
-        def header(self, key: str, default=None):  # noqa: ANN001
+        def header(self, key: str, default=None):
             return default
 
         raw = None

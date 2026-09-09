@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from almasix.auth.guard import AuthManager, Guard, SessionGuard, auth
+from almasix.auth.guard import AuthManager, SessionGuard, auth
 from almasix.auth.passwords import Password, get_password_manager
 from almasix.auth.providers import MemoryUserProvider
 from almasix.hashing import Hash, HashManager, set_hash_manager
-from almasix.session.signing import sign_payload, unsign_payload
 from almasix.session.encrypt import decrypt_string, encrypt_string
-from almasix.session.store import Session, set_session, reset_session
+from almasix.session.signing import sign_payload, unsign_payload
+from almasix.session.store import Session, reset_session, set_session
 
 
 @pytest.fixture(autouse=True)
@@ -79,7 +79,7 @@ async def test_password_broker_flow() -> None:
         [{"id": 1, "email": "ada@example.com", "password": Hash.make("old")}]
     )
     manager = AuthManager()
-    manager._providers["users"] = provider  # noqa: SLF001
+    manager._providers["users"] = provider
     token_box: dict[str, str] = {}
 
     async def deliver(user, token: str) -> None:

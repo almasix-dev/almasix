@@ -141,7 +141,9 @@ class Collection(SupportCollection[T]):
             query = query.with_(*relations)
         reloaded = {item.get_key(): item for item in await query.get()}
         return self._new(
-            reloaded[key] for item in items if (key := item.get_key()) in reloaded  # type: ignore[attr-defined]
+            reloaded[key]
+            for item in items
+            if (key := item.get_key()) in reloaded  # type: ignore[attr-defined]
         )
 
     async def load(self, *relations: str) -> Collection[T]:

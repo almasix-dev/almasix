@@ -26,17 +26,11 @@ class Component:
         """Return the Prism view name to render (``components.alert``)."""
         if self.template:
             return self.template
-        raise NotImplementedError(
-            f"{type(self).__name__} must implement render() or set template="
-        )
+        raise NotImplementedError(f"{type(self).__name__} must implement render() or set template=")
 
     def data(self) -> dict[str, Any]:
         """Public data merged into the component view context."""
-        return {
-            key: value
-            for key, value in vars(self).items()
-            if not key.startswith("_")
-        }
+        return {key: value for key, value in vars(self).items() if not key.startswith("_")}
 
     def with_attributes(self, attrs: dict[str, Any]) -> Component:
         """Store leftover HTML attributes for ``attributes`` in the view."""

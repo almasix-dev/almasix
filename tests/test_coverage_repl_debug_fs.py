@@ -9,7 +9,7 @@ from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
@@ -213,9 +213,7 @@ def test_configure_ptpython_leaves_a_private_eval_where_it_found_it() -> None:
     assert not hasattr(private, "eval")
 
 
-def test_rich_console_runcode_paths(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_rich_console_runcode_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     app = _minimal_app(tmp_path, monkeypatch)
     app.load_environment()
     app.load_configuration()
@@ -246,9 +244,7 @@ def test_rich_console_runcode_paths(
     assert shown
 
 
-def test_plain_console_displayhook(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_plain_console_displayhook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     app = _minimal_app(tmp_path, monkeypatch)
     app.load_environment()
     app.load_configuration()
@@ -260,7 +256,7 @@ def test_plain_console_displayhook(
     assert sys.displayhook is not original
     sys.displayhook(None)
     sys.displayhook({"k": 1})
-    assert builtins._ == {"k": 1}  # noqa: SLF001
+    assert builtins._ == {"k": 1}
 
 
 # ---------------------------------------------------------------------------
@@ -291,7 +287,9 @@ def test_caller_and_type_edges(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "Caller" in _type_label(Caller("f.py", 1, "x"))
 
 
-def test_dump_dd_without_rich(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_dump_dd_without_rich(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     real_import = builtins.__import__
 
     def guarded(name: str, *args: Any, **kwargs: Any) -> Any:

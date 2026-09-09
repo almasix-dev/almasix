@@ -6,9 +6,11 @@ description: Configure connections, run raw SQL, split reads from writes, listen
 ## Introduction
 
 Almost every application talks to a database. Almasix reaches every supported
-engine through one API: the `DB` facade for raw SQL and connections, the
-[query builder](/database/queries/) for most reads and writes, and
-[Articulate](/articulate/) when you want models.
+engine through one configuration file and two resolve paths: the `DB` facade
+and SQL [query builder](/database/queries/) for tables, and
+[document stores](/database/documents/) for MongoDB (or the in-process memory
+store). [Articulate](/articulate/) models sit on either — `Model` on a table,
+[`Document`](/articulate/documents/) on a collection.
 
 Every call is a coroutine — the database is I/O, and Almasix never blocks the
 loop on it.
@@ -16,8 +18,8 @@ loop on it.
 ## Configuration
 
 Connections live in `config/database.py`. A new application is ready to use
-SQLite; PostgreSQL, MySQL/MariaDB, SQL Server, and optionally Oracle are a
-config block away.
+SQLite; PostgreSQL, MySQL/MariaDB, SQL Server, Oracle, and document stores
+(MongoDB / memory) are a config block away.
 
 ```python
 # config/database.py
@@ -38,6 +40,14 @@ config = {
             "username": env("DB_USERNAME", "almasix"),
             "password": env("DB_PASSWORD", ""),
         },
+        "mongodb": {
+            "driver": "mongodb",
+            "dsn": env("MONGODB_DSN", ""),
+            "database": env("MONGODB_DATABASE", "almasix"),
+        },
+        "documents": {
+            "driver": "memory",
+        },
     },
 }
 ```
@@ -48,27 +58,33 @@ DB_DATABASE=database/database.sqlite
 ```
 
 SQLite `:memory:` databases work as you would hope: Almasix uses a static pool,
-so every acquire sees the same in-memory database.
+so every acquire sees the same in-memory database. Document connections use
+`store()` instead of `connection()` — see
+[Document stores](/database/documents/).
 
 ### Installing a driver
 
-SQLite ships with Almasix. The others are extras:
+SQLite ships with Almasix. The others are extras. For what each engine can
+actually do — and which ones CI executes — see [Engine support](/database/engines/).
 
 ```bash
 pip install almasix[pgsql]    # PostgreSQL (asyncpg)
 pip install almasix[mysql]    # MySQL / MariaDB (aiomysql)
 pip install almasix[sqlsrv]   # SQL Server (aioodbc + ODBC driver)
 pip install almasix[oracle]   # Oracle
-pip install almasix[db]       # all of them
+pip install almasix[db]       # all SQL drivers
+pip install almasix[mongodb]  # MongoDB document store (Motor)
 ```
 
-| `driver` | Async URL | Extra |
+| `driver` | Async URL / store | Extra |
 | --- | --- | --- |
 | `sqlite` | `sqlite+aiosqlite:///…` | included |
 | `pgsql` / `postgres` / `postgresql` | `postgresql+asyncpg://…` | `almasix[pgsql]` |
 | `mysql` / `mariadb` | `mysql+aiomysql://…` | `almasix[mysql]` |
 | `sqlsrv` / `mssql` / `sqlserver` | `mssql+aioodbc://…` | `almasix[sqlsrv]` |
 | `oracle` | `oracle+oracledb_async://…?service_name=` | `almasix[oracle]` |
+| `mongodb` | Motor client (collections) | `almasix[mongodb]` |
+| `memory` | In-process document store | included |
 
 A `url` key is used as given, with a sync prefix upgraded to its async driver.
 SQL Server takes `odbc_driver` (default `ODBC Driver 18 for SQL Server`) and
@@ -286,30 +302,18 @@ smith db:monitor --databases=pgsql,mysql --max=100
 `db:monitor` reports how many sessions each connection has open, and fails when
 one is over `--max` — enough for a scheduled check to notice a leak.
 
-## Document connections
+## Document stores
 
-A connection whose driver is `mongodb` or `memory` holds collections rather
-than tables. Those resolve through `store()` instead of `connection()`, and
-Articulate reaches them with [`Document` models](/articulate/documents/):
-
-```bash
-pip install almasix[mongodb]  # MongoDB, through Motor
-```
-
-| `driver` | Store | Extra |
-| --- | --- | --- |
-| `mongodb` | MongoDB, through Motor | `almasix[mongodb]` |
-| `memory` | In-process documents, for tests and demos | included |
-
-```python
-get_manager().store("mongodb")        # a DocumentStore
-get_manager().is_document("mongodb")  # True
-```
+SQL is not the only kind of connection. Drivers `mongodb` and `memory` hold
+collections; they resolve through `store()` and power
+[`Document` models](/articulate/documents/). The full database-side story —
+config, `store()` vs `connection()`, and when to choose collections — lives on
+[Document stores (NoSQL)](/database/documents/).
 
 ## Next steps
 
-Reach for the [query builder](/database/queries/) for most reads and writes,
-and [Articulate](/articulate/) when you want Active Record persistence and
-relationships. `DB.raw("price * 1.1")` and
-`await DB.connection().execute(...)` are the escape hatches when neither will
-say it.
+Reach for the [query builder](/database/queries/) for most SQL reads and
+writes, [document stores](/database/documents/) for MongoDB and the memory
+store, and [Articulate](/articulate/) when you want Active Record persistence.
+`DB.raw("price * 1.1")` and `await DB.connection().execute(...)` are the SQL
+escape hatches when neither will say it.

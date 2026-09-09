@@ -62,11 +62,7 @@ class FakeBroadcaster(Broadcaster):
         callback: Callable[[RecordedBroadcast], bool] | None = None,
     ) -> list[RecordedBroadcast]:
         name = _name_of(event)
-        found = [
-            record
-            for record in self.broadcasts
-            if name is None or record.event == name
-        ]
+        found = [record for record in self.broadcasts if name is None or record.event == name]
         if callback is not None:
             found = [record for record in found if callback(record)]
         return found
@@ -99,9 +95,7 @@ class FakeBroadcaster(Broadcaster):
 
     def assert_broadcast_count(self, count: int) -> None:
         if len(self.broadcasts) != count:
-            raise AssertionError(
-                f"Expected {count} broadcasts; got {len(self.broadcasts)}."
-            )
+            raise AssertionError(f"Expected {count} broadcasts; got {len(self.broadcasts)}.")
 
     def flush(self) -> None:
         self.broadcasts.clear()

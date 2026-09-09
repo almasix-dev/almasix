@@ -286,7 +286,7 @@ def test_the_prompts_decide_what_the_flags_did_not(tmp_path: Path) -> None:
         {
             "Scaffold a pytest suite (tests/)?": True,
             "Initialize a git repository?": True,
-            "Install Python dependencies now?": True,
+            "Create a .venv and install Python dependencies?": True,
             "Run npm install and npm run build?": True,
             "Run the default migrations?": True,
         },
@@ -332,7 +332,7 @@ def test_npm_is_not_asked_about_without_node_or_without_a_stack(tmp_path: Path) 
 
 
 def test_migrating_is_only_offered_once_dependencies_are_installed(tmp_path: Path) -> None:
-    prompter = ScriptedPrompter({}, {"Install Python dependencies now?": False})
+    prompter = ScriptedPrompter({}, {"Create a .venv and install Python dependencies?": False})
     plan = resolve_plan(
         "demo",
         tmp_path / "demo",
@@ -366,7 +366,7 @@ def _plan(tmp_path: Path, **kwargs: object) -> InstallPlan:
 def test_nothing_runs_when_nothing_was_asked_for(tmp_path: Path) -> None:
     results = run_steps(_plan(tmp_path), tmp_path)
 
-    assert [result.name for result in results] == ["git", "install", "npm", "migrate"]
+    assert [result.name for result in results] == ["git", "venv", "install", "npm", "migrate"]
     assert all(not result.ran for result in results)
 
 
@@ -401,20 +401,31 @@ def test_a_step_that_fails_is_reported_not_raised(tmp_path: Path, monkeypatch) -
     results = {result.name: result for result in run_steps(plan, tmp_path)}
 
     assert results["git"].failed and "git is not installed" in results["git"].detail
-    assert results["install"].failed and "uv is not installed" in results["install"].detail
+    assert results["venv"].failed and "uv is not installed" in results["venv"].detail
+    assert results["install"].failed
     assert results["npm"].failed and "npm is not installed" in results["npm"].detail
 
 
 def test_the_installer_prefers_uv_and_falls_back_to_pip(tmp_path: Path, monkeypatch) -> None:
     from almasix.installer import steps
 
+    root = tmp_path / "app"
+    root.mkdir()
+    # Pretend the venv already exists so install command resolution can run.
+    python = steps.venv_python(root)
+    python.parent.mkdir(parents=True, exist_ok=True)
+    python.write_text("", encoding="utf-8")
+
     monkeypatch.setattr(steps.shutil, "which", lambda name: "/usr/bin/uv" if name == "uv" else None)
-    assert steps._python_install_command(_plan(tmp_path, install=True))[0] == "uv"
+    command = steps._python_install_command(_plan(tmp_path, install=True), root)
+    assert command is not None and command[:2] == ("uv", "pip")
+    assert "--python" in command and "-e" in command and "." in command
 
     monkeypatch.setattr(steps.shutil, "which", lambda _name: None)
-    command = steps._python_install_command(_plan(tmp_path, install=True))
-    assert command is not None and command[1:] == ("-m", "pip", "install", "-e", ".")
-    assert steps._python_install_command(_plan(tmp_path, installer="poetry")) is None
+    command = steps._python_install_command(_plan(tmp_path, install=True), root)
+    assert command is not None and command[1:4] == ("-m", "pip", "install")
+    assert "-e" in command and "." in command
+    assert steps._python_install_command(_plan(tmp_path, installer="poetry"), root) is None
 
 
 def test_each_step_runs_its_commands_and_reports_the_first_error(
@@ -427,6 +438,11 @@ def test_each_step_runs_its_commands_and_reports_the_first_error(
 
     def fake_run(command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
         ran.append(list(command))
+        # Simulate `python -m venv` / `uv venv` leaving an interpreter behind.
+        if "venv" in command or (len(command) >= 3 and command[-3:-1] == ["-m", "venv"]):
+            python = steps.venv_python(cwd)
+            python.parent.mkdir(parents=True, exist_ok=True)
+            python.write_text("", encoding="utf-8")
         failing = list(command)[:2] == ["npm", "run"]
         return subprocess.CompletedProcess(
             list(command),
@@ -441,12 +457,13 @@ def test_each_step_runs_its_commands_and_reports_the_first_error(
     plan = _plan(tmp_path, npm=True, install=True, migrate=True)
     results = {result.name: result for result in run_steps(plan, tmp_path)}
 
+    assert results["venv"].ok
     assert results["install"].ok
     assert results["npm"].failed
     assert results["npm"].detail == "npm ERR! build failed"
     assert results["migrate"].ok
     assert ["npm", "install"] in ran
-    assert any(command[1:] == ["smith", "migrate", "--force"] for command in ran)
+    assert any(command[-3:] == ["smith", "migrate", "--force"] for command in ran)
 
 
 def test_a_frontend_that_builds_reports_both_commands(tmp_path: Path, monkeypatch) -> None:
@@ -468,17 +485,22 @@ def test_a_frontend_that_builds_reports_both_commands(tmp_path: Path, monkeypatc
 def test_a_migration_failure_names_itself(tmp_path: Path, monkeypatch) -> None:
     from almasix.installer import steps
 
-    monkeypatch.setattr(
-        steps,
-        "_run",
-        lambda command, cwd: subprocess.CompletedProcess(list(command), 1, "", ""),
-    )
+    def fake_run(command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+        if "venv" in command or (len(command) >= 3 and command[-3:-1] == ["-m", "venv"]):
+            python = steps.venv_python(cwd)
+            python.parent.mkdir(parents=True, exist_ok=True)
+            python.write_text("", encoding="utf-8")
+            return subprocess.CompletedProcess(list(command), 0, "", "")
+        return subprocess.CompletedProcess(list(command), 1, "", "")
+
+    monkeypatch.setattr(steps, "_run", fake_run)
 
     plan = _plan(tmp_path, migrate=True, git=True, install=True)
     monkeypatch.setattr(steps.shutil, "which", lambda _name: "/usr/bin/git")
     results = {result.name: result for result in run_steps(plan, tmp_path)}
 
     assert results["git"].detail.endswith("failed")
+    assert results["venv"].ok
     assert results["install"].detail == "dependency install failed"
     assert results["migrate"].detail == "smith migrate failed"
 
@@ -487,6 +509,49 @@ def test_step_result_reads_as_a_sentence() -> None:
     assert StepResult("npm", ran=True).failed is False
     assert StepResult("npm", ran=True, ok=False).failed is True
     assert StepResult("npm", ran=False, ok=False).failed is False
+
+
+def test_create_venv_and_editable_install_use_the_app_venv(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from almasix.installer import steps
+
+    root = tmp_path / "fresh"
+    root.mkdir()
+    ran: list[list[str]] = []
+
+    def fake_run(command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+        ran.append(list(command))
+        if "venv" in command or (len(command) >= 3 and command[-3:-1] == ["-m", "venv"]):
+            python = steps.venv_python(cwd)
+            python.parent.mkdir(parents=True, exist_ok=True)
+            python.write_text("", encoding="utf-8")
+        return subprocess.CompletedProcess(list(command), 0, "", "")
+
+    monkeypatch.setattr(steps, "_run", fake_run)
+    monkeypatch.setattr(steps.shutil, "which", lambda _name: None)
+
+    plan = _plan(tmp_path, install=True, migrate=True, database="pgsql")
+    results = {result.name: result for result in run_steps(plan, root)}
+
+    assert results["venv"].ok
+    assert results["install"].ok
+    assert any("-m" in cmd and "venv" in cmd for cmd in ran)
+    install_cmd = next(cmd for cmd in ran if "pip" in cmd and "-e" in cmd)
+    assert str(steps.venv_python(root)) in install_cmd
+    assert "almasix[pgsql]" in install_cmd
+    migrate_cmd = next(cmd for cmd in ran if "migrate" in cmd)
+    assert migrate_cmd[0] == str(steps.venv_python(root))
+
+
+def test_scaffolded_apps_include_the_users_migration(tmp_path: Path) -> None:
+    root = scaffold_app("auth_tables", destination=tmp_path / "auth_tables")
+    users = root / "database" / "migrations" / "0001_01_01_000000_create_users_table.py"
+    body = users.read_text(encoding="utf-8")
+    assert 'Schema.create("users"' in body
+    assert 'Schema.create("password_reset_tokens"' in body
+    assert 'Schema.create("sessions"' in body
 
 
 # -- the command line --------------------------------------------------------
@@ -503,7 +568,7 @@ def test_new_reports_the_stack_the_database_and_what_is_left_to_do(tmp_path: Pat
     assert "Bootstrap" in result.stdout
     assert "SQLite" in result.stdout
     assert "cd cli_demo" in result.stdout
-    assert "smith migrate" in result.stdout
+    assert "python smith migrate" in result.stdout
     assert "npm install && npm run build" in result.stdout
 
 
@@ -571,9 +636,9 @@ def test_new_lists_only_the_steps_still_owed(tmp_path: Path, monkeypatch) -> Non
 
     assert result.exit_code == 0
     assert "install   uv pip install -e ." in result.stdout
-    for owed in ("pip install -e .", "smith migrate", "npm install"):
+    for owed in ("pip install -e .", "python smith migrate", "npm install"):
         assert owed not in result.stdout.split("Next steps")[-1], owed
-    assert "smith serve" in result.stdout
+    assert "python smith serve" in result.stdout
 
 
 def test_without_a_terminal_new_takes_the_non_interactive_defaults(

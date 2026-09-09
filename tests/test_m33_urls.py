@@ -83,9 +83,7 @@ def test_a_name_generates_its_uri(routed: Router) -> None:
     [7, "7", [7], (7,), {"post": 7}],
     ids=["scalar", "string", "list", "tuple", "mapping"],
 )
-def test_every_shape_of_parameter_means_the_same_thing(
-    routed: Router, parameters: Any
-) -> None:
+def test_every_shape_of_parameter_means_the_same_thing(routed: Router, parameters: Any) -> None:
     assert route("posts.show", parameters) == "https://shop.test/posts/7"
 
 
@@ -103,9 +101,7 @@ def test_a_parameter_may_be_called_the_same_as_an_argument(routed: Router) -> No
     assert route("hello", name="ada") == "https://shop.test/greet/ada"
     assert route("by", parameters="x") == "https://shop.test/by/x"
     assert signed_route("hello", name="ada").startswith("https://shop.test/greet/ada?")
-    assert temporary_signed_route("hello", 5, name="ada").startswith(
-        "https://shop.test/greet/ada?"
-    )
+    assert temporary_signed_route("hello", 5, name="ada").startswith("https://shop.test/greet/ada?")
     assert to_route("hello", name="ada").headers["location"] == "/greet/ada"
 
 
@@ -540,9 +536,7 @@ async def test_a_route_naming_no_default_passes_straight_through(routed: Router)
 # --- Prism templates --------------------------------------------------------
 
 
-def test_the_route_directives_and_helpers_reach_templates(
-    routed: Router, tmp_path: Any
-) -> None:
+def test_the_route_directives_and_helpers_reach_templates(routed: Router, tmp_path: Any) -> None:
     from almasix.prism.engine import Engine
 
     (tmp_path / "links.prism.html").write_text(

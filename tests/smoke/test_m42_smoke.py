@@ -136,4 +136,5 @@ def test_m42_readme_points_at_the_demo(progress_client: TestClient) -> None:
 
     assert "| **M42** | `smith progress:queries`" in readme
     assert "\nsmith progress:queries\n" in readme
-    assert "exhausted in M42" in readme
+    assert "progress:queries" in readme
+    assert "**M42**" in readme

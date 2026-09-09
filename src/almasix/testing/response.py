@@ -102,9 +102,7 @@ class TestResponse:
 
     def assert_status(self, status: int) -> TestResponse:
         if self.status != status:
-            raise AssertionError(
-                f"Expected status {status}; got {self.status}.{self._body_hint()}"
-            )
+            raise AssertionError(f"Expected status {status}; got {self.status}.{self._body_hint()}")
         return self
 
     def assert_ok(self) -> TestResponse:
@@ -178,7 +176,9 @@ class TestResponse:
         self.assert_redirect()
         location = str(self.header("location", ""))
         if fragment not in location:
-            raise AssertionError(f"Redirected to [{location}], which does not contain [{fragment}].")
+            raise AssertionError(
+                f"Redirected to [{location}], which does not contain [{fragment}]."
+            )
         return self
 
     def assert_location(self, uri: str) -> TestResponse:
@@ -194,9 +194,7 @@ class TestResponse:
             present = ", ".join(sorted(self.raw.headers.keys())) or "nothing"
             raise AssertionError(f"Header [{name}] is missing. Sent: {present}.")
         if value is not _ANY and str(self.raw.headers[name]) != str(value):
-            raise AssertionError(
-                f"Header [{name}] is [{self.raw.headers[name]}], not [{value}]."
-            )
+            raise AssertionError(f"Header [{name}] is [{self.raw.headers[name]}], not [{value}].")
         return self
 
     def assert_header_missing(self, name: str) -> TestResponse:
@@ -284,9 +282,7 @@ class TestResponse:
         if strict:
             return self.assert_exact_json(expected)
         missing = {
-            key: value
-            for key, value in expected.items()
-            if data_get(payload, key, _ANY) != value
+            key: value for key, value in expected.items() if data_get(payload, key, _ANY) != value
         }
         if missing:
             raise AssertionError(f"The JSON is missing {missing}. Got: {self._json_text()}.")
@@ -327,7 +323,9 @@ class TestResponse:
 
     def assert_json_missing(self, fragment: Mapping[str, Any]) -> TestResponse:
         if _contains_fragment(self._decoded(), fragment):
-            raise AssertionError(f"The fragment {dict(fragment)} is in the JSON, and should not be.")
+            raise AssertionError(
+                f"The fragment {dict(fragment)} is in the JSON, and should not be."
+            )
         return self
 
     def assert_json_count(self, count: int, key: str | None = None) -> TestResponse:
@@ -349,13 +347,13 @@ class TestResponse:
         payload = self._decoded() if key is None else data_get(self._decoded(), key)
         if not isinstance(payload, list):
             #: A shape that is not the shape asserted is a failure, not a type error.
-            raise AssertionError(f"Expected a JSON array; got {type(payload).__name__}.")  # noqa: TRY004
+            raise AssertionError(f"Expected a JSON array; got {type(payload).__name__}.")
         return self
 
     def assert_json_is_object(self, key: str | None = None) -> TestResponse:
         payload = self._decoded() if key is None else data_get(self._decoded(), key)
         if not isinstance(payload, dict):
-            raise AssertionError(f"Expected a JSON object; got {type(payload).__name__}.")  # noqa: TRY004
+            raise AssertionError(f"Expected a JSON object; got {type(payload).__name__}.")
         return self
 
     # --- validation ------------------------------------------------------------
@@ -450,7 +448,9 @@ class TestResponse:
     def assert_view_missing(self, key: str) -> TestResponse:
         for _, data in self.views:
             if data_get(data, key, _ANY) is not _ANY:
-                raise AssertionError(f"A rendered view was given [{key}], and should not have been.")
+                raise AssertionError(
+                    f"A rendered view was given [{key}], and should not have been."
+                )
         return self
 
     # --- internals --------------------------------------------------------------
@@ -527,7 +527,9 @@ def _assert_structure(structure: Any, payload: Any, path: str) -> None:
         for key, nested in structure.items():
             if key == "*":
                 if not isinstance(payload, (list, tuple)):
-                    raise AssertionError(f"Expected a list at [{where}]; got {type(payload).__name__}.")
+                    raise AssertionError(
+                        f"Expected a list at [{where}]; got {type(payload).__name__}."
+                    )
                 for index, item in enumerate(payload):
                     _assert_structure(nested, item, f"{path}.{index}".lstrip("."))
                 continue

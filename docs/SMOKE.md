@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.3.0` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.4.0` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -608,6 +608,7 @@ pytest -q tests/test_m25_*.py tests/smoke/test_m25_smoke.py
 - [x] `smith make:document [--factory|--embed]`, `documents:index [--pretend]`, `documents:show`; indexes declared on the model
 - [x] Living example: `Activity` on a document store, `smith progress:documents`, `GET /api/documents`; the board marks M25 complete
 - [x] Docs + smoke; SQL regressions green; 100% line and branch coverage on `almasix.orm.documents`
+- [x] **L13 Mongo audit (2026-09-09):** compared against [Laravel 13 MongoDB](https://laravel.com/docs/13.x/mongodb); Eloquent-on-collections closed; cache/queue/GridFS/Scout/`vectorSearch`/transactions/cursor pagination named missing or N/A; docs split into `articulate/documents/*` with a compared page; withdrawn “Laravel has no NoSQL” claim
 
 ---
 
@@ -633,6 +634,7 @@ pytest -q tests/test_m26_*.py tests/smoke/test_m26_smoke.py
 - [x] `smith make:channel`, `channel:list`, and `config/broadcasting.py` + `routes/channels.py` in the scaffold
 - [x] Living example: `PostPublished`, a broadcasting `Comment`, `smith progress:broadcast`, `GET /api/broadcast`; the board marks M26 complete
 - [x] Docs + smoke; 100% line and branch coverage on `almasix.broadcasting`
+- [ ] **Still owed:** Echo-class browser client (**M52**) — server is not the full broadcasting product
 
 ---
 
@@ -816,6 +818,81 @@ cd examples/progress && python smith progress:schema
 
 ---
 
+## M44 — Multi-engine database CI
+
+```bash
+pytest -q tests/test_m44_conformance.py tests/smoke/test_m44_smoke.py
+cd examples/progress && python smith progress:engines
+# With services up:
+# ALMASIX_TEST_DB=pgsql … pytest -q tests/test_m44_conformance.py
+# ALMASIX_TEST_DB=mysql … pytest -q tests/test_m44_conformance.py
+```
+
+### M44 exit criteria
+
+- [x] CI `orm-engines` job runs the dialect conformance suite against SQLite, PostgreSQL, and MySQL (services for Postgres 16 + MySQL 8.4)
+- [x] Conformance executes schema DDL, upsert, JSON path wheres/updates, row locks, nested transactions/savepoints, and offset + cursor pagination on each claimed engine
+- [x] `ALMASIX_TEST_DB` + `DB_*` drive `tests/orm_support.py`; `make test-orm-engines` mirrors CI
+- [x] Support matrix published at `website/.../database/engines.md` (claimed engines, feature rows, SQLite limits, compile-only SQL Server / Oracle)
+- [x] PostgreSQL JSON `#>` / `JSONB_SET` cast paths to `text[]` so `json` columns execute under asyncpg (caught by the new suite)
+- [x] Living example: `smith progress:engines`; the board marks M44 complete with proof naming the command and the CI matrix
+
+---
+
+## M51 — Lint and format gate
+
+```bash
+make lint
+pytest -q tests/smoke/test_m51_smoke.py
+cd examples/progress && python smith progress:lint
+```
+
+### M51 exit criteria
+
+- [x] `ruff==0.16.6` pinned in the `dev` extra (exact version, not a floating range)
+- [x] Explicit `[tool.ruff.lint] select` — `E4,E7,E9,F,I,UP,B,RUF100` — with documented ignores and `tests/**` per-file ignores for fixture injection (`F811`)
+- [x] `make lint` runs `ruff check` and `ruff format --check` on `src` and `tests`, and is green
+- [x] CI `lint` job on Python 3.11–3.13 asserts the pin and runs the same commands
+- [x] README gate table lists lint; the “not a CI gate yet” disclaimer is gone
+- [x] Living example: `smith progress:lint`; the board marks M51 complete
+
+---
+
+## M38 — Deployment + production ops
+
+```bash
+pytest -q tests/smoke/test_m38_smoke.py
+cd examples/progress && python smith progress:deploy
+```
+
+### M38 exit criteria
+
+- [x] `smith serve --workers` (reload off when workers > 1) and `--proxy-headers` / `--forwarded-allow-ips` wired to Uvicorn
+- [x] Default `GET /up` health probe (`ApplicationBuilder.with_health`); outside Almasix middleware stacks
+- [x] Starlight **Deployment** page (env, serve, optimize, migrate/queues, bare metal, container, releasing)
+- [x] `examples/deploy/` Dockerfile + compose (web + queue worker + Postgres, `/up` healthcheck)
+- [x] Package version **0.4.0** in `pyproject.toml` / `__version__` (0.3.0 already on PyPI; tag `v0.4.0` to publish)
+- [x] Living example: `smith progress:deploy`; the board marks M38 complete
+
+---
+
+## M39 — Docs journey rewrite + Prologue
+
+```bash
+pytest -q tests/smoke/test_m39_smoke.py
+cd examples/progress && python smith progress:docs
+```
+
+### M39 exit criteria
+
+- [x] Prologue sidebar: introduction, Release Notes, Upgrade Guide, Documentation Versions
+- [x] The Basics reordered to teaching order; Authentication / Hashing / Passwords after Session
+- [x] No `M##` milestone IDs in `website/src/content/docs`
+- [x] Header version switcher lists latest major (`0.x`) + `main` (opt-in); older-docs banner links to latest when not on `0.x`; switcher syncs from the live URL
+- [x] Living example: `smith progress:docs`; the board marks M39 complete
+
+---
+
 ## M49 — Support Collections exhaust
 
 ```bash
@@ -995,7 +1072,9 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 ## Out of scope until later milestones
 
 - Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
-- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs versioning + Prologue (M39)
+- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Echo-class client (M52)
+- **Stability track (2026-09-09):** M44 + M25 L13 Mongo audit + M51 lint gate + M38 deployment + **M39** docs journey complete; prefer M37 → M52 → M36; one milestone at a time
+- Parity reference: **Laravel 13.x** docs
 - IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

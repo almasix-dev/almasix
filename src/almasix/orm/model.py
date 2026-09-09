@@ -7,7 +7,7 @@ import re
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any, ClassVar
 
 from almasix.orm.attributes import Attribute
@@ -320,8 +320,7 @@ class Model(metaclass=ModelMeta):
         if self._totally_guarded() and attributes:
             offending = ", ".join(sorted(attributes))
             raise MassAssignmentError(
-                f"Add [{offending}] to fillable to allow mass assignment on "
-                f"{type(self).__name__}."
+                f"Add [{offending}] to fillable to allow mass assignment on {type(self).__name__}."
             )
         discarded = []
         for key, value in attributes.items():
@@ -675,7 +674,7 @@ class Model(metaclass=ModelMeta):
     def _fresh_timestamp(self) -> datetime:
         from almasix.support.helpers import now
 
-        return now(timezone.utc).replace(tzinfo=None, microsecond=0)
+        return now(UTC).replace(tzinfo=None, microsecond=0)
 
     def _timestamps_enabled(self) -> bool:
         if not type(self).timestamps:
@@ -860,7 +859,9 @@ class Model(metaclass=ModelMeta):
         return True
 
     async def refresh(self) -> Model:
-        fresh = await self.instance_query().without_global_scopes().where_key(self.get_key()).first()
+        fresh = (
+            await self.instance_query().without_global_scopes().where_key(self.get_key()).first()
+        )
         if fresh is not None:
             self._attributes = dict(fresh._attributes)
             self._relations.clear()
@@ -984,14 +985,16 @@ class Model(metaclass=ModelMeta):
     def has_one(self, related: type[Model], foreign: str | None = None, local: str | None = None):
         from almasix.orm.relations import HasOne
 
-        return HasOne(self, related, foreign or type(self).get_foreign_key(),
-                      local or type(self).primary_key)
+        return HasOne(
+            self, related, foreign or type(self).get_foreign_key(), local or type(self).primary_key
+        )
 
     def has_many(self, related: type[Model], foreign: str | None = None, local: str | None = None):
         from almasix.orm.relations import HasMany
 
-        return HasMany(self, related, foreign or type(self).get_foreign_key(),
-                       local or type(self).primary_key)
+        return HasMany(
+            self, related, foreign or type(self).get_foreign_key(), local or type(self).primary_key
+        )
 
     def belongs_to(
         self,
@@ -1001,8 +1004,9 @@ class Model(metaclass=ModelMeta):
     ):
         from almasix.orm.relations import BelongsTo
 
-        return BelongsTo(self, related, foreign or related.get_foreign_key(),
-                         owner or related.primary_key)
+        return BelongsTo(
+            self, related, foreign or related.get_foreign_key(), owner or related.primary_key
+        )
 
     def belongs_to_many(
         self,
@@ -1323,10 +1327,7 @@ class PendingRelation:
 
     def __repr__(self) -> str:
         lazy = " lazy" if type(self._instance).lazy_relations else ""
-        return (
-            f"<unloaded{lazy} relation {self._name!r} on "
-            f"{type(self._instance).__name__}>"
-        )
+        return f"<unloaded{lazy} relation {self._name!r} on {type(self._instance).__name__}>"
 
 
 class RelationDescriptor:

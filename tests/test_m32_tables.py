@@ -63,7 +63,9 @@ def test_the_sessions_migration_carries_the_columns_laravel_stores(
     tmp_path: Path,
 ) -> None:
     assert kernel.run_argv("session:table", []) == 0
-    body = next((tmp_path / "database" / "migrations").glob("*_create_sessions_table.py")).read_text()
+    body = next(
+        (tmp_path / "database" / "migrations").glob("*_create_sessions_table.py")
+    ).read_text()
 
     for column in ("user_id", "ip_address", "user_agent", "payload", "last_activity"):
         assert column in body
@@ -209,7 +211,7 @@ async def test_unreadable_and_absent_cookies_start_a_new_session(memory_db) -> N
 
     await _sessions_table()
     handler = DatabaseSessionHandler()
-    read = lambda request: handler.read(  # noqa: E731
+    read = lambda request: handler.read(
         request, key="k" * 32, cookie_name="almasix_session", lifetime=600
     )
 

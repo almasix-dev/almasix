@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import inspect
 import time
-from collections.abc import Sequence
 from typing import Any
 
 from almasix.http.exceptions import TooManyRequestsHttpException

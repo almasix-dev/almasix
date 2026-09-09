@@ -126,6 +126,7 @@ class DocumentBuilder:
             raise UnsupportedQueryError(f"{name}() is SQL-only — {SQL_ONLY[name]}")
         scope = getattr(self.model, f"scope_{name}", None) if self.model else None
         if scope is not None:
+
             def call(*args: Any, **kwargs: Any) -> DocumentBuilder:
                 result = scope(self, *args, **kwargs)
                 return self if result is None else result
@@ -165,9 +166,7 @@ class DocumentBuilder:
                 self.where(key, "=", item, boolean)
             return self
         if operator is _MISSING:
-            raise TypeError(
-                "where() requires where(field, value) or where(field, operator, value)"
-            )
+            raise TypeError("where() requires where(field, value) or where(field, operator, value)")
         real_operator, real_value = self._operator_and_value(operator, value)
         return self._push(
             Condition(self.field(column), str(real_operator).strip().lower(), real_value, boolean)
@@ -187,7 +186,9 @@ class DocumentBuilder:
     def or_where_in(self, column: str, values: Iterable[Any]) -> DocumentBuilder:
         return self.where_in(column, values, "or")
 
-    def where_not_in(self, column: str, values: Iterable[Any], boolean: str = "and") -> DocumentBuilder:
+    def where_not_in(
+        self, column: str, values: Iterable[Any], boolean: str = "and"
+    ) -> DocumentBuilder:
         return self._push(Condition(self.field(column), "not in", list(values), boolean))
 
     def where_null(self, column: str, boolean: str = "and") -> DocumentBuilder:
@@ -294,14 +295,24 @@ class DocumentBuilder:
     def for_page(self, page: int, per_page: int) -> DocumentBuilder:
         return self.offset(max(0, (page - 1) * per_page)).limit(per_page)
 
-    def when(self, condition: Any, callback: Callable[..., Any], otherwise: Callable[..., Any] | None = None) -> DocumentBuilder:
+    def when(
+        self,
+        condition: Any,
+        callback: Callable[..., Any],
+        otherwise: Callable[..., Any] | None = None,
+    ) -> DocumentBuilder:
         if condition:
             return callback(self, condition) or self
         if otherwise is not None:
             return otherwise(self, condition) or self
         return self
 
-    def unless(self, condition: Any, callback: Callable[..., Any], otherwise: Callable[..., Any] | None = None) -> DocumentBuilder:
+    def unless(
+        self,
+        condition: Any,
+        callback: Callable[..., Any],
+        otherwise: Callable[..., Any] | None = None,
+    ) -> DocumentBuilder:
         return self.when(not condition, callback, otherwise)
 
     def tap(self, callback: Callable[[DocumentBuilder], Any]) -> DocumentBuilder:
@@ -539,7 +550,9 @@ class DocumentBuilder:
         return await self.get_store().delete(self.to_query())
 
     async def increment(self, column: str, amount: int = 1, **extra: Any) -> int:
-        return await self.get_store().increment(self.to_query(), {self.field(column): amount}, extra)
+        return await self.get_store().increment(
+            self.to_query(), {self.field(column): amount}, extra
+        )
 
     async def decrement(self, column: str, amount: int = 1, **extra: Any) -> int:
         return await self.increment(column, -amount, **extra)
@@ -574,4 +587,3 @@ class DocumentBuilder:
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid
         return f"<DocumentBuilder {self.table} wheres={len(self._wheres)}>"
-

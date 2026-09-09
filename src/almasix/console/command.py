@@ -180,7 +180,9 @@ class Command:
         from almasix.console.prompts import multiselect, select
 
         if multiple:
-            preselected = default if isinstance(default, list) else ([] if default is None else [default])
+            preselected = (
+                default if isinstance(default, list) else ([] if default is None else [default])
+            )
             return multiselect(question, choices, default=preselected)
         return select(question, choices, default=default)
 

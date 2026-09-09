@@ -13,7 +13,8 @@ from almasix.console.commands.storage_link import StorageLinkCommand
 from almasix.console.mutex import Mutex
 from almasix.console.scheduling import Event, Schedule, _cron_matches, _field_matches, run_event
 from almasix.framework.application import Application
-from almasix.queue.helpers import default_queue_config, set_manager as set_queue_manager
+from almasix.queue.helpers import default_queue_config
+from almasix.queue.helpers import set_manager as set_queue_manager
 from almasix.queue.manager import QueueManager
 
 
@@ -90,7 +91,7 @@ def test_storage_link_defaults_and_force_directory(tmp_path: Path) -> None:
         link.unlink()
     link.mkdir()
     cmd_force = StorageLinkCommand(app)
-    cmd_force._options = {"force": True, "relative": False}  # noqa: SLF001
+    cmd_force._options = {"force": True, "relative": False}
     assert cmd_force.handle() == 1
 
 
@@ -125,7 +126,9 @@ def test_queue_failed_empty_and_retry_non_database(tmp_path: Path) -> None:
 
     retry = QueueRetryCommand(app)
     # connection("database") KeyError
-    qm2 = QueueManager({"default": "sync", "connections": {"sync": {"driver": "sync"}}, "failed": {}})
+    qm2 = QueueManager(
+        {"default": "sync", "connections": {"sync": {"driver": "sync"}}, "failed": {}}
+    )
     set_queue_manager(qm2)
     app.container.instance(QueueManager, qm2)
     assert retry.handle() == 1

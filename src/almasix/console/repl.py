@@ -25,6 +25,7 @@ ORM is async — these both work:
   User.all()
   await User.query().get()
 Helpers: app, config, DB, User, run(coro), dump(...), dd(...), to_json(...)
+Theme: One Dark Pro syntax highlighting (IPython / ptpython)
 Exit: Ctrl-D or exit()
 """
 
@@ -40,6 +41,7 @@ def resolve_awaitable(value: Any) -> Any:
         return value
     if inspect.iscoroutine(value):
         return asyncio.run(value)
+
     # Generic awaitable (Task, Future, …)
     async def _drain() -> Any:
         return await value
@@ -231,6 +233,28 @@ def _loupe_prompts_class():
     return LoupePrompts
 
 
+def _loupe_highlighting_overrides() -> dict:
+    """One Dark Pro accents for the prompt and completion chrome."""
+    from pygments.token import Token
+
+    from almasix.console.prompts.style import (
+        OD_BLUE,
+        OD_COMMENT,
+        OD_CYAN,
+        OD_MAGENTA,
+        OD_YELLOW,
+    )
+
+    return {
+        Token.Prompt: f"bold {OD_MAGENTA}",
+        Token.PromptNum: f"bold {OD_BLUE}",
+        Token.OutPrompt: OD_COMMENT,
+        Token.OutPromptNum: OD_CYAN,
+        Token.MatchingBracket.Cursor: f"bold {OD_YELLOW}",
+        Token.MatchingBracket.Other: f"bold {OD_YELLOW}",
+    }
+
+
 def _start_ipython(namespace: dict[str, Any]) -> int | None:
     try:
         from IPython.core.displayhook import DisplayHook
@@ -258,10 +282,14 @@ def _start_ipython(namespace: dict[str, Any]) -> int | None:
             self.finish_displayhook()
 
     cfg = Config()
-    cfg.InteractiveShellEmbed.colors = "Linux"
+    # One Dark Pro via Pygments — colors the input buffer like VS Code.
+    cfg.InteractiveShellEmbed.colors = "Neutral"
     cfg.InteractiveShellEmbed.confirm_exit = False
     cfg.InteractiveShell.ast_node_interactivity = "last_expr_or_assign"
     cfg.InteractiveShell.autoawait = True
+    cfg.TerminalInteractiveShell.colors = "Neutral"
+    cfg.TerminalInteractiveShell.highlighting_style = "one-dark"
+    cfg.TerminalInteractiveShell.highlighting_style_overrides = _loupe_highlighting_overrides()
     cfg.TerminalInteractiveShell.true_color = True
     cfg.TerminalInteractiveShell.prompts_class = _loupe_prompts_class()
     cfg.TerminalInteractiveShell.editing_mode = "emacs"
@@ -273,6 +301,7 @@ def _start_ipython(namespace: dict[str, Any]) -> int | None:
         exit_msg="Leaving Loupe.",
         user_ns=namespace,
     )
+    _apply_loupe_completion_style(shell)
     # Real asyncio runner so ``await User.all()`` works inside the embed.
     try:
         shell(using="asyncio")
@@ -281,11 +310,41 @@ def _start_ipython(namespace: dict[str, Any]) -> int | None:
     return 0
 
 
-def _configure_ptpython(repl) -> None:  # noqa: ANN001
+def _apply_loupe_completion_style(shell: Any) -> None:
+    """Paint the completion menu in One Dark Pro tones when prompt_toolkit is live."""
+    try:
+        from prompt_toolkit.styles import Style, merge_styles
+
+        from almasix.console.prompts.style import OD_COMMENT, OD_FG, OD_GREEN
+    except ImportError:
+        return
+
+    extra = Style.from_dict(
+        {
+            "completion-menu": f"bg:#21252b {OD_FG}",
+            "completion-menu.completion": f"bg:#21252b {OD_FG}",
+            "completion-menu.completion.current": f"bg:#2c313a bold {OD_GREEN}",
+            "completion-menu.meta.completion": f"bg:#21252b {OD_COMMENT}",
+            "completion-menu.meta.completion.current": f"bg:#2c313a {OD_FG}",
+            "scrollbar.background": "bg:#21252b",
+            "scrollbar.button": "bg:#5c6370",
+        }
+    )
+    for attr in ("pt_app", "_pt_app", "pt_loop"):
+        app = getattr(shell, attr, None)
+        if app is None:
+            continue
+        current = getattr(app, "style", None)
+        if current is not None:
+            app.style = merge_styles([current, extra])
+            return
+
+
+def _configure_ptpython(repl) -> None:
     repl.show_signature = True
     repl.show_docstring = True
     repl.highlight_matching_parenthesis = True
-    repl.use_code_colorscheme("monokai")
+    repl.use_code_colorscheme("one-dark")
     repl.color_depth = "DEPTH_24_BIT"
     repl.enable_syntax_highlighting = True
     repl.prompt_style = "ipython"
@@ -293,6 +352,7 @@ def _configure_ptpython(repl) -> None:  # noqa: ANN001
     # Prefer eval that resolves awaitables when ptpython supports it.
     original_eval = getattr(repl, "eval", None) or getattr(repl, "_eval", None)
     if original_eval is not None:
+
         def _eval(expression: str):
             result = original_eval(expression)
             return resolve_awaitable(result)
@@ -328,10 +388,10 @@ def _start_rich_console(namespace: dict[str, Any]) -> int:
 
     theme = Theme(
         {
-            "loupe.banner": "bold cyan",
-            "loupe.hint": "dim",
-            "loupe.prompt": "bold magenta",
-            "loupe.warn": "yellow",
+            "loupe.banner": "bold #61afef",
+            "loupe.hint": "#5c6370",
+            "loupe.prompt": "bold #c678dd",
+            "loupe.warn": "#e5c07b",
         }
     )
     console = Console(theme=theme, soft_wrap=True)
@@ -356,7 +416,7 @@ def _start_rich_console(namespace: dict[str, Any]) -> int:
 
         value = resolve_awaitable(value)
         builtins = __import__("builtins")
-        builtins._ = value  # noqa: SLF001 — REPL `_` convenience
+        builtins._ = value
         render(value, console=console)
 
     sys.displayhook = displayhook
@@ -369,11 +429,11 @@ def _start_rich_console(namespace: dict[str, Any]) -> int:
             console.print("[loupe.prompt]loupe>[/] ", end="")
             return input()
 
-        def runcode(self, code_obj) -> None:  # noqa: A002
+        def runcode(self, code_obj) -> None:
             from almasix.debug import DumpAndDie
 
             try:
-                exec(code_obj, self.locals)  # noqa: S102
+                exec(code_obj, self.locals)
             except DumpAndDie as exc:
                 raise SystemExit(0) from exc
             except SystemExit:

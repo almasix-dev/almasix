@@ -100,7 +100,7 @@ def _defer_until_commit(event: Any) -> bool:
         from almasix.orm.facade import get_manager
 
         connection = get_manager().connection(getattr(event, "broadcast_database", None))
-    except Exception:  # noqa: BLE001 — an application without a database still broadcasts
+    except Exception:
         return False
     if not connection.in_transaction():
         return False

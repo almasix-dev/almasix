@@ -89,7 +89,9 @@ def test_invalid_names_are_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPa
         make("widget", "Post", base_path=tmp_path)
 
 
-def test_make_component_writes_anonymous_view(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_make_component_writes_anonymous_view(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
 
     result = runner.invoke(smith_app, ["make:component", "forms/Input"])

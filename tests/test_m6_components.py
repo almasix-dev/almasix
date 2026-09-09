@@ -290,7 +290,7 @@ def test_component_attrs_allow_parens_in_strings(tmp_path: Path) -> None:
 
 
 def test_expand_x_slot_to_directives() -> None:
-    out = expand_x_tags('<x-card><x-slot:title>T</x-slot>Body</x-card>')
+    out = expand_x_tags("<x-card><x-slot:title>T</x-slot>Body</x-card>")
     assert "@component('card'" in out
     assert "@slot('title')" in out
     assert "@endslot" in out

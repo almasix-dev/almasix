@@ -269,7 +269,7 @@ async def test_a_default_is_the_engines_not_the_applications(memory_db) -> None:
             table.boolean("live").default(False),
         ),
     )
-    await DB.insert('INSERT INTO posts (title) VALUES (:title)', {"title": "Raw"})
+    await DB.insert("INSERT INTO posts (title) VALUES (:title)", {"title": "Raw"})
     row = await DB.table("posts").first()
     assert row["status"] == "draft"
     assert row["votes"] == 0
@@ -291,7 +291,7 @@ def test_how_a_default_is_written_for_each_kind_of_value() -> None:
     assert "DEFAULT 'O''Hara'" in column_sql(blueprint, pg, 0)
     assert "DEFAULT 7" in column_sql(blueprint, pg, 1)
     assert "DEFAULT true" in column_sql(blueprint, pg, 2)
-    assert 'DEFAULT \'{"k": 1}\'' in column_sql(blueprint, pg, 3)
+    assert "DEFAULT '{\"k\": 1}'" in column_sql(blueprint, pg, 3)
     assert "DEFAULT" not in column_sql(blueprint, pg, 4)
     assert "DEFAULT CURRENT_TIMESTAMP" in column_sql(blueprint, pg, 5)
     assert "DEFAULT 1" in column_sql(blueprint, sqlite.dialect(), 2)
@@ -346,7 +346,9 @@ def test_comment_charset_collation_and_invisible_are_mysqls(memory_db) -> None:
 def test_first_after_and_before_place_a_column(memory_db) -> None:
     my = mysql.dialect()
     assert " FIRST" in compile_table_statements(_with(lambda t: t.string("a").first()), my)[0]
-    assert " AFTER `b`" in compile_table_statements(_with(lambda t: t.string("a").after("b")), my)[0]
+    assert (
+        " AFTER `b`" in compile_table_statements(_with(lambda t: t.string("a").after("b")), my)[0]
+    )
     assert (
         " BEFORE `b`" in compile_table_statements(_with(lambda t: t.string("a").before("b")), my)[0]
     )

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -31,7 +31,7 @@ class DatabaseNotificationStore:
         from almasix.orm import DB
 
         row_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "id": row_id,
             "type": f"{type(notification).__module__}.{type(notification).__qualname__}",
@@ -77,7 +77,7 @@ class DatabaseNotificationStore:
     async def mark_as_read(self, notification_id: str) -> bool:
         from almasix.orm import DB
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         affected = await (
             DB.table("notifications")
             .where("id", notification_id)

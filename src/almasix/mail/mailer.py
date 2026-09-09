@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import mimetypes
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from almasix.mail.mailable import Address, Attachment, Mailable
 from almasix.mail.markdown import render_content
@@ -219,10 +220,10 @@ class Mail:
         from almasix.mail.testing import MailAssertions
 
         manager = cls.manager()
-        mailers = dict(manager._config.get("mailers") or {})  # noqa: SLF001
+        mailers = dict(manager._config.get("mailers") or {})
         if name not in mailers:
             mailers[name] = {"transport": "array"}
-            manager.set_config({**manager._config, "mailers": mailers})  # noqa: SLF001
+            manager.set_config({**manager._config, "mailers": mailers})
         manager.set_default_mailer(name)
         assertions = MailAssertions(name)
         assertions.flush()

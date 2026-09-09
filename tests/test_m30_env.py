@@ -161,7 +161,9 @@ def test_neither_command_overwrites_without_force(
     capsys.readouterr()
 
     assert kernel.run_argv("env:encrypt", ["--key", "base64:k"]) == 1
-    assert "[.env.encrypted] already exists. Pass --force to overwrite it." in capsys.readouterr().err
+    assert (
+        "[.env.encrypted] already exists. Pass --force to overwrite it." in capsys.readouterr().err
+    )
 
     assert kernel.run_argv("env:decrypt", ["--key", "base64:k"]) == 1
     assert "[.env] already exists. Pass --force to overwrite it." in capsys.readouterr().err

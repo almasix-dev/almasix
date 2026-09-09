@@ -3,10 +3,9 @@ title: Rate Limiting
 description: Cache-backed RateLimiter, throttle middleware, and login throttling.
 ---
 
-Almasix rate-limits anything that needs a budget — HTTP routes, login attempts,
-or an arbitrary callback — with a thin counter over the application cache. The
-shape matches Laravel's [Rate Limiting](https://laravel.com/docs/rate-limiting)
-and the `throttle` middleware documented under Routing.
+Rate limiting caps how often something may run — an HTTP route, a login form,
+or any callback you wrap — using a counter in the application cache. Name a
+budget, set a maximum, and Almasix rejects or delays work that exceeds it.
 
 ## Cache configuration
 
@@ -22,12 +21,12 @@ config = {
 }
 ```
 
-In code, this is surfaced as `cache.limiter` (a Laravel-shaped config key) so
-`RateLimiter` can pick the correct store for its counters.
+In code, this is surfaced as `cache.limiter` so `RateLimiter` can pick the
+correct store for its counters.
 
 Counters live under the `almasix:rate:` key prefix. Queue workers and HTTP
-processes that share that cache store also share the same budgets — the same
-reason Laravel asks you to pick Redis for production rate limiting.
+processes that share that cache store also share the same budgets — which is
+why production deployments usually point the limiter at Redis.
 
 ## Basic usage
 
@@ -64,8 +63,8 @@ RateLimiter.hit(f"send-message:{user.id}")
 ```
 
 `remaining` / `retries_left`, `clear`, and `reset_attempts` round out the
-surface. CamelCase aliases (`tooManyAttempts`, `availableIn`, …) are installed
-for readers coming from Laravel docs.
+surface. CamelCase aliases (`tooManyAttempts`, `availableIn`, …) are also
+available where they help existing snippets.
 
 ## Defining rate limiters
 
@@ -130,7 +129,7 @@ Route.get("/mixed", handler, middleware=["throttle:10|60"])  # guest|auth
 is sixty per minute. `throttle:10|60` uses ten for guests and sixty for
 authenticated users.
 
-Put the named `api` limiter on every API route the Laravel 11 way:
+Put the named `api` limiter on every API route via bootstrap:
 
 ```python
 def configure(middleware: Middleware) -> None:
@@ -143,7 +142,8 @@ refusal is a `429 Too Many Attempts.` with `Retry-After` and
 
 ## Login throttling
 
-Wire login the same way Laravel's `LoginRequest` does:
+Protect login the same way you protect any other budget — hit on failure, clear
+on success:
 
 ```python
 from almasix.auth import LoginRateLimiter, attempt_login

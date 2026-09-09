@@ -195,9 +195,11 @@ async def test_or_where_relation_widens_the_result_set(memory_db) -> None:
 async def test_with_where_has_filters_and_constrains_the_eager_load(memory_db) -> None:
     await _seed()
 
-    authors = await Author.query().with_where_has(
-        "posts", lambda query: query.where("published", "=", 1)
-    ).get()
+    authors = (
+        await Author.query()
+        .with_where_has("posts", lambda query: query.where("published", "=", 1))
+        .get()
+    )
 
     assert [author.name for author in authors] == ["Ada", "Grace"]
     # Ada's unpublished draft is filtered out of the loaded relation too.
@@ -324,7 +326,9 @@ async def test_where_doesnt_have_morph_inverts_the_match(memory_db) -> None:
 
     found = await (
         Remark.query()
-        .where_doesnt_have_morph("commentable", [Video], lambda query: query.where("length", ">", 60))
+        .where_doesnt_have_morph(
+            "commentable", [Video], lambda query: query.where("length", ">", 60)
+        )
         .get()
     )
 
@@ -349,7 +353,9 @@ async def test_or_morph_variants_widen_the_result_set(memory_db) -> None:
     or_where = await (
         Remark.query()
         .where("spam", "=", 1)
-        .or_where_has_morph("commentable", [Article], lambda query: query.where("published", "=", 1))
+        .or_where_has_morph(
+            "commentable", [Article], lambda query: query.where("published", "=", 1)
+        )
         .get()
     )
     or_doesnt = await (
@@ -372,12 +378,14 @@ async def test_or_morph_variants_widen_the_result_set(memory_db) -> None:
 async def test_where_morph_relation_filters_inline(memory_db) -> None:
     await _seed()
 
-    found = await Remark.query().where_morph_relation(
-        "commentable", [Article], "title", "Prose"
-    ).get()
-    missing = await Remark.query().where_morph_relation(
-        "commentable", [Article], "title", "!=", "Prose"
-    ).get()
+    found = (
+        await Remark.query().where_morph_relation("commentable", [Article], "title", "Prose").get()
+    )
+    missing = (
+        await Remark.query()
+        .where_morph_relation("commentable", [Article], "title", "!=", "Prose")
+        .get()
+    )
     ored = await (
         Remark.query()
         .where("spam", "=", 1)

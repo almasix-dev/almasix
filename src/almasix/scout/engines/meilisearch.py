@@ -38,9 +38,7 @@ class MeilisearchEngine(Engine):
         index = records[0].searchable_as()
         primary = records[0].get_scout_key_name()
         documents = [searchable_payload(model) for model in records]
-        await self._request(
-            "PUT", f"/indexes/{index}/documents?primaryKey={primary}", documents
-        )
+        await self._request("PUT", f"/indexes/{index}/documents?primaryKey={primary}", documents)
 
     async def delete(self, models: Sequence[Any]) -> None:
         records = list(models)
