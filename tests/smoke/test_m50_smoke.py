@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 import pathlib
 import re
 
@@ -179,11 +178,7 @@ def test_the_string_gaps_the_audit_found_are_closed() -> None:
 
 def test_the_fluent_wrapper_delegates_the_whole_static_surface() -> None:
     """Str.slug(value) used to work while str_(value).slug() did not."""
-    missing = {
-        name
-        for name in public_names(Str)
-        if not hasattr(Stringable, name)
-    }
+    missing = {name for name in public_names(Str) if not hasattr(Stringable, name)}
 
     assert missing == set()
     assert str_("Ada Lovelace").slug().value() == "ada-lovelace"

@@ -1,4 +1,4 @@
-"""What happens after the files land: git, dependencies, assets, migrations.
+"""What happens after the files land: git, venv, dependencies, assets, migrations.
 
 Each step is skippable, reports what it ran, and never leaves the installer
 holding an exception — a new application whose `npm install` failed is still a
@@ -7,6 +7,7 @@ new application, and the summary says which part did not happen.
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -33,7 +34,11 @@ class StepResult:
 
 def run_steps(plan: InstallPlan, root: Path) -> list[StepResult]:
     """Run every step the plan asked for, in the order they depend on."""
-    results = [git_init(plan, root), install_dependencies(plan, root)]
+    results = [
+        git_init(plan, root),
+        create_venv(plan, root),
+        install_dependencies(plan, root),
+    ]
     results.append(install_node(plan, root))
     results.append(migrate(plan, root))
     return results
@@ -64,10 +69,55 @@ def git_init(plan: InstallPlan, root: Path) -> StepResult:
     return StepResult("git", ran=True, detail=f"branch {plan.branch}, one commit")
 
 
+def create_venv(plan: InstallPlan, root: Path) -> StepResult:
+    """Create ``.venv`` inside the application when dependencies will be installed."""
+    if not plan.install:
+        return StepResult("venv", ran=False)
+
+    python = venv_python(root)
+    if python.is_file():
+        return StepResult("venv", ran=True, detail=".venv already present")
+
+    command = _venv_create_command(plan, root)
+    if command is None:
+        return StepResult(
+            "venv",
+            ran=True,
+            ok=False,
+            detail=f"{plan.installer} is not installed",
+        )
+    completed = _run(command, root)
+    if completed.returncode != 0:
+        return StepResult(
+            "venv",
+            ran=True,
+            ok=False,
+            detail=_first_error(completed) or "venv creation failed",
+        )
+    if not python.is_file():
+        return StepResult(
+            "venv",
+            ran=True,
+            ok=False,
+            detail="venv creation finished but .venv/bin/python is missing",
+        )
+    return StepResult("venv", ran=True, detail=" ".join(command))
+
+
 def install_dependencies(plan: InstallPlan, root: Path) -> StepResult:
     if not plan.install:
         return StepResult("install", ran=False)
-    command = _python_install_command(plan)
+
+    python = venv_python(root)
+    if not python.is_file():
+        return StepResult(
+            "install",
+            ran=True,
+            ok=False,
+            detail=".venv is missing — create the virtualenv first",
+        )
+
+    command = _python_install_command(plan, root)
     if command is None:
         return StepResult(
             "install",
@@ -106,7 +156,8 @@ def install_node(plan: InstallPlan, root: Path) -> StepResult:
 def migrate(plan: InstallPlan, root: Path) -> StepResult:
     if not plan.migrate:
         return StepResult("migrate", ran=False)
-    completed = _run((sys.executable, "smith", "migrate", "--force"), root)
+    python = app_python(root)
+    completed = _run((str(python), "smith", "migrate", "--force"), root)
     if completed.returncode != 0:
         return StepResult(
             "migrate",
@@ -114,23 +165,58 @@ def migrate(plan: InstallPlan, root: Path) -> StepResult:
             ok=False,
             detail=_first_error(completed) or "smith migrate failed",
         )
-    return StepResult("migrate", ran=True, detail="users, sessions, cache, queue tables")
+    return StepResult(
+        "migrate",
+        ran=True,
+        detail="users, password_reset_tokens, sessions, cache, queue tables",
+    )
 
 
-def _python_install_command(plan: InstallPlan) -> tuple[str, ...] | None:
-    """``uv pip install`` when uv is around, plain pip otherwise."""
+def venv_python(root: Path) -> Path:
+    """Interpreter inside the application's ``.venv``."""
+    if os.name == "nt":  # pragma: no cover - Windows layout
+        return root / ".venv" / "Scripts" / "python.exe"
+    return root / ".venv" / "bin" / "python"
+
+
+def app_python(root: Path) -> Path:
+    """Prefer the app venv; fall back to the process that ran ``almasix``."""
+    candidate = venv_python(root)
+    return candidate if candidate.is_file() else Path(sys.executable)
+
+
+def _venv_create_command(plan: InstallPlan, root: Path) -> tuple[str, ...] | None:
+    target = str(root / ".venv")
     choice = plan.installer
     if choice in {"auto", "uv"} and shutil.which("uv") is not None:
-        return ("uv", "pip", "install", "-e", ".")
+        return ("uv", "venv", target)
     if choice == "uv":
         return None
     if choice in {"auto", "pip"}:
-        return (sys.executable, "-m", "pip", "install", "-e", ".")
+        return (sys.executable, "-m", "venv", target)
+    return None
+
+
+def _python_install_command(plan: InstallPlan, root: Path) -> tuple[str, ...] | None:
+    """Install the app editable into ``.venv`` (plus the engine extra when set)."""
+    python = venv_python(root)
+    packages = ["-e", "."]
+    extra = plan.database_info.extra
+    if extra:
+        packages.append(extra)
+
+    choice = plan.installer
+    if choice in {"auto", "uv"} and shutil.which("uv") is not None:
+        return ("uv", "pip", "install", "--python", str(python), *packages)
+    if choice == "uv":
+        return None
+    if choice in {"auto", "pip"}:
+        return (str(python), "-m", "pip", "install", *packages)
     return None
 
 
 def _run(command: Sequence[str], cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(  # noqa: S603 - fixed argv, no shell
+    return subprocess.run(
         list(command),
         cwd=cwd,
         capture_output=True,

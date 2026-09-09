@@ -14,7 +14,9 @@ from typing import Any
 from almasix.orm.eager import eager_load
 
 
-async def load_document_relations(models: Sequence[Any], relations: Mapping[str, Any] | Any) -> None:
+async def load_document_relations(
+    models: Sequence[Any], relations: Mapping[str, Any] | Any
+) -> None:
     """Load reference relations onto documents — one query per relation."""
     await eager_load(models, relations)
 

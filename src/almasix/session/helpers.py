@@ -103,7 +103,9 @@ class CookieJar:
         """Attach a cookie to the response on the way out."""
         from almasix.auth.cookies import QueuedCookie, queue_cookie
 
-        built = name if isinstance(name, QueuedCookie) else self.make(name, value, minutes, **kwargs)
+        built = (
+            name if isinstance(name, QueuedCookie) else self.make(name, value, minutes, **kwargs)
+        )
         queue_cookie(
             built.name,
             built.value,

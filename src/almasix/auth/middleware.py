@@ -47,14 +47,17 @@ class StartAuth(Middleware):
             if isinstance(guard, SessionGuard) and session is not None:
                 payload = session.get(f"login_{guard.name}")
                 if payload is not None:
-                    user = await _safe_resolve(lambda: _hydrate_user(guard, payload))
+                    # Bind loop vars into defaults so the lambda cannot see a later iteration.
+                    user = await _safe_resolve(lambda g=guard, p=payload: _hydrate_user(g, p))
                     if user is not None:
                         guard.once(user)
                 else:
-                    remembered = await _safe_resolve(lambda: _from_remember_cookie(request, guard))
+                    remembered = await _safe_resolve(
+                        lambda g=guard: _from_remember_cookie(request, g)
+                    )
                     if remembered is not None:
                         guard.once(remembered)
-                        guard._via_remember = True  # noqa: SLF001
+                        guard._via_remember = True
                         session.put(f"login_{guard.name}", {"id": guard.id()})
             if isinstance(guard, TokenGuard):
                 bearer = request.bearer_token()
@@ -63,10 +66,10 @@ class StartAuth(Middleware):
                 if token:
                     # Soft-fail: missing schema / provider errors must not 500 public routes
                     # that happen to send Authorization (M2 demo Bearer on /api/items/…).
-                    await _safe_resolve(lambda: guard.set_user_from_request_token(token))
-            if guard._via_request is not None and guard.guest():  # noqa: SLF001
+                    await _safe_resolve(lambda g=guard, t=token: g.set_user_from_request_token(t))
+            if guard._via_request is not None and guard.guest():
                 try:
-                    resolved = guard._via_request(request)  # noqa: SLF001
+                    resolved = guard._via_request(request)
                     if hasattr(resolved, "__await__"):
                         resolved = await resolved  # type: ignore[misc]
                     if resolved is not None:  # pragma: no branch
@@ -74,7 +77,7 @@ class StartAuth(Middleware):
                 except Exception:
                     pass
 
-        request._auth = manager  # noqa: SLF001
+        request._auth = manager
         token = set_auth(manager)
         try:
             response = await call_next(request)
@@ -157,7 +160,7 @@ class RequirePassword(Middleware):
             session = request.session
         except RuntimeError:
             if _wants_json(request):
-                raise UnauthorizedHttpException(__("auth.password"))
+                raise UnauthorizedHttpException(__("auth.password")) from None
             return redirect("/confirm-password")
 
         confirmed_at = session.get(_PASSWORD_CONFIRMED_AT)

@@ -37,8 +37,7 @@ def rename_column_sql(table: str, old: str, new: str, dialect: Any) -> str:
     if name == "mssql":
         return f"EXEC sp_rename '{table}.{old}', '{new}', 'COLUMN'"
     return (
-        f"ALTER TABLE {qt} RENAME COLUMN {quote_ident(dialect, old)} "
-        f"TO {quote_ident(dialect, new)}"
+        f"ALTER TABLE {qt} RENAME COLUMN {quote_ident(dialect, old)} TO {quote_ident(dialect, new)}"
     )
 
 
@@ -75,17 +74,13 @@ def build_async_url(config: dict[str, Any]) -> str:
         query = urlencode(
             {
                 "driver": odbc,
-                "TrustServerCertificate": str(
-                    config.get("trust_server_certificate", "yes")
-                ),
+                "TrustServerCertificate": str(config.get("trust_server_certificate", "yes")),
             }
         )
         return f"mssql+aioodbc://{auth}{hostname}/{database}?{query}"
 
     if driver == "oracle":
-        service = str(
-            config.get("service_name") or config.get("sid") or database or "ORCL"
-        )
+        service = str(config.get("service_name") or config.get("sid") or database or "ORCL")
         query = urlencode({"service_name": service})
         return f"oracle+oracledb_async://{auth}{hostname}/?{query}"
 

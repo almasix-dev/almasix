@@ -59,17 +59,15 @@ async def test_two_arg_never_guesses_operator(memory_db) -> None:
 async def test_or_where_and_nested_groups(memory_db) -> None:
     await _items(memory_db)
     found = await (
-        Item.query()
-        .where("name", "=", "alpha")
-        .or_where("name", "gamma")
-        .order_by("name")
-        .get()
+        Item.query().where("name", "=", "alpha").or_where("name", "gamma").order_by("name").get()
     )
     assert [item.name for item in found] == ["alpha", "gamma"]
 
-    nested = await Item.query().where(
-        lambda query: query.where("votes", ">=", 5).where("name", "!=", "gamma")
-    ).first()
+    nested = (
+        await Item.query()
+        .where(lambda query: query.where("votes", ">=", 5).where("name", "!=", "gamma"))
+        .first()
+    )
     assert nested is not None and nested.name == "beta"
 
 

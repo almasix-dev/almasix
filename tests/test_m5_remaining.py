@@ -57,9 +57,11 @@ async def test_remaining_relation_and_builder_contracts(memory_db) -> None:
     await Memo.query().has("author").get()
     await Memo.query().with_count("author").get()
     await Memo.query().where_has("author").get()
-    loaded = await Person.query().with_(
-        {"badges": None, "comments": None, "portrait": None, "tags": None}
-    ).get()
+    loaded = (
+        await Person.query()
+        .with_({"badges": None, "comments": None, "portrait": None, "tags": None})
+        .get()
+    )
     assert loaded[0].relation_loaded("badges")
     await Nation.query().has("memos").with_("memos").with_count("memos").get()
     await Person.query().has("notes", "=", 1).get()
@@ -246,7 +248,9 @@ def test_cli_error_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
     assert made.exit_code == 1
     model = runner.invoke(smith_app, ["make:model", "Widget"], catch_exceptions=False)
     assert model.exit_code == 0
-    with patch("almasix.console.commands.runtime.find_available_port", side_effect=NoFreePortError("full")):
+    with patch(
+        "almasix.console.commands.runtime.find_available_port", side_effect=NoFreePortError("full")
+    ):
         serve = runner.invoke(smith_app, ["serve", "--app", "x:y"], catch_exceptions=False)
         assert serve.exit_code == 1
     with pytest.raises(ValueError):

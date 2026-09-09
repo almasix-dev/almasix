@@ -143,11 +143,7 @@ class Arr:
             else:
                 iterable = items
             for item in iterable:
-                if (
-                    isinstance(item, Sequence)
-                    and not isinstance(item, (str, bytes))
-                    and level > 0
-                ):
+                if isinstance(item, Sequence) and not isinstance(item, (str, bytes)) and level > 0:
                     walk(item, level - 1)
                 elif isinstance(item, Mapping) and level > 0:
                     walk(item, level - 1)  # pragma: no branch
@@ -263,9 +259,7 @@ class Arr:
         key: str | Callable[[Any], Any] | None = None,
     ) -> list[Any] | dict[Any, Any]:
         if key is None:
-            return [
-                value(item) if callable(value) else data_get(item, value) for item in array
-            ]
+            return [value(item) if callable(value) else data_get(item, value) for item in array]
         results: dict[Any, Any] = {}
         for item in array:
             item_key = key(item) if callable(key) else data_get(item, key)
@@ -470,6 +464,8 @@ Arr.isList = Arr.is_list  # type: ignore[attr-defined]
 Arr.keyBy = Arr.key_by  # type: ignore[attr-defined]
 Arr.mapSpread = Arr.map_spread  # type: ignore[attr-defined]
 Arr.mapWithKeys = Arr.map_with_keys  # type: ignore[attr-defined]
+
+
 def _typed(array: Any, key: str | None, expected: type | tuple[type, ...], label: str) -> Any:
     """``Arr.get`` with a type assertion, for reading configuration safely."""
     value = data_get(array, key)

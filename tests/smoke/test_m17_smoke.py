@@ -34,9 +34,9 @@ def test_m17_scaffold_ships_previous_keys(tmp_path: Path) -> None:
     root = scaffold_app("m17_enc", destination=tmp_path / "m17_enc")
     app_cfg = (root / "config" / "app.py").read_text(encoding="utf-8")
     assert "previous_keys" in app_cfg
-    assert "APP_PREVIOUS_KEYS" in app_cfg or "APP_PREVIOUS_KEYS" in (
-        root / ".env"
-    ).read_text(encoding="utf-8")
+    assert "APP_PREVIOUS_KEYS" in app_cfg or "APP_PREVIOUS_KEYS" in (root / ".env").read_text(
+        encoding="utf-8"
+    )
     env = (root / ".env").read_text(encoding="utf-8")
     assert "APP_KEY=" in env
     assert "APP_PREVIOUS_KEYS" in env

@@ -8,11 +8,10 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from almasix.exceptions import Handler, publish_errors
+from almasix.exceptions import publish_errors
 from almasix.exceptions.publish import ErrorsPublishError
 from almasix.framework import Application
 from almasix.http import Controller, Middleware, NotFoundHttpException, Request, Response, html
-from almasix.log import log
 from almasix.routing import Route, set_router
 from tests.support import purge_generated_app_modules
 
@@ -87,7 +86,7 @@ def _boot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, debug: bool) -> Ap
     with Route.group(prefix="/api", middleware=["api"]):
         Route.get("/boom", [ApiController, "boom"])
         Route.get("/missing", [ApiController, "missing"])
-    app._routes_loaded = True  # noqa: SLF001
+    app._routes_loaded = True
     return app
 
 
@@ -153,7 +152,7 @@ def test_web_debug_page_gated_on_app_debug(
     # APP_ENV alone must not keep the debug page when APP_DEBUG is false.
     app.config.set("app.env", "local")
     app.config.set("app.debug", False)
-    app._asgi = None  # noqa: SLF001 — rebuild ASGI with new config
+    app._asgi = None
     client = TestClient(app.asgi, raise_server_exceptions=False)
     prod = client.get("/boom")
     assert prod.status_code == 500
@@ -236,8 +235,8 @@ def test_unmatched_routes_use_path_polarity(
 
 
 def test_fallback_html_without_engine() -> None:
-    from almasix.prism.helpers import set_engine
     from almasix.exceptions.handler import Handler
+    from almasix.prism.helpers import set_engine
 
     set_engine(None)
     handler = Handler(None)
@@ -257,12 +256,12 @@ def test_fallback_html_without_engine() -> None:
 
 def test_mapping_and_publish_edges(tmp_path: Path) -> None:
     from almasix.exceptions.mapping import (
+        _load_type,
         default_message_for_status,
         polarity_from_path,
         register_status,
         resolved_status_map,
         status_for_exception,
-        _load_type,
     )
     from almasix.exceptions.publish import ErrorsPublishError, framework_views_root, publish_errors
 
@@ -290,9 +289,9 @@ def test_mapping_and_publish_edges(tmp_path: Path) -> None:
         "KEEP", encoding="utf-8"
     )
     publish_errors(tmp_path, bundle="default", force=False)
-    assert (
-        tmp_path / "resources" / "views" / "errors" / "404.prism.html"
-    ).read_text(encoding="utf-8") == "KEEP"
+    assert (tmp_path / "resources" / "views" / "errors" / "404.prism.html").read_text(
+        encoding="utf-8"
+    ) == "KEEP"
     assert framework_views_root("default").is_dir()
     with pytest.raises(ErrorsPublishError):
         framework_views_root("nope")
@@ -356,8 +355,8 @@ def test_provider_boot_without_engine(tmp_path: Path, monkeypatch: pytest.Monkey
 
 
 def test_remaining_m8_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from almasix.exceptions.handler import Handler
     from almasix.exceptions import mapping as mapping_mod
+    from almasix.exceptions.handler import Handler
     from almasix.exceptions.publish import publish_errors
     from almasix.log.helpers import LogWriter
     from almasix.log.manager import LogManager, set_log_manager
@@ -413,22 +412,6 @@ def test_remaining_m8_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     )
     # Call through default_message which tries __ then falls back
     from almasix.exceptions.mapping import default_message_for_status
-    import almasix.exceptions.mapping as m
-
-    real = m.__dict__.get("__")  # may not exist at module level
-
-    def fake_default(status: int) -> str:
-        try:
-            raise RuntimeError("force fallback")
-        except Exception:
-            fallbacks = {
-                404: "Not Found",
-                419: "Page Expired",
-                429: "Too Many Requests",
-                500: "Server Error",
-                503: "Service Unavailable",
-            }
-            return fallbacks.get(status, "Server Error")
 
     # Directly exercise fallbacks by patching the import inside the function
     monkeypatch.setattr(
@@ -451,7 +434,7 @@ def test_remaining_m8_branches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
             "missing-child": {"driver": "null"},
         },
     )
-    mgr = LogManager(app)
+    LogManager(app)  # build the stack channel so the next config swap has a baseline
     # null has NullHandler — stack should copy it; for empty handlers path use
     # a child that clears handlers
     app.config.set(

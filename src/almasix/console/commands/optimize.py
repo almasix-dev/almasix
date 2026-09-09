@@ -34,7 +34,9 @@ class CacheClearCommand(Command):
 
 
 class CacheForgetCommand(Command):
-    signature = "cache:forget {key : The cache key to forget} {--store= : The store to forget it from}"
+    signature = (
+        "cache:forget {key : The cache key to forget} {--store= : The store to forget it from}"
+    )
     description = "Remove one item from the cache"
 
     def handle(self) -> int:
@@ -94,7 +96,9 @@ class ViewCacheCommand(ViewCommand):
             self.error("A template failed to compile. Nothing was cached.")
             return self.FAILURE
         self.success(f"{compiled} template(s) compiled.")
-        self.comment("Compiled views live in the process, so this warms this run and checks the rest.")
+        self.comment(
+            "Compiled views live in the process, so this warms this run and checks the rest."
+        )
         return self.SUCCESS
 
 

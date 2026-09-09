@@ -6,7 +6,7 @@ import asyncio
 import inspect
 import time
 from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 from typing import Any, TypeVar
 
 from almasix.support.arr import Arr
@@ -132,6 +132,7 @@ class Optional:
             return Optional(None)
         attr = getattr(obj, item, None)
         if callable(attr):
+
             def wrapper(*args: Any, **kwargs: Any) -> Any:
                 return attr(*args, **kwargs)
 
@@ -169,7 +170,9 @@ def throw_unless(condition: Any, exception: Any = RuntimeError, *args: Any, **kw
     throw_if(not condition, exception, *args, **kwargs)
 
 
-def abort_if(condition: Any, code: int = 404, message: str = "", headers: dict[str, str] | None = None) -> None:
+def abort_if(
+    condition: Any, code: int = 404, message: str = "", headers: dict[str, str] | None = None
+) -> None:
     if condition:
         abort(code, message, headers=headers)
 
@@ -202,7 +205,7 @@ def retry(
     for attempt in range(1, attempts + 1):
         try:
             return callback()
-        except BaseException as exc:  # noqa: BLE001
+        except BaseException as exc:
             last_exc = exc
             if when is not None and not when(exc):
                 raise
@@ -229,7 +232,7 @@ async def retry_async(
             if inspect.isawaitable(result):
                 return await result
             return result
-        except BaseException as exc:  # noqa: BLE001
+        except BaseException as exc:
             last_exc = exc
             if when is not None and not when(exc):
                 raise
@@ -257,7 +260,7 @@ def rescue(
     """Execute callback; on exception return rescue value (Laravel ``rescue``)."""
     try:
         return callback()
-    except BaseException as exc:  # noqa: BLE001
+    except BaseException as exc:
         if report:
             try:
                 report_exception(exc)
@@ -324,7 +327,7 @@ _test_now: datetime | None = None
 
 def set_test_now(moment: datetime | None) -> None:
     """Freeze what ``now()`` answers, or thaw it again with ``None``."""
-    global _test_now  # noqa: PLW0603 — one clock, and only a test moves it
+    global _test_now
     _test_now = moment
 
 
@@ -334,9 +337,9 @@ def get_test_now() -> datetime | None:
 
 def now(tz: timezone | None = None) -> datetime:
     if _test_now is not None:
-        frozen = _test_now if _test_now.tzinfo else _test_now.replace(tzinfo=timezone.utc)
-        return frozen.astimezone(tz or timezone.utc)
-    return datetime.now(tz or timezone.utc)
+        frozen = _test_now if _test_now.tzinfo else _test_now.replace(tzinfo=UTC)
+        return frozen.astimezone(tz or UTC)
+    return datetime.now(tz or UTC)
 
 
 def today(tz: timezone | None = None) -> date:

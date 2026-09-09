@@ -11,7 +11,9 @@ from almasix.session.signing import sign_payload, unsign_payload
 class SessionHandler(Protocol):
     """Load / persist session bags for ``StartSession``."""
 
-    async def read(self, request: Any, *, key: str, cookie_name: str, lifetime: int) -> tuple[str | None, dict[str, Any] | None]:
+    async def read(
+        self, request: Any, *, key: str, cookie_name: str, lifetime: int
+    ) -> tuple[str | None, dict[str, Any] | None]:
         """Return ``(session_id, data)`` — data may be ``None`` for a new session."""
         ...  # pragma: no cover
 
@@ -32,8 +34,7 @@ class SessionHandler(Protocol):
         """Persist and set cookies. Return the session id used."""
         ...  # pragma: no cover
 
-    async def destroy(self, session_id: str | None) -> None:
-        ...  # pragma: no cover
+    async def destroy(self, session_id: str | None) -> None: ...  # pragma: no cover
 
 
 class CookieSessionHandler:
@@ -86,7 +87,9 @@ class CookieSessionHandler:
 class RedisSessionHandler:
     """Cookie holds a signed session id; payload lives in Redis."""
 
-    def __init__(self, *, connection: str | None = None, key_prefix: str = "almasix_session:") -> None:
+    def __init__(
+        self, *, connection: str | None = None, key_prefix: str = "almasix_session:"
+    ) -> None:
         self.connection = connection
         self.key_prefix = key_prefix
 
@@ -119,7 +122,9 @@ class RedisSessionHandler:
         if payload is None:
             return session_id, None
         try:
-            text = payload.decode("utf-8") if isinstance(payload, (bytes, bytearray)) else str(payload)
+            text = (
+                payload.decode("utf-8") if isinstance(payload, (bytes, bytearray)) else str(payload)
+            )
             data = json.loads(text)
         except Exception:
             return session_id, None

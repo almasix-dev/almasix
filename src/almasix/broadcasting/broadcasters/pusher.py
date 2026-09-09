@@ -34,7 +34,9 @@ class PusherBroadcaster(Broadcaster):
     ) -> None:
         names = list(channels)
         for start in range(0, len(names), MAX_CHANNELS_PER_REQUEST):
-            await self._post(names[start : start + MAX_CHANNELS_PER_REQUEST], event, payload, socket)
+            await self._post(
+                names[start : start + MAX_CHANNELS_PER_REQUEST], event, payload, socket
+            )
 
     async def _post(
         self,
@@ -57,9 +59,13 @@ class PusherBroadcaster(Broadcaster):
         path = f"/apps/{self.app_id}/events"
         url = f"{self.base_url}{path}?{self._query(path, encoded)}"
 
-        response = await Http.pending().with_headers({"Content-Type": "application/json"}).apost(
-            url,
-            body,
+        response = (
+            await Http.pending()
+            .with_headers({"Content-Type": "application/json"})
+            .apost(
+                url,
+                body,
+            )
         )
         if not response.successful():
             from almasix.broadcasting.exceptions import BroadcastException

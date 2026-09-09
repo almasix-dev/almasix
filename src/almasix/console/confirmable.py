@@ -20,7 +20,7 @@ def current_environment(default: str = "production") -> str:
 
     try:
         return str(config("app.env", default) or default)
-    except Exception:  # noqa: BLE001 - config is absent outside a booted app
+    except Exception:
         return default
 
 
@@ -57,7 +57,5 @@ class Confirmable:
         # so a missing config is not read as one here.
         if self.option("force") or current_environment("local") != "production":
             return True
-        self.error(
-            "Application is in production. Re-run with --force if you really mean it."
-        )
+        self.error("Application is in production. Re-run with --force if you really mean it.")
         return False

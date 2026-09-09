@@ -125,9 +125,7 @@ def test_prune_command_prunes_every_prunable_model(
     assert count(Untouched) == 1
 
 
-def test_prune_command_may_target_one_model(
-    tmp_path: Path, database, app_models, capsys
-) -> None:
+def test_prune_command_may_target_one_model(tmp_path: Path, database, app_models, capsys) -> None:
     code = run(tmp_path, ["--model=Flight"])
     output = capsys.readouterr().out
 
@@ -144,9 +142,7 @@ def test_prune_command_accepts_a_dotted_class_path(
     assert "Flight: 2 model(s) pruned." in capsys.readouterr().out
 
 
-def test_prune_command_may_exclude_models(
-    tmp_path: Path, database, app_models, capsys
-) -> None:
+def test_prune_command_may_exclude_models(tmp_path: Path, database, app_models, capsys) -> None:
     code = run(tmp_path, ["--except=Bulk"])
     output = capsys.readouterr().out
 
@@ -155,9 +151,7 @@ def test_prune_command_may_exclude_models(
     assert "Bulk" not in output
 
 
-def test_prune_command_pretends(
-    tmp_path: Path, database, app_models, capsys
-) -> None:
+def test_prune_command_pretends(tmp_path: Path, database, app_models, capsys) -> None:
     code = run(tmp_path, ["--pretend", "--model=Flight"])
     output = capsys.readouterr().out
 
@@ -166,24 +160,18 @@ def test_prune_command_pretends(
     assert count(Flight) == 3
 
 
-def test_prune_command_honors_the_chunk_size(
-    tmp_path: Path, database, app_models, capsys
-) -> None:
+def test_prune_command_honors_the_chunk_size(tmp_path: Path, database, app_models, capsys) -> None:
     run(tmp_path, ["--model=Flight", "--chunk=1"])
     assert "Flight: 2 model(s) pruned." in capsys.readouterr().out
 
 
-def test_model_and_except_cannot_be_combined(
-    tmp_path: Path, database, app_models, capsys
-) -> None:
+def test_model_and_except_cannot_be_combined(tmp_path: Path, database, app_models, capsys) -> None:
     code = run(tmp_path, ["--model=Flight", "--except=Bulk"])
     assert code == 2
     assert "cannot be combined" in capsys.readouterr().err
 
 
-def test_unknown_models_warn(
-    tmp_path: Path, database, app_models, capsys
-) -> None:
+def test_unknown_models_warn(tmp_path: Path, database, app_models, capsys) -> None:
     code = run(tmp_path, ["--model=Nope"])
     output = capsys.readouterr().out
 
@@ -192,9 +180,7 @@ def test_unknown_models_warn(
     assert "No prunable models found." in output
 
 
-def test_prune_command_survives_an_app_without_models(
-    tmp_path: Path, monkeypatch, capsys
-) -> None:
+def test_prune_command_survives_an_app_without_models(tmp_path: Path, monkeypatch, capsys) -> None:
     """An app with no `app/models` package at all."""
     from almasix.console.commands import model_prune
 
@@ -208,9 +194,7 @@ def test_prune_command_survives_an_app_without_models(
     assert "No prunable models found." in capsys.readouterr().out
 
 
-def test_prune_command_walks_submodules(
-    tmp_path: Path, database, capsys, monkeypatch
-) -> None:
+def test_prune_command_walks_submodules(tmp_path: Path, database, capsys, monkeypatch) -> None:
     """A real `app/models/` directory, imported module by module."""
     models_dir = tmp_path / "app" / "models"
     models_dir.mkdir(parents=True)

@@ -37,8 +37,8 @@ class StartSession(Middleware):
         session = Session(data)
         if data is not None:
             session.age_flash()
-        request._session = session  # noqa: SLF001
-        request._session_id = session_id  # noqa: SLF001
+        request._session = session
+        request._session_id = session_id
         token = set_session(session)
         try:
             response = await call_next(request)

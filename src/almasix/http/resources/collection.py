@@ -11,9 +11,7 @@ from almasix.http.resources.resource import JsonResource
 
 def is_paginator(candidate: Any) -> bool:
     """Duck-type a paginator so this layer need not import the ORM."""
-    return all(
-        hasattr(candidate, attribute) for attribute in ("items", "current_page", "per_page")
-    )
+    return all(hasattr(candidate, attribute) for attribute in ("items", "current_page", "per_page"))
 
 
 class ResourceCollection(JsonResource):

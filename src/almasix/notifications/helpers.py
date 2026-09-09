@@ -11,7 +11,7 @@ _sender: NotificationSender | None = None
 
 def set_sender(sender: NotificationSender | None) -> None:
     """Swap the sender every notification goes through (`Notification::fake()`)."""
-    global _sender  # noqa: PLW0603 — one sender, like every other façade here
+    global _sender
     _sender = sender
 
 

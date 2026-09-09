@@ -116,7 +116,7 @@ class FileLoader:
         sys.modules[module_name] = module
         try:
             spec.loader.exec_module(module)
-        except Exception:  # noqa: BLE001 — lang files are user-authored
+        except Exception:
             return {}
         data = getattr(module, "translations", None)
         if data is None:
@@ -134,11 +134,7 @@ class FileLoader:
     @staticmethod
     def _merge(target: dict[str, Any], source: dict[str, Any]) -> None:
         for key, value in source.items():
-            if (
-                key in target
-                and isinstance(target[key], dict)
-                and isinstance(value, dict)
-            ):
+            if key in target and isinstance(target[key], dict) and isinstance(value, dict):
                 FileLoader._merge(target[key], value)
             else:
                 target[key] = value

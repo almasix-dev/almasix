@@ -153,7 +153,7 @@ def test_data_helpers_and_misc() -> None:
     assert once(lambda: 42) == 42
     assert once(lambda: 99) == 99  # different function object — not same cache key intent
     # same callback identity
-    cb = lambda: "cached"  # noqa: E731
+    cb = lambda: "cached"
     assert once(cb) == "cached"
     assert once(cb) == "cached"
 

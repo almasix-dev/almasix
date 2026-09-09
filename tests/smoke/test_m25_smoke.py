@@ -16,6 +16,7 @@ pytestmark = [pytest.mark.smoke]
 
 PROGRESS = Path(__file__).resolve().parents[2] / "examples" / "progress"
 ROOT = Path(__file__).resolve().parents[2]
+DOCS = ROOT / "website" / "src" / "content" / "docs" / "articulate" / "documents"
 runner = CliRunner()
 
 
@@ -41,15 +42,66 @@ def progress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     return TestClient(module.asgi)
 
 
-def test_m25_docs_and_sidebar_exist() -> None:
-    page = ROOT / "website" / "src" / "content" / "docs" / "articulate" / "documents.md"
-    assert page.is_file()
+def test_m25_docs_are_broken_down_and_in_the_sidebar() -> None:
+    for name in (
+        "index.md",
+        "getting-started.md",
+        "querying.md",
+        "relationships.md",
+        "indexes.md",
+        "aggregations.md",
+        "compared.md",
+    ):
+        assert (DOCS / name).is_file(), name
+
     sidebar = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
-    assert "articulate/documents" in sidebar
-    getting_started = (
-        ROOT / "website" / "src" / "content" / "docs" / "database" / "index.md"
-    ).read_text(encoding="utf-8")
+    for slug in (
+        "articulate/documents",
+        "articulate/documents/getting-started",
+        "articulate/documents/querying",
+        "articulate/documents/relationships",
+        "articulate/documents/indexes",
+        "articulate/documents/aggregations",
+        "articulate/documents/compared",
+        "database/documents",
+    ):
+        assert slug in sidebar, slug
+
+    database = ROOT / "website" / "src" / "content" / "docs" / "database"
+    assert (database / "documents.md").is_file()
+    getting_started = (database / "index.md").read_text(encoding="utf-8")
+    assert "/database/documents/" in getting_started
     assert "/articulate/documents/" in getting_started
+    engines = (database / "engines.md").read_text(encoding="utf-8")
+    assert "### Document stores" in engines
+
+
+def test_m25_compared_page_is_an_honest_l13_map() -> None:
+    compared = (DOCS / "compared.md").read_text(encoding="utf-8")
+    assert "laravel.com/docs/13.x/mongodb" in compared
+    for heading in (
+        "## Eloquent-on-collections",
+        "## Laravel feature list (package integrations)",
+        "## Deliberate deviations",
+    ):
+        assert heading in compared, heading
+    for phrase in (
+        "**Shipped**",
+        "**Partial**",
+        "**Missing**",
+        "MongoDB cache driver",
+        "GridFS",
+        "Scout",
+        "vectorSearch",
+        "Transactions",
+        "memory` is a real store",
+    ):
+        assert phrase in compared, phrase
+
+    # The withdrawn claim must not return.
+    index = (DOCS / "index.md").read_text(encoding="utf-8")
+    assert "Laravel has no first-party NoSQL" not in index
+    assert "Laravel 13 documents MongoDB" in index
 
 
 def test_m25_the_mongodb_extra_is_declared() -> None:
@@ -120,6 +172,7 @@ def test_m25_progress_documents_command(progress_cwd: Path) -> None:
     assert "store -> memory [documents], collection activities" in output
     assert "embed -> Nairobi, KE" in output
     assert "refusal -> join() is SQL-only" in output
+    assert "parity -> Eloquent-on-collections shipped" in output
 
 
 def test_m25_route_returns_a_document_tour(progress_client: TestClient) -> None:
@@ -142,3 +195,4 @@ def test_m25_board_marks_documents_complete(progress_cwd: Path) -> None:
     m25 = next(m for m in _milestones() if m["id"] == "M25")
     assert m25["status"] == "complete"
     assert any("progress:documents" in proof for proof in m25["proof"])
+    assert any("L13 Mongo" in proof or "compared" in proof for proof in m25["proof"])

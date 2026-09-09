@@ -41,7 +41,7 @@ Jobs without `ShouldQueue` (and without `queue = True`) run synchronously. Use `
 },
 ```
 
-```env
+```ini
 QUEUE_CONNECTION=redis
 ```
 
@@ -54,7 +54,7 @@ python smith queue:failed
 python smith queue:retry {id}
 ```
 
-Failed jobs call `job.failed(exc)` and report through the M8 exception Handler when available.
+Failed jobs call `job.failed(exc)` and report through the exception Handler when available.
 
 ## Related
 

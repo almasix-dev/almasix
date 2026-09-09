@@ -38,6 +38,4 @@ def find_available_port(
         if is_port_free(host, port):
             return port
 
-    raise NoFreePortError(
-        f"No free port found on {host} between {start} and {end}."
-    )
+    raise NoFreePortError(f"No free port found on {host} between {start} and {end}.")

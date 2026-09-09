@@ -41,7 +41,7 @@ class DbCommand(Command):
 
         try:
             definition = manager._definition(name)
-        except Exception as exc:  # noqa: BLE001 - a misnamed connection is the user's to fix
+        except Exception as exc:
             self.error(str(exc))
             return self.FAILURE
 
@@ -149,7 +149,7 @@ class DbWipeCommand(Confirmable, Command):
 
         try:
             dropped = asyncio.run(self.wipe(connection))
-        except Exception as exc:  # noqa: BLE001 - the database is the user's to fix
+        except Exception as exc:
             self.error(str(exc))
             return self.FAILURE
 
@@ -163,7 +163,9 @@ class DbWipeCommand(Confirmable, Command):
 
     def refuse_unsupported(self) -> int | None:
         """Stop before dropping anything when asked for something we cannot do."""
-        asked = [flag for flag in ("drop-views", "drop-types") if self.option(flag.replace("-", "_"))]
+        asked = [
+            flag for flag in ("drop-views", "drop-types") if self.option(flag.replace("-", "_"))
+        ]
         if not asked:
             return None
         flags = " and ".join(f"--{flag}" for flag in asked)

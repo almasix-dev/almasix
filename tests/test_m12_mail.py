@@ -10,8 +10,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from almasix.prism.engine import Engine
-from almasix.prism.helpers import set_engine
 from almasix.filesystem.manager import Storage, StorageManager
 from almasix.framework import Application
 from almasix.mail import (
@@ -20,8 +18,8 @@ from almasix.mail import (
     Content,
     Envelope,
     Mail,
-    MailAssertions,
     Mailable,
+    MailAssertions,
     ShouldQueue,
 )
 from almasix.mail.helpers import default_mail_config, mail
@@ -30,6 +28,8 @@ from almasix.mail.markdown import render_content
 from almasix.mail.provider import MailServiceProvider
 from almasix.mail.transports.log import LogTransport
 from almasix.mail.transports.smtp import SmtpTransport
+from almasix.prism.engine import Engine
+from almasix.prism.helpers import set_engine
 
 
 @pytest.fixture

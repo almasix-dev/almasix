@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import sys
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
-import sys
 
 import pytest
 import typer
@@ -90,7 +90,10 @@ def test_parse_signature_errors_and_optional() -> None:
 def test_command_helpers_and_unimplemented(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ALMASIX_PROMPTS_INTERACTIVE", "0")
     cmd = FullCommand()
-    assert cmd.run(arguments={"name": "n", "tags": ["a"]}, options={"queue": "high", "force": True}) == 0
+    assert (
+        cmd.run(arguments={"name": "n", "tags": ["a"]}, options={"queue": "high", "force": True})
+        == 0
+    )
     with pytest.raises(NotImplementedError):
         Command().handle()
     assert NoSigCommand.name() == "NoSigCommand"
@@ -113,7 +116,8 @@ def test_output_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
     out.table(["h"], [["r"], []])
     out.table(["a"], [["only", "extra"]])  # extra cell ignored
     assert out.confirm("ok?", default=True) is True
-    assert any("h" in e for e in echoes)
+    assert any("✔" in e and "s" in e for e in echoes)
+    assert any("✘" in e and "e" in e for e in echoes)
 
 
 def test_parse_argv_flags_and_required() -> None:
@@ -355,7 +359,9 @@ def test_start_loupe_ipython_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     app.load_configuration()
     called: list[bool] = []
 
-    with patch("almasix.console.repl._start_ipython", side_effect=lambda ns: called.append(True) or 0):
+    with patch(
+        "almasix.console.repl._start_ipython", side_effect=lambda ns: called.append(True) or 0
+    ):
         assert start_loupe(app) == 0
     assert called
 
@@ -438,7 +444,7 @@ def test_start_ptpython_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
         def use_code_colorscheme(self, name):
             configured.append(True)
 
-    def fake_embed(*, globals, locals, configure, title):  # noqa: A002
+    def fake_embed(*, globals, locals, configure, title):
         configure(FakeRepl())
         embeds.append(globals)
 

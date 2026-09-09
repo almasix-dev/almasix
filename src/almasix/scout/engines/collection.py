@@ -55,9 +55,7 @@ class CollectionEngine(Engine):
         phrase = builder.query.lower()
 
         found = [
-            model
-            for model in rows
-            if model.should_be_searchable() and _contains(model, phrase)
+            model for model in rows if model.should_be_searchable() and _contains(model, phrase)
         ]
         found = [model for model in found if _passes_soft_delete(builder, model)]
         return _ordered(builder, found)
@@ -85,7 +83,9 @@ def _contains(model: Any, phrase: str) -> bool:
     for value in searchable_payload(model).values():
         if value is None:
             continue
-        text = value if isinstance(value, (str, int, float, bool)) else json.dumps(value, default=str)
+        text = (
+            value if isinstance(value, (str, int, float, bool)) else json.dumps(value, default=str)
+        )
         if phrase in str(text).lower():
             return True
     return False

@@ -13,7 +13,6 @@ from almasix.http import (
     BadRequestHttpException,
     HttpException,
     NotFoundHttpException,
-    Request,
     html,
     json,
     make_response,

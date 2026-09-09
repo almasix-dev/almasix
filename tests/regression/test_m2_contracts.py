@@ -78,8 +78,9 @@ def test_scaffolded_app_serves_via_route_dsl(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from tests.support import purge_generated_app_modules
     import importlib
+
+    from tests.support import purge_generated_app_modules
 
     root = scaffold_app("m2_serve", destination=tmp_path / "m2_serve")
     purge_generated_app_modules()

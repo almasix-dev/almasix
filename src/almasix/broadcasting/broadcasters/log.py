@@ -37,5 +37,5 @@ class LogBroadcaster(Broadcaster):
             from almasix.log import log
 
             log().info(line)
-        except Exception:  # noqa: BLE001 — a missing logger must not lose the broadcast
+        except Exception:
             print(f"[broadcast] {line}")

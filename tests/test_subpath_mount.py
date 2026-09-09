@@ -45,7 +45,7 @@ def test_kernel_mounts_app_at_base_path(tmp_path: Path) -> None:
     app.router.routes.clear()
     Route.get("/", [HomeController, "index"])
     Route.get("/api/health", [HomeController, "index"])
-    app.http_kernel._asgi = None  # noqa: SLF001
+    app.http_kernel._asgi = None
 
     client = TestClient(app.asgi)
     root = client.get("/", follow_redirects=False)

@@ -173,18 +173,14 @@ def find_stack(name: str) -> Stack:
     for stack in STACKS:
         if stack.name == name:
             return stack
-    raise ScaffoldError(
-        f"Unknown stack {name!r}. Choose one of: {', '.join(STACK_NAMES)}."
-    )
+    raise ScaffoldError(f"Unknown stack {name!r}. Choose one of: {', '.join(STACK_NAMES)}.")
 
 
 def find_database(name: str) -> Database:
     for database in DATABASES:
         if database.name == name:
             return database
-    raise ScaffoldError(
-        f"Unknown database {name!r}. Choose one of: {', '.join(DATABASE_NAMES)}."
-    )
+    raise ScaffoldError(f"Unknown database {name!r}. Choose one of: {', '.join(DATABASE_NAMES)}.")
 
 
 def database_env(database: Database, *, app_name: str) -> str:

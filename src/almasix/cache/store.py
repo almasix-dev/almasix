@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 
@@ -14,8 +14,8 @@ def normalize_ttl(seconds: Any) -> int | None:
     if isinstance(seconds, timedelta):
         return max(0, int(seconds.total_seconds()))
     if isinstance(seconds, datetime):
-        now = datetime.now(timezone.utc)
-        target = seconds if seconds.tzinfo else seconds.replace(tzinfo=timezone.utc)
+        now = datetime.now(UTC)
+        target = seconds if seconds.tzinfo else seconds.replace(tzinfo=UTC)
         return max(0, int((target - now).total_seconds()))
     return max(0, int(seconds))
 
@@ -152,8 +152,7 @@ class Repository:
     def tags(self, *names: str) -> TaggedCache:
         if not getattr(self.store, "supports_tags", False):
             raise RuntimeError(
-                "Cache tags are not supported by this store. "
-                "Use the array or redis store."
+                "Cache tags are not supported by this store. Use the array or redis store."
             )
         return TaggedCache(self, list(names))
 

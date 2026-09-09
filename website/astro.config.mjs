@@ -37,6 +37,10 @@ export default defineConfig({
 				baseUrl: 'https://github.com/almasix-dev/almasix/edit/main/website/',
 			},
 			customCss: ['./src/styles/custom.css'],
+			components: {
+				Header: './src/components/Header.astro',
+				PageFrame: './src/components/PageFrame.astro',
+			},
 			expressiveCode: {
 				themes: ['one-dark-pro'],
 				useStarlightDarkModeSwitch: false,
@@ -83,11 +87,22 @@ export default defineConfig({
 			],
 			sidebar: [
 				{
+					label: 'Prologue',
+					collapsed: false,
+					items: [
+						{ label: 'How to read these docs', slug: 'prologue/introduction' },
+						{ label: 'Release Notes', slug: 'prologue/release-notes' },
+						{ label: 'Upgrade Guide', slug: 'prologue/upgrade' },
+						{ label: 'Documentation Versions', slug: 'prologue/versions' },
+					],
+				},
+				{
 					label: 'Getting Started',
 					collapsed: true,
 					items: [
 						{ label: 'Installation', slug: 'installation' },
 						{ label: 'Directory Structure', slug: 'structure' },
+						{ label: 'Deployment', slug: 'deployment' },
 					],
 				},
 				{
@@ -95,21 +110,24 @@ export default defineConfig({
 					collapsed: true,
 					items: [
 						{ label: 'Routing', slug: 'routing' },
-						{ label: 'Middleware', slug: 'middleware' },
-						{ label: 'CSRF Protection', slug: 'csrf' },
-						{ label: 'Security headers & CORS', slug: 'security' },
-						{ label: 'Rate Limiting', slug: 'rate-limiting' },
 						{ label: 'Controllers', slug: 'controllers' },
 						{ label: 'Requests', slug: 'requests' },
 						{ label: 'Responses', slug: 'responses' },
 						{ label: 'API Resources', slug: 'api-resources' },
+						{ label: 'Middleware', slug: 'middleware' },
+						{ label: 'CSRF Protection', slug: 'csrf' },
+						{ label: 'Validation', slug: 'validation' },
 						{ label: 'Views (Prism)', slug: 'views' },
 						{ label: 'Asset Bundling', slug: 'asset-bundling' },
 						{ label: 'URL Generation', slug: 'urls' },
 						{ label: 'Session', slug: 'session' },
-						{ label: 'Validation', slug: 'validation' },
+						{ label: 'Authentication', slug: 'authentication' },
+						{ label: 'Hashing', slug: 'hashing' },
+						{ label: 'Passwords', slug: 'passwords' },
 						{ label: 'Error Handling', slug: 'errors' },
 						{ label: 'Logging', slug: 'logging' },
+						{ label: 'Security headers & CORS', slug: 'security' },
+						{ label: 'Rate Limiting', slug: 'rate-limiting' },
 					],
 				},
 				{
@@ -140,10 +158,7 @@ export default defineConfig({
 					label: 'Security',
 					collapsed: true,
 					items: [
-						{ label: 'Authentication', slug: 'authentication' },
 						{ label: 'Authorization', slug: 'authorization' },
-						{ label: 'Hashing', slug: 'hashing' },
-						{ label: 'Passwords', slug: 'passwords' },
 						{ label: 'Encryption', slug: 'encryption' },
 					],
 				},
@@ -152,6 +167,8 @@ export default defineConfig({
 					collapsed: true,
 					items: [
 						{ label: 'Database: Getting Started', slug: 'database' },
+						{ label: 'Engine support', slug: 'database/engines' },
+						{ label: 'Document stores (NoSQL)', slug: 'database/documents' },
 						{ label: 'Query Builder', slug: 'database/queries' },
 						{ label: 'Pagination', slug: 'database/pagination' },
 						{ label: 'Migrations', slug: 'database/migrations' },
@@ -169,7 +186,19 @@ export default defineConfig({
 						{ label: 'Serialization', slug: 'articulate/serialization' },
 						{ label: 'Collections', slug: 'articulate/collections' },
 						{ label: 'Soft Deletes & Events', slug: 'articulate/events' },
-						{ label: 'Documents (NoSQL)', slug: 'articulate/documents' },
+						{
+							label: 'Documents (NoSQL)',
+							collapsed: true,
+							items: [
+								{ label: 'Introduction', slug: 'articulate/documents' },
+								{ label: 'Getting Started', slug: 'articulate/documents/getting-started' },
+								{ label: 'Querying', slug: 'articulate/documents/querying' },
+								{ label: 'Relationships & Embeds', slug: 'articulate/documents/relationships' },
+								{ label: 'Indexes', slug: 'articulate/documents/indexes' },
+								{ label: 'Aggregations', slug: 'articulate/documents/aggregations' },
+								{ label: 'Compared with Laravel', slug: 'articulate/documents/compared' },
+							],
+						},
 					],
 				},
 				{

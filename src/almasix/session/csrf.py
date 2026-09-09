@@ -35,7 +35,7 @@ class VerifyCsrfToken(Middleware):
             session.put(_SESSION_KEY, token)
 
         # Share with Prism ``@csrf`` / view composers.
-        request._csrf_token = token  # noqa: SLF001
+        request._csrf_token = token
 
         if request.method.upper() not in _SAFE and not self._tokens_match(request, token):
             raise TokenMismatchError()

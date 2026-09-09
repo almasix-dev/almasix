@@ -64,7 +64,7 @@ def test_callable_and_string_actions(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
     Route.get("/explode", explode)
 
-    app._routes_loaded = True  # noqa: SLF001
+    app._routes_loaded = True
     client = TestClient(app.asgi, raise_server_exceptions=False)
     assert client.get("/bare").json() == {"bare": "ok"}
     assert client.get("/ctrl").json() == {"echo": "1"}
@@ -91,16 +91,18 @@ def test_kernel_invalid_action_and_middleware() -> None:
     app = Application()
     kernel = HttpKernel(app, Router())
     with pytest.raises(TypeError, match="Unsupported route action"):
-        kernel._resolve_action(123)  # noqa: SLF001
+        kernel._resolve_action(123)
     with pytest.raises(ImportError, match="Invalid import path"):
-        kernel._resolve_middleware("missing", {})  # noqa: SLF001
+        kernel._resolve_middleware("missing", {})
     with pytest.raises(RuntimeError, match="Unknown middleware"):
-        kernel._resolve_middleware("weird", {"weird": 42})  # noqa: SLF001
+        kernel._resolve_middleware("weird", {"weird": 42})
     with pytest.raises(TypeError, match="Middleware subclass"):
-        kernel._resolve_middleware("bad", {"bad": dict})  # noqa: SLF001
+        kernel._resolve_middleware("bad", {"bad": dict})
 
 
-def test_kernel_asgi_cached_and_sync_handlers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_kernel_asgi_cached_and_sync_handlers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     purge_generated_app_modules()
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "app.py").write_text(
@@ -127,7 +129,7 @@ def test_kernel_asgi_cached_and_sync_handlers(tmp_path: Path, monkeypatch: pytes
     Route.get("/ctrl-list", [EchoController, "index"])
     Route.get("/ctrl-str", ["tests.test_m2_kernel_edges.EchoController", "index"])
 
-    app._routes_loaded = True  # noqa: SLF001
+    app._routes_loaded = True
     first = app.asgi
     second = app.asgi
     assert first is second
@@ -165,10 +167,10 @@ def test_request_json_and_form(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 
     Route.post("/json", echo_json)
     Route.post("/form", echo_form)
-    app._routes_loaded = True  # noqa: SLF001
+    app._routes_loaded = True
     client = TestClient(app.asgi)
     assert client.post("/json", json={"a": 1}).json() == {"json": {"a": 1}}
-    assert client.post("/json", content=b"not-json", headers={"content-type": "application/json"}).json() == {
-        "json": None
-    }
+    assert client.post(
+        "/json", content=b"not-json", headers={"content-type": "application/json"}
+    ).json() == {"json": None}
     assert client.post("/form", data={"name": "almasix"}).json() == {"name": "almasix"}

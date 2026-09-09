@@ -67,7 +67,7 @@ class Attribute:
     def __init__(
         self,
         get: Callable[..., Any] | None = None,
-        set: Callable[..., Any] | None = None,  # noqa: A002 - Laravel's argument name
+        set: Callable[..., Any] | None = None,
         *,
         cache: bool = False,
     ) -> None:
@@ -80,7 +80,7 @@ class Attribute:
     def make(
         cls,
         get: Callable[..., Any] | None = None,
-        set: Callable[..., Any] | None = None,  # noqa: A002 - Laravel's argument name
+        set: Callable[..., Any] | None = None,
         *,
         cache: bool = False,
     ) -> Attribute:

@@ -99,7 +99,7 @@ class PendingBroadcast:
         # down must not turn a missed broadcast into a traceback.
         try:
             self.send()
-        except Exception:  # noqa: BLE001 - nothing useful can be raised from __del__
+        except Exception:
             pass
 
 

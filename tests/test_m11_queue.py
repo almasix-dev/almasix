@@ -17,7 +17,6 @@ from almasix.queue.helpers import default_queue_config, set_dispatcher, set_mana
 from almasix.queue.manager import QueueManager
 from almasix.queue.provider import QueueServiceProvider
 from almasix.queue.worker import Worker
-from tests.orm_support import memory_db
 
 
 class CounterJob(Job):
@@ -323,7 +322,10 @@ config = {
 
     AsyncCounterJob.value = 0
     asyncio.run(dispatch(AsyncCounterJob()))
-    assert kernel.run_command("queue:work", arguments={}, options={"once": True, "queue": "default"}) == 0
+    assert (
+        kernel.run_command("queue:work", arguments={}, options={"once": True, "queue": "default"})
+        == 0
+    )
     assert AsyncCounterJob.value == 1
 
 

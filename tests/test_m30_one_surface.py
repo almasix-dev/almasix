@@ -28,7 +28,7 @@ from almasix.console.command import Command
 from almasix.nowhere import Missing  # noqa
 """
 
-WORKS = '''
+WORKS = """
 from almasix.console.command import Command
 
 
@@ -39,7 +39,7 @@ class WorksCommand(Command):
     def handle(self) -> int:
         self.line("still here")
         return 0
-'''
+"""
 
 
 @pytest.fixture()
@@ -96,7 +96,7 @@ def test_the_directory_loader_keeps_the_files_it_can_read(tmp_path: Path) -> Non
     (commands / "_ignored.py").write_text("raise RuntimeError('never read')\n", encoding="utf-8")
 
     kernel = ConsoleKernel.for_cwd(tmp_path)
-    kernel._load_path(commands)  # noqa: SLF001 - the fallback has no public door
+    kernel._load_path(commands)
 
     assert "probe:works" in kernel.commands
     assert [Path(failure.module).name for failure in kernel.failures] == ["broken.py"]
@@ -130,7 +130,9 @@ def test_aliases_answer_to_the_same_command(tmp_path: Path) -> None:
     assert kernel.run_argv("probe:other", []) == 0
 
 
-def test_generators_run_without_an_application(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_generators_run_without_an_application(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A bare directory has no config, so a generator must not want one."""
     monkeypatch.chdir(tmp_path)
     kernel = ConsoleKernel.for_cwd(tmp_path)
@@ -325,7 +327,11 @@ def test_importing_a_command_module_first_does_not_hide_its_commands() -> None:
     the process, depending only on import order.
     """
     untouched = subprocess.run(
-        [sys.executable, "-c", "import sys, almasix.smith; print('almasix.smith.cli' in sys.modules)"],
+        [
+            sys.executable,
+            "-c",
+            "import sys, almasix.smith; print('almasix.smith.cli' in sys.modules)",
+        ],
         capture_output=True,
         text=True,
         cwd=Path.cwd(),

@@ -2,23 +2,22 @@
 
 from __future__ import annotations
 
-import smtplib
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from almasix.prism.engine import Engine
-from almasix.prism.helpers import set_engine
 from almasix.framework import Application
-from almasix.mail import Address, Attachment, Content, Envelope, Mail, MailAssertions, Mailable
+from almasix.mail import Address, Attachment, Content, Envelope, Mail, Mailable
 from almasix.mail.helpers import default_mail_config
-from almasix.mail.mailer import MailManager, PendingMail, _read_storage, _resolve_attachments
+from almasix.mail.mailer import MailManager, _read_storage, _resolve_attachments
 from almasix.mail.message import ResolvedAttachment, SentMessage
 from almasix.mail.provider import MailServiceProvider
 from almasix.mail.testing import MailAssertions as Assertions
 from almasix.mail.transports.smtp import SmtpTransport
+from almasix.prism.engine import Engine
+from almasix.prism.helpers import set_engine
 
 
 class PlainMail(Mailable):

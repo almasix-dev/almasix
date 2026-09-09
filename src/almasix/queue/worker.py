@@ -117,9 +117,7 @@ class Worker:
             else:
                 result = await run_through_middleware(job, execute)
         except TimeoutError as exc:
-            raise TimeoutError(
-                f"Job {type(job).__name__} timed out after {timeout}s"
-            ) from exc
+            raise TimeoutError(f"Job {type(job).__name__} timed out after {timeout}s") from exc
         except Exception:
             raise
         else:

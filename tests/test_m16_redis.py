@@ -18,7 +18,11 @@ from almasix.queue.worker import Worker
 from almasix.redis.facade import Redis
 from almasix.redis.helpers import default_redis_config, redis, set_manager
 from almasix.redis.manager import RedisManager, require_redis
-from almasix.session.handlers import CookieSessionHandler, RedisSessionHandler, resolve_session_handler
+from almasix.session.handlers import (
+    CookieSessionHandler,
+    RedisSessionHandler,
+    resolve_session_handler,
+)
 from tests.support_redis import FakeRedis
 
 
@@ -68,7 +72,9 @@ def test_require_redis_missing_package(monkeypatch: pytest.MonkeyPatch) -> None:
         require_redis()
 
 
-def test_redis_facade_get_set_delete_incr_publish(redis_manager: RedisManager, fake_redis: FakeRedis) -> None:
+def test_redis_facade_get_set_delete_incr_publish(
+    redis_manager: RedisManager, fake_redis: FakeRedis
+) -> None:
     del redis_manager
     assert Redis.set("greeting", b"hello", ex=60) is True
     assert Redis.get("greeting") == b"hello"
@@ -98,7 +104,7 @@ def test_redis_manager_from_url(monkeypatch: pytest.MonkeyPatch) -> None:
             created["kwargs"] = kwargs
             return FakeRedis()
 
-        class Redis:  # noqa: N801
+        class Redis:
             def __init__(self, **kwargs):
                 created["redis_kwargs"] = kwargs
 
@@ -112,7 +118,9 @@ def test_redis_manager_from_url(monkeypatch: pytest.MonkeyPatch) -> None:
     assert created["url"] == "redis://example/0"
 
 
-def test_redis_cache_store_crud_tags_locks(redis_manager: RedisManager, fake_redis: FakeRedis) -> None:
+def test_redis_cache_store_crud_tags_locks(
+    redis_manager: RedisManager, fake_redis: FakeRedis
+) -> None:
     del redis_manager
     store = RedisStore(client=fake_redis)
     assert store.put("a", {"n": 1}, 60)
@@ -249,11 +257,15 @@ async def test_redis_queue_and_worker(fake_redis: FakeRedis) -> None:
         None,
         {
             "default": "redis",
-            "connections": {"redis": {"driver": "redis", "connection": "default", "queue": "queues"}},
+            "connections": {
+                "redis": {"driver": "redis", "connection": "default", "queue": "queues"}
+            },
             "failed": {"driver": "database", "table": "failed_jobs"},
         },
     )
-    connection = RedisQueue(None, {"connection": "default", "queue": "queues"}, manager=queue_manager, client=fake_redis)
+    connection = RedisQueue(
+        None, {"connection": "default", "queue": "queues"}, manager=queue_manager, client=fake_redis
+    )
     queue_manager._connections["redis"] = connection
 
     job = DemoJob()
@@ -307,9 +319,12 @@ def test_default_redis_config_shape() -> None:
 
 
 def test_resolve_session_handler_cookie(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("almasix.config.config", lambda key, default=None: {
-        "session.driver": "cookie",
-    }.get(key, default))
+    monkeypatch.setattr(
+        "almasix.config.config",
+        lambda key, default=None: {
+            "session.driver": "cookie",
+        }.get(key, default),
+    )
     assert isinstance(resolve_session_handler(), CookieSessionHandler)
 
 
@@ -327,7 +342,10 @@ def test_resolve_session_handler_redis(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_resolve_session_handler_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("almasix.config.config", lambda key, default=None: "bogus" if key == "session.driver" else default)
+    monkeypatch.setattr(
+        "almasix.config.config",
+        lambda key, default=None: "bogus" if key == "session.driver" else default,
+    )
     with pytest.raises(ValueError):
         resolve_session_handler()
 
@@ -340,7 +358,7 @@ def test_redis_manager_host_password_and_forget(monkeypatch: pytest.MonkeyPatch)
         def from_url(url: str, **kwargs):  # pragma: no cover
             raise AssertionError("url path not expected")
 
-        class Redis:  # noqa: N801
+        class Redis:
             def __init__(self, **kwargs):
                 created.update(kwargs)
 
@@ -361,7 +379,7 @@ def test_redis_manager_host_password_and_forget(monkeypatch: pytest.MonkeyPatch)
         },
     )
     manager.set_default_connection("default")
-    client = manager.connection()
+    manager.connection()
     assert created["host"] == "redis.local"
     assert created["password"] == "secret"
     assert created["username"] == "almasix"
@@ -444,7 +462,9 @@ def test_redis_store_corrupt_value_and_lock_block(fake_redis: FakeRedis) -> None
     assert store.increment("s") is False
 
 
-def test_redis_store_uses_manager_client(redis_manager: RedisManager, fake_redis: FakeRedis) -> None:
+def test_redis_store_uses_manager_client(
+    redis_manager: RedisManager, fake_redis: FakeRedis
+) -> None:
     del redis_manager
     store = RedisStore(connection="default")
     assert store.put("via-manager", 1, 10)
@@ -480,18 +500,21 @@ async def test_redis_session_edge_cases(fake_redis: FakeRedis) -> None:
     sid, data = await handler.read(Req(bad), key="k", cookie_name="s", lifetime=3600)
     assert sid is None
     # empty write short-circuit
-    assert await handler.write(
-        Resp(),
-        session_id=None,
-        data={},
-        key="k",
-        cookie_name="s",
-        lifetime=60,
-        path="/",
-        secure=False,
-        dirty=False,
-        had_prior=False,
-    ) is None
+    assert (
+        await handler.write(
+            Resp(),
+            session_id=None,
+            data={},
+            key="k",
+            cookie_name="s",
+            lifetime=60,
+            path="/",
+            secure=False,
+            dirty=False,
+            had_prior=False,
+        )
+        is None
+    )
     await CookieSessionHandler().destroy(None)
     set_manager(None)
 
@@ -596,6 +619,7 @@ async def test_redis_session_corrupt_payload(fake_redis: FakeRedis) -> None:
     got_id, data = await handler.read(Req(), key="k", cookie_name="s", lifetime=3600)
     assert got_id == sid and data is None
     await handler.destroy(sid)
+
     # cookie write no-op when clean empty
     class Resp:
         def set_cookie(self, *a, **k) -> None:
@@ -669,7 +693,7 @@ def test_manager_optional_auth_branches(monkeypatch: pytest.MonkeyPatch) -> None
     seen: list[dict[str, Any]] = []
 
     class DummyAsync:
-        class Redis:  # noqa: N801
+        class Redis:
             def __init__(self, **kwargs):
                 seen.append(kwargs)
 

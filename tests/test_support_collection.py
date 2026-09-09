@@ -8,9 +8,14 @@ from typing import Any
 
 import pytest
 
-from almasix.support import Collection, ItemNotFoundError, MultipleItemsFoundError, collect, data_get
+from almasix.support import (
+    Collection,
+    ItemNotFoundError,
+    MultipleItemsFoundError,
+    collect,
+    data_get,
+)
 from almasix.support.collection import value_get
-
 
 # --- helpers / construction -------------------------------------------------
 
@@ -347,12 +352,17 @@ def test_collapse_flatten_flip_pad_zip() -> None:
 def test_diff_intersect_unique() -> None:
     assert collect([1, 2, 3]).diff([2]).values().all() == [1, 3]
     assert collect({"a": 1, "b": 2}).diff_assoc({"a": 1, "b": 9}).all() == {"b": 2}
-    assert collect({"a": "A"}).diff_assoc_using({"a": "a"}, lambda a, b: a.lower() == b.lower()).count() == 0
+    assert (
+        collect({"a": "A"})
+        .diff_assoc_using({"a": "a"}, lambda a, b: a.lower() == b.lower())
+        .count()
+        == 0
+    )
     assert collect({"a": 1, "b": 2}).diff_keys({"a": 9}).all() == {"b": 2}
     assert collect([1, 2, 3]).intersect([2, 9]).values().all() == [2]
-    assert collect(["A", "B"]).intersect_using(["a"], lambda a, b: a.lower() == b.lower()).values().all() == [
-        "A"
-    ]
+    assert collect(["A", "B"]).intersect_using(
+        ["a"], lambda a, b: a.lower() == b.lower()
+    ).values().all() == ["A"]
     assert collect({"a": 1, "b": 2}).intersect_assoc({"a": 1, "b": 9}).all() == {"a": 1}
     assert collect({"a": "A"}).intersect_assoc_using(
         {"a": "a"}, lambda a, b: a.lower() == b.lower()

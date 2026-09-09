@@ -187,9 +187,7 @@ class Handler:
                 request_method=request.method,
                 request_path=request.path,
                 route_name=getattr(request, "route_name", None),
-                app_name=str(
-                    self.app.config.get("app.name", "Almasix") if self.app else "Almasix"
-                ),
+                app_name=str(self.app.config.get("app.name", "Almasix") if self.app else "Almasix"),
             )
             return HTMLResponse(body, status_code=status)
 
@@ -229,11 +227,7 @@ class Handler:
 
     @staticmethod
     def _fallback_html(status: int, message: str) -> str:
-        safe_message = (
-            message.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-        )
+        safe_message = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         return (
             "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>"
             f"<title>{status}</title></head><body>"

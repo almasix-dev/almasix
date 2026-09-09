@@ -17,7 +17,9 @@ from typing import Any
 from starlette.convertors import CONVERTOR_TYPES, Convertor, register_url_convertor
 
 #: `{name}`, `{name?}`, `{name:field}`, `{name:field?}`.
-PARAMETER_RE = re.compile(r"\{(?P<name>[A-Za-z_][A-Za-z0-9_]*)(?::(?P<field>[A-Za-z0-9_]+))?(?P<optional>\?)?\}")
+PARAMETER_RE = re.compile(
+    r"\{(?P<name>[A-Za-z_][A-Za-z0-9_]*)(?::(?P<field>[A-Za-z0-9_]+))?(?P<optional>\?)?\}"
+)
 
 #: Convertors Starlette ships. A `{post:int}` means the converter, not a
 #: binding field — see `binding_field_of`.
@@ -65,9 +67,7 @@ def parameter_names(uri: str) -> list[str]:
 
 def optional_parameters(uri: str) -> list[str]:
     """The parameters written `{name?}`."""
-    return [
-        match.group("name") for match in PARAMETER_RE.finditer(uri) if match.group("optional")
-    ]
+    return [match.group("name") for match in PARAMETER_RE.finditer(uri) if match.group("optional")]
 
 
 def binding_fields(uri: str) -> dict[str, str]:

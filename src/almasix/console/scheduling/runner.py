@@ -374,9 +374,7 @@ def _require_name(event: Event, feature: str) -> None:
     """
     if event.command or event.shell or event._name:
         return
-    raise RuntimeError(
-        f"A scheduled closure or job needs a name() before {feature}() can lock it."
-    )
+    raise RuntimeError(f"A scheduled closure or job needs a name() before {feature}() can lock it.")
 
 
 def _claim_server(event: Event, store: str | None) -> bool:

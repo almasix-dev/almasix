@@ -498,7 +498,11 @@ class BelongsTo(Relation):
         return self.foreign_key
 
     def associate(self, model: Model | Any) -> Model:
-        value = model.get_raw_attribute(self.owner_key) if hasattr(model, "get_raw_attribute") else model
+        value = (
+            model.get_raw_attribute(self.owner_key)
+            if hasattr(model, "get_raw_attribute")
+            else model
+        )
         self.parent.set_attribute(self.foreign_key, value)
         return self.parent
 
@@ -859,9 +863,7 @@ class HasManyThrough(Relation):
         through_table = self.through.get_table()
         builder = self._join(self._related_builder())
         builder.select(sa.literal_column(f"{self.related.get_table()}.*"))
-        builder.add_select(
-            builder.column(f"{through_table}.{self.first_key}").label(PIVOT_PARENT)
-        )
+        builder.add_select(builder.column(f"{through_table}.{self.first_key}").label(PIVOT_PARENT))
         return builder.where_in(f"{through_table}.{self.first_key}", keys)
 
     def match(self, models: Sequence[Model], results: Collection[Any], name: str) -> None:

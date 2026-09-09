@@ -129,6 +129,4 @@ def test_has_and_locale_helpers(translator: Translator) -> None:
 
 
 def test_framework_validation_catalog_loaded(translator: Translator) -> None:
-    assert __("validation.required", {"attribute": "email"}) == (
-        "The email field is required."
-    )
+    assert __("validation.required", {"attribute": "email"}) == ("The email field is required.")

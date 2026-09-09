@@ -53,7 +53,9 @@ class Factory:
         callback(pool)
         return pool
 
-    def concurrently(self, callback: Callable[[Pool], Any], output: Any = None) -> ProcessPoolResults:
+    def concurrently(
+        self, callback: Callable[[Pool], Any], output: Any = None
+    ) -> ProcessPoolResults:
         return self.pool(callback).start(output).wait()
 
     def pipe(

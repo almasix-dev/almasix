@@ -1,0 +1,59 @@
+---
+/**
+ * Banner when the live docs version is not the latest major.
+ * Hidden by default for static builds; VersionSelect reveals it from the URL.
+ */
+import { DOCS_VERSIONS, LATEST_VERSION, hrefForVersion } from '../versions.mjs';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const latest = DOCS_VERSIONS.find((version) => version.slug === LATEST_VERSION);
+const latestHref = hrefForVersion(base, LATEST_VERSION, Astro.url.pathname, '');
+const latestLabel = latest?.label ?? LATEST_VERSION;
+---
+
+<almasix-version-banner class="docs-version-banner" role="status" hidden data-current={LATEST_VERSION}>
+	<p>
+		You are viewing documentation for <strong data-current-label>{LATEST_VERSION}</strong>, which
+		is not the latest version.
+		<a data-latest-link href={latestHref}>Switch to {latestLabel} (latest) →</a>
+	</p>
+</almasix-version-banner>
+
+<style>
+	/* Default display:none — a bare `display:flex` would override HTML [hidden]. */
+	.docs-version-banner {
+		display: none;
+		position: fixed;
+		z-index: calc(var(--sl-z-index-navbar) - 1);
+		inset-inline: 0;
+		inset-block-start: var(--sl-nav-height);
+		width: 100%;
+		min-height: var(--sl-version-banner-height, 2.75rem);
+		align-items: center;
+		padding: 0.5rem 1.25rem;
+		box-sizing: border-box;
+		background: color-mix(in srgb, var(--almasix-orange) 18%, var(--sl-color-bg-nav));
+		border-bottom: 1px solid color-mix(in srgb, var(--almasix-orange) 45%, transparent);
+		color: var(--sl-color-white);
+		font-size: var(--sl-text-sm);
+		line-height: 1.45;
+	}
+	.docs-version-banner:not([hidden]) {
+		display: flex;
+	}
+	.docs-version-banner p {
+		margin: 0;
+		max-width: 72rem;
+	}
+	.docs-version-banner a {
+		color: var(--almasix-orange-soft);
+		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+		margin-inline-start: 0.35rem;
+		white-space: nowrap;
+	}
+	.docs-version-banner a:hover {
+		color: var(--almasix-orange);
+	}
+</style>

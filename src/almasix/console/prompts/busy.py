@@ -31,7 +31,7 @@ def spin(callback: Callable[[], R], message: str = "Working…") -> R:
     def worker() -> None:
         try:
             result.append(callback())
-        except BaseException as exc:  # noqa: BLE001 — re-raise after spinner stops
+        except BaseException as exc:
             error.append(exc)
         finally:
             done.set()
@@ -81,7 +81,7 @@ class Progress:
             self._progress.update(self._task_id, description=desc)
         return self
 
-    def label(self, message: str) -> Progress:  # noqa: A003
+    def label(self, message: str) -> Progress:
         self._label = message
         return self.hint(self._hint)
 

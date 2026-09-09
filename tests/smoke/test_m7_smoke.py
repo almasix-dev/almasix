@@ -81,9 +81,11 @@ def test_m7_api_bearer_auth(progress_client: TestClient) -> None:
     ok = progress_client.get("/api/me", headers={"Authorization": "Bearer secret-token"})
     assert ok.status_code == 200
     body = ok.json()["user"]
-    assert body.get("api_token") == "secret-token" or body.get("token") == "secret-token" or body.get(
-        "email"
-    ) == "ada@almasix.dev"
+    assert (
+        body.get("api_token") == "secret-token"
+        or body.get("token") == "secret-token"
+        or body.get("email") == "ada@almasix.dev"
+    )
 
 
 def test_m7_session_cookie_is_set(progress_client: TestClient) -> None:

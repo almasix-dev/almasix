@@ -162,8 +162,8 @@ class Searchable:
     def without_syncing_to_search(cls) -> Iterator[None]:
         """Write without touching the index::
 
-            with Post.without_syncing_to_search():
-                await post.save()
+        with Post.without_syncing_to_search():
+            await post.save()
         """
         token = _PAUSED.set(_PAUSED.get() | {cls})
         try:

@@ -1,0 +1,169 @@
+---
+/**
+ * Major + main version switcher. Default / latest is the newest major (`0.x`).
+ * `main` is unreleased and opt-in. Selection is synced from the live URL because
+ * static builds cannot see `?docsVersion=` at request time.
+ */
+import {
+	DOCS_VERSIONS,
+	LATEST_VERSION,
+	DOCS_VERSION_QUERY,
+	hrefForVersion,
+} from '../versions.mjs';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const options = DOCS_VERSIONS.map((version) => ({
+	label: version.label,
+	slug: version.slug,
+	// SSR defaults to latest; the client rewrites values + selected from location.
+	value: hrefForVersion(base, version.slug, Astro.url.pathname, ''),
+	selected: version.slug === LATEST_VERSION,
+}));
+const known = DOCS_VERSIONS.map((version) => version.slug).join(',');
+---
+
+<almasix-version-select
+	data-base={base}
+	data-latest={LATEST_VERSION}
+	data-query={DOCS_VERSION_QUERY}
+	data-known={known}
+>
+	<label class="version-select">
+		<span class="sr-only">Documentation version</span>
+		<select autocomplete="off" aria-label="Documentation version">
+			{
+				options.map(({ label, value, slug, selected }) => (
+					<option value={value} selected={selected} data-version={slug}>
+						{label}
+					</option>
+				))
+			}
+		</select>
+	</label>
+</almasix-version-select>
+
+<script>
+	class AlmasixVersionSelect extends HTMLElement {
+		connectedCallback() {
+			const select = this.querySelector('select');
+			if (!(select instanceof HTMLSelectElement)) return;
+
+			const base = this.dataset.base || '/';
+			const queryKey = this.dataset.query || 'docsVersion';
+			const latest = this.dataset.latest || '0.x';
+			const known = (this.dataset.known || latest).split(',').filter(Boolean);
+
+			const readCurrent = () => {
+				const params = new URLSearchParams(window.location.search);
+				const fromQuery = params.get(queryKey);
+				if (fromQuery && known.includes(fromQuery)) return fromQuery;
+				const parts = window.location.pathname.split('/').filter(Boolean);
+				const candidates = parts[0] === 'almasix' ? parts.slice(1) : parts;
+				const head = candidates[0];
+				if (head && known.includes(head)) return head;
+				return latest;
+			};
+
+			const hrefFor = (slug) => {
+				const params = new URLSearchParams(window.location.search);
+				if (slug === latest) params.delete(queryKey);
+				else params.set(queryKey, slug);
+				const query = params.toString();
+				const path = window.location.pathname;
+				return query ? `${path}?${query}` : path;
+			};
+
+			const syncFromLocation = () => {
+				const current = readCurrent();
+				for (const option of select.options) {
+					const slug = option.dataset.version || '';
+					option.value = hrefFor(slug);
+					option.selected = slug === current;
+				}
+				const page = document.querySelector('.page');
+				const banner = document.querySelector('almasix-version-banner');
+				const isLatest = current === latest;
+				page?.toggleAttribute('data-docs-outdated', !isLatest);
+				banner?.toggleAttribute('hidden', isLatest);
+				banner?.setAttribute('data-current', current);
+				const label = banner?.querySelector('[data-current-label]');
+				if (label) label.textContent = current;
+				const latestLink = banner?.querySelector('[data-latest-link]');
+				if (latestLink instanceof HTMLAnchorElement) {
+					latestLink.href = hrefFor(latest);
+				}
+			};
+
+			syncFromLocation();
+			window.addEventListener('popstate', syncFromLocation);
+
+			select.addEventListener('change', () => {
+				const href = select.value;
+				if (href) window.location.assign(href);
+			});
+
+			// Keep a non-latest selection when following plain in-site links.
+			// Do not rewrite explicit version navigation (banner → latest, or ?docsVersion=).
+			document.addEventListener(
+				'click',
+				(event) => {
+					const target = event.target;
+					if (!(target instanceof Element)) return;
+					const anchor = target.closest('a[href]');
+					if (!(anchor instanceof HTMLAnchorElement)) return;
+					if (anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+					if (anchor.hasAttribute('data-latest-link')) return;
+
+					const current = readCurrent();
+					if (current === latest) return;
+
+					let url;
+					try {
+						url = new URL(anchor.href, window.location.href);
+					} catch {
+						return;
+					}
+					if (url.origin !== window.location.origin) return;
+					const basePath = base.replace(/\/$/, '');
+					if (basePath && !url.pathname.startsWith(basePath)) return;
+
+					// Href already chooses a version — respect it.
+					if (url.searchParams.has(queryKey)) return;
+
+					url.searchParams.set(queryKey, current);
+					event.preventDefault();
+					window.location.assign(url.toString());
+				},
+				true,
+			);
+		}
+	}
+	customElements.define('almasix-version-select', AlmasixVersionSelect);
+</script>
+
+<style>
+	.version-select {
+		display: flex;
+		align-items: center;
+		color: var(--sl-color-gray-2);
+	}
+	.version-select:hover {
+		color: var(--sl-color-white);
+	}
+	.version-select select {
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 0.375rem;
+		padding: 0.35rem 0.55rem;
+		background-color: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: var(--sl-text-sm);
+		cursor: pointer;
+		appearance: auto;
+		min-width: 4.5rem;
+	}
+	.version-select option {
+		background-color: var(--sl-color-bg-nav);
+		color: var(--sl-color-gray-1);
+	}
+</style>

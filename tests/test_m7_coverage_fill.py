@@ -8,17 +8,17 @@ import pytest
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
-from almasix.auth.guard import AuthManager, Guard, auth, get_auth, reset_auth, set_auth
+from almasix.auth.guard import AuthManager, auth, get_auth, reset_auth, set_auth
 from almasix.auth.middleware import Authenticate, RedirectIfAuthenticated, StartAuth
 from almasix.auth.provider import AuthServiceProvider
 from almasix.config import ConfigRepository, set_repository
 from almasix.framework import Application
 from almasix.http.request import Request
-from almasix.session.signing import sign_payload, unsign_payload
 from almasix.session.csrf import VerifyCsrfToken, csrf_token
 from almasix.session.encrypt import decrypt_string, encrypt_string
 from almasix.session.encrypt_middleware import EncryptCookies
 from almasix.session.middleware import StartSession
+from almasix.session.signing import unsign_payload
 from almasix.session.store import Session, get_session, reset_session, set_session
 
 
@@ -85,7 +85,7 @@ async def test_csrf_rejects_bad_token(monkeypatch: pytest.MonkeyPatch) -> None:
     set_repository(repo)
     session = Session({"_csrf_token": "expected"})
     request = _request("POST", "/")
-    request._session = session  # noqa: SLF001
+    request._session = session
     token = set_session(session)
     try:
         with pytest.raises(Exception) as exc:
@@ -129,24 +129,26 @@ def test_cookie_unsign_edges() -> None:
 
     from almasix.session import signing
 
-    body = signing._b64encode(json.dumps({"a": 1}).encode())  # noqa: SLF001
+    body = signing._b64encode(json.dumps({"a": 1}).encode())
     msg = f"{body}.notint"
-    sig = signing._sign(msg, "k")  # noqa: SLF001
+    sig = signing._sign(msg, "k")
     assert unsign_payload(f"{body}.notint.{sig}", key="k") is None
 
-    bad_body = signing._b64encode(b"\xff\xfe")  # noqa: SLF001
+    bad_body = signing._b64encode(b"\xff\xfe")
     ts = str(int(time.time()))
     msg2 = f"{bad_body}.{ts}"
-    sig2 = signing._sign(msg2, "k")  # noqa: SLF001
+    sig2 = signing._sign(msg2, "k")
     assert unsign_payload(f"{bad_body}.{ts}.{sig2}", key="k") is None
 
     # Non-dict JSON
     body3 = base64.urlsafe_b64encode(json.dumps([1]).encode()).decode().rstrip("=")
     ts3 = str(int(time.time()))
     msg3 = f"{body3}.{ts3}"
-    sig3 = base64.urlsafe_b64encode(
-        hmac.new(b"k", msg3.encode(), hashlib.sha256).digest()
-    ).decode().rstrip("=")
+    sig3 = (
+        base64.urlsafe_b64encode(hmac.new(b"k", msg3.encode(), hashlib.sha256).digest())
+        .decode()
+        .rstrip("=")
+    )
     assert unsign_payload(f"{body3}.{ts3}.{sig3}", key="k") is None
 
 
@@ -158,7 +160,7 @@ def test_encrypt_invalid_utf8_payload() -> None:
     nonce = b"\x00" * 16
     cipher = bytes([0xFF, 0xFE])
     mac = __import__("hmac").new(raw_key, nonce + cipher, __import__("hashlib").sha256).digest()
-    token = f"{enc._b64encode(nonce)}.{enc._b64encode(cipher)}.{enc._b64encode(mac)}"  # noqa: SLF001
+    token = f"{enc._b64encode(nonce)}.{enc._b64encode(cipher)}.{enc._b64encode(mac)}"
     assert decrypt_string(token, key=key) is None
 
 
@@ -181,7 +183,7 @@ def test_user_to_dict_variants_and_guest() -> None:
 
 def test_request_cookies_override() -> None:
     request = _request()
-    request._cookies = {"a": "1"}  # noqa: SLF001
+    request._cookies = {"a": "1"}
     assert request.cookies["a"] == "1"
     assert request.cookie("a") == "1"
 
@@ -287,7 +289,7 @@ async def test_start_auth_from_session_and_bearer(monkeypatch: pytest.MonkeyPatc
     set_repository(repo)
     session = Session({"login_web": {"id": "u1", "name": "U"}})
     request = _request()
-    request._session = session  # noqa: SLF001
+    request._session = session
 
     async def inner(req: Request) -> Response:
         assert get_auth() is not None
@@ -314,7 +316,7 @@ async def test_start_auth_from_session_and_bearer(monkeypatch: pytest.MonkeyPatc
         return {"type": "http.request", "body": b"", "more_body": False}
 
     bare = Request(StarletteRequest(scope, receive))
-    bare._session = None  # noqa: SLF001
+    bare._session = None
 
     async def bearer_inner(req: Request) -> Response:
         # Unknown bearer must not invent an opaque user (TokenGuard honesty).

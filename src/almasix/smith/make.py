@@ -23,6 +23,7 @@ class Blueprint:
     directory: tuple[str, ...]
     stub: str
 
+
 BLUEPRINTS: dict[str, Blueprint] = {
     "controller": Blueprint(("app", "http", "controllers"), "controller.stub"),
     "middleware": Blueprint(("app", "http", "middleware"), "middleware.stub"),
@@ -51,6 +52,7 @@ BLUEPRINTS: dict[str, Blueprint] = {
     "class": Blueprint(("app",), "class.stub"),
 }
 
+
 def make_component(
     name: str,
     *,
@@ -78,7 +80,9 @@ def make_component(
     directory = base_path.joinpath("resources", "views", "components", *rel_parts[:-1])
     target = directory / f"{rel_parts[-1]}.prism.html"
     if target.exists() and not force:
-        raise MakeError(f"{target.relative_to(base_path)} already exists. Use --force to overwrite.")
+        raise MakeError(
+            f"{target.relative_to(base_path)} already exists. Use --force to overwrite."
+        )
     directory.mkdir(parents=True, exist_ok=True)
     display = "/".join(rel_parts)
     view_name = "components." + ".".join(rel_parts)
@@ -151,7 +155,9 @@ def make(
     directory = base_path.joinpath(*blueprint.directory, *package_ns)
     target = directory / f"{module_name}.py"
     if target.exists() and not force:
-        raise MakeError(f"{target.relative_to(base_path)} already exists. Use --force to overwrite.")
+        raise MakeError(
+            f"{target.relative_to(base_path)} already exists. Use --force to overwrite."
+        )
 
     directory.mkdir(parents=True, exist_ok=True)
     _ensure_packages(base_path, blueprint.directory + package_ns)
@@ -187,7 +193,9 @@ def make_view(
     directory = base_path.joinpath("resources", "views", *parts[:-1])
     target = directory / f"{parts[-1]}.prism.html"
     if target.exists() and not force:
-        raise MakeError(f"{target.relative_to(base_path)} already exists. Use --force to overwrite.")
+        raise MakeError(
+            f"{target.relative_to(base_path)} already exists. Use --force to overwrite."
+        )
 
     directory.mkdir(parents=True, exist_ok=True)
     target.write_text(
@@ -227,6 +235,7 @@ def command_name(class_name: str) -> str:
         for letter in class_name.replace("Command", "")
     )
     return dashed.lstrip("-") or "command"
+
 
 def _ensure_packages(base_path: Path, parts: tuple[str, ...]) -> None:
     """Generated directories must be importable packages."""

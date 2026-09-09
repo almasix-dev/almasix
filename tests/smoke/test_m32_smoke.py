@@ -74,7 +74,15 @@ def test_m32_docs_cover_the_installer_and_the_stacks() -> None:
         "## Scaffolding from your own stubs",
     ):
         assert heading in installation, heading
-    for flag in ("--stack", "--database", "--no-tests", "--git", "--install", "--stubs", "--migrate"):
+    for flag in (
+        "--stack",
+        "--database",
+        "--no-tests",
+        "--git",
+        "--install",
+        "--stubs",
+        "--migrate",
+    ):
         assert flag in installation, flag
     for command in ("cache:table", "queue:table", "queue:failed-table", "session:table"):
         assert command in installation, command

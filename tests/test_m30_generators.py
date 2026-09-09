@@ -114,9 +114,7 @@ def test_the_new_generators_describe_themselves_like_the_old_ones(
         description = kernel.commands[command].description
         assert description.startswith("Create a")
         assert directories[relative] in description
-    assert kernel.commands["make:view"].description == (
-        "Create a Prism view in resources/views"
-    )
+    assert kernel.commands["make:view"].description == ("Create a Prism view in resources/views")
 
 
 def test_no_generator_wants_an_application_to_exist_first(kernel: ConsoleKernel) -> None:
@@ -134,9 +132,7 @@ def test_a_nested_name_becomes_a_package_path(kernel: ConsoleKernel, tmp_path: P
     assert "class PruneAccounts(" in source(path)
 
 
-def test_a_published_stub_wins_over_the_frameworks(
-    kernel: ConsoleKernel, tmp_path: Path
-) -> None:
+def test_a_published_stub_wins_over_the_frameworks(kernel: ConsoleKernel, tmp_path: Path) -> None:
     publish(tmp_path)
     (tmp_path / "stubs" / "job.queued.stub").write_text(
         '"""{{ class }} — house style."""\n', encoding="utf-8"
@@ -219,9 +215,7 @@ def test_the_generated_markdown_mail_renders_through_prism(
 # --- notifications --------------------------------------------------------
 
 
-def test_a_generated_notification_goes_out_on_mail(
-    kernel: ConsoleKernel, tmp_path: Path
-) -> None:
+def test_a_generated_notification_goes_out_on_mail(kernel: ConsoleKernel, tmp_path: Path) -> None:
     assert kernel.run_argv("make:notification", ["InvoicePaid"]) == 0
 
     notification = load(tmp_path / "app" / "notifications" / "invoice_paid.py").InvoicePaid()
@@ -281,9 +275,7 @@ def test_a_generated_rule_validates_a_field(kernel: ConsoleKernel, tmp_path: Pat
     assert "The given value is invalid." in str(excinfo.value)
 
 
-def test_a_plain_rule_leaves_empty_input_to_required(
-    kernel: ConsoleKernel, tmp_path: Path
-) -> None:
+def test_a_plain_rule_leaves_empty_input_to_required(kernel: ConsoleKernel, tmp_path: Path) -> None:
     assert kernel.run_argv("make:rule", ["Uppercase"]) == 0
 
     body = source(tmp_path / "app" / "rules" / "uppercase.py")
@@ -414,9 +406,7 @@ def test_a_generated_interface_is_a_protocol(kernel: ConsoleKernel, tmp_path: Pa
     assert isinstance(object(), protocol)  # runtime_checkable, and empty so far
 
 
-def test_a_class_lands_under_the_path_its_name_gives(
-    kernel: ConsoleKernel, tmp_path: Path
-) -> None:
+def test_a_class_lands_under_the_path_its_name_gives(kernel: ConsoleKernel, tmp_path: Path) -> None:
     assert kernel.run_argv("make:class", ["Services/Ledger"]) == 0
 
     path = tmp_path / "app" / "services" / "ledger.py"
@@ -446,9 +436,7 @@ def test_a_generated_observer_only_names_real_model_events(
     assert set(hooks) <= set(EVENTS)
 
 
-def test_a_generated_observer_registers_on_a_model(
-    kernel: ConsoleKernel, tmp_path: Path
-) -> None:
+def test_a_generated_observer_registers_on_a_model(kernel: ConsoleKernel, tmp_path: Path) -> None:
     from almasix.orm import Model
 
     assert kernel.run_argv("make:observer", ["PostObserver"]) == 0
@@ -516,9 +504,7 @@ def test_a_view_name_has_to_be_a_name(
     assert "Invalid name segment" in capsys.readouterr().err
 
 
-def test_a_view_needs_a_name(
-    kernel: ConsoleKernel, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_a_view_needs_a_name(kernel: ConsoleKernel, capsys: pytest.CaptureFixture[str]) -> None:
     assert kernel.run_argv("make:view", ["..."]) == 1
 
     assert "A view name is required." in capsys.readouterr().err

@@ -137,9 +137,7 @@ def broadcast_payload(event: Any) -> dict[str, Any]:
         payload = dict(explicit() or {})
     else:
         payload = {
-            key: _format(value)
-            for key, value in vars(event).items()
-            if not key.startswith("_")
+            key: _format(value) for key, value in vars(event).items() if not key.startswith("_")
         }
     payload.setdefault("socket", getattr(event, "socket", None))
     return payload

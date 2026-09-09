@@ -142,6 +142,6 @@ class Container:
         localns: dict[str, Any],
     ) -> Any:
         try:
-            return eval(annotation, globalns, localns)  # noqa: S307
+            return eval(annotation, globalns, localns)
         except Exception:
             return annotation

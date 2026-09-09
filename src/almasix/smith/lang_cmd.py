@@ -36,9 +36,7 @@ def publish_lang(base_path: Path, *, force: bool = False) -> Path:
 def make_lang(locale: str, base_path: Path, *, force: bool = False) -> Path:
     """Create an empty locale tree under `lang/<locale>/`."""
     if not _LOCALE_RE.match(locale):
-        raise LangError(
-            f"Invalid locale {locale!r}. Use a BCP 47-ish tag like en, en_US, or sw."
-        )
+        raise LangError(f"Invalid locale {locale!r}. Use a BCP 47-ish tag like en, en_US, or sw.")
     root = base_path / "lang" / locale
     if root.exists() and any(root.iterdir()) and not force:
         raise LangError(f"Locale directory already exists: {root}")
@@ -97,7 +95,7 @@ def _load_py_dict(path: Path) -> dict:
     sys.modules[module_name] = module
     try:
         spec.loader.exec_module(module)
-    except Exception:  # noqa: BLE001 — lang files are user-authored
+    except Exception:
         return {}
     data = getattr(module, "translations", None)
     return data if isinstance(data, dict) else {}

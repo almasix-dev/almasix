@@ -458,9 +458,7 @@ async def test_authorize_middleware(monkeypatch: pytest.MonkeyPatch) -> None:
     await empty.handle(type("R", (), {"path_params": {}})(), nxt)
 
     with pytest.raises(AuthorizationException):
-        await Authorize("missing,nope.token").handle(
-            type("R", (), {"path_params": {}})(), nxt
-        )
+        await Authorize("missing,nope.token").handle(type("R", (), {"path_params": {}})(), nxt)
 
 
 def test_provider_binds_gate(tmp_path: Path) -> None:
@@ -693,6 +691,7 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
     assert _can_be_called_with_user(lambda: True, None)
     assert _can_be_called_with_user(lambda *args: True, None)
     assert _can_be_called_with_user(HandleAbility, None) is False
+
     class NoHandle:
         pass
 
@@ -739,10 +738,18 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
         inspect.Parameter("user", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=User | None)
     )
     assert _parameter_allows_none(
-        inspect.Parameter("user", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Union[User, None])  # noqa: UP007
+        inspect.Parameter(
+            "user",
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=Union[User, None],  # noqa: UP007 — exercise typing.Union form
+        )
     )
     assert _parameter_allows_none(
-        inspect.Parameter("user", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Optional[User])  # noqa: UP045
+        inspect.Parameter(
+            "user",
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=Optional[User],  # noqa: UP045 — exercise typing.Optional form
+        )
     )
     assert not _parameter_allows_none(
         inspect.Parameter("user", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=User)
@@ -756,7 +763,9 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
         _resolve_callback(["no.such.Class", "handle"], container=None)
     with pytest.raises(TypeError):
         _resolve_callback([HandleAbility, "missing"], container=None)
-    assert callable(_resolve_callback(["almasix.auth.access.policies.Policy", "allow"], container=None))
+    assert callable(
+        _resolve_callback(["almasix.auth.access.policies.Policy", "allow"], container=None)
+    )
     assert callable(_resolve_callback(f"{path}@handle", container=None))
 
     class OkContainer:
@@ -791,7 +800,9 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
     import sys
 
     gmod = sys.modules[AccessGate.__module__]
-    monkeypatch.setattr(gmod, "_default_policy_paths", lambda cls: ["almasix.auth.access.policies.Policy"])
+    monkeypatch.setattr(
+        gmod, "_default_policy_paths", lambda cls: ["almasix.auth.access.policies.Policy"]
+    )
     Gate.flush()
     assert isinstance(Gate.get_policy_for(Post), Policy)
     monkeypatch.setattr(inspect, "isclass", lambda _m: True)
@@ -812,7 +823,9 @@ def test_gate_internal_branches_for_parity(monkeypatch: pytest.MonkeyPatch) -> N
     assert _invoke(no_signature_fn, User(1), [], container=None) is True
     assert _call_after(no_signature_fn, User(1), "x", False, []) is True
 
-    exc = AuthorizationException("x", response=AuthorizationResponse.deny_with_status(418, "teapot"))
+    exc = AuthorizationException(
+        "x", response=AuthorizationResponse.deny_with_status(418, "teapot")
+    )
     assert exc.status_code == 418
 
     Gate.flush()

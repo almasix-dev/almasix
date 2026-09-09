@@ -2,7 +2,7 @@
 
 Preferred usage::
 
-    almasix new myapp                     # asks: stack, database, tests, git, install
+    almasix new myapp                     # asks: stack, database, tests, git, venv/install
     almasix new myapp --no-interaction    # asks nothing, takes the defaults
     almasix new myapp --stack bootstrap --database pgsql --git --install --migrate
 """
@@ -56,7 +56,7 @@ def stacks() -> None:
 
 
 @app.command("new")
-def new(  # noqa: PLR0913 - one option per prompt, by design
+def new(
     name: str = typer.Argument(..., help="Application directory name"),
     path: Path | None = typer.Option(
         None,
@@ -91,7 +91,7 @@ def new(  # noqa: PLR0913 - one option per prompt, by design
     install: bool | None = typer.Option(
         None,
         "--install/--no-install",
-        help="Install Python dependencies after creating (default: no)",
+        help="Create .venv and install Python deps with -e . (default: no unless asked)",
     ),
     installer: str = typer.Option(
         "auto",
@@ -101,12 +101,12 @@ def new(  # noqa: PLR0913 - one option per prompt, by design
     npm: bool | None = typer.Option(
         None,
         "--npm/--no-npm",
-        help="Run npm install and npm run build (default: no)",
+        help="Run npm install and npm run build (default: no unless asked)",
     ),
     migrate: bool | None = typer.Option(
         None,
         "--migrate/--no-migrate",
-        help="Run the default migrations after installing (default: no)",
+        help="Run default migrations after installing (users, sessions, …; default: no unless asked)",
     ),
     stubs: Path | None = typer.Option(
         None,
@@ -197,15 +197,25 @@ def _next_steps(plan: object, root: Path, results: list[StepResult]) -> None:
     done = {result.name for result in results if result.ran and result.ok}
 
     lines = [f"  cd {root.name}"]
-    if "install" not in done:
+    if "venv" not in done and "install" not in done:
         lines.append("  python -m venv .venv && source .venv/bin/activate")
         extra = plan.database_info.extra
-        lines.append(f"  pip install -e . {'&& pip install ' + extra if extra else ''}".rstrip())
+        lines.append(
+            f"  pip install -e . {'&& pip install ' + extra if extra else ''}".rstrip()
+        )
+    elif "install" not in done:
+        lines.append("  source .venv/bin/activate")
+        extra = plan.database_info.extra
+        lines.append(
+            f"  pip install -e . {'&& pip install ' + extra if extra else ''}".rstrip()
+        )
+    else:
+        lines.append("  source .venv/bin/activate")
     if "migrate" not in done:
-        lines.append("  smith migrate")
+        lines.append("  python smith migrate")
     if plan.uses_node and "npm" not in done:
         lines.append("  npm install && npm run build")
-    lines.append("  smith serve")
+    lines.append("  python smith serve")
 
     typer.echo("\nNext steps:")
     typer.echo("\n".join(lines))

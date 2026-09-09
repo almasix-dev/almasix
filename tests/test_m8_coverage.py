@@ -42,7 +42,9 @@ def test_debug_html_missing_source(tmp_path: Path) -> None:
     assert isinstance(text, str)
 
 
-def test_handler_renderable_and_per_exception(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_handler_renderable_and_per_exception(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     purge_generated_app_modules()
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "app.py").write_text(
@@ -75,7 +77,9 @@ def test_handler_renderable_and_per_exception(tmp_path: Path, monkeypatch: pytes
             return html("<p>custom</p>", status=418)
 
     handler.report(CustomError())
-    req = Request(SimpleNamespace(method="GET", url=SimpleNamespace(path="/"), headers={}, cookies={}))
+    req = Request(
+        SimpleNamespace(method="GET", url=SimpleNamespace(path="/"), headers={}, cookies={})
+    )
     req.route_polarity = "web"
     response = handler.render(req, CustomError())
     assert response.status_code == 418
@@ -125,7 +129,7 @@ def test_handler_json_http_500_hidden(tmp_path: Path, monkeypatch: pytest.Monkey
 
     with Route.group(prefix="/api", middleware=["api"]):
         Route.get("/x", [Boom, "index"])
-    app._routes_loaded = True  # noqa: SLF001
+    app._routes_loaded = True
     client = TestClient(app.asgi, raise_server_exceptions=False)
     body = client.get("/api/x").json()
     assert body == {"message": "Server Error", "status": 500, "errors": {}}

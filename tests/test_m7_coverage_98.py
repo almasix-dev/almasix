@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import time
+from datetime import UTC
 
 import pytest
 from starlette.requests import Request as StarletteRequest
@@ -35,7 +36,6 @@ from almasix.auth.passwords import (
     DatabaseTokenRepository,
     Password,
     PasswordBroker,
-    get_password_manager,
     set_password_manager,
 )
 from almasix.auth.providers import ArticulateUserProvider, MemoryUserProvider
@@ -116,9 +116,7 @@ async def test_guard_helpers_and_payloads() -> None:
 
 @pytest.mark.asyncio
 async def test_session_guard_logout_other_and_manager() -> None:
-    provider = MemoryUserProvider(
-        [{"id": 1, "email": "a@b.c", "password": Hash.make("pw")}]
-    )
+    provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("pw")}])
     guard = SessionGuard("web", provider)
     session = Session()
     tok = set_session(session)
@@ -128,7 +126,7 @@ async def test_session_guard_logout_other_and_manager() -> None:
         assert await guard.logout_other_devices("pw") is True
         manager = AuthManager()
         manager.should_use("web")
-        manager._guards["web"] = guard  # noqa: SLF001
+        manager._guards["web"] = guard
         assert manager.via_remember() is False
         await manager.validate({"email": "a@b.c", "password": "pw"})
         await manager.login({"id": 1})
@@ -163,8 +161,8 @@ async def test_token_guard_and_auth_manager_resolve() -> None:
     assert isinstance(manager.guard("web"), SessionGuard)
     assert isinstance(manager.guard("api"), TokenGuard)
     assert type(manager.guard("custom")).__name__ == "Guard"
-    assert manager._resolve_provider("empty") is None  # noqa: SLF001
-    assert manager._resolve_provider("bad") is None  # noqa: SLF001
+    assert manager._resolve_provider("empty") is None
+    assert manager._resolve_provider("bad") is None
 
     api = manager.guard("api")
     assert await api.attempt({"api_token": "t"})
@@ -187,27 +185,26 @@ async def test_middleware_json_and_basic_and_password() -> None:
     tok = set_session(session)
     try:
         request = _req("/secret")
-        request._session = session  # noqa: SLF001
+        request._session = session
         response = await RequirePassword().handle(request, lambda r: Response("ok"))
         assert response.status_code in {302, 303, 307}
         mark_password_confirmed(request)
         # force expire
         session.put("auth.password_confirmed_at", time.time() - 10)
         json_req = _req("/api/x", headers=[(b"accept", b"application/json")])
-        json_req._session = session  # noqa: SLF001
+        json_req._session = session
         with pytest.raises(Exception):
             await RequirePassword(timeout=1).handle(json_req, lambda r: Response("ok"))
     finally:
         reset_session(tok)
 
-    provider = MemoryUserProvider(
-        [{"id": 1, "email": "ada@x.com", "password": Hash.make("pw")}]
-    )
+    provider = MemoryUserProvider([{"id": 1, "email": "ada@x.com", "password": Hash.make("pw")}])
     manager = AuthManager()
-    manager._providers["users"] = provider  # noqa: SLF001
-    manager._guards["web"] = SessionGuard("web", provider)  # noqa: SLF001
+    manager._providers["users"] = provider
+    manager._guards["web"] = SessionGuard("web", provider)
     auth_tok = set_auth(manager)
     try:
+
         async def ok(r):
             return Response("ok")
 
@@ -258,8 +255,8 @@ async def test_start_auth_remember_and_via_request() -> None:
     set_repository(repo)
 
     request = _req(headers=[(b"cookie", b"remember_web=1|rem")])
-    request._session = Session()  # noqa: SLF001
-    request._cookies = {"remember_web": "1|rem"}  # noqa: SLF001
+    request._session = Session()
+    request._cookies = {"remember_web": "1|rem"}
 
     async def inner(req: Request) -> Response:
         assert auth().check() or auth().guard("web").check() or True
@@ -276,8 +273,8 @@ async def test_start_auth_remember_and_via_request() -> None:
 
     manager.via_request("web", resolve)
     request2 = _req()
-    request2._session = Session()  # noqa: SLF001
-    request2._auth = manager  # noqa: SLF001
+    request2._session = Session()
+    request2._auth = manager
     # StartAuth creates its own manager — exercise callback on existing manager
     guard = manager.guard("web")
     result = await resolve(request2)
@@ -287,9 +284,7 @@ async def test_start_auth_remember_and_via_request() -> None:
 
 @pytest.mark.asyncio
 async def test_password_broker_facade_and_expired() -> None:
-    provider = MemoryUserProvider(
-        [{"id": 1, "email": "a@b.c", "password": Hash.make("old")}]
-    )
+    provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("old")}])
     tokens = DatabaseTokenRepository(expire=60, throttle=0)
     broker = PasswordBroker(provider, tokens)
 
@@ -312,7 +307,7 @@ async def test_password_broker_facade_and_expired() -> None:
 
     # expired token
     token = await tokens.create("a@b.c")
-    tokens._tokens["a@b.c"]["created_at"] = 0  # noqa: SLF001
+    tokens._tokens["a@b.c"]["created_at"] = 0
     assert await tokens.exists("a@b.c", token) is False
     assert await Password.send_reset_link({"email": "missing@x.com"}) == Password.INVALID_USER
     assert Password.broker("users") is not None
@@ -393,14 +388,15 @@ async def test_articulate_provider_edges() -> None:
     )()
     assert await provider.validate_credentials(user, {}) is False
     await provider.rehash_password_if_required(user, {})
-    plain = {"id": 1}
     # Articulate update on object without save
     obj = type("R", (), {})()
     await provider.update_remember_token(obj, "t")
     assert obj.remember_token == "t"
     mem = MemoryUserProvider([{"id": 1, "password": Hash.make("a")}])
     assert await mem.validate_credentials({"id": 1}, {}) is False
-    await mem.rehash_password_if_required({"id": 1, "password": Hash.make("a")}, {"password": "a"}, force=True)
+    await mem.rehash_password_if_required(
+        {"id": 1, "password": Hash.make("a")}, {"password": "a"}, force=True
+    )
 
 
 @pytest.mark.asyncio
@@ -448,8 +444,8 @@ async def test_password_database_repository_paths(monkeypatch: pytest.MonkeyPatc
     token2 = await tokens2.create("b@b.c")
     assert await tokens2.exists("b@b.c", token2)
     await tokens2.delete_expired()
-    await tokens2._db_delete_expired(time.time())  # noqa: SLF001
-    await tokens2._db_get("missing")  # noqa: SLF001
+    await tokens2._db_delete_expired(time.time())
+    await tokens2._db_get("missing")
 
 
 @pytest.mark.asyncio
@@ -490,12 +486,14 @@ async def test_more_guard_and_middleware_edges() -> None:
         {
             "users": {
                 "driver": "memory",
-                "users": [{"id": 1, "api_token": "good", "email": "a@b.c", "password": Hash.make("x")}],
+                "users": [
+                    {"id": 1, "api_token": "good", "email": "a@b.c", "password": Hash.make("x")}
+                ],
             }
         },
     )
     bare = _req("/api/me", headers=[(b"authorization", b"Bearer good")])
-    bare._session = Session()  # noqa: SLF001
+    bare._session = Session()
 
     async def inner(req):
         assert auth().guard("api").check()
@@ -516,8 +514,8 @@ async def test_base_guard_login_events_and_hash_exceptions(monkeypatch: pytest.M
     await bare.login({"id": 1})
     assert "login" in seen
 
-    from almasix.hashing.hasher import BcryptHasher
     import almasix.hashing.hasher as hasher_mod
+    from almasix.hashing.hasher import BcryptHasher
 
     bh = BcryptHasher(4)
     good = bh.make("a")
@@ -623,8 +621,8 @@ async def test_provider_password_helpers() -> None:
 
 @pytest.mark.asyncio
 async def test_start_auth_via_request_and_crypto_edges(monkeypatch: pytest.MonkeyPatch) -> None:
-    from almasix.session.signing import sign_payload, unsign_payload
     from almasix.session.encrypt import decrypt_string, encrypt_string
+    from almasix.session.signing import sign_payload, unsign_payload
 
     token = encrypt_string("hello", key="k")
     bad = token[:-4] + "xxxx"
@@ -649,7 +647,7 @@ async def test_start_auth_via_request_and_crypto_edges(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(AuthManager, "configure_from_config", patched)
     request = _req()
-    request._session = Session()  # noqa: SLF001
+    request._session = Session()
 
     async def inner(req):
         assert auth().guard("web").user()["id"] == "via-req"
@@ -666,9 +664,9 @@ def test_hash_is_hashed_cross_algorithm() -> None:
 
 
 def test_translation_and_encrypt_middleware_edges() -> None:
-    from almasix.translation.plural import plural_category, plural_index, select
+
     from almasix.session.encrypt_middleware import EncryptCookies
-    from starlette.responses import Response
+    from almasix.translation.plural import plural_category, plural_index, select
 
     assert select("solo", 99) == "solo"
     assert plural_index("en", 2, 1) == 0
@@ -678,10 +676,10 @@ def test_translation_and_encrypt_middleware_edges() -> None:
 
     mw = EncryptCookies()
     EncryptCookies.except_cookies = frozenset({"plain"})
-    header = mw._encrypt_set_cookie("plain=value; Path=/", key="k")  # noqa: SLF001
+    header = mw._encrypt_set_cookie("plain=value; Path=/", key="k")
     assert header.startswith("plain=value")
     # no equals
-    assert mw._encrypt_set_cookie("weird", key="k") == "weird"  # noqa: SLF001
+    assert mw._encrypt_set_cookie("weird", key="k") == "weird"
     EncryptCookies.except_cookies = frozenset()
 
 
@@ -710,14 +708,17 @@ def test_last_mile_coverage_hits(monkeypatch: pytest.MonkeyPatch) -> None:
     repo = ConfigRepository()
     repo.set("auth.providers", {"users": {"driver": "articulate", "model": "does.not.Exist"}})
     set_repository(repo)
-    assert AuthManager()._resolve_provider("users") is None  # noqa: SLF001
+    assert AuthManager()._resolve_provider("users") is None
 
 
 @pytest.mark.asyncio
 async def test_password_broker_none_provider() -> None:
     broker = PasswordBroker(None, DatabaseTokenRepository())
     assert await broker.send_reset_link({"email": "a"}) == Password.INVALID_USER
-    assert await broker.reset({"email": "a", "token": "t", "password": "x"}, lambda u, p: None) == Password.INVALID_USER
+    assert (
+        await broker.reset({"email": "a", "token": "t", "password": "x"}, lambda u, p: None)
+        == Password.INVALID_USER
+    )
 
 
 def test_hash_is_hashed_when_driver_rejects() -> None:
@@ -738,7 +739,7 @@ def test_hash_is_hashed_when_driver_rejects() -> None:
         def needs_rehash(self, *a, **k):
             return True
 
-    manager._hashers["bcrypt"] = Reject()  # noqa: SLF001
+    manager._hashers["bcrypt"] = Reject()
     assert Hash.is_hashed("$2b$04$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
     assert Hash.is_hashed("$argon2id$v=19$m=8,t=1,p=1$aaaaaaaaaaaaaaaa$bbbb")
     assert not Hash.is_hashed("plain")
@@ -773,21 +774,28 @@ def test_argon_check_exception_paths(monkeypatch: pytest.MonkeyPatch) -> None:
         def hash(self, *a, **k):
             return hashed
 
-    hasher._password_hasher = Broken()  # noqa: SLF001
+    hasher._password_hasher = Broken()
     assert hasher.check("secret", hashed) is False
     assert hasher.needs_rehash(hashed) is True
 
 
 @pytest.mark.asyncio
 async def test_tiny_remaining_branches() -> None:
-    from almasix.auth.guard import _remember_token_of, _remember_lifetime, _cookie_path, _cookie_secure
+    from datetime import datetime
+
+    from almasix.auth.guard import (
+        _cookie_path,
+        _cookie_secure,
+        _remember_lifetime,
+        _remember_token_of,
+    )
     from almasix.auth.passwords import DatabaseTokenRepository
-    from datetime import datetime, timezone
 
     class HasAttr:
         remember_token = None
 
     assert _remember_token_of(HasAttr()) is None
+
     class HasVal:
         remember_token = "zz"
 
@@ -803,19 +811,19 @@ async def test_tiny_remaining_branches() -> None:
     assert _cookie_secure() is True
 
     tokens = DatabaseTokenRepository(use_database=True)
-    tokens._tokens["a@b.c"] = {  # noqa: SLF001
+    tokens._tokens["a@b.c"] = {
         "email": "a@b.c",
         "token": "x",
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
     }
     # memory hit with datetime created_at via _get
-    row = await tokens._get("a@b.c")  # noqa: SLF001
+    row = await tokens._get("a@b.c")
     assert row is not None
 
 
 def test_one_more_line() -> None:
-    from almasix.config.repository import ConfigRepository as CR
     from almasix.config import set_repository
+    from almasix.config.repository import ConfigRepository as CR
 
     repo = CR()
     assert repo.get("missing.nested.key", "d") == "d"
@@ -846,7 +854,7 @@ async def test_auth_hydration_soft_fails_provider_errors(monkeypatch: pytest.Mon
     assert await _safe_resolve(lambda: _hydrate_user(guard, {"id": 1})) is None
 
     request = _req()
-    request._cookies = {"remember_web": "1|tok"}  # noqa: SLF001
+    request._cookies = {"remember_web": "1|tok"}
     assert await _safe_resolve(lambda: _from_remember_cookie(request, guard)) is None
 
     def boom_resolve(self, name: str):
@@ -864,8 +872,8 @@ async def test_auth_hydration_soft_fails_provider_errors(monkeypatch: pytest.Mon
     set_repository(repo)
 
     request = _req("/api/items/42", headers=[(b"authorization", b"Bearer secret")])
-    request._session = Session({"login_web": {"id": 1}})  # noqa: SLF001
-    set_session(request._session)  # noqa: SLF001
+    request._session = Session({"login_web": {"id": 1}})
+    set_session(request._session)
 
     async def ok(_req):
         return Response(content=b"ok", status_code=200)

@@ -140,7 +140,7 @@ def _columns(model: Any) -> list[str]:
         # built from attributes the row has not loaded cannot answer, which
         # is what `searchable_columns` is for.
         payload = model().to_searchable_array()
-    except Exception:  # noqa: BLE001 — an unanswerable array is a missing declaration
+    except Exception:
         payload = {}
     return [key for key in payload if key != SOFT_DELETED]
 

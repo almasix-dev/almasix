@@ -30,18 +30,17 @@ class LoginRateLimiter:
         self.decay_seconds = decay_seconds
 
     def key(self, request: Request, username: str | None = None) -> str:
-        name = username if username is not None else str(
-            request.input("email")
-            or request.input("username")
-            or request.input("login")
-            or ""
+        name = (
+            username
+            if username is not None
+            else str(
+                request.input("email") or request.input("username") or request.input("login") or ""
+            )
         )
         return f"login|{name.lower()}|{request.ip() or '0.0.0.0'}"
 
     def too_many_attempts(self, request: Request, username: str | None = None) -> bool:
-        return RateLimiter.too_many_attempts(
-            self.key(request, username), self.max_attempts
-        )
+        return RateLimiter.too_many_attempts(self.key(request, username), self.max_attempts)
 
     def hit(self, request: Request, username: str | None = None) -> int:
         return RateLimiter.hit(self.key(request, username), self.decay_seconds)
@@ -82,10 +81,7 @@ async def attempt_login(
 
     rate = limiter or LoginRateLimiter()
     username = str(
-        credentials.get("email")
-        or credentials.get("username")
-        or credentials.get("login")
-        or ""
+        credentials.get("email") or credentials.get("username") or credentials.get("login") or ""
     )
     if rate.too_many_attempts(request, username):
         rate.raise_for(request, username)

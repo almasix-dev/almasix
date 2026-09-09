@@ -27,9 +27,7 @@ def default_filesystems_config(base_path: str | Any = ".") -> dict[str, Any]:
             },
             "public": {
                 "driver": "local",
-                "root": f"{root}/storage/app/public"
-                if root != "."
-                else "storage/app/public",
+                "root": f"{root}/storage/app/public" if root != "." else "storage/app/public",
                 "url": "/storage",
                 "visibility": "public",
             },

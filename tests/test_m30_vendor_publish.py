@@ -84,7 +84,9 @@ def test_publishing_a_provider_copies_its_files_and_its_directories(
     assert "Published" in output
 
 
-def test_a_tag_publishes_across_providers(app: Any, package: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_a_tag_publishes_across_providers(
+    app: Any, package: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     declare(app, package, "courier-config")
 
     code, _ = run(app, tag=["courier-config"])
@@ -106,7 +108,9 @@ def test_an_unknown_tag_says_so_rather_than_publishing_everything(
     assert not (app.path("config", "courier.py")).exists()
 
 
-def test_a_provider_with_no_declarations_says_so(app: Any, package: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_a_provider_with_no_declarations_says_so(
+    app: Any, package: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     declare(app, package)
 
     code, _ = run(app, provider="app.providers.Nothing")
@@ -176,7 +180,9 @@ def test_publishing_nothing_at_all_says_nothing_to_publish(
 def test_a_provider_and_a_tag_together_narrow_to_their_overlap(app: Any, package: Path) -> None:
     class OtherProvider(ServiceProvider):
         def boot(self) -> None:
-            self.publishes({package / "assets" / "logo.svg": app.path("public", "other.svg")}, "shared")
+            self.publishes(
+                {package / "assets" / "logo.svg": app.path("public", "other.svg")}, "shared"
+            )
 
     provider = declare(app, package, "shared")
     OtherProvider(app).boot()
@@ -232,7 +238,10 @@ def test_with_nothing_declared_at_all_it_fails_instead_of_prompting(
 
 
 def test_a_destination_outside_the_application_is_named_in_full(
-    app: Any, package: Path, tmp_path_factory: pytest.TempPathFactory, capsys: pytest.CaptureFixture[str]
+    app: Any,
+    package: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     outside = tmp_path_factory.mktemp("outside") / "logo.svg"
 

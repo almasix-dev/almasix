@@ -371,11 +371,15 @@ class Http(metaclass=_HttpMeta):
         return cls.pending().throw_unless(condition)
 
     @classmethod
-    def when(cls, condition: Any, callback: Callable, default: Callable | None = None) -> PendingRequest:
+    def when(
+        cls, condition: Any, callback: Callable, default: Callable | None = None
+    ) -> PendingRequest:
         return cls.pending().when(condition, callback, default)
 
     @classmethod
-    def unless(cls, condition: Any, callback: Callable, default: Callable | None = None) -> PendingRequest:
+    def unless(
+        cls, condition: Any, callback: Callable, default: Callable | None = None
+    ) -> PendingRequest:
         return cls.pending().unless(condition, callback, default)
 
     @classmethod

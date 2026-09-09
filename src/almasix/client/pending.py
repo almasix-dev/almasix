@@ -12,7 +12,6 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import httpx
 
-from almasix.support.arity import accepts_two_arguments
 from almasix.client.events import ConnectionFailed, RequestSending, ResponseReceived
 from almasix.client.exceptions import (
     ConnectionException,
@@ -24,10 +23,10 @@ from almasix.client.request import RecordedRequest
 from almasix.client.response import Response
 from almasix.client.uri_template import expand as expand_uri_template
 from almasix.events import Event
+from almasix.support.arity import accepts_two_arguments
 
 _JSON_TYPES = (dict, list)
 _BODY_FORMATS = frozenset({"json", "form", "multipart", "body"})
-
 
 
 class PendingRequest:
@@ -164,7 +163,9 @@ class PendingRequest:
         cloned._options.update(dict(options))
         return cloned
 
-    def with_middleware(self, middleware: Callable[[RecordedRequest], RecordedRequest]) -> PendingRequest:
+    def with_middleware(
+        self, middleware: Callable[[RecordedRequest], RecordedRequest]
+    ) -> PendingRequest:
         cloned = self._clone()
         cloned._middleware.append(middleware)
         return cloned
@@ -174,7 +175,9 @@ class PendingRequest:
     ) -> PendingRequest:
         return self.with_middleware(middleware)
 
-    def with_response_middleware(self, middleware: Callable[[Response], Response]) -> PendingRequest:
+    def with_response_middleware(
+        self, middleware: Callable[[Response], Response]
+    ) -> PendingRequest:
         cloned = self._clone()
         cloned._response_middleware.append(middleware)
         return cloned
@@ -279,9 +282,7 @@ class PendingRequest:
         cloned = self._clone()
         cloned._throw = True
         cloned._throw_if = (
-            (lambda resp: not condition(resp))
-            if callable(condition)
-            else (not bool(condition))
+            (lambda resp: not condition(resp)) if callable(condition) else (not bool(condition))
         )
         return cloned
 
@@ -597,7 +598,9 @@ class PendingRequest:
             if isinstance(recorded.data, Mapping):
                 kwargs["data"] = recorded.data
         elif self._body_format == "json" or (
-            recorded.data is not None and isinstance(recorded.data, _JSON_TYPES) and self._body_format is None
+            recorded.data is not None
+            and isinstance(recorded.data, _JSON_TYPES)
+            and self._body_format is None
         ):
             kwargs["json"] = recorded.data
         elif recorded.body is not None and self._body_format != "form":

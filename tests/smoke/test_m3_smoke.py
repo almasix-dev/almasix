@@ -111,9 +111,7 @@ def test_m3_s3_generated_app_links_honor_base_path(
 
     env_file = root / ".env"
     env_file.write_text(
-        env_file.read_text(encoding="utf-8").replace(
-            "APP_BASE_PATH=", "APP_BASE_PATH=/apps/m3"
-        ),
+        env_file.read_text(encoding="utf-8").replace("APP_BASE_PATH=", "APP_BASE_PATH=/apps/m3"),
         encoding="utf-8",
     )
     # Process env wins over .env — pin the prefix for this smoke explicitly.

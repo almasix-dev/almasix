@@ -82,7 +82,7 @@ def test_attributes_fall_through_to_the_underlying_object() -> None:
     assert resource.name == "Ada"
     assert resource["id"] == 1
     with pytest.raises(AttributeError):
-        resource.nope  # noqa: B018
+        resource.nope
 
 
 def test_attributes_fall_through_to_an_object_too() -> None:
@@ -375,7 +375,9 @@ def test_additional_data_survives_disabled_wrapping() -> None:
 
 
 def test_status_and_headers_are_configurable() -> None:
-    response = UserResource(ADA).status(201).header("X-Made", "yes").headers({"X-More": "1"}).response()
+    response = (
+        UserResource(ADA).status(201).header("X-Made", "yes").headers({"X-More": "1"}).response()
+    )
     assert response.status_code == 201
     assert response.headers["x-made"] == "yes"
     assert response.headers["x-more"] == "1"
@@ -625,7 +627,7 @@ async def _schema() -> None:
     )
 
 
-async def test_a_resource_over_a_model_uses_its_attributes(memory_db: Any) -> None:  # noqa: F811
+async def test_a_resource_over_a_model_uses_its_attributes(memory_db: Any) -> None:
     del memory_db
     await _schema()
     author = await Author.create({"name": "Ada", "email": "ada@example.test"})
@@ -643,7 +645,7 @@ async def test_a_resource_over_a_model_uses_its_attributes(memory_db: Any) -> No
     assert "email" not in JsonResource(author).resolve()
 
 
-async def test_when_loaded_only_includes_eager_loaded_relations(memory_db: Any) -> None:  # noqa: F811
+async def test_when_loaded_only_includes_eager_loaded_relations(memory_db: Any) -> None:
     del memory_db
     await _schema()
     author = await Author.create({"name": "Ada"})
@@ -668,7 +670,7 @@ async def test_when_loaded_only_includes_eager_loaded_relations(memory_db: Any) 
     assert resolved["author"]["name"] == "Ada"
 
 
-async def test_when_counted_and_when_aggregated(memory_db: Any) -> None:  # noqa: F811
+async def test_when_counted_and_when_aggregated(memory_db: Any) -> None:
     del memory_db
     await _schema()
     author = await Author.create({"name": "Ada"})
@@ -699,7 +701,7 @@ async def test_when_counted_and_when_aggregated(memory_db: Any) -> None:  # noqa
     assert resolved["labelled"] == "counted"
 
 
-async def test_when_has_reads_a_models_attributes(memory_db: Any) -> None:  # noqa: F811
+async def test_when_has_reads_a_models_attributes(memory_db: Any) -> None:
     del memory_db
     await _schema()
     author = await Author.create({"name": "Ada"})
@@ -708,7 +710,7 @@ async def test_when_has_reads_a_models_attributes(memory_db: Any) -> None:  # no
     assert is_missing(resource.when_has("nickname"))
 
 
-async def test_when_loaded_accepts_a_plain_replacement_value(memory_db: Any) -> None:  # noqa: F811
+async def test_when_loaded_accepts_a_plain_replacement_value(memory_db: Any) -> None:
     del memory_db
     await _schema()
     author = await Author.create({"name": "Ada"})
@@ -720,11 +722,9 @@ async def test_when_loaded_accepts_a_plain_replacement_value(memory_db: Any) -> 
     assert resource.when_loaded("author", lambda relation, extra=None: relation.name) == "Ada"
 
 
-async def test_when_pivot_loaded_reads_the_intermediate_row(memory_db: Any) -> None:  # noqa: F811
+async def test_when_pivot_loaded_reads_the_intermediate_row(memory_db: Any) -> None:
     del memory_db
-    await Schema.create(
-        "posts", lambda table: (table.id(), table.string("title"))
-    )
+    await Schema.create("posts", lambda table: (table.id(), table.string("title")))
     await Schema.create("tags", lambda table: (table.id(), table.string("name")))
     await Schema.create(
         "post_tag",
@@ -747,9 +747,7 @@ async def test_when_pivot_loaded_reads_the_intermediate_row(memory_db: Any) -> N
         timestamps = False
 
         def tags(self) -> Any:
-            return self.belongs_to_many(Tag, "post_tag", "post_id", "tag_id").with_pivot(
-                "added_by"
-            )
+            return self.belongs_to_many(Tag, "post_tag", "post_id", "tag_id").with_pivot("added_by")
 
     post = await Post.create({"title": "Hello"})
     tag = await Tag.create({"name": "python"})
@@ -762,9 +760,7 @@ async def test_when_pivot_loaded_reads_the_intermediate_row(memory_db: Any) -> N
         def to_dict(self, request: Any = None) -> dict[str, Any]:
             return {
                 "name": self.name,
-                "added_by": self.when_pivot_loaded(
-                    "post_tag", lambda pivot: pivot.added_by
-                ),
+                "added_by": self.when_pivot_loaded("post_tag", lambda pivot: pivot.added_by),
                 "renamed": self.when_pivot_loaded_as("pivot", "post_tag", "yes"),
                 "other_table": self.when_pivot_loaded("something_else", "no"),
             }
@@ -779,7 +775,7 @@ async def test_when_pivot_loaded_reads_the_intermediate_row(memory_db: Any) -> N
     assert TagResource(plain).resolve() == {"name": "python"}
 
 
-async def test_when_appended_follows_the_models_appends(memory_db: Any) -> None:  # noqa: F811
+async def test_when_appended_follows_the_models_appends(memory_db: Any) -> None:
     del memory_db
     await _schema()
 
@@ -803,7 +799,7 @@ async def test_when_appended_follows_the_models_appends(memory_db: Any) -> None:
     assert Appending(author).resolve() == {"shouted": "ADA", "override": "given"}
 
 
-async def test_a_collection_over_a_real_paginator(memory_db: Any) -> None:  # noqa: F811
+async def test_a_collection_over_a_real_paginator(memory_db: Any) -> None:
     del memory_db
     await _schema()
     for index in range(5):

@@ -4,28 +4,27 @@ from __future__ import annotations
 
 import pickle
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from almasix.cache import Cache, CacheManager, cache, default_cache_config, set_manager
+from almasix.cache import Cache, CacheManager, cache, set_manager
 from almasix.cache.drivers.array import ArrayStore
 from almasix.cache.drivers.database import DatabaseStore
 from almasix.cache.drivers.file import FileStore
-from almasix.cache.locks import CacheLock, LockTimeoutError
+from almasix.cache.locks import LockTimeoutError
 from almasix.cache.schema import ensure_cache_table, ensure_cache_table_sync
 from almasix.cache.store import Repository, normalize_ttl
 from almasix.framework.application import Application
-from tests.orm_support import memory_db
 
 
 def test_normalize_ttl_variants() -> None:
     assert normalize_ttl(None) is None
     assert normalize_ttl(10) == 10
     assert normalize_ttl(-5) == 0
-    future = datetime.now(timezone.utc).replace(year=2099)
+    future = datetime.now(UTC).replace(year=2099)
     assert normalize_ttl(future) > 0
 
 
@@ -43,7 +42,7 @@ def test_array_expiry_and_bad_increment() -> None:
 
 def test_file_corrupt_and_expiry(tmp_path: Path) -> None:
     store = FileStore(tmp_path)
-    path = store._path("k")  # noqa: SLF001
+    path = store._path("k")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"not-pickle")
     assert store.get("k") is None
@@ -97,7 +96,10 @@ def test_repository_many_and_tags_remember(tmp_path: Path) -> None:
         config={
             "default": "array",
             "prefix": "p_",
-            "stores": {"array": {"driver": "array"}, "file": {"driver": "file", "path": str(tmp_path)}},
+            "stores": {
+                "array": {"driver": "array"},
+                "file": {"driver": "file", "path": str(tmp_path)},
+            },
         }
     )
     set_manager(manager)
@@ -238,7 +240,8 @@ def test_sync_database_and_manager_driver(tmp_path: Path) -> None:
     """Hit sync ``_run`` / ``ensure_cache_table_sync`` (no running loop) + manager database path."""
     import asyncio
 
-    from almasix.orm import DatabaseManager, set_manager as set_db
+    from almasix.orm import DatabaseManager
+    from almasix.orm import set_manager as set_db
 
     async def _boot() -> DatabaseManager:
         manager = DatabaseManager(
@@ -313,7 +316,7 @@ def test_file_lock_and_add_expired(tmp_path: Path) -> None:
     time.sleep(0.02)
     assert store.add("gone", 2) is True
     # corrupt then add
-    path = store._path("c")  # noqa: SLF001
+    path = store._path("c")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"bad")
     assert store.add("c", 1) is True
@@ -370,7 +373,13 @@ async def test_database_lock_full(memory_db) -> None:
 
 def test_manager_facade_extras(tmp_path: Path) -> None:
     manager = CacheManager(
-        config={"default": "array", "stores": {"array": {"driver": "array"}, "file": {"driver": "file", "path": str(tmp_path)}}}
+        config={
+            "default": "array",
+            "stores": {
+                "array": {"driver": "array"},
+                "file": {"driver": "file", "path": str(tmp_path)},
+            },
+        }
     )
     manager.set_default_driver("array")
     set_manager(manager)
@@ -403,6 +412,7 @@ def test_manager_facade_extras(tmp_path: Path) -> None:
     assert fl.get() is True
     assert fl.owner_token()
     assert file_repo.restore_lock("fr", fl.owner_token()).release() is True
+
     # flush_locks fallback when store lacks the method
     class NoFlushStore:
         supports_tags = False
@@ -443,7 +453,7 @@ def test_file_increment_expired_and_corrupt_lock(tmp_path: Path) -> None:
     store.put("e", 1, 0)
     time.sleep(0.02)
     assert store.increment("e") == 1
-    path = store._path("bad")  # noqa: SLF001
+    path = store._path("bad")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"not-pickle")
     assert store.increment("bad") == 1
@@ -456,7 +466,7 @@ def test_file_increment_expired_and_corrupt_lock(tmp_path: Path) -> None:
         with store.lock("held", seconds=5):
             pass
     # corrupt lock file then release
-    lock_path = store._lock_path("held")  # noqa: SLF001
+    lock_path = store._lock_path("held")
     lock_path.write_bytes(b"nope")
     assert lock.release() is True
     # corrupt then re-acquire
@@ -470,7 +480,8 @@ def test_cache_lock_sleep_and_db_block_success(tmp_path: Path) -> None:
     """Hit FileLock/DatabaseLock block success + sleep arcs."""
     import asyncio
 
-    from almasix.orm import DatabaseManager, set_manager as set_db
+    from almasix.orm import DatabaseManager
+    from almasix.orm import set_manager as set_db
 
     fs = FileStore(tmp_path / "locks")
     # Success path of FileLock.block (line: return True when acquired)
@@ -486,7 +497,7 @@ def test_cache_lock_sleep_and_db_block_success(tmp_path: Path) -> None:
     # Re-acquire as same owner overwrites (branch where condition is false)
     assert fs.lock("sleep", seconds=5, owner=held.owner_token()).get() is True
     # Expired lock file → overwrite path
-    path = fs._lock_path("expired")  # noqa: SLF001
+    path = fs._lock_path("expired")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(pickle.dumps({"owner": "old", "expires": time.time() - 10}, protocol=4))
     assert fs.lock("expired", seconds=5).get() is True
@@ -540,7 +551,7 @@ def test_tags_duplicate_key_and_provider_unbound(tmp_path: Path) -> None:
 
 def test_schedule_filesystem_mutex_fallback(tmp_path: Path) -> None:
     """When Cache is not booted, without_overlapping uses filesystem Mutex."""
-    from almasix.console.scheduling import Event, run_event, _try_cache_lock
+    from almasix.console.scheduling import Event, _try_cache_lock, run_event
 
     set_manager(None)
     assert _try_cache_lock("x") is None

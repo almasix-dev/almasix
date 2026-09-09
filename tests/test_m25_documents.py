@@ -119,9 +119,7 @@ async def seed_articles() -> Author:
     await Article.create(
         title="Notes", author_id=author.get_key(), views=30, labels=["math", "engines"]
     )
-    await Article.create(
-        title="Sketches", author_id=author.get_key(), views=5, labels=["math"]
-    )
+    await Article.create(title="Sketches", author_id=author.get_key(), views=5, labels=["math"])
     return author
 
 
@@ -462,9 +460,9 @@ async def test_the_builder_says_no_to_sql_only_calls(documents: DatabaseManager)
     with pytest.raises(UnsupportedQueryError, match="SQL-only"):
         Document.where_column("a", "b")
     with pytest.raises(AttributeError):
-        Article.query().not_a_method_at_all  # noqa: B018 — the access is the test
+        Article.query().not_a_method_at_all
     with pytest.raises(AttributeError):
-        Article.query()._nope  # noqa: B018 — the access is the test
+        Article.query()._nope
 
 
 async def test_reads_that_return_one_document(documents: DatabaseManager) -> None:
@@ -726,7 +724,9 @@ async def test_relations_can_be_named_in_a_mapping_or_on_the_class(
     documents: DatabaseManager,
 ) -> None:
     await seed_articles()
-    loaded = await Author.query().with_({"articles": lambda query: query.where("views", 30)}).first()
+    loaded = (
+        await Author.query().with_({"articles": lambda query: query.where("views", 30)}).first()
+    )
     assert [article.title for article in loaded.articles] == ["Notes"]
 
     class EagerAuthor(Author):
@@ -781,9 +781,9 @@ def test_an_embed_refuses_a_field_it_does_not_declare() -> None:
 def test_reading_an_attribute_an_embed_has_not_got() -> None:
     address = Address(city="Nairobi")
     with pytest.raises(AttributeError, match="has no attribute 'zip'"):
-        address.zip  # noqa: B018 — the access is the test
+        address.zip
     with pytest.raises(AttributeError):
-        address._secret  # noqa: B018 — the access is the test
+        address._secret
 
 
 def test_hydrating_embeds() -> None:
@@ -816,9 +816,7 @@ async def test_embeds_one_reads_writes_and_removes(documents: DatabaseManager) -
 
     address.city = "Cambridge"
     await address.save()
-    assert (await Author.find(author.get_key())).get_relation("address").get().city == (
-        "Cambridge"
-    )
+    assert (await Author.find(author.get_key())).get_relation("address").get().city == ("Cambridge")
 
     await reloaded.get_relation("address").delete()
     assert (await Author.find(author.get_key())).get_relation("address").get() is None
@@ -851,9 +849,7 @@ async def test_embeds_many_is_a_list_inside_the_document(documents: DatabaseMana
     first = tags.first()
     first.name = "renamed"
     await first.save()
-    assert (await Author.find(author.get_key())).get_raw_attribute("tags")[0] == {
-        "name": "renamed"
-    }
+    assert (await Author.find(author.get_key())).get_raw_attribute("tags")[0] == {"name": "renamed"}
 
     latest = await Author.find(author.get_key())
     tags = latest.get_relation("tags")
@@ -1080,9 +1076,7 @@ async def test_the_mongo_store_reads(mongo: tuple[MongoStore, FakeCollection, Fa
     assert await store.aggregate(Query("articles"), "sum", "views") == 3
     assert await store.aggregate(Query("articles"), "count") == 7
     assert await store.group_count(Query("articles"), "author_id") == {None: 3}
-    assert await store.raw_aggregate("articles", [{"$match": {}}]) == [
-        {"_id": None, "value": 3}
-    ]
+    assert await store.raw_aggregate("articles", [{"$match": {}}]) == [{"_id": None, "value": 3}]
 
 
 async def test_a_distinct_query_uses_mongos_own_call(
@@ -1194,7 +1188,7 @@ def test_a_missing_motor_is_named_rather_than_imploding(
 
     monkeypatch.setattr(builtins, "__import__", refuse)
     with pytest.raises(MongoNotInstalled):
-        MongoStore("mongo", {}).client  # noqa: B018 — the access is the test
+        MongoStore("mongo", {}).client
 
 
 # --- the manager ------------------------------------------------------------

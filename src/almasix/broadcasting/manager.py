@@ -243,15 +243,14 @@ class BroadcastManager:
         parameters = [
             parameter
             for parameter in inspect.signature(callback).parameters.values()
-            if parameter.kind
-            in (parameter.POSITIONAL_ONLY, parameter.POSITIONAL_OR_KEYWORD)
+            if parameter.kind in (parameter.POSITIONAL_ONLY, parameter.POSITIONAL_OR_KEYWORD)
         ][1:]  # the first parameter is always the user
 
         # `from __future__ import annotations` turns every annotation into a
         # string, so ask typing for the real classes before looking for models.
         try:
             hints = get_type_hints(callback)
-        except Exception:  # noqa: BLE001 — an unresolvable hint just means no binding
+        except Exception:
             hints = {}
 
         bound: list[Any] = []

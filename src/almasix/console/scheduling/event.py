@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from almasix.console.scheduling.cron import cron_matches, last_day_of_month, next_run_at
 from almasix.aliases import install_camel_aliases
+from almasix.console.scheduling.cron import cron_matches, last_day_of_month, next_run_at
 
 Callback = Callable[..., Any]
 
@@ -432,9 +432,7 @@ class Event:
         """
         moment = self._moment(after)
         if self.repeat_seconds:
-            candidate = next_run_at(
-                self.expression, moment, repeat_seconds=self.repeat_seconds
-            )
+            candidate = next_run_at(self.expression, moment, repeat_seconds=self.repeat_seconds)
             if candidate.minute == moment.minute:
                 return candidate
         candidate = moment.replace(second=0, microsecond=0)

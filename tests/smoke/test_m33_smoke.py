@@ -58,8 +58,7 @@ def test_m33_demo_command_exercises_the_routing_surface() -> None:
         # Resource routing.
         "resource         -> 7 routes",
         "/photos/{photo}/edit               photos.edit",
-        "nested           -> ['/photos/{photo}/comments', "
-        "'/photos/{photo}/comments/{comment}']",
+        "nested           -> ['/photos/{photo}/comments', '/photos/{photo}/comments/{comment}']",
         "shallow          -> ['/photos/{photo}/comments', '/comments/{comment}']",
         "shallow names    -> ['photos.comments.index', 'comments.show']",
         "scoped           -> /photos/{photo}/comments/{comment:slug}",

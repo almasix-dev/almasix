@@ -101,7 +101,7 @@ class ConsoleKernel:
         self.app.apply_middleware_callbacks()
         self.app.register_configured_providers()
         self.app.boot()
-        self.app._bootstrapped = True  # noqa: SLF001
+        self.app._bootstrapped = True
 
     def discover(self) -> None:
         from almasix.console.facade import Artisan, drain_pending
@@ -146,7 +146,9 @@ class ConsoleKernel:
                 # commands do not exist yet. Skipping quietly would drop them
                 # from the CLI depending on what was imported first.
                 self.failures.append(
-                    DiscoveryFailure(name, ImportError(f"{name} is still importing — circular import"))
+                    DiscoveryFailure(
+                        name, ImportError(f"{name} is still importing — circular import")
+                    )
                 )
                 continue
             self._register_module(module)
@@ -251,8 +253,8 @@ class ConsoleKernel:
         if not isolated:
             return instance.run(arguments=arguments, options=options)
 
-        instance._arguments = arguments  # noqa: SLF001 - isolatable_id() may read input
-        instance._options = options  # noqa: SLF001
+        instance._arguments = arguments
+        instance._options = options
         lock = isolation.acquire(
             instance.isolatable_id(),
             instance.isolation_lock_seconds(),
@@ -397,7 +399,11 @@ def _parse_argv(
             meta = by_shortcut[token[1]]
             inline = token[2:].lstrip("=")
             index = _consume_option(
-                argv, index, f"{meta['name']}={inline}" if inline else meta["name"], by_name, options
+                argv,
+                index,
+                f"{meta['name']}={inline}" if inline else meta["name"],
+                by_name,
+                options,
             )
         else:
             positional.append(token)

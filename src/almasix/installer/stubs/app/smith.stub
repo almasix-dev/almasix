@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 """Smith — Almasix in-application CLI.
 
-Once this project is installed into its virtualenv (``pip install -e .``):
+From the application root, the reliable form is always:
 
-    smith version
-    smith serve
-    smith list
-    smith loupe   # aliases: tinker, repl
-
-Or via this root script, which needs no install step:
-
+    python smith version
     python smith serve
+    python smith list
+    python smith loupe   # aliases: tinker, repl
+
+After ``pip install -e .`` of *this* application, a ``smith`` console script is
+also linked into the active virtualenv, so bare ``smith …`` works there too.
+Installing only the framework does not put ``smith`` on PATH.
 """
 
 from __future__ import annotations

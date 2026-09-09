@@ -164,9 +164,9 @@ def resolve_plan(
         answers.install,
         interactive,
         lambda: asker.confirm(
-            "Install Python dependencies now?",
+            "Create a .venv and install Python dependencies?",
             default=True,
-            hint="uv when available, otherwise pip",
+            hint="venv + pip/uv install -e . (and the database extra when needed)",
         ),
         bool(DEFAULTS["install"]),
         plan.asked,
@@ -177,7 +177,11 @@ def resolve_plan(
         plan.npm = _answer(
             answers.npm,
             interactive,
-            lambda: asker.confirm("Run npm install and npm run build?", default=False),
+            lambda: asker.confirm(
+                "Run npm install and npm run build?",
+                default=True,
+                hint="frontend assets for Vite stacks",
+            ),
             bool(DEFAULTS["npm"]),
             plan.asked,
             "npm",
@@ -193,9 +197,11 @@ def resolve_plan(
             interactive,
             lambda: asker.confirm(
                 "Run the default migrations?",
-                default=plan.database == "sqlite",
-                hint="creates users, sessions, cache, and the queue tables",
+                default=True,
+                hint="creates users, password resets, sessions, cache, and queue tables",
             ),
+            # Non-interactive: only when --migrate was passed; interactive
+            # default above is Yes once dependencies are being installed.
             bool(DEFAULTS["migrate"]),
             plan.asked,
             "migrate",

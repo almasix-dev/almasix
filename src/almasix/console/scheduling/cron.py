@@ -13,8 +13,7 @@ _MONTHS = {
     )
 }
 _DAYS = {
-    name: number
-    for number, name in enumerate(("sun", "mon", "tue", "wed", "thu", "fri", "sat"), 0)
+    name: number for number, name in enumerate(("sun", "mon", "tue", "wed", "thu", "fri", "sat"), 0)
 }
 
 

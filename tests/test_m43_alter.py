@@ -27,13 +27,13 @@ def test_change_restates_the_whole_column_for_mysql() -> None:
         lambda t: t.string("title", 100).nullable(False).default("Untitled").change(),
         mysql.dialect(),
     )
-    assert sql == [
-        "ALTER TABLE `posts` MODIFY title VARCHAR(100) NOT NULL DEFAULT 'Untitled'"
-    ]
+    assert sql == ["ALTER TABLE `posts` MODIFY title VARCHAR(100) NOT NULL DEFAULT 'Untitled'"]
 
 
 def test_change_on_postgresql_says_one_thing_at_a_time() -> None:
-    sql = statements(lambda t: t.integer("votes").nullable(False).default(0).change(), postgresql.dialect())
+    sql = statements(
+        lambda t: t.integer("votes").nullable(False).default(0).change(), postgresql.dialect()
+    )
     assert sql == [
         'ALTER TABLE "posts" ALTER COLUMN "votes" TYPE INTEGER USING "votes"::INTEGER',
         'ALTER TABLE "posts" ALTER COLUMN "votes" SET NOT NULL',
@@ -44,7 +44,9 @@ def test_change_on_postgresql_says_one_thing_at_a_time() -> None:
     assert dropped[1].endswith("DROP NOT NULL")
     assert dropped[2].endswith("DROP DEFAULT")
 
-    stamped = statements(lambda t: t.timestamp("seen_at").use_current().change(), postgresql.dialect())
+    stamped = statements(
+        lambda t: t.timestamp("seen_at").use_current().change(), postgresql.dialect()
+    )
     assert stamped[2].endswith("SET DEFAULT CURRENT_TIMESTAMP")
 
 
@@ -52,9 +54,9 @@ def test_change_on_the_engines_that_spell_it_differently() -> None:
     assert statements(lambda t: t.string("title").change(), mssql.dialect()) == [
         "ALTER TABLE [posts] ALTER COLUMN [title] VARCHAR(255) NULL"
     ]
-    assert statements(
-        lambda t: t.string("title").nullable(False).change(), mssql.dialect()
-    ) == ["ALTER TABLE [posts] ALTER COLUMN [title] VARCHAR(255) NOT NULL"]
+    assert statements(lambda t: t.string("title").nullable(False).change(), mssql.dialect()) == [
+        "ALTER TABLE [posts] ALTER COLUMN [title] VARCHAR(255) NOT NULL"
+    ]
     assert statements(lambda t: t.integer("votes").change(), oracle.dialect()) == [
         'ALTER TABLE "posts" MODIFY (votes INTEGER)'
     ]
@@ -111,9 +113,9 @@ def test_a_named_drop_takes_the_name_it_is_given() -> None:
     assert statements(lambda t: t.drop_unique(name="posts_slug_unique"), mysql.dialect()) == [
         "ALTER TABLE `posts` DROP INDEX `posts_slug_unique`"
     ]
-    assert statements(
-        lambda t: t.drop_foreign(name="fk_author"), postgresql.dialect()
-    ) == ['ALTER TABLE "posts" DROP CONSTRAINT "fk_author"']
+    assert statements(lambda t: t.drop_foreign(name="fk_author"), postgresql.dialect()) == [
+        'ALTER TABLE "posts" DROP CONSTRAINT "fk_author"'
+    ]
 
 
 def test_sqlite_cannot_drop_constraints_and_says_so() -> None:
@@ -183,7 +185,11 @@ def test_adding_a_primary_key_after_the_fact() -> None:
 async def test_a_primary_key_declared_at_create_time(memory_db) -> None:
     await Schema.create(
         "tags",
-        lambda table: (table.string("locale", 5), table.string("slug"), table.primary(["locale", "slug"])),
+        lambda table: (
+            table.string("locale", 5),
+            table.string("slug"),
+            table.primary(["locale", "slug"]),
+        ),
     )
     await DB.table("tags").insert({"locale": "en", "slug": "php"})
     with pytest.raises(Exception, match="UNIQUE|PRIMARY"):
@@ -270,14 +276,18 @@ async def test_the_conditional_helpers_run_only_when_they_should(memory_db) -> N
     await Schema.when_table_has_column("posts", "title", lambda table: table.string("subtitle"))
     await Schema.when_table_has_column("posts", "absent", lambda table: table.string("never"))
     await Schema.when_table_doesnt_have_column("posts", "slug", lambda table: table.string("slug"))
-    await Schema.when_table_doesnt_have_column("posts", "title", lambda table: table.string("also_never"))
+    await Schema.when_table_doesnt_have_column(
+        "posts", "title", lambda table: table.string("also_never")
+    )
 
     names = {column["name"] for column in await Schema.columns("posts")}
     assert {"subtitle", "slug"} <= names
     assert "never" not in names and "also_never" not in names
 
 
-async def test_dropping_every_table_ignores_the_order_they_reference_each_other_in(memory_db) -> None:
+async def test_dropping_every_table_ignores_the_order_they_reference_each_other_in(
+    memory_db,
+) -> None:
     await Schema.create("users", lambda table: (table.id(), table.string("email")))
     await Schema.create(
         "posts",
@@ -294,8 +304,7 @@ def test_how_each_engine_switches_constraint_checking() -> None:
     assert _foreign_key_switch(sqlite.dialect(), False) == "PRAGMA foreign_keys=OFF"
     assert _foreign_key_switch(mysql.dialect(), True) == "SET FOREIGN_KEY_CHECKS=1"
     assert (
-        _foreign_key_switch(postgresql.dialect(), False)
-        == "SET session_replication_role = replica"
+        _foreign_key_switch(postgresql.dialect(), False) == "SET session_replication_role = replica"
     )
     # SQL Server checks per constraint, so there is nothing global to say.
     assert _foreign_key_switch(mssql.dialect(), False) is None

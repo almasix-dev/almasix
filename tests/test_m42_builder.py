@@ -50,7 +50,9 @@ async def test_a_join_may_be_built_by_a_callable(memory_db) -> None:
     await _shop()
     query = customers().join(
         "orders",
-        lambda join: join.on("customers.id", "=", "orders.customer_id").where("orders.total", ">", 20),
+        lambda join: join.on("customers.id", "=", "orders.customer_id").where(
+            "orders.total", ">", 20
+        ),
     )
     rows = await query.select("customers.name", "orders.total").get()
     assert [(row["name"], row["total"]) for row in rows] == [("Ada", 50), ("Ada", 70)]
@@ -101,8 +103,11 @@ async def test_an_unknown_join_type_is_refused(memory_db) -> None:
 
 async def test_a_subquery_can_be_joined_under_a_name(memory_db) -> None:
     await _shop()
-    totals = DB.table("orders").select("customer_id").select_raw("sum(total) as spent").group_by(
-        "customer_id"
+    totals = (
+        DB.table("orders")
+        .select("customer_id")
+        .select_raw("sum(total) as spent")
+        .group_by("customer_id")
     )
     query = customers().join_sub(totals, "totals", "totals.customer_id", "=", "customers.id")
     rows = await query.select("customers.name", "totals.spent").order_by("customers.name").get()
@@ -161,7 +166,11 @@ async def test_a_column_the_subquery_did_not_select_is_named_as_written(memory_d
 
 async def test_a_subquery_can_be_a_selected_column_or_an_ordering(memory_db) -> None:
     await _shop()
-    spent = DB.table("orders").select_raw("sum(total)").where_column("orders.customer_id", "customers.id")
+    spent = (
+        DB.table("orders")
+        .select_raw("sum(total)")
+        .where_column("orders.customer_id", "customers.id")
+    )
     rows = await customers().select("name").select_sub(spent, "spent").order_by("name").get()
     assert [(row["name"], row["spent"]) for row in rows] == [
         ("Ada", 120),
@@ -170,7 +179,9 @@ async def test_a_subquery_can_be_a_selected_column_or_an_ordering(memory_db) -> 
     ]
     ordered = list(await customers().order_by_sub(spent, "desc").pluck("name"))
     assert ordered == ["Ada", "Grace", "Linus"]
-    added = await customers().select("name").add_select_sub(spent, "spent").where("name", "Ada").first()
+    added = (
+        await customers().select("name").add_select_sub(spent, "spent").where("name", "Ada").first()
+    )
     assert added["spent"] == 120
 
 
@@ -180,10 +191,7 @@ async def test_a_subquery_can_be_a_selected_column_or_an_ordering(memory_db) -> 
 async def test_a_union_combines_two_queries_and_orders_the_result(memory_db) -> None:
     await _shop()
     query = (
-        customers()
-        .where("name", "Ada")
-        .union(customers().where("name", "Linus"))
-        .order_by("name")
+        customers().where("name", "Ada").union(customers().where("name", "Linus")).order_by("name")
     )
     assert [row["name"] for row in await query.get()] == ["Ada", "Linus"]
 
@@ -211,7 +219,9 @@ async def test_locking_compiles_and_can_be_taken_back(memory_db) -> None:
     assert "FOR UPDATE" in str(customers().lock_for_update().to_select().compile(dialect=pg))
     assert "FOR SHARE" in str(customers().shared_lock().to_select().compile(dialect=pg))
     assert "FOR UPDATE" in str(customers().lock().to_select().compile(dialect=pg))
-    assert "FOR" not in str(customers().lock_for_update().lock(False).to_select().compile(dialect=pg))
+    assert "FOR" not in str(
+        customers().lock_for_update().lock(False).to_select().compile(dialect=pg)
+    )
     assert "FOR SHARE" in str(customers().lock("share").to_select().compile(dialect=pg))
     # SQLite has no row locks, so the clause is dropped rather than failing.
     assert len(await customers().lock_for_update().get()) == 3
@@ -241,16 +251,25 @@ async def test_the_having_family(memory_db) -> None:
     await _shop()
 
     def spend() -> QueryBuilder:
-        return DB.table("orders").group_by("customer_id").select("customer_id").select_raw(
-            "sum(total) as spent"
+        return (
+            DB.table("orders")
+            .group_by("customer_id")
+            .select("customer_id")
+            .select_raw("sum(total) as spent")
         )
 
-    assert [row["customer_id"] for row in await spend().having_between("spent", [100, 200]).get()] == [1]
+    assert [
+        row["customer_id"] for row in await spend().having_between("spent", [100, 200]).get()
+    ] == [1]
     assert len(await spend().having_raw("sum(total) > 100").get()) == 1
     assert len(await spend().having("customer_id", 1).or_having("customer_id", 2).get()) == 2
-    assert len(await spend().having_raw("sum(total) > 500").or_having_raw("sum(total) > 5").get()) == 2
+    assert (
+        len(await spend().having_raw("sum(total) > 500").or_having_raw("sum(total) > 5").get()) == 2
+    )
     assert len(await spend().having_between("spent", 100, 200).get()) == 1
-    assert len(await spend().having("customer_id", 0).or_having_between("spent", [1, 20]).get()) == 1
+    assert (
+        len(await spend().having("customer_id", 0).or_having_between("spent", [1, 20]).get()) == 1
+    )
     assert len(await spend().having_not_null("spent").get()) == 2
     assert len(await spend().having_null("spent").get()) == 0
     assert len(await spend().having(sa.text("sum(total) > 100")).get()) == 1
@@ -482,8 +501,8 @@ async def test_pending_attributes_seed_the_builders_own_creators(memory_db) -> N
     assert made.kind == "bug"
     unsaved = await Feature.query().with_attributes({"kind": "bug"}).first_or_new({"name": "Draft"})
     assert unsaved.kind == "bug"
-    upserted = await Feature.query().with_attributes({"kind": "bug"}).update_or_create(
-        {"name": "Freeze"}
+    upserted = (
+        await Feature.query().with_attributes({"kind": "bug"}).update_or_create({"name": "Freeze"})
     )
     assert upserted.kind == "bug"
 

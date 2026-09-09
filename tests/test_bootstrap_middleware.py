@@ -11,8 +11,10 @@ from almasix.framework import Application, Middleware
 from almasix.http import (
     HEADER_X_FORWARDED_FOR,
     HEADER_X_FORWARDED_PROTO,
-    Middleware as HttpMiddleware,
     Request,
+)
+from almasix.http import (
+    Middleware as HttpMiddleware,
 )
 from almasix.http.controller import Controller
 from almasix.installer.scaffold import scaffold_app
@@ -104,7 +106,7 @@ def test_trust_proxies_rewrites_client_and_scheme(tmp_path: Path) -> None:
 
     app.router.routes.clear()
     Route.get("/probe", [ProbeController, "index"])
-    app.http_kernel._asgi = None  # noqa: SLF001
+    app.http_kernel._asgi = None
     client = TestClient(app.asgi)
     response = client.get(
         "/probe",
@@ -143,7 +145,7 @@ def test_trust_hosts_rejects_unknown_host(tmp_path: Path) -> None:
 
     app.router.routes.clear()
     Route.get("/", [OkController, "index"])
-    app.http_kernel._asgi = None  # noqa: SLF001
+    app.http_kernel._asgi = None
     client = TestClient(app.asgi, raise_server_exceptions=False)
 
     allowed = client.get("/", headers={"Host": "app.test"})

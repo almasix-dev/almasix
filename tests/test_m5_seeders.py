@@ -129,7 +129,9 @@ async def test_resolve_string_container_and_sync_run(seed_db) -> None:
     await root.call(CountingSeeder)
     assert Cmd.messages
 
-    assert isinstance(Seeder().set_container(GoodContainer()).resolve(CountingSeeder), CountingSeeder)
+    assert isinstance(
+        Seeder().set_container(GoodContainer()).resolve(CountingSeeder), CountingSeeder
+    )
 
     with pytest.raises(SeederError):
         root.resolve(object)  # type: ignore[arg-type]

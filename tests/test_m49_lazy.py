@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 import pytest
 
 from almasix.support import collect
-from almasix.support.lazy import AsyncLazyCollection, LazyCollection, lazy
 from almasix.support.collection import Collection
+from almasix.support.lazy import AsyncLazyCollection, LazyCollection, lazy
 from tests.orm_support import memory_db  # noqa: F401
 
 

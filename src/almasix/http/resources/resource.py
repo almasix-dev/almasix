@@ -185,9 +185,7 @@ class JsonResource(Resolvable):
         """Include a ``with_sum`` / ``with_avg`` / … result when it was loaded."""
         return self._when_extra(f"{relationship}_{aggregate}_{column}", value, default)
 
-    def when_pivot_loaded(
-        self, table: str, value: Any = MISSING, default: Any = MISSING
-    ) -> Any:
+    def when_pivot_loaded(self, table: str, value: Any = MISSING, default: Any = MISSING) -> Any:
         return self.when_pivot_loaded_as("pivot", table, value, default)
 
     def when_pivot_loaded_as(

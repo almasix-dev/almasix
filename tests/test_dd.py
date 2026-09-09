@@ -8,7 +8,7 @@ import pytest
 
 from almasix.console.command import Command
 from almasix.console.kernel import ConsoleKernel
-from almasix.debug import DumpAndDie, Caller, dd, dump, render_dd_html, render_dump_html, serialize
+from almasix.debug import Caller, DumpAndDie, dd, dump, render_dd_html, render_dump_html, serialize
 from almasix.exceptions.handler import Handler
 from almasix.framework import Application
 from tests.support import purge_generated_app_modules

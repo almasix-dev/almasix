@@ -90,7 +90,7 @@ it the default store.
 
 ## Session driver
 
-```env
+```ini
 SESSION_DRIVER=redis
 ```
 
@@ -115,7 +115,7 @@ the configured prefix. Default remains `cookie` for local apps.
 },
 ```
 
-```env
+```ini
 QUEUE_CONNECTION=redis
 ```
 

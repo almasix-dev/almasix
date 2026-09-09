@@ -100,7 +100,7 @@ def test_encrypter_keys_dedupe() -> None:
 
 def test_crypt_facade_and_helpers(tmp_path: Path) -> None:
     Crypt.set_encrypter(Encrypter("facade-key"))
-    assert Crypt.encrypt("hi") 
+    assert Crypt.encrypt("hi")
     assert Crypt.decrypt(Crypt.encrypt([1, 2])) == [1, 2]
     assert Crypt.decrypt_string(Crypt.encrypt_string("z")) == "z"
     assert encrypt({"n": 1})
@@ -191,7 +191,9 @@ def test_provider_boot_noop_when_unbound() -> None:
     EncryptionServiceProvider(MiniApp()).boot()
 
 
-def test_key_generate_creates_and_updates_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_key_generate_creates_and_updates_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     runner = CliRunner()
     from almasix.console.kernel import ConsoleKernel

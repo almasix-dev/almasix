@@ -56,9 +56,7 @@ class ProcessResult:
             callback(self, exception)
         raise exception
 
-    def throw_if(
-        self, condition: Any, callback: Callable[..., Any] | None = None
-    ) -> ProcessResult:
+    def throw_if(self, condition: Any, callback: Callable[..., Any] | None = None) -> ProcessResult:
         if callable(condition):
             condition = condition(self)
         if condition:
@@ -73,6 +71,4 @@ class ProcessResult:
         return self.throw_if(not condition, callback)
 
     def __repr__(self) -> str:
-        return (
-            f"<ProcessResult command={self._command!r} exit_code={self._exit_code!r}>"
-        )
+        return f"<ProcessResult command={self._command!r} exit_code={self._exit_code!r}>"

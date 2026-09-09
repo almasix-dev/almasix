@@ -1,0 +1,60 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "${APP_KEY}"
+      APP_URL: "http://localhost:8000"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: almasix
+      DB_USERNAME: almasix
+      DB_PASSWORD: almasix
+      QUEUE_CONNECTION: database
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/up')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  worker:
+    build: .
+    command: ["smith", "queue:work", "--tries=3"]
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "${APP_KEY}"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: almasix
+      DB_USERNAME: almasix
+      DB_PASSWORD: almasix
+      QUEUE_CONNECTION: database
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: almasix
+      POSTGRES_USER: almasix
+      POSTGRES_PASSWORD: almasix
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U almasix -d almasix"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

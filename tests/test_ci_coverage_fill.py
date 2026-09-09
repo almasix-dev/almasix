@@ -14,7 +14,8 @@ from almasix.console.commands.queue_work import QueueListenCommand, QueueWorkCom
 from almasix.console.commands.storage_link import StorageLinkCommand
 from almasix.console.display import describe, serialize, to_json
 from almasix.console.repl import resolve_awaitable
-from almasix.debug import dump, render_dd_html, render_dump_html, serialize as debug_serialize
+from almasix.debug import dump, render_dd_html, render_dump_html
+from almasix.debug import serialize as debug_serialize
 from almasix.framework.application import Application
 from almasix.notifications.jobs import (
     SendQueuedNotification,
@@ -29,12 +30,10 @@ from almasix.notifications.verification import (
     verify_signature,
 )
 from almasix.queue import Job, ShouldQueue, ensure_tables
-from almasix.queue.helpers import default_queue_config, set_dispatcher, set_manager
 from almasix.queue.dispatcher import Dispatcher
+from almasix.queue.helpers import default_queue_config, set_dispatcher, set_manager
 from almasix.queue.manager import QueueManager
 from almasix.support import collect
-from tests.orm_support import memory_db
-
 
 # ---------------------------------------------------------------------------
 # Verification
@@ -42,7 +41,9 @@ from tests.orm_support import memory_db
 
 
 class _VerifyUser(MustVerifyEmail):
-    def __init__(self, *, user_id: int = 1, email: str = "ada@example.com", verified: bool = False) -> None:
+    def __init__(
+        self, *, user_id: int = 1, email: str = "ada@example.com", verified: bool = False
+    ) -> None:
         self.id = user_id
         self.email = email
         self.email_verified_at = "yes" if verified else None
@@ -251,23 +252,23 @@ async def test_queue_failed_and_retry_commands(memory_db: Any) -> None:
 
         def _retry_all() -> int:
             cmd = QueueRetryCommand(app)
-            cmd._options = {"all": True}  # noqa: SLF001
+            cmd._options = {"all": True}
             return cmd.handle()
 
         assert pool.submit(_retry_all).result() == 0
 
         def _retry_missing() -> int:
             cmd = QueueRetryCommand(app)
-            cmd._options = {"all": False}  # noqa: SLF001
-            cmd._arguments = {}  # noqa: SLF001
+            cmd._options = {"all": False}
+            cmd._arguments = {}
             return cmd.handle()
 
         assert pool.submit(_retry_missing).result() == 1
 
         def _retry_missing_id() -> int:
             cmd = QueueRetryCommand(app)
-            cmd._options = {"all": False}  # noqa: SLF001
-            cmd._arguments = {"id": 99999}  # noqa: SLF001
+            cmd._options = {"all": False}
+            cmd._arguments = {"id": 99999}
             return cmd.handle()
 
         assert pool.submit(_retry_missing_id).result() == 1
@@ -283,13 +284,15 @@ async def test_queue_failed_and_retry_commands(memory_db: Any) -> None:
             )
             app2.container.instance(QueueManager, sync_only)
             bad = QueueRetryCommand(app2)
-            bad._options = {"all": True}  # noqa: SLF001
+            bad._options = {"all": True}
             return bad.handle()
 
         assert pool.submit(_retry_sync_only).result() == 1
 
 
-def test_queue_work_once_and_listen_interrupt(memory_db: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_queue_work_once_and_listen_interrupt(
+    memory_db: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
     del memory_db
     asyncio.run(ensure_tables())
     config = default_queue_config("sqlite")
@@ -304,7 +307,7 @@ def test_queue_work_once_and_listen_interrupt(memory_db: Any, monkeypatch: pytes
     app.container.instance(QueueManager, manager)
 
     work = QueueWorkCommand(app)
-    work._options = {"once": True, "queue": "default", "connection": "database"}  # noqa: SLF001
+    work._options = {"once": True, "queue": "default", "connection": "database"}
     assert work.handle() == 0
 
     def _raise_interrupt(*_a: Any, **_k: Any) -> int:
@@ -312,7 +315,7 @@ def test_queue_work_once_and_listen_interrupt(memory_db: Any, monkeypatch: pytes
 
     monkeypatch.setattr(asyncio, "run", _raise_interrupt)
     listen = QueueListenCommand(app)
-    listen._options = {"queue": "default"}  # noqa: SLF001
+    listen._options = {"queue": "default"}
     assert listen.handle() == 0
 
 

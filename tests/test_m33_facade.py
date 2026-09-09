@@ -271,9 +271,7 @@ def test_middleware_names_flatten_from_every_shape(given: Any, expected: list[st
         (True, []),
     ],
 )
-def test_resource_action_names_flatten_from_every_shape(
-    given: Any, expected: list[str]
-) -> None:
+def test_resource_action_names_flatten_from_every_shape(given: Any, expected: list[str]) -> None:
     from almasix.routing.resource import _names
 
     assert _names([given]) == expected

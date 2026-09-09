@@ -34,8 +34,10 @@ def users() -> QueryBuilder:
 def test_json_containment_per_engine() -> None:
     query = users().where_json_contains("options->languages", "en")
     assert "json_each" in sql(query, sqlite.dialect())
-    assert 'JSON_CONTAINS(users.options, \'"en"\', \'$."languages"\')' in sql(query, mysql.dialect())
-    assert "#> '{languages}'" in sql(query, postgresql.dialect())
+    assert "JSON_CONTAINS(users.options, '\"en\"', '$.\"languages\"')" in sql(
+        query, mysql.dialect()
+    )
+    assert "#> CAST('{languages}' AS text[])" in sql(query, postgresql.dialect())
     assert "@> CAST" in sql(query, postgresql.dialect())
 
 
@@ -74,7 +76,9 @@ def test_a_json_update_is_written_in_the_engine_s_own_function() -> None:
 
     assert "JSON_SET(options, '$.\"colour\"', JSON('\"blue\"'))" == update(sqlite.dialect())
     assert "CAST('\"blue\"' AS JSON)" in update(mysql.dialect())
-    assert "JSONB_SET(CAST(options AS JSONB), '{colour}'" in update(postgresql.dialect())
+    assert "JSONB_SET(CAST(options AS JSONB), CAST('{colour}' AS text[])" in update(
+        postgresql.dialect()
+    )
 
 
 # --- full text --------------------------------------------------------------

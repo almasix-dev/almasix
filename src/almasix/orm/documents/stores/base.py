@@ -52,7 +52,9 @@ class DocumentStore(ABC):
         """Set fields on every matching document; returns how many changed."""
 
     @abstractmethod
-    async def increment(self, query: Query, amounts: Mapping[str, Any], values: Mapping[str, Any]) -> int:
+    async def increment(
+        self, query: Query, amounts: Mapping[str, Any], values: Mapping[str, Any]
+    ) -> int:
         """Add to numeric fields in place, and set anything in `values`."""
 
     @abstractmethod
@@ -84,7 +86,7 @@ class DocumentStore(ABC):
     async def collections(self) -> list[str]:
         """Every collection this store holds."""
 
-    async def disconnect(self) -> None:
+    async def disconnect(self) -> None:  # noqa: B027 — optional; memory store has nothing to close
         """Release whatever the store is holding open."""
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid

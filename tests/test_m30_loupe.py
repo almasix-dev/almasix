@@ -10,23 +10,23 @@ from almasix.console.kernel import ConsoleKernel
 from almasix.console.repl import build_namespace
 from almasix.installer.scaffold import scaffold_app
 
-MODEL = '''
+MODEL = """
 from almasix.orm import Model
 
 
 class Widget(Model):
     fillable = ("name",)
-'''
+"""
 
 #: Loupe reaches for ``User`` by name before it discovers anything, the way
 #: Tinker does, so the refusal below has to be tested against a real one.
-USER = '''
+USER = """
 from almasix.orm import Model
 
 
 class User(Model):
     fillable = ("email",)
-'''
+"""
 
 
 @pytest.fixture()

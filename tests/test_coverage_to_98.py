@@ -71,7 +71,9 @@ def test_translator_lookup_and_placeholder_edges(tmp_path: Path) -> None:
         "translations = {'nested': {'hi': 'hello'}, 'cart': {'apple': 'one|many'}}\n",
         encoding="utf-8",
     )
-    (lang / "en.json").write_text('{"Hello world": "Hi", "ns.key": "from-json"}\n', encoding="utf-8")
+    (lang / "en.json").write_text(
+        '{"Hello world": "Hi", "ns.key": "from-json"}\n', encoding="utf-8"
+    )
     t = Translator(locale="en", fallback="en")
     t.add_path(lang)
     t.add_json_path(lang)
@@ -93,10 +95,10 @@ def test_translator_lookup_and_placeholder_edges(tmp_path: Path) -> None:
     # JSON namespace needle + runtime fallbacks.
     assert t.get("pkg::Hello world") in {"Hi", "runtime-wins", "Hello world"} or True
     # Group key with empty item → returns the whole group dict (or None).
-    assert t._lookup("messages.", "en") == {  # noqa: SLF001
+    assert t._lookup("messages.", "en") == {
         "nested": {"hi": "hello"},
         "cart": {"apple": "one|many"},
-    } or t._lookup("messages.", "en")  # noqa: SLF001
+    } or t._lookup("messages.", "en")
 
     t.add_lines({"bare": "line"}, "en")
     assert t.get("bare") == "line"
@@ -119,7 +121,7 @@ async def test_set_locale_middleware_edges(tmp_path: Path) -> None:
     set_translator(t)
 
     # Non-directory path is skipped in _available_locales.
-    t.loader._paths.append(tmp_path / "missing-dir")  # noqa: SLF001
+    t.loader._paths.append(tmp_path / "missing-dir")
     locales = _available_locales(t)
     assert "en" in locales and "sw" in locales and "fr" in locales
 
@@ -165,7 +167,7 @@ def test_form_request_schema_edges() -> None:
             return None
 
     req = Mixed(_Stub())  # type: ignore[arg-type]
-    assert req.request is req._request  # noqa: SLF001
+    assert req.request is req._request
     req.validate()
     assert req.data.title == "ok"
 
@@ -224,7 +226,7 @@ async def test_request_bag_edges() -> None:
     assert request.query() == {"q": "1"} or "q" in request.query()
     assert isinstance(request.route(), dict)
     assert "tags" in request.keys()
-    request._input["flag"] = None  # noqa: SLF001
+    request._input["flag"] = None
     assert request.boolean("flag") is False
     assert _flatten_multi([("a", 1), ("a", 2), ("a", 3)]) == {"a": [1, 2, 3]}
 
@@ -241,14 +243,14 @@ def test_bootstrap_middleware_use_and_replace() -> None:
     }
     mw = Middleware(repo)
     mw.use(["only"])
-    assert mw._global == ["only"]  # noqa: SLF001
+    assert mw._global == ["only"]
     mw.group("api", replace=["locale"])
-    assert mw._groups["api"] == ["locale"]  # noqa: SLF001
+    assert mw._groups["api"] == ["locale"]
     mw.trust_hosts(["example.com"])
-    assert "trust.hosts" in mw._global  # noqa: SLF001
+    assert "trust.hosts" in mw._global
     # Second call should not double-prepend.
     mw.trust_hosts(["example.com"])
-    assert mw._global.count("trust.hosts") == 1  # noqa: SLF001
+    assert mw._global.count("trust.hosts") == 1
 
 
 def test_container_string_annotation_and_defaults() -> None:
@@ -260,7 +262,7 @@ def test_container_string_annotation_and_defaults() -> None:
             self.value = value
 
     class NeedsStringHint:
-        def __init__(self, dep: "Dep") -> None:  # noqa: F821
+        def __init__(self, dep: Dep) -> None:
             self.dep = dep
 
     container = Container()
@@ -274,7 +276,7 @@ def test_container_string_annotation_and_defaults() -> None:
             assert isinstance(container.resolve(NeedsStringHint), NeedsStringHint)
         assert isinstance(container.resolve(HasDefault), HasDefault)
 
-    assert container._evaluate_string_annotation("???bad", {}, {}) == "???bad"  # noqa: SLF001
+    assert container._evaluate_string_annotation("???bad", {}, {}) == "???bad"
 
 
 def test_parse_accept_language_bad_quality() -> None:
@@ -385,7 +387,7 @@ def test_schema_fk_action_helpers() -> None:
 
     # FK missing ref_table raises.
     broken = Blueprint("posts")
-    broken._foreign_keys.append(ForeignKeyDefinition(broken, ["user_id"]))  # noqa: SLF001
+    broken._foreign_keys.append(ForeignKeyDefinition(broken, ["user_id"]))
     with pytest.raises(SchemaError):
         compile_table_statements(broken, postgresql.dialect())
 
@@ -471,7 +473,7 @@ async def test_model_equality_accessors_and_relations(memory_db) -> None:
 
     # Hidden attrs/relations omitted from dict; extra keys included.
     a.set_relation("notes", Collection([]))
-    a._extra["flash"] = "ok"  # noqa: SLF001
+    a._extra["flash"] = "ok"
     payload = a.to_dict()
     assert "label" not in payload
     assert payload.get("display")
@@ -613,7 +615,7 @@ async def test_relation_existence_callbacks_and_upsert(memory_db) -> None:
         await QueryBuilder.for_table("people").where("id", -1).first_or_fail()
 
     builder = QueryBuilder.for_table("people")
-    affected = await builder._upsert_probe(  # noqa: SLF001
+    affected = await builder._upsert_probe(
         [{"id": person.id, "name": "Pat2"}, {"id": 99999, "name": "New"}],
         ["id"],
         ["name"],
@@ -624,18 +626,18 @@ async def test_relation_existence_callbacks_and_upsert(memory_db) -> None:
         name = "unknown"
 
     assert (
-        _native_upsert(builder._table_clause("people"), [{"id": 1}], ["id"], ["name"], _NoUpsert())  # noqa: SLF001
+        _native_upsert(builder._table_clause("people"), [{"id": 1}], ["id"], ["name"], _NoUpsert())
         is None
     )
 
-    def scope_self(self, query, flag=True):  # noqa: ANN001
+    def scope_self(self, query, flag=True):
         return query.where("id", ">", 0) if flag else query
 
-    def scope_plain(query):  # noqa: ANN001
+    def scope_plain(query):
         return query
 
     class _Weird:
-        def __call__(self, query):  # noqa: ANN001
+        def __call__(self, query):
             return query
 
     _invoke_scope(scope_self, Person, Person.query(), (), {})

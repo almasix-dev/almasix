@@ -162,7 +162,7 @@ async def schema() -> None:
 # --- definitions, make, create --------------------------------------------
 
 
-async def test_a_factory_makes_one_unsaved_model(memory_db) -> None:  # noqa: F811
+async def test_a_factory_makes_one_unsaved_model(memory_db) -> None:
     del memory_db
     author = await AuthorFactory.new().make()
     assert isinstance(author, Author)
@@ -170,7 +170,7 @@ async def test_a_factory_makes_one_unsaved_model(memory_db) -> None:  # noqa: F8
     assert not author.exists
 
 
-async def test_a_factory_creates_and_persists(memory_db) -> None:  # noqa: F811
+async def test_a_factory_creates_and_persists(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().create()
@@ -178,7 +178,7 @@ async def test_a_factory_creates_and_persists(memory_db) -> None:  # noqa: F811
     assert await Author.query().count() == 1
 
 
-async def test_a_count_returns_a_collection(memory_db) -> None:  # noqa: F811
+async def test_a_count_returns_a_collection(memory_db) -> None:
     del memory_db
     await schema()
     authors = await Author.factory().count(3).create()
@@ -189,21 +189,21 @@ async def test_a_count_returns_a_collection(memory_db) -> None:  # noqa: F811
     assert len(await Author.factory().count(0).make()) == 0
 
 
-async def test_times_and_new_are_the_two_entry_points(memory_db) -> None:  # noqa: F811
+async def test_times_and_new_are_the_two_entry_points(memory_db) -> None:
     del memory_db
     await schema()
     assert len(await AuthorFactory.times(2).create()) == 2
     assert (await AuthorFactory.new({"name": "Ada"}).make()).name == "Ada"
 
 
-async def test_attributes_passed_to_make_and_create_win(memory_db) -> None:  # noqa: F811
+async def test_attributes_passed_to_make_and_create_win(memory_db) -> None:
     del memory_db
     await schema()
     assert (await Author.factory().make({"name": "Grace"})).name == "Grace"
     assert (await Author.factory().create({"name": "Grace"})).name == "Grace"
 
 
-async def test_a_factory_bypasses_the_mass_assignment_guard(memory_db) -> None:  # noqa: F811
+async def test_a_factory_bypasses_the_mass_assignment_guard(memory_db) -> None:
     del memory_db
     await schema()
     assert Author._totally_guarded()
@@ -211,7 +211,7 @@ async def test_a_factory_bypasses_the_mass_assignment_guard(memory_db) -> None: 
     assert author.name
 
 
-async def test_raw_returns_attributes_without_a_model(memory_db) -> None:  # noqa: F811
+async def test_raw_returns_attributes_without_a_model(memory_db) -> None:
     del memory_db
     single = await AuthorFactory.new().raw({"name": "Ada"})
     assert single["name"] == "Ada"
@@ -220,7 +220,7 @@ async def test_raw_returns_attributes_without_a_model(memory_db) -> None:  # noq
     assert len(many) == 2 and many[0]["email"] != many[1]["email"]
 
 
-async def test_one_and_many_helpers(memory_db) -> None:  # noqa: F811
+async def test_one_and_many_helpers(memory_db) -> None:
     del memory_db
     await schema()
     assert isinstance(await Author.factory().count(5).make_one(), Author)
@@ -231,7 +231,7 @@ async def test_one_and_many_helpers(memory_db) -> None:  # noqa: F811
     assert await Author.query().count() == 6
 
 
-async def test_lazy_defers_the_write(memory_db) -> None:  # noqa: F811
+async def test_lazy_defers_the_write(memory_db) -> None:
     del memory_db
     await schema()
     later = Author.factory().lazy({"name": "Ada"})
@@ -244,7 +244,7 @@ async def test_lazy_defers_the_write(memory_db) -> None:  # noqa: F811
 # --- states ---------------------------------------------------------------
 
 
-async def test_a_state_can_be_a_dict_a_callable_or_a_coroutine(memory_db) -> None:  # noqa: F811
+async def test_a_state_can_be_a_dict_a_callable_or_a_coroutine(memory_db) -> None:
     del memory_db
     await schema()
 
@@ -262,7 +262,7 @@ async def test_a_state_can_be_a_dict_a_callable_or_a_coroutine(memory_db) -> Non
     assert author.email == "ada@example.com"
 
 
-async def test_a_state_callable_can_read_the_parent(memory_db) -> None:  # noqa: F811
+async def test_a_state_callable_can_read_the_parent(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().create({"name": "Ada"})
@@ -276,19 +276,19 @@ async def test_a_state_callable_can_read_the_parent(memory_db) -> None:  # noqa:
     assert seen == [author]
 
 
-async def test_set_is_a_one_key_state(memory_db) -> None:  # noqa: F811
+async def test_set_is_a_one_key_state(memory_db) -> None:
     del memory_db
     assert (await Author.factory().set("name", "Ada").make()).name == "Ada"
 
 
-async def test_a_state_method_reads_like_laravel(memory_db) -> None:  # noqa: F811
+async def test_a_state_method_reads_like_laravel(memory_db) -> None:
     del memory_db
     await schema()
     book = await BookFactory.new().draft().create()
     assert book.published is False
 
 
-async def test_a_factory_is_immutable(memory_db) -> None:  # noqa: F811
+async def test_a_factory_is_immutable(memory_db) -> None:
     del memory_db
     base = Author.factory()
     named = base.state({"name": "Ada"})
@@ -299,7 +299,7 @@ async def test_a_factory_is_immutable(memory_db) -> None:  # noqa: F811
 # --- sequences ------------------------------------------------------------
 
 
-async def test_a_sequence_cycles_through_its_states(memory_db) -> None:  # noqa: F811
+async def test_a_sequence_cycles_through_its_states(memory_db) -> None:
     del memory_db
     await schema()
     books = await (
@@ -308,7 +308,7 @@ async def test_a_sequence_cycles_through_its_states(memory_db) -> None:  # noqa:
     assert [book.published for book in books] == [True, False, True, False]
 
 
-async def test_a_sequence_step_can_read_its_index(memory_db) -> None:  # noqa: F811
+async def test_a_sequence_step_can_read_its_index(memory_db) -> None:
     del memory_db
     await schema()
     books = await (
@@ -317,16 +317,18 @@ async def test_a_sequence_step_can_read_its_index(memory_db) -> None:  # noqa: F
     assert [book.title for book in books] == ["n0", "n1", "n2"]
 
 
-async def test_for_each_sequence_sets_the_count(memory_db) -> None:  # noqa: F811
+async def test_for_each_sequence_sets_the_count(memory_db) -> None:
     del memory_db
     await schema()
-    books = await Book.factory().for_each_sequence(
-        {"title": "one"}, {"title": "two"}, {"title": "three"}
-    ).create()
+    books = (
+        await Book.factory()
+        .for_each_sequence({"title": "one"}, {"title": "two"}, {"title": "three"})
+        .create()
+    )
     assert [book.title for book in books] == ["one", "two", "three"]
 
 
-async def test_a_cross_join_sequence_is_every_combination(memory_db) -> None:  # noqa: F811
+async def test_a_cross_join_sequence_is_every_combination(memory_db) -> None:
     del memory_db
     await schema()
     books = await (
@@ -354,14 +356,14 @@ def test_an_empty_sequence_yields_nothing() -> None:
 # --- relationships --------------------------------------------------------
 
 
-async def test_has_creates_children_for_a_has_many(memory_db) -> None:  # noqa: F811
+async def test_has_creates_children_for_a_has_many(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().has(Book.factory().count(3)).create()
     assert await Book.query().where("author_id", "=", author.id).count() == 3
 
 
-async def test_has_creates_a_child_for_a_has_one(memory_db) -> None:  # noqa: F811
+async def test_has_creates_a_child_for_a_has_one(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().has(Profile.factory(), "profile").create()
@@ -369,7 +371,7 @@ async def test_has_creates_a_child_for_a_has_one(memory_db) -> None:  # noqa: F8
     assert profile is not None
 
 
-async def test_has_creates_children_for_a_morph_many(memory_db) -> None:  # noqa: F811
+async def test_has_creates_children_for_a_morph_many(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().has(Note.factory().count(2), "notes").create()
@@ -378,7 +380,7 @@ async def test_has_creates_children_for_a_morph_many(memory_db) -> None:  # noqa
     assert {note.notable_type for note in notes} == {"Author"}
 
 
-async def test_has_attached_writes_the_pivot(memory_db) -> None:  # noqa: F811
+async def test_has_attached_writes_the_pivot(memory_db) -> None:
     del memory_db
     await schema()
     author = await (
@@ -389,20 +391,18 @@ async def test_has_attached_writes_the_pivot(memory_db) -> None:  # noqa: F811
     assert {tag.pivot.kind for tag in tags} == {"topic"}
 
 
-async def test_has_attached_takes_existing_models_and_a_pivot_callable(memory_db) -> None:  # noqa: F811
+async def test_has_attached_takes_existing_models_and_a_pivot_callable(memory_db) -> None:
     del memory_db
     await schema()
     tags = await Tag.factory().count(2).create()
     author = await (
-        Author.factory()
-        .has_attached(tags, lambda tag: {"kind": tag.label}, "tags")
-        .create()
+        Author.factory().has_attached(tags, lambda tag: {"kind": tag.label}, "tags").create()
     )
     attached = await author.get_relation("tags").get()
     assert {tag.pivot.kind for tag in attached} == {tag.label for tag in tags}
 
 
-async def test_for_supplies_the_parent(memory_db) -> None:  # noqa: F811
+async def test_for_supplies_the_parent(memory_db) -> None:
     del memory_db
     await schema()
     book = await Book.factory().for_(Author.factory().state({"name": "Ada"})).create()
@@ -410,7 +410,7 @@ async def test_for_supplies_the_parent(memory_db) -> None:  # noqa: F811
     assert author.name == "Ada"
 
 
-async def test_for_accepts_a_model_and_reuses_it(memory_db) -> None:  # noqa: F811
+async def test_for_accepts_a_model_and_reuses_it(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().create()
@@ -419,7 +419,7 @@ async def test_for_accepts_a_model_and_reuses_it(memory_db) -> None:  # noqa: F8
     assert await Author.query().count() == 1
 
 
-async def test_a_batch_shares_the_one_parent_for_made(memory_db) -> None:  # noqa: F811
+async def test_a_batch_shares_the_one_parent_for_made(memory_db) -> None:
     del memory_db
     await schema()
     books = await Book.factory().count(3).for_(Author.factory()).create()
@@ -427,7 +427,7 @@ async def test_a_batch_shares_the_one_parent_for_made(memory_db) -> None:  # noq
     assert await Author.query().count() == 1
 
 
-async def test_for_prefers_a_recycled_parent(memory_db) -> None:  # noqa: F811
+async def test_for_prefers_a_recycled_parent(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().create()
@@ -436,7 +436,7 @@ async def test_for_prefers_a_recycled_parent(memory_db) -> None:  # noqa: F811
     assert await Author.query().count() == 1
 
 
-async def test_for_a_morph_to_writes_both_columns(memory_db) -> None:  # noqa: F811
+async def test_for_a_morph_to_writes_both_columns(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().create()
@@ -445,7 +445,7 @@ async def test_for_a_morph_to_writes_both_columns(memory_db) -> None:  # noqa: F
     assert note.notable_type == "Author"
 
 
-async def test_the_magic_relation_methods(memory_db) -> None:  # noqa: F811
+async def test_the_magic_relation_methods(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().has_books(2).create()
@@ -459,15 +459,15 @@ async def test_the_magic_relation_methods(memory_db) -> None:  # noqa: F811
     assert (await Author.find(book.author_id)).name == "Grace"
 
 
-async def test_the_magic_methods_reject_what_is_not_a_relation(memory_db) -> None:  # noqa: F811
+async def test_the_magic_methods_reject_what_is_not_a_relation(memory_db) -> None:
     del memory_db
     with pytest.raises(AttributeError):
-        Author.factory().has_nothing  # noqa: B018 - the lookup itself is what raises
+        Author.factory().has_nothing
     with pytest.raises(AttributeError):
-        Author.factory().not_a_relation_helper  # noqa: B018
+        Author.factory().not_a_relation_helper
 
 
-async def test_has_and_for_report_the_wrong_relation_kind(memory_db) -> None:  # noqa: F811
+async def test_has_and_for_report_the_wrong_relation_kind(memory_db) -> None:
     del memory_db
     await schema()
     with pytest.raises(RelationshipError):
@@ -478,7 +478,7 @@ async def test_has_and_for_report_the_wrong_relation_kind(memory_db) -> None:  #
         await Author.factory().has_attached(Book.factory(), None, "books").create()
 
 
-async def test_a_factory_attribute_creates_the_related_row(memory_db) -> None:  # noqa: F811
+async def test_a_factory_attribute_creates_the_related_row(memory_db) -> None:
     del memory_db
     await schema()
 
@@ -492,7 +492,7 @@ async def test_a_factory_attribute_creates_the_related_row(memory_db) -> None:  
     assert await Author.find(book.author_id) is not None
 
 
-async def test_a_model_attribute_becomes_its_key(memory_db) -> None:  # noqa: F811
+async def test_a_model_attribute_becomes_its_key(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().create()
@@ -500,7 +500,7 @@ async def test_a_model_attribute_becomes_its_key(memory_db) -> None:  # noqa: F8
     assert book.author_id == author.id
 
 
-async def test_recycle_reuses_a_parent_instead_of_creating_one(memory_db) -> None:  # noqa: F811
+async def test_recycle_reuses_a_parent_instead_of_creating_one(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().create()
@@ -520,7 +520,7 @@ async def test_recycle_reuses_a_parent_instead_of_creating_one(memory_db) -> Non
     assert factory.get_random_recycled_model(Book) is None
 
 
-async def test_recycled_models_reach_children_and_parents(memory_db) -> None:  # noqa: F811
+async def test_recycled_models_reach_children_and_parents(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().create()
@@ -535,7 +535,7 @@ async def test_recycled_models_reach_children_and_parents(memory_db) -> None:  #
     assert created.id != author.id
 
 
-async def test_the_relationship_name_is_guessed_from_the_related_model(memory_db) -> None:  # noqa: F811
+async def test_the_relationship_name_is_guessed_from_the_related_model(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().has(Book.factory().count(2)).has(Profile.factory()).create()
@@ -543,14 +543,14 @@ async def test_the_relationship_name_is_guessed_from_the_related_model(memory_db
     assert await Profile.query().where("author_id", "=", author.id).count() == 1
 
 
-async def test_has_can_attach_through_a_belongs_to_many(memory_db) -> None:  # noqa: F811
+async def test_has_can_attach_through_a_belongs_to_many(memory_db) -> None:
     del memory_db
     await schema()
     author = await Author.factory().has(Tag.factory().count(2), "tags").create()
     assert len(await author.get_relation("tags").get()) == 2
 
 
-async def test_has_attached_takes_a_single_model(memory_db) -> None:  # noqa: F811
+async def test_has_attached_takes_a_single_model(memory_db) -> None:
     del memory_db
     await schema()
     tag = await Tag.factory().create()
@@ -562,7 +562,7 @@ async def test_has_attached_takes_a_single_model(memory_db) -> None:  # noqa: F8
         Author.factory().has_attached([], None, "tags")
 
 
-async def test_a_callable_attribute_is_given_the_row_so_far(memory_db) -> None:  # noqa: F811
+async def test_a_callable_attribute_is_given_the_row_so_far(memory_db) -> None:
     del memory_db
     await schema()
 
@@ -578,7 +578,7 @@ async def test_a_callable_attribute_is_given_the_row_so_far(memory_db) -> None: 
     assert (await DerivedFactory.new().make()).email == "ada@example.com"
 
 
-async def test_hooks_may_take_any_arity(memory_db) -> None:  # noqa: F811
+async def test_hooks_may_take_any_arity(memory_db) -> None:
     del memory_db
     await schema()
     seen: list[Any] = []
@@ -593,7 +593,7 @@ async def test_hooks_may_take_any_arity(memory_db) -> None:  # noqa: F811
     assert seen == [1]
 
 
-async def test_an_empty_loaded_relation_is_dropped_before_saving(memory_db) -> None:  # noqa: F811
+async def test_an_empty_loaded_relation_is_dropped_before_saving(memory_db) -> None:
     del memory_db
     await schema()
 
@@ -613,7 +613,7 @@ async def test_an_empty_loaded_relation_is_dropped_before_saving(memory_db) -> N
 # --- hooks, quiet writes, trashed rows ------------------------------------
 
 
-async def test_after_making_and_after_creating_run(memory_db) -> None:  # noqa: F811
+async def test_after_making_and_after_creating_run(memory_db) -> None:
     del memory_db
     await schema()
     made: list[Any] = []
@@ -632,7 +632,7 @@ async def test_after_making_and_after_creating_run(memory_db) -> None:  # noqa: 
     assert created == [(author, None)]
 
 
-async def test_configure_registers_hooks_up_front(memory_db) -> None:  # noqa: F811
+async def test_configure_registers_hooks_up_front(memory_db) -> None:
     del memory_db
     await schema()
     seen: list[Any] = []
@@ -650,7 +650,7 @@ async def test_configure_registers_hooks_up_front(memory_db) -> None:  # noqa: F
     assert seen == ["Ada"]
 
 
-async def test_quiet_creation_skips_model_events(memory_db) -> None:  # noqa: F811
+async def test_quiet_creation_skips_model_events(memory_db) -> None:
     del memory_db
     await schema()
     fired: list[str] = []
@@ -666,7 +666,7 @@ async def test_quiet_creation_skips_model_events(memory_db) -> None:  # noqa: F8
     Author._events["created"].clear()
 
 
-async def test_trashed_creates_an_already_deleted_row(memory_db) -> None:  # noqa: F811
+async def test_trashed_creates_an_already_deleted_row(memory_db) -> None:
     del memory_db
     await schema()
     book = await Book.factory().trashed().create()
@@ -674,12 +674,12 @@ async def test_trashed_creates_an_already_deleted_row(memory_db) -> None:  # noq
     assert await Book.query().count() == 0
     assert len(await Book.with_trashed().get()) == 1
 
-    stamp = datetime(2020, 1, 1)  # noqa: DTZ001 - the column is naive, like the ORM's
+    stamp = datetime(2020, 1, 1)
     dated = await Book.factory().trashed(stamp).create()
     assert dated.get_raw_attribute("deleted_at") == stamp
 
 
-async def test_a_factory_can_name_its_connection(memory_db) -> None:  # noqa: F811
+async def test_a_factory_can_name_its_connection(memory_db) -> None:
     del memory_db
     await schema()
 
@@ -691,7 +691,7 @@ async def test_a_factory_can_name_its_connection(memory_db) -> None:  # noqa: F8
 # --- resolution -----------------------------------------------------------
 
 
-async def test_a_model_names_its_own_factory(memory_db) -> None:  # noqa: F811
+async def test_a_model_names_its_own_factory(memory_db) -> None:
     del memory_db
     await schema()
 
@@ -741,7 +741,7 @@ async def test_a_factory_named_after_the_model_is_found_without_declaring_it() -
     assert (await Gadget.factory().make()).name == "gadget"
 
 
-async def test_model_factory_takes_a_count_a_state_or_both(memory_db) -> None:  # noqa: F811
+async def test_model_factory_takes_a_count_a_state_or_both(memory_db) -> None:
     del memory_db
     await schema()
     assert (await Author.factory({"name": "Ada"}).make()).name == "Ada"
@@ -875,12 +875,12 @@ def test_the_providers_produce_plausible_values() -> None:
 
 def test_the_time_providers_stay_inside_their_window() -> None:
     generator = Fake(seed=3)
-    start = datetime(2020, 1, 1)  # noqa: DTZ001 - the ORM stores naive UTC
-    end = datetime(2020, 12, 31)  # noqa: DTZ001
+    start = datetime(2020, 1, 1)
+    end = datetime(2020, 12, 31)
     when = generator.date_time_between(start, end)
     assert start <= when <= end
     assert isinstance(generator.date_time(), datetime)
-    assert generator.date_time_this_month().month == datetime.now().month  # noqa: DTZ005
+    assert generator.date_time_this_month().month == datetime.now().month
     assert generator.date().year >= 2000
     assert generator.time().hour <= 23
 

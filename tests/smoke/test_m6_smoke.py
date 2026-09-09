@@ -80,7 +80,12 @@ def test_m6_prism_assets_honor_base_path(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("APP_URL", "http://testserver")
     # Force re-import with new env.
     for mod in list(importlib.sys.modules):
-        if mod == "bootstrap" or mod.startswith("bootstrap.") or mod == "config" or mod.startswith("config."):
+        if (
+            mod == "bootstrap"
+            or mod.startswith("bootstrap.")
+            or mod == "config"
+            or mod.startswith("config.")
+        ):
             importlib.sys.modules.pop(mod, None)
     import sys
 
@@ -95,7 +100,10 @@ def test_m6_prism_assets_honor_base_path(monkeypatch: pytest.MonkeyPatch) -> Non
 
     home = client.get("/apps/progress/", follow_redirects=True)
     assert home.status_code == 200
-    assert 'href="/apps/progress/css/app.css"' in home.text or "/apps/progress/css/app.css" in home.text
+    assert (
+        'href="/apps/progress/css/app.css"' in home.text
+        or "/apps/progress/css/app.css" in home.text
+    )
     assert "/apps/progress/images/almasix-banner.svg" in home.text
 
     css = client.get("/apps/progress/css/app.css")

@@ -21,7 +21,7 @@ def defer_until_commit(model: Any, work: Callable[[], Any]) -> bool:
         from almasix.orm.facade import get_manager
 
         connection = get_manager().connection(type(model).connection)
-    except Exception:  # noqa: BLE001 — a model without a SQL connection indexes now
+    except Exception:
         return False
     if not connection.in_transaction():
         return False

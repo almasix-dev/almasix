@@ -40,8 +40,11 @@ def test_make_migration_infers_create_stub(tmp_path: Path) -> None:
     path = make_migration("create_users_table", tmp_path)
     text = path.read_text(encoding="utf-8")
     assert "class CreateUsersTable(Migration)" in text
-    assert 'Schema.create(\n            "users"' in text or 'Schema.create(\n            "users",' in text
-    assert "drop_if_exists(\"users\")" in text
+    assert (
+        'Schema.create(\n            "users"' in text
+        or 'Schema.create(\n            "users",' in text
+    )
+    assert 'drop_if_exists("users")' in text
     cls = _load(path)
     assert cls.__name__ == "CreateUsersTable"
 

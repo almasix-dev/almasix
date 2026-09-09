@@ -29,7 +29,7 @@ from the environment:
 | `CACHE_STORE` | `file` | Name of the default store (`array`, `file`, `database`, `null`, …) |
 | `CACHE_PREFIX` | `almasix_cache_` | Prefix applied to every cache key |
 
-```env
+```ini
 CACHE_STORE=file
 CACHE_PREFIX=almasix_cache_
 ```

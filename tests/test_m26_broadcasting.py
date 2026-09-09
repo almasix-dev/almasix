@@ -632,9 +632,10 @@ def test_a_user_key_is_read_however_the_model_spells_it(
     class Bare:
         id = 11
 
-    assert '"user_id":"42"' in _isolated_manager.user_auth(
-        FakeRequest({}, Authenticatable())
-    )["user_data"]
+    assert (
+        '"user_id":"42"'
+        in _isolated_manager.user_auth(FakeRequest({}, Authenticatable()))["user_data"]
+    )
     assert '"user_id":"11"' in _isolated_manager.user_auth(FakeRequest({}, Bare()))["user_data"]
 
 
@@ -649,9 +650,7 @@ async def test_the_controller_turns_a_refusal_into_a_403(
         await controller.user_auth(FakeRequest({}))
 
     _isolated_manager.channel("x", lambda user: True)
-    ok = await controller.auth(
-        FakeRequest({"channel_name": "private-x", "socket_id": "1"}, User())
-    )
+    ok = await controller.auth(FakeRequest({"channel_name": "private-x", "socket_id": "1"}, User()))
     assert "auth" in ok
     assert "auth" in await controller.user_auth(FakeRequest({}, User()))
 
@@ -1712,7 +1711,7 @@ class CommittedNote(BroadcastsEventsAfterCommit, Model):
 
 
 @pytest.fixture()
-async def notes_schema(memory_db: Any) -> Any:  # noqa: F811
+async def notes_schema(memory_db: Any) -> Any:
     del memory_db
     from almasix.orm import Schema
 

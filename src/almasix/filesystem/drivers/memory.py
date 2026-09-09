@@ -110,7 +110,9 @@ class MemoryAdapter:
                 parts = rest.split("/")
                 for i in range(1, len(parts)):
                     found.add(f"{prefix}{'/'.join(parts[:i])}" if prefix else "/".join(parts[:i]))
-        return sorted(d for d in found if d in self._dirs or any(f.startswith(d + "/") for f in self._files))
+        return sorted(
+            d for d in found if d in self._dirs or any(f.startswith(d + "/") for f in self._files)
+        )
 
     def make_directory(self, path: str) -> bool:
         key = normalize_path(path)

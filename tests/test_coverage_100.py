@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.util
-import time
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -14,7 +13,12 @@ from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
 from almasix.auth import events as auth_events
-from almasix.auth.cookies import apply_queued_cookies, begin_cookie_queue, queue_cookie, reset_cookie_queue
+from almasix.auth.cookies import (
+    apply_queued_cookies,
+    begin_cookie_queue,
+    queue_cookie,
+    reset_cookie_queue,
+)
 from almasix.auth.guard import (
     AuthManager,
     Guard,
@@ -129,7 +133,10 @@ async def test_providers_full_edges() -> None:
     assert await provider.retrieve_by_token(1, "wrong") is None
     assert await provider.retrieve_by_token(1, "rem") is user
     assert await provider.validate_credentials(user, {}) is False
-    assert await provider.validate_credentials(SimpleNamespace(password=None), {"password": "x"}) is False
+    assert (
+        await provider.validate_credentials(SimpleNamespace(password=None), {"password": "x"})
+        is False
+    )
     await provider.rehash_password_if_required(user, {"password": "secret"}, force=True)
     plain = SimpleNamespace(password=Hash.make("a"), save=AsyncMock())
     await provider.rehash_password_if_required(plain, {"password": "a"}, force=True)
@@ -168,10 +175,10 @@ async def test_guard_helpers_remaining() -> None:
 
     obj = SimpleNamespace(id=1)
     sg = SessionGuard("web", None)
-    tok = await sg._cycle_remember_token(obj)  # noqa: SLF001
+    tok = await sg._cycle_remember_token(obj)
     assert obj.remember_token == tok
-    sg._queue_remember_cookie(SimpleNamespace(id=None))  # noqa: SLF001
-    sg._queue_remember_cookie(SimpleNamespace(id=1, remember_token=None))  # noqa: SLF001
+    sg._queue_remember_cookie(SimpleNamespace(id=None))
+    sg._queue_remember_cookie(SimpleNamespace(id=1, remember_token=None))
 
     manager = AuthManager()
     guard = manager.guard("web")
@@ -180,7 +187,7 @@ async def test_guard_helpers_remaining() -> None:
         return {"id": "via"}
 
     manager.via_request("web", cb)
-    assert guard._via_request is cb  # noqa: SLF001
+    assert guard._via_request is cb
     assert AuthManager().id() is None
 
     class AttrUser:
@@ -200,7 +207,9 @@ async def test_guard_helpers_remaining() -> None:
             return {"email": "a", "name": "b"}.get(attr)
 
     assert _session_payload(AttrUserGet())["email"] == "a"
-    assert "password" not in _user_to_dict(type("D", (), {"to_dict": lambda self: {"id": 1, "password": "s"}})())
+    assert "password" not in _user_to_dict(
+        type("D", (), {"to_dict": lambda self: {"id": 1, "password": "s"}})()
+    )
     assert _user_to_dict(SimpleNamespace(id=3, password="x", _priv=1))["id"] == 3
     assert _user_to_dict(5)["user"] == "5"
     assert _user_id(Ident()) == 42
@@ -216,7 +225,10 @@ async def test_middleware_remaining_paths() -> None:
     repo = ConfigRepository()
     repo.set(
         "auth.guards",
-        {"web": {"driver": "session", "provider": "users"}, "api": {"driver": "token", "provider": "users"}},
+        {
+            "web": {"driver": "session", "provider": "users"},
+            "api": {"driver": "token", "provider": "users"},
+        },
     )
     repo.set("auth.providers", {"users": {"driver": "memory", "users": []}})
     set_repository(repo)
@@ -233,7 +245,7 @@ async def test_middleware_remaining_paths() -> None:
 
     with patch.object(AuthManager, "guard", guard_with_via):
         request = _req()
-        request._session = Session()  # noqa: SLF001
+        request._session = Session()
         set_session(request._session)
 
         async def ok(_r):
@@ -273,7 +285,7 @@ async def test_middleware_remaining_paths() -> None:
 
     sess = Session({"auth.password_confirmed_at": 0})
     jr = _req(headers=[(b"accept", b"application/json")])
-    jr._session = sess  # noqa: SLF001
+    jr._session = sess
     set_session(sess)
     with pytest.raises(UnauthorizedHttpException):
         await RequirePassword(timeout=1).handle(jr, ok)
@@ -284,7 +296,11 @@ async def test_middleware_remaining_paths() -> None:
     m.guard("web").once({"id": 1})
     tok = set_auth(m)
     try:
-        assert (await RedirectIfAuthenticated("web").handle(_req(), ok)).status_code in {302, 303, 307}
+        assert (await RedirectIfAuthenticated("web").handle(_req(), ok)).status_code in {
+            302,
+            303,
+            307,
+        }
     finally:
         reset_auth(tok)
 
@@ -294,7 +310,7 @@ async def test_middleware_remaining_paths() -> None:
     assert "admin" in _configured_guard_names()
 
     qreq = _req(path="/x", query=b"a=1")
-    qreq._session = Session()  # noqa: SLF001
+    qreq._session = Session()
     set_session(qreq._session)
     await _unauthenticated(qreq)
 
@@ -316,16 +332,16 @@ async def test_password_remaining() -> None:
 
     with patch("almasix.orm.facade.DB.select", fake_select_empty):
         tokens.use_database = True
-        assert await tokens._db_get("a@b.c") is None  # noqa: SLF001
+        assert await tokens._db_get("a@b.c") is None
 
     with patch("almasix.orm.facade.DB.select", fake_select):
-        assert (await tokens._db_get("a@b.c"))["created_at"] == 123.0  # noqa: SLF001
+        assert (await tokens._db_get("a@b.c"))["created_at"] == 123.0
 
     async def boom(*a, **k):
         raise RuntimeError("db down")
 
     with patch("almasix.orm.facade.DB.statement", boom):
-        assert await tokens._db_delete_expired(0.0) == 0  # noqa: SLF001
+        assert await tokens._db_delete_expired(0.0) == 0
 
     provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("old")}])
     broker = PasswordBroker(provider, DatabaseTokenRepository(throttle=0))
@@ -336,7 +352,9 @@ async def test_password_remaining() -> None:
     broker.send_callback = adeliver
     assert await broker.send_reset_link({"email": "a@b.c"}) == Password.RESET_LINK_SENT
     assert (
-        await broker.reset({"email": "missing@x.com", "token": "x", "password": "n"}, lambda u, p: None)
+        await broker.reset(
+            {"email": "missing@x.com", "token": "x", "password": "n"}, lambda u, p: None
+        )
         == Password.INVALID_USER
     )
 
@@ -381,8 +399,8 @@ def test_cookies_encrypt_session_branches() -> None:
         reset_cookie_queue(token)
 
     mw = EncryptCookies()
-    assert "=" in mw._encrypt_set_cookie("plain=value", key="k")  # noqa: SLF001
-    mw._encrypt_response_cookies(SimpleNamespace(), key="k")  # noqa: SLF001
+    assert "=" in mw._encrypt_set_cookie("plain=value", key="k")
+    mw._encrypt_response_cookies(SimpleNamespace(), key="k")
 
 
 @pytest.mark.asyncio
@@ -391,7 +409,7 @@ async def test_session_clean_no_set_cookie() -> None:
     repo.set("app.key", "test-key")
     set_repository(repo)
     request = _req()
-    request._cookies = {}  # noqa: SLF001
+    request._cookies = {}
 
     async def clean(req):
         _ = req.session
@@ -411,41 +429,46 @@ async def test_kernel_parameterized_and_invoke(tmp_path: Path) -> None:
     root = tmp_path / "app"
     for part in ("bootstrap", "config", "routes"):
         (root / part).mkdir(parents=True)
-    (root / "config" / "app.py").write_text("config = {'name': 'T', 'key': 'k'}\n", encoding="utf-8")
+    (root / "config" / "app.py").write_text(
+        "config = {'name': 'T', 'key': 'k'}\n", encoding="utf-8"
+    )
     app = Application.configure(root).create()
     kernel = HttpKernel(app, Router())
 
-    assert kernel._instantiate_parameterized(Authenticate, "auth", "api").guard_name == "api"  # noqa: SLF001
-    assert kernel._instantiate_parameterized(AuthenticateWithBasicAuth, "auth.basic", "email").field == "email"  # noqa: SLF001
-    kernel._instantiate_parameterized(RequirePassword, "password.confirm", "30")  # noqa: SLF001
+    assert kernel._instantiate_parameterized(Authenticate, "auth", "api").guard_name == "api"
+    assert (
+        kernel._instantiate_parameterized(AuthenticateWithBasicAuth, "auth.basic", "email").field
+        == "email"
+    )
+    kernel._instantiate_parameterized(RequirePassword, "password.confirm", "30")
 
     class NoParamMw:
         def __init__(self) -> None:
             pass
 
-    assert kernel._instantiate_parameterized(NoParamMw, "custom", "x") is not None  # noqa: SLF001
+    assert kernel._instantiate_parameterized(NoParamMw, "custom", "x") is not None
 
     with patch("inspect.signature", side_effect=TypeError("boom")):
-        assert await kernel._invoke(lambda: "x", _req()) == "x"  # noqa: SLF001
+        assert await kernel._invoke(lambda: "x", _req()) == "x"
 
     with patch("inspect.signature", side_effect=ValueError("boom")):
 
         async def async_h():
             return "y"
 
-        assert await kernel._invoke(async_h, _req()) == "y"  # noqa: SLF001
+        assert await kernel._invoke(async_h, _req()) == "y"
 
     def handler(request: Request):
         return "z"
 
     with patch("almasix.http.kernel.get_type_hints", side_effect=Exception("no hints")):
-        assert await kernel._invoke(handler, _req()) == "z"  # noqa: SLF001
+        assert await kernel._invoke(handler, _req()) == "z"
 
     class C:
         async def meth(self, request: Request):
             return "m"
 
-    assert await kernel._invoke(C().meth, _req()) == "m"  # noqa: SLF001
+    assert await kernel._invoke(C().meth, _req()) == "m"
 
 
 def test_trust_and_router_and_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -465,7 +488,7 @@ def test_trust_and_router_and_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
         "headers": [],
     }
     mw = TrustProxiesASGI(lambda *a: None, proxies="*", headers=HEADER_X_FORWARDED_ALL)
-    mw._apply(scope, {"x-forwarded-for": "  ,"})  # noqa: SLF001
+    mw._apply(scope, {"x-forwarded-for": "  ,"})
     mw._apply(
         scope,
         {
@@ -475,14 +498,16 @@ def test_trust_and_router_and_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
             "x-forwarded-port": "443",
             "x-forwarded-prefix": "/app/",
         },
-    )  # noqa: SLF001
-    mw._apply(scope, {"x-forwarded-proto": "ftp"})  # noqa: SLF001
-    mw._apply(scope, {"x-forwarded-port": "abc"})  # noqa: SLF001
-    mw._apply({"server": ("h", 1), "headers": [], "client": None}, {"x-forwarded-for": "9.9.9.9"})  # noqa: SLF001
-    TrustProxiesASGI(lambda *a: None, proxies="*", headers=0)._apply(scope, {"x-forwarded-for": "1.1.1.1"})  # noqa: SLF001
+    )
+    mw._apply(scope, {"x-forwarded-proto": "ftp"})
+    mw._apply(scope, {"x-forwarded-port": "abc"})
+    mw._apply({"server": ("h", 1), "headers": [], "client": None}, {"x-forwarded-for": "9.9.9.9"})
+    TrustProxiesASGI(lambda *a: None, proxies="*", headers=0)._apply(
+        scope, {"x-forwarded-for": "1.1.1.1"}
+    )
 
     router = Router()
-    router._group_stack.append(_GroupOptions(prefix="api"))  # noqa: SLF001
+    router._group_stack.append(_GroupOptions(prefix="api"))
     assert router.add(["GET"], "items", lambda: None).uri.startswith("/")
 
     root = tmp_path / "app"
@@ -494,11 +519,13 @@ def test_trust_and_router_and_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     bad.write_text("x = 1\n", encoding="utf-8")
     monkeypatch.setattr(importlib.util, "spec_from_file_location", lambda *a, **k: None)
     with pytest.raises(ImportError):
-        app._load_route_file(bad)  # noqa: SLF001
+        app._load_route_file(bad)
 
 
 @pytest.mark.asyncio
-async def test_env_smith_translation_support(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_env_smith_translation_support(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from almasix.smith import lang_cmd
     from almasix.smith.make import MakeError, make_component
     from almasix.support.collection import Collection
@@ -515,7 +542,7 @@ async def test_env_smith_translation_support(tmp_path: Path, monkeypatch: pytest
     lang_cmd.publish_lang(base, force=False)
 
     with patch("importlib.util.spec_from_file_location", return_value=None):
-        assert lang_cmd._load_py_dict(tmp_path / "x.py") == {}  # noqa: SLF001
+        assert lang_cmd._load_py_dict(tmp_path / "x.py") == {}
 
     app_root = tmp_path / "makeapp"
     (app_root / "resources" / "views" / "components").mkdir(parents=True)
@@ -530,9 +557,9 @@ async def test_env_smith_translation_support(tmp_path: Path, monkeypatch: pytest
     loader = FileLoader()
     loader.add_path(str(lang))
     with patch("importlib.util.spec_from_file_location", return_value=None):
-        assert loader._load_py(lang / "en" / "messages.py") == {}  # noqa: SLF001
+        assert loader._load_py(lang / "en" / "messages.py") == {}
     (lang / "en" / "stemdict.py").write_text("stemdict = {'k': 'v'}\n", encoding="utf-8")
-    assert loader._load_py(lang / "en" / "stemdict.py")["k"] == "v"  # noqa: SLF001
+    assert loader._load_py(lang / "en" / "stemdict.py")["k"] == "v"
     target: dict = {"a": {"b": 1}}
     FileLoader._merge(target, {"a": {"c": 2}, "d": 3})
     assert target["a"]["c"] == 2
@@ -542,17 +569,17 @@ async def test_env_smith_translation_support(tmp_path: Path, monkeypatch: pytest
     t.set_fallback("fr")
     assert t.has("totally.missing.key") is False
     loader.add_lines({"Hello": "Bonjour", "alt": "x"}, "en", "*")
-    assert t._lookup("Hello", "en") == "Bonjour"  # noqa: SLF001
-    assert t._lookup("alt", "en") == "x"  # noqa: SLF001
+    assert t._lookup("Hello", "en") == "Bonjour"
+    assert t._lookup("alt", "en") == "x"
     loader.add_lines({"full.key": "via-key"}, "en", "*")
     # key with dot goes through group parse; force JSON-style via runtime key match
-    assert t._lookup("full.key", "en") in {"via-key", None}  # noqa: SLF001
+    assert t._lookup("full.key", "en") in {"via-key", None}
 
     from almasix.translation.locale import reset_locale_context
 
     reset_locale_context()
     req = _req()
-    req._session = Session({"locale": "en"})  # noqa: SLF001
+    req._session = Session({"locale": "en"})
 
     async def nxt(r):
         return Response(b"ok")

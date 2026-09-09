@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "almasix"
-version = "0.3.0"
+version = "0.4.0"
 description = "Laravel-inspired Python web framework with Adonis-class DX on FastAPI/Starlette"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -55,7 +55,7 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0",
     "httpx>=0.27.0",
-    "ruff>=0.8.0",
+    "ruff==0.16.6",
     "argon2-cffi>=23.0",
     "ipython>=8.18",
     "redis>=5",
@@ -144,6 +144,33 @@ exclude_lines = [
 line-length = 100
 target-version = "py311"
 src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Explicit selection — do not inherit ruff's moving default (M51).
+select = [
+    "E4", "E7", "E9",  # pycodestyle errors
+    "F",               # pyflakes
+    "I",               # isort
+    "UP",              # pyupgrade
+    "B",               # flake8-bugbear
+    "RUF100",          # unused `# noqa` — suppressions must earn their keep
+]
+ignore = [
+    "E731",   # lambda assignment — blueprint / query DSLs assign callables
+    "UP042",  # str enum — leave existing Enum subclasses alone
+    "B008",   # function-call defaults — FastAPI / Typer Depends patterns
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Pytest fixtures are imported so the name is in scope, then reappear as
+# parameters; that shadowing is the fixture injection pattern, not a bug.
+"tests/**" = ["F811", "B017", "B018"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.pylint.main]
 ignore-paths = ["\\.venv", "build", "dist"]

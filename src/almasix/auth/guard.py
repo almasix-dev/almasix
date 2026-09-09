@@ -205,7 +205,7 @@ class SessionGuard(Guard):
         if isinstance(user, dict):
             user["remember_token"] = token
         elif not hasattr(user, "get_remember_token"):
-            setattr(user, "remember_token", token)
+            user.remember_token = token
         return token
 
     def _queue_remember_cookie(self, user: Any) -> None:

@@ -95,9 +95,7 @@ class ConcurrencyManager:
         outcomes = await asyncio.gather(
             *(_awaitable(task) for task in task_set.tasks), return_exceptions=True
         )
-        settled = [
-            (not isinstance(outcome, BaseException), outcome) for outcome in outcomes
-        ]
+        settled = [(not isinstance(outcome, BaseException), outcome) for outcome in outcomes]
         first_failure(settled)
         return task_set.shape(list(outcomes))
 

@@ -51,6 +51,7 @@ def configure_middleware(middleware: Middleware) -> None:
 application = (
     Application.configure(BASE_PATH)
     .with_middleware(configure_middleware)
+    # .with_health("/up")  # default; pass None to disable the load-balancer probe
     .create()
 )
 asgi = application.asgi

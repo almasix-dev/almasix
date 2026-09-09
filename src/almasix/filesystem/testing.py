@@ -18,7 +18,9 @@ class FakeDisk(Disk):
     def assert_exists(self, *paths: str) -> None:
         missing = [path for path in paths if not self.exists(path)]
         if missing:
-            raise AssertionError(f"[{self.name}] is missing {missing}. It holds: {self._listing()}.")
+            raise AssertionError(
+                f"[{self.name}] is missing {missing}. It holds: {self._listing()}."
+            )
 
     def assert_missing(self, *paths: str) -> None:
         present = [path for path in paths if self.exists(path)]
@@ -28,7 +30,9 @@ class FakeDisk(Disk):
     def assert_count(self, directory: str = "", count: int = 0) -> None:
         found = len(self.files(directory, recursive=True))
         if found != count:
-            raise AssertionError(f"Expected {count} file(s) in [{directory or '/'}]; found {found}.")
+            raise AssertionError(
+                f"Expected {count} file(s) in [{directory or '/'}]; found {found}."
+            )
 
     def assert_directory_empty(self, directory: str = "") -> None:
         found = self.files(directory, recursive=True)

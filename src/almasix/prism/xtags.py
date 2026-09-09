@@ -18,9 +18,7 @@ _X_SELF = re.compile(
     r"<x-([a-zA-Z0-9_.-]+)(\s[^>]*)?\s*/>",
     re.IGNORECASE,
 )
-_ATTR = re.compile(
-    r"""([:@]?[a-zA-Z_][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))"""
-)
+_ATTR = re.compile(r"""([:@]?[a-zA-Z_][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""")
 _ECHO_ONLY = re.compile(r"^\s*\{\{\s*(.+?)\s*\}\}\s*$", re.DOTALL)
 
 

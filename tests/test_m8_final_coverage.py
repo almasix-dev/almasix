@@ -7,10 +7,10 @@ from types import ModuleType
 
 import pytest
 
-from almasix.exceptions.handler import Handler
 from almasix.exceptions import mapping as mapping_mod
 from almasix.exceptions import provider as provider_mod
 from almasix.exceptions import publish as publish_mod
+from almasix.exceptions.handler import Handler
 from almasix.exceptions.publish import ErrorsPublishError, publish_errors
 from almasix.framework import Application
 from almasix.http import HttpException
@@ -27,10 +27,7 @@ def test_handler_http_500_client_message_when_not_debug() -> None:
     )
     assert msg == "Server Error"
     # HttpException branch that returns the real message (line 116).
-    assert (
-        handler._message_for(HttpException("Nope", status_code=404), for_client=True)
-        == "Nope"
-    )
+    assert handler._message_for(HttpException("Nope", status_code=404), for_client=True) == "Nope"
 
 
 def test_provider_boot_when_fallback_missing(

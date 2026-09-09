@@ -25,7 +25,7 @@ class UsesGreeter:
 
 
 class CycleA:
-    def __init__(self, other: "CycleB") -> None:
+    def __init__(self, other: CycleB) -> None:
         self.other = other
 
 
@@ -37,7 +37,7 @@ class CycleB:
 class OptionalCycleA:
     """A cycle whose parameters both have defaults."""
 
-    def __init__(self, other: "OptionalCycleB" = None) -> None:  # type: ignore[assignment]
+    def __init__(self, other: OptionalCycleB = None) -> None:  # type: ignore[assignment]
         self.other = other
 
 
@@ -47,7 +47,7 @@ class OptionalCycleB:
 
 
 class NeedsHint:
-    def __init__(self, value) -> None:  # noqa: ANN001
+    def __init__(self, value) -> None:
         self.value = value
 
 
@@ -249,14 +249,14 @@ config = {
     app.bootstrap()
     app.boot()
 
-    count = len(app._providers)  # noqa: SLF001
+    count = len(app._providers)
     app.config.set(
         "app.providers",
         ["almasix.providers.foundation.FoundationServiceProvider"],
     )
     app.register_configured_providers()
     # Foundation is always registered once; duplicate string entry is skipped.
-    assert len(app._providers) == count + 1  # noqa: SLF001
+    assert len(app._providers) == count + 1
 
     from app.providers.tracking_provider import TrackingProvider
 

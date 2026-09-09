@@ -3,9 +3,13 @@ title: Middleware
 description: Register and configure HTTP middleware in your Almasix application.
 ---
 
-Middleware provide a convenient mechanism for inspecting and filtering HTTP requests entering your application. For example, Almasix includes middleware for setting the request locale. You may also write your own.
+**Middleware** runs before (and sometimes after) a route handler. Use it to
+inspect or change the request — start a session, reject guests, set a locale —
+without repeating that logic in every controller.
 
-Almasix registers middleware in **`bootstrap/app.py`**. Keep `config/http.py` for group shells and defaults; put your application's middleware wiring in the bootstrap configurator.
+Almasix registers middleware in **`bootstrap/app.py`**. Keep `config/http.py`
+for group shells and defaults; put your application's wiring in the bootstrap
+configurator.
 
 ## Registering middleware
 

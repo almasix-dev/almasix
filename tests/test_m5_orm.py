@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
 import pytest
 
 from almasix.orm import (
-    Collection,
     DB,
+    Collection,
     MassAssignmentError,
     Model,
     ModelNotFoundError,

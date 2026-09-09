@@ -53,10 +53,7 @@ class PreventRequestsDuringMaintenance(Middleware):
 
     def _is_excepted(self, request: Request) -> bool:
         path = request.path
-        return any(
-            path == uri or path.startswith(uri.rstrip("*"))
-            for uri in self.except_
-        )
+        return any(path == uri or path.startswith(uri.rstrip("*")) for uri in self.except_)
 
 
 def maintenance_payload(request: Request | None = None) -> dict[str, Any] | None:
@@ -176,5 +173,5 @@ def _rendered_body(payload: Mapping[str, Any]) -> str | None:
 
         engine = current_app().make(Engine)
         return engine.render(str(view_name), {"retry": payload.get("retry")})
-    except Exception:  # noqa: BLE001 — a missing view must not prevent the 503
+    except Exception:
         return None

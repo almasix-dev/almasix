@@ -63,6 +63,10 @@ class ProgressDocumentsCommand(Command):
         except UnsupportedQueryError as exc:
             self.info(f"refusal -> {exc}")
 
+        self.info(
+            "parity -> Eloquent-on-collections shipped; "
+            "cache/queue/GridFS/Scout Mongo named as gaps"
+        )
         self.line(f"  connections -> {get_manager().document_connection_names()}")
         await Activity.query().without_global_scopes().delete()
         self.success("documents demo ok")

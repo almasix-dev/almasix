@@ -24,9 +24,7 @@ async def assert_database_has(
     name, data = _table_and_data(table, data)
     if await _count(name, data, connection) == 0:
         rows = await _sample(name, connection)
-        raise AssertionError(
-            f"No row in [{name}] matches {dict(data)}. The table holds: {rows}."
-        )
+        raise AssertionError(f"No row in [{name}] matches {dict(data)}. The table holds: {rows}.")
 
 
 async def assert_database_missing(

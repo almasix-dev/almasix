@@ -139,8 +139,14 @@ async def test_integer_lists_can_be_inlined_rather_than_bound(memory_db) -> None
     await _people()
     assert await names(people().where_integer_in_raw("id", [1])) == ["Ada"]
     assert await names(people().where_integer_not_in_raw("id", [1])) == ["Grace"]
-    assert await names(people().where("id", 2).or_where_integer_in_raw("id", [1])) == ["Ada", "Grace"]
-    assert await names(people().where("id", 1).or_where_integer_not_in_raw("id", [1])) == ["Ada", "Grace"]
+    assert await names(people().where("id", 2).or_where_integer_in_raw("id", [1])) == [
+        "Ada",
+        "Grace",
+    ]
+    assert await names(people().where("id", 1).or_where_integer_not_in_raw("id", [1])) == [
+        "Ada",
+        "Grace",
+    ]
 
 
 async def test_an_inlined_list_with_nothing_in_it_matches_nothing(memory_db) -> None:
@@ -165,9 +171,9 @@ async def test_null_and_the_null_safe_comparison(memory_db) -> None:
     assert await names(people().where("id", 0).or_where_null("nickname")) == ["Ada"]
     assert await names(people().where("id", 0).or_where_not_null("nickname")) == ["Grace"]
     assert await names(people().where_null_safe_equals("nickname", None)) == ["Ada"]
-    assert await names(people().where("id", 0).or_where_null_safe_equals("nickname", "Amazing")) == [
-        "Grace"
-    ]
+    assert await names(
+        people().where("id", 0).or_where_null_safe_equals("nickname", "Amazing")
+    ) == ["Grace"]
 
 
 # --- ranges --------------------------------------------------------------
@@ -255,7 +261,7 @@ async def test_the_or_forms_of_the_date_part_family(memory_db) -> None:
 async def test_dates_and_times_may_be_given_as_objects(memory_db) -> None:
     await _people()
     assert await names(people().where_date("due_at", datetime.date(2020, 1, 1))) == ["Ada"]
-    when = datetime.datetime(2020, 1, 1, 10, 0, 0)  # noqa: DTZ001 - a stored naive timestamp
+    when = datetime.datetime(2020, 1, 1, 10, 0, 0)
     assert await names(people().where_date("due_at", when)) == ["Ada"]
     assert await names(people().where_time("due_at", when)) == ["Ada", "Grace"]
     assert await names(people().where_time("due_at", datetime.time(10, 0, 0))) == ["Ada", "Grace"]
@@ -325,11 +331,20 @@ async def test_json_containment_and_its_negation(memory_db) -> None:
 
 async def test_asking_whether_a_key_is_there_at_all(memory_db) -> None:
     await _people()
-    assert await names(people().where_json_contains_key("options->dining->meal")) == ["Ada", "Grace"]
+    assert await names(people().where_json_contains_key("options->dining->meal")) == [
+        "Ada",
+        "Grace",
+    ]
     assert await names(people().where_json_contains_key("options->missing")) == []
-    assert await names(people().where_json_doesnt_contain_key("options->missing")) == ["Ada", "Grace"]
+    assert await names(people().where_json_doesnt_contain_key("options->missing")) == [
+        "Ada",
+        "Grace",
+    ]
     none = people().where("id", 0)
-    assert await names(none.clone().or_where_json_contains_key("options->enabled")) == ["Ada", "Grace"]
+    assert await names(none.clone().or_where_json_contains_key("options->enabled")) == [
+        "Ada",
+        "Grace",
+    ]
     assert await names(none.clone().or_where_json_doesnt_contain_key("options->missing")) == [
         "Ada",
         "Grace",
@@ -385,7 +400,9 @@ async def test_exists_also_takes_a_plain_select(memory_db) -> None:
 
     await _orders(memory_db)
     statement = DB.table("orders").where_column("orders.person_id", "people.id").to_select()
-    assert await names(people().where_exists(sa.select(sa.literal(1)).select_from(statement.subquery()))) == [
+    assert await names(
+        people().where_exists(sa.select(sa.literal(1)).select_from(statement.subquery()))
+    ) == [
         "Ada",
         "Grace",
     ]

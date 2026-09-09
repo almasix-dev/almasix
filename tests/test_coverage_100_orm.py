@@ -5,19 +5,19 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
+import sqlalchemy as sa
 
 from almasix.orm.builder import QueryBuilder, _native_upsert
 from almasix.orm.collection import Collection
 from almasix.orm.connection import Connection
 from almasix.orm.eager import _children, eager_load
-from almasix.orm.migration import MigrationError, Migrator, _load
+from almasix.orm.migration import MigrationError, _load
 from almasix.orm.model import Model, RelationNotLoadedError
-from almasix.orm.schema import Blueprint, Column
+from almasix.orm.schema import Column
 from almasix.orm.seeder import SeederError, _load_module
-import sqlalchemy as sa
 
 
 @pytest.mark.asyncio
@@ -125,7 +125,7 @@ def test_model_accessors_relations_load_missing() -> None:
             return self.has_many(Post)
 
     u = User()
-    u._attributes["label"] = "x"  # noqa: SLF001
+    u._attributes["label"] = "x"
     assert u.get_attribute("label") == "L:x"
 
     class User2(Model):
@@ -137,7 +137,7 @@ def test_model_accessors_relations_load_missing() -> None:
     assert User2().get_attribute("virtual") == "virt"
 
     u3 = User()
-    u3._relations["posts"] = ["p"]  # noqa: SLF001
+    u3._relations["posts"] = ["p"]
     assert u3.get_attribute("posts") == ["p"]
 
     with pytest.raises(RelationNotLoadedError):
@@ -176,7 +176,9 @@ async def test_load_missing_and_eager_children() -> None:
 
 
 def test_schema_column_fk_on_update_delete() -> None:
-    col = Column("user_id", sa.Integer, references="users.id", on_delete="CASCADE", on_update="CASCADE")
+    col = Column(
+        "user_id", sa.Integer, references="users.id", on_delete="CASCADE", on_update="CASCADE"
+    )
     sa_col = col.to_sqlalchemy()
     assert sa_col is not None
 
@@ -193,7 +195,9 @@ async def test_connection_sqlite_fk_pragma(tmp_path: Path) -> None:
         await c.commit()
 
 
-def test_migration_and_seeder_load_failures(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_migration_and_seeder_load_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "2026_01_01_000000_x.py"
     path.write_text("class X: pass\n", encoding="utf-8")
     monkeypatch.setattr(importlib.util, "spec_from_file_location", lambda *a, **k: None)

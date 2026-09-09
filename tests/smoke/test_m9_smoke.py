@@ -43,7 +43,7 @@ def progress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     app = module.application
     app.config.set("app.debug", False)
     app.config.set("logging.default", "null")
-    app._asgi = None  # noqa: SLF001
+    app._asgi = None
     module.asgi = app.asgi
     return TestClient(module.asgi, raise_server_exceptions=False)
 

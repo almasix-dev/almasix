@@ -41,12 +41,7 @@ class Learner(Model):
 
     @relation
     def subscriptions(self):
-        return (
-            self.belongs_to_many(Plan)
-            .using(Subscription)
-            .as_("subscription")
-            .with_pivot("tier")
-        )
+        return self.belongs_to_many(Plan).using(Subscription).as_("subscription").with_pivot("tier")
 
     @relation
     def gold_plans(self):

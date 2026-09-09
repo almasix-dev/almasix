@@ -469,9 +469,7 @@ def test_recording_and_assertions() -> None:
     Http.assert_sent(lambda r: r.method == "POST" and r["name"] == "Ada")
     Http.assert_not_sent("https://evil.test/*")
     Http.assert_sent_count(2)
-    Http.assert_sent_in_order(
-        ["https://api.example.test/users", "https://api.example.test/orders"]
-    )
+    Http.assert_sent_in_order(["https://api.example.test/users", "https://api.example.test/orders"])
     http_assert_sent("https://api.example.test/orders")
 
 
@@ -588,12 +586,14 @@ def test_when_and_unless_apply_configuration_conditionally() -> None:
         ]
         == "Bearer default"
     )
-    assert Http.when(lambda request: True, lambda r: r.with_token("callable")).headers[
-        "Authorization"
-    ] == "Bearer callable"
-    assert Http.unless(False, lambda request: request.with_token("unless")).headers[
-        "Authorization"
-    ] == "Bearer unless"
+    assert (
+        Http.when(lambda request: True, lambda r: r.with_token("callable")).headers["Authorization"]
+        == "Bearer callable"
+    )
+    assert (
+        Http.unless(False, lambda request: request.with_token("unless")).headers["Authorization"]
+        == "Bearer unless"
+    )
     assert Http.unless(lambda request: True, lambda r: r.with_token("no")).headers == {}
 
 
@@ -671,9 +671,7 @@ def test_attach_switches_to_multipart_and_records_files() -> None:
     assert sent()[0].files == {"photo": ("me.jpg", b"binary")}
 
     Http.attach("doc", b"pdf", headers={"Content-Type": "application/pdf"}).post(URL)
-    assert sent()[1].files == {
-        "doc": ("doc", b"pdf", None, {"Content-Type": "application/pdf"})
-    }
+    assert sent()[1].files == {"doc": ("doc", b"pdf", None, {"Content-Type": "application/pdf"})}
 
 
 def _tag(request: RecordedRequest, value: str) -> RecordedRequest:
@@ -1005,8 +1003,8 @@ def test_throw_if_and_throw_unless_gate_on_a_condition() -> None:
 
 def test_response_middleware_runs_before_the_throw_policy() -> None:
     Http.fake({"*": Http.response(None, 500)})
-    response = Http.with_response_middleware(lambda _r: Response.make({"healed": True})).throw().get(
-        URL
+    response = (
+        Http.with_response_middleware(lambda _r: Response.make({"healed": True})).throw().get(URL)
     )
     assert response.json() == {"healed": True}
 
@@ -1087,7 +1085,9 @@ FLUENT_DELEGATIONS: list[tuple[str, tuple[Any, ...]]] = [
 ]
 
 
-@pytest.mark.parametrize(("name", "args"), FLUENT_DELEGATIONS, ids=[n for n, _ in FLUENT_DELEGATIONS])
+@pytest.mark.parametrize(
+    ("name", "args"), FLUENT_DELEGATIONS, ids=[n for n, _ in FLUENT_DELEGATIONS]
+)
 def test_facade_fluent_methods_delegate_to_a_pending_request(
     name: str, args: tuple[Any, ...]
 ) -> None:

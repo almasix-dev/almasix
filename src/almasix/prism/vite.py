@@ -120,9 +120,7 @@ class Vite:
         chunk = manifest.get(entry)
         if not isinstance(chunk, dict) or "file" not in chunk:
             known = ", ".join(sorted(manifest)) or "nothing"
-            raise ViteEntryNotFound(
-                f"Vite manifest has no entry {entry!r}. It names: {known}."
-            )
+            raise ViteEntryNotFound(f"Vite manifest has no entry {entry!r}. It names: {known}.")
         return chunk
 
     # -- tags ----------------------------------------------------------------

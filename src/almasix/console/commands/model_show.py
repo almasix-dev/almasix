@@ -55,8 +55,7 @@ class ModelShowCommand(Command):
         given = self.option("database")
         if given is True:
             self.error(
-                "Invalid value for '--database': provide a connection name, "
-                "e.g. --database=sqlite."
+                "Invalid value for '--database': provide a connection name, e.g. --database=sqlite."
             )
             return self.INVALID
 
@@ -86,8 +85,7 @@ class ModelShowCommand(Command):
                 self.line(f"Known models: {', '.join(known)}.")
             else:
                 self.line(
-                    "Name a class under app.models, or a dotted path "
-                    "like app.models.post.Post."
+                    "Name a class under app.models, or a dotted path like app.models.post.Post."
                 )
             return None
         if not (isinstance(found, type) and issubclass(found, Model)):
@@ -122,7 +120,7 @@ class ModelShowCommand(Command):
         table = model.get_table()
         try:
             columns = asyncio.run(Schema.columns(table, connection=connection))
-        except Exception as exc:  # noqa: BLE001 - the database is the user's to fix
+        except Exception as exc:
             return [], f"Column details need a database connection: {exc}"
         if not columns:
             return [], f"Table [{table}] does not exist yet, so it has no columns to show."
@@ -195,7 +193,7 @@ class ModelShowCommand(Command):
             kind = type(relation).__name__
             # A morph_to points wherever the row says; there is no one model.
             related = None if isinstance(relation, MorphTo) else _dotted(relation.related)
-        except Exception:  # noqa: BLE001 - a relation body may read a loaded row
+        except Exception:
             return {"name": name, "type": None, "related": None}
         return {"name": name, "type": kind, "related": related}
 

@@ -58,7 +58,9 @@ class FakeQueue(Dispatcher):
         if self.only and not isinstance(job, self.only):
             return await self._real.dispatch_sync(job)
         self.pushed.append(
-            RecordedJob(job=job, connection=job.connection_name(), queue=job.queue_name(), queued=False)
+            RecordedJob(
+                job=job, connection=job.connection_name(), queue=job.queue_name(), queued=False
+            )
         )
         return None
 

@@ -24,7 +24,6 @@ from almasix.cache.drivers.file import FileStore
 from almasix.cache.provider import CacheServiceProvider
 from almasix.console.scheduling import Event, run_event
 from almasix.framework.application import Application
-from tests.orm_support import memory_db
 
 
 @pytest.fixture()
@@ -112,7 +111,10 @@ def test_file_store(tmp_path: Path) -> None:
     assert store.flush() is True
     assert store.get("user:1") is None
     repo = CacheManager(
-        config={"default": "file", "stores": {"file": {"driver": "file", "path": str(tmp_path / "t")}}}
+        config={
+            "default": "file",
+            "stores": {"file": {"driver": "file", "path": str(tmp_path / "t")}},
+        }
     ).store()
     with pytest.raises(RuntimeError, match="tags are not supported"):
         repo.tags("users")

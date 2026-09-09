@@ -30,7 +30,10 @@ class ServeCommand(Command):
         f"serve {{--host={DEFAULT_HOST} : Bind host}} "
         f"{{--port= : Bind port (default: first free port from {DEFAULT_PORT}–{MAX_PORT}; "
         "if the chosen port is busy, try the next)} "
+        "{--workers=1 : Uvicorn worker processes (reload is disabled when > 1)} "
         "{--no-reload : Do not auto-reload on code changes} "
+        "{--proxy-headers : Honour X-Forwarded-* from a reverse proxy} "
+        "{--forwarded-allow-ips=* : Proxy IPs allowed to set forwarded headers} "
         f"{{--app={DEFAULT_ASGI} : ASGI import path (default: {DEFAULT_ASGI})}}"
     )
     description = "Serve the application with Uvicorn"
@@ -60,6 +63,18 @@ class ServeCommand(Command):
             self.error(f"Invalid value for '--port': {port!r} is not a valid integer.")
             return self.INVALID
 
+        workers_raw = self.option("workers")
+        try:
+            workers = 1 if workers_raw is None else int(str(workers_raw))
+        except ValueError:
+            self.error(
+                f"Invalid value for '--workers': {workers_raw!r} is not a valid integer."
+            )
+            return self.INVALID
+        if workers < 1:
+            self.error("--workers must be at least 1.")
+            return self.INVALID
+
         # Default discovery window is 3000–3099 (100 ports). Explicit --port uses
         # the same window size starting from the requested port.
         window = MAX_PORT - DEFAULT_PORT
@@ -74,8 +89,25 @@ class ServeCommand(Command):
         if chosen != start_port:
             self.warn(f"Port {start_port} is in use, using http://{host}:{chosen} instead.")
 
-        self.line(f"Serving {app_path} on http://{host}:{chosen}")
-        uvicorn.run(app_path, host=host, port=chosen, reload=not self.option("no_reload"))
+        # Uvicorn rejects reload + workers together; production always wants
+        # --no-reload with multiple workers.
+        reload = not self.option("no_reload") and workers == 1
+        if workers > 1 and not self.option("no_reload"):
+            self.comment("Reload disabled because --workers is greater than 1.")
+
+        kwargs: dict = {
+            "host": host,
+            "port": chosen,
+            "reload": reload,
+            "workers": workers,
+            "proxy_headers": bool(self.option("proxy_headers")),
+            "forwarded_allow_ips": str(self.option("forwarded_allow_ips") or "*"),
+        }
+        self.line(
+            f"Serving {app_path} on http://{host}:{chosen}"
+            + (f" ({workers} workers)" if workers > 1 else "")
+        )
+        uvicorn.run(app_path, **kwargs)
         return self.SUCCESS
 
 

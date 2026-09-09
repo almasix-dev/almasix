@@ -58,9 +58,7 @@ def test_extends_errors_and_implicit_content(tmp_path: Path) -> None:
     with pytest.raises(SyntaxError, match="Unexpected"):
         compile_template("@endsection")
     with pytest.raises(SyntaxError, match="Nested"):
-        compile_template(
-            "@section('a')\n@section('b')\nx\n@endsection\n@endsection"
-        )
+        compile_template("@section('a')\n@section('b')\nx\n@endsection\n@endsection")
 
 
 def test_unknown_tag_kind() -> None:
@@ -87,9 +85,7 @@ def test_python_mode_keeps_inner_tags() -> None:
 
 def test_push_and_slot_scan_skips_inner_tags() -> None:
     """Depth scanners must ignore unrelated tags (branch coverage)."""
-    render = compile_template(
-        "@push('s'){{ v }}@parent@endpush@stack('s')"
-    )
+    render = compile_template("@push('s'){{ v }}@parent@endpush@stack('s')")
     assert "X" in render({"v": "X"}, Engine(paths=[]))
 
     default, named = _split_slots("@slot('a'){{ v }}@endslot\nD")
@@ -104,15 +100,11 @@ def test_push_and_slot_scan_skips_inner_tags() -> None:
         compile_template("@cache('k')\nbody")
 
     # Word-boundary: do not glue letters onto @endpush / @endcache.
-    nested_push = compile_template(
-        "@push('s')@push('t')T@endpush P@endpush@stack('s')@stack('t')"
-    )
+    nested_push = compile_template("@push('s')@push('t')T@endpush P@endpush@stack('s')@stack('t')")
     out = nested_push({}, Engine(paths=[]))
     assert "P" in out and "T" in out
 
-    nested_cache = compile_template(
-        "@cache('outer')@cache('inner')Z@endcache@endcache"
-    )
+    nested_cache = compile_template("@cache('outer')@cache('inner')Z@endcache@endcache")
     assert "Z" in nested_cache({}, Engine(paths=[]))
 
 
@@ -135,9 +127,7 @@ def test_each_without_empty_view(tmp_path: Path) -> None:
 
 
 def test_nested_named_slots(tmp_path: Path) -> None:
-    default, named = _split_slots(
-        "@slot('inner')\n@slot('deep')D@endslot\nI\n@endslot\nO\n"
-    )
+    default, named = _split_slots("@slot('inner')\n@slot('deep')D@endslot\nI\n@endslot\nO\n")
     assert "O" in default
     assert list(named) == ["inner"]
     assert "@slot('deep')" in named["inner"]

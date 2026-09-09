@@ -42,9 +42,9 @@ class Kind(Enum):
 class Person(Model):
     timestamps = False
     fillable = ("name", "votes", "flag", "born")
-    casts = {"votes": "int", "flag": "bool"}  # noqa: RUF012
+    casts = {"votes": "int", "flag": "bool"}
     appends = ("label",)
-    attributes = {"votes": 0}  # noqa: RUF012
+    attributes = {"votes": 0}
 
     def get_label_attribute(self, _value=None) -> str:
         return f"#{self.name}"
@@ -420,7 +420,7 @@ async def test_model_lifecycle_accessors_events(memory_db) -> None:
     with pytest.raises(RelationNotLoadedError):
         Person().notes[0]
     with pytest.raises(RelationNotLoadedError):
-        Person().notes.missing  # noqa: B018
+        Person().notes.missing
     assert "unloaded" in repr(Person().notes)
     rel = Person().notes()
     assert rel.query()
@@ -432,7 +432,7 @@ async def test_model_lifecycle_accessors_events(memory_db) -> None:
     with pytest.raises(AttributeError):
         row.get_relation("nope")
     with pytest.raises(AttributeError):
-        row.not_a_field  # noqa: B018
+        row.not_a_field
     flagged = await Person.query().flagged().named("Load").get()
     assert isinstance(flagged, Collection)
     Person.add_global_scope("named_ada", lambda q: q.where("name", "Ada"))
@@ -464,7 +464,7 @@ async def test_relations_pivot_morph_through_eager(memory_db) -> None:
     first_note = await ada.notes().first()
     assert first_note is not None
     with pytest.raises(AttributeError):
-        ada.notes()._nope  # noqa: B018
+        ada.notes()._nope
 
     await ada.bio().create(text="bio")
     profile = await ada.bio().get()
@@ -542,9 +542,18 @@ async def test_connection_urls_nested_tx_and_schema(memory_db) -> None:
     await _schema(memory_db)
     assert _normalize_url({"url": "sqlite:///tmp.db"}).startswith("sqlite+aiosqlite")
     assert "asyncpg" in _normalize_url(
-        {"driver": "pgsql", "username": "u", "password": "p", "host": "h", "port": 5432, "database": "db"}
+        {
+            "driver": "pgsql",
+            "username": "u",
+            "password": "p",
+            "host": "h",
+            "port": 5432,
+            "database": "db",
+        }
     )
-    assert "aiomysql" in _normalize_url({"driver": "mysql", "username": "u", "host": "h", "database": "db"})
+    assert "aiomysql" in _normalize_url(
+        {"driver": "mysql", "username": "u", "host": "h", "database": "db"}
+    )
     assert _normalize_url({"driver": "postgres", "host": "h", "database": "db"})
     assert "aioodbc" in _normalize_url(
         {"driver": "sqlsrv", "username": "sa", "host": "h", "database": "db"}

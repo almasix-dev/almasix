@@ -42,14 +42,18 @@ cd /path/to/almasix
 source .venv/bin/activate
 pip install -e .
 cd examples/progress
-pip install -e .
-smith migrate --seed
-smith serve
+pip install -e .          # links `smith` into the venv; optional if you use python smith
+python smith migrate --seed
+python smith serve
 ```
 
 SQLite file: `database/database.sqlite` (gitignored). Same layout as `almasix new`.
 
-Open http://127.0.0.1:3000 (or the port `smith serve` prints). With `APP_BASE_PATH=/almasix`, use http://127.0.0.1:3000/almasix/.
+Open http://127.0.0.1:3000 (or the port `python smith serve` prints). With `APP_BASE_PATH=/almasix`, use http://127.0.0.1:3000/almasix/.
+
+Installing only the framework (`pip install -e .` at the repo root) does **not**
+put `smith` on PATH — that comes from installing **this app**, or from
+`python smith …` via the root script.
 
 ## M2 manual checklist
 
@@ -169,7 +173,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M22** | `smith progress:concurrency` — `Concurrency.run` / `defer` / `arun`, four drivers |
 | **M23** | `smith progress:resources` + `GET /api/resources` — `JsonResource`, conditionals, wrapping, pagination meta |
 | **M24** | `smith progress:factories` — factories, states, sequences, `has` / `for_`; `DemoSeeder` seeds through them |
-| **M25** | `smith progress:documents` + `GET /api/documents` — `Document` models, embeds, references, indexes, `documents:show` |
+| **M25** | `smith progress:documents` + `GET /api/documents` — `Document` models, embeds, references, indexes; docs at `articulate/documents/*` with L13 compared page |
 | **M26** | `smith progress:broadcast` + `GET /api/broadcast` — `ShouldBroadcast`, channel auth, the websocket at `/broadcasting/socket`, `channel:list` |
 | **M27** | `smith progress:search` + `GET /api/search` — `Searchable` posts, the `database` and `collection` engines, `Scout.fake()`, `scout:status` |
 | **M28** | `smith progress:testing` + `smith test` — `tests/` drives the app in-process: HTTP and console assertions, database helpers, `fake()`, time travel |
@@ -183,20 +187,23 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |
 | **M42** | `smith progress:queries` — JSON wheres and updates, `join_sub`, unions, `having_between`, `sole`, locking, `DB.listen` / `pretend` / `after_commit`; `smith db` |
 | **M43** | `smith progress:schema` — the column catalogue, `change()` and the drops, `Schema.rename`, index and foreign-key inspection, `migrate --pretend` / `--step`, all three paginators |
+| **M44** | `smith progress:engines` — DDL, upsert, JSON, locks, transactions, pagination on the app engine; CI runs the same suite on SQLite + PostgreSQL + MySQL |
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
-| **M29, M36–M39, M44–M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M51** | `smith progress:lint` — pinned `ruff==0.16.6`, `make lint`, CI lint job |
+| **M38** | `smith progress:deploy` — `serve --workers`, `/up`, Deployment docs, `examples/deploy`, Trusted Publishing |
+| **M39** | `smith progress:docs` — Prologue, Basics teaching order, latest-major+main switcher, older-docs banner |
+| **M29, M36–M37, M45–M48, M52** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M28, M30–M35, M40–M43, M49, and M50 are closed — M5's query builder was
-exhausted in M42 and its schema layer in M43, M32 gave `almasix new` its
-prompts, its four stacks, and the default migrations Laravel ships and Almasix
-did not, M33 closed routing, M34 put security headers and CORS on by
-default and finished the HTTP half of `smith down`, and M35 shipped
-cache-backed rate limiting with the `throttle` middleware and login lockout.
-Next is **M36 — starter kits**. The board on `/progress` lists the full **M0–M51** roadmap with a
-status and proof for each milestone.
+M0–M28, M30–M35, M38–M44, M49–M51 are closed on the ladder. M32–M35
+closed the installer, routing, security headers/CORS, and rate limiting; M25’s
+Laravel 13 Mongo audit, M51’s lint gate, M38’s deployment ops, and M39’s docs
+journey are closed with them. **Stability track next** (see `docs/PLAN.md`):
+API tokens (**M37**), then Echo-class client, then starter kits. The board on
+`/progress` lists the full roadmap with a status and proof for each milestone.
+
 ## CLI
 
 ```bash
@@ -209,6 +216,7 @@ smith progress:helpers
 smith progress:collections
 smith progress:queries
 smith progress:schema
+smith progress:engines
 smith progress:install
 smith progress:routing
 smith progress:security
@@ -224,6 +232,9 @@ smith progress:concurrency
 smith progress:resources
 smith progress:factories
 smith progress:documents
+smith progress:lint
+smith progress:deploy
+smith progress:docs
 smith progress:broadcast
 smith progress:search
 smith progress:testing

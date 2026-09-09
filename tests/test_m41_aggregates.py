@@ -94,9 +94,7 @@ async def test_aggregates_accept_constraining_callbacks(memory_db) -> None:
     await _seed()
 
     writers = await (
-        Writer.query()
-        .with_count(entries=lambda query: query.where("published", "=", 1))
-        .get()
+        Writer.query().with_count(entries=lambda query: query.where("published", "=", 1)).get()
     )
 
     assert [writer.entries_count for writer in writers] == [1, 1, 0]
@@ -192,9 +190,7 @@ async def test_deferred_aggregates_accept_constraints_and_aliases(memory_db) -> 
     ada, _, _ = await _seed()
 
     await ada.load_count(entries=lambda query: query.where("published", "=", 1))
-    await ada.load_aggregate(
-        ["entries as top_score"], "votes", "max", entries=lambda query: query
-    )
+    await ada.load_aggregate(["entries as top_score"], "votes", "max", entries=lambda query: query)
 
     assert ada.entries_count == 1
     assert ada.top_score == 30

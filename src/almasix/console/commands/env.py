@@ -43,9 +43,7 @@ class EnvironmentFileCommand(Command):
         """The ``--key`` text, ``None`` when absent, ``False`` when unusable."""
         value = self.option("key")
         if value is True:
-            self.error(
-                "Invalid value for '--key': provide the key itself, e.g. --key=base64:AbC…"
-            )
+            self.error("Invalid value for '--key': provide the key itself, e.g. --key=base64:AbC…")
             return False
         text = str(value or "").strip()
         return text or None

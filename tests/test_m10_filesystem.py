@@ -146,11 +146,11 @@ def test_s3_adapter_with_mock_client() -> None:
 
 
 def test_s3_requires_boto3_without_client() -> None:
-    from almasix.filesystem.drivers.s3 import S3Adapter
+    import builtins
 
     # If boto3 is installed this still constructs; force ImportError path via monkeypatch.
     import almasix.filesystem.drivers.s3 as s3_mod
-    import builtins
+    from almasix.filesystem.drivers.s3 import S3Adapter
 
     real_import = builtins.__import__
 

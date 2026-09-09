@@ -21,7 +21,9 @@ class QueueWorkCommand(Command):
         manager = self.app.make(QueueManager)
         worker = Worker(manager)
         processed = asyncio.run(
-            worker.run(connection, queue=queue, once=once, sleep=sleep, max_jobs=1 if once else None)
+            worker.run(
+                connection, queue=queue, once=once, sleep=sleep, max_jobs=1 if once else None
+            )
         )
         if once and processed == 0:
             self.comment("No jobs available.")

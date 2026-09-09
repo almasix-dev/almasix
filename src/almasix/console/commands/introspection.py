@@ -36,8 +36,7 @@ class AboutCommand(Command):
     """
 
     signature = (
-        "about {--only= : Show only this section (environment, drivers)} "
-        "{--json : Output as JSON}"
+        "about {--only= : Show only this section (environment, drivers)} {--json : Output as JSON}"
     )
     description = "Show a summary of the application's environment and drivers"
 

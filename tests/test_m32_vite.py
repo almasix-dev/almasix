@@ -172,9 +172,7 @@ def test_the_root_is_the_booted_application(tmp_path: Path, monkeypatch) -> None
     assert Vite().hot_path() == tmp_path / "app_root" / "public" / "hot"
 
 
-def test_the_directive_renders_through_the_engine(
-    built: Path, monkeypatch, unbooted: None
-) -> None:
+def test_the_directive_renders_through_the_engine(built: Path, monkeypatch, unbooted: None) -> None:
     monkeypatch.chdir(built)
     views = built / "resources" / "views"
     views.mkdir(parents=True)

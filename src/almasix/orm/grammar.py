@@ -53,6 +53,15 @@ def _brace_path(path: list[str]) -> str:
     return "{" + ",".join(path) + "}"
 
 
+def _pg_json_extract(column_sql: str, path_sql: str) -> str:
+    """``#>`` needs ``jsonb`` on the left and ``text[]`` on the right.
+
+    A plain ``json`` column and a string bind both fail under asyncpg —
+    cast both sides so ``json`` / ``jsonb`` columns share one spelling.
+    """
+    return f"(CAST({column_sql} AS JSONB) #> CAST({path_sql} AS text[]))"
+
+
 def _is_mariadb(dialect: Any) -> bool:
     return bool(getattr(dialect, "is_mariadb", False))
 
@@ -91,7 +100,7 @@ def _json_contains_postgresql(element: JsonContains, compiler: Any, **kw: Any) -
     document = compiler.process(sa.literal(json.dumps(element.value)), **kw)
     if element.path:
         path = compiler.process(sa.literal(_brace_path(element.path)), **kw)
-        column = f"({column} #> {path})"
+        column = _pg_json_extract(column, path)
     return f"CAST({column} AS JSONB) @> CAST({document} AS JSONB)"
 
 
@@ -167,7 +176,7 @@ def _json_length_postgresql(element: JsonLength, compiler: Any, **kw: Any) -> st
     column = compiler.process(element.column, **kw)
     if element.path:
         path = compiler.process(sa.literal(_brace_path(element.path)), **kw)
-        column = f"({column} #> {path})"
+        column = _pg_json_extract(column, path)
     return f"JSONB_ARRAY_LENGTH(CAST({column} AS JSONB))"
 
 
@@ -268,7 +277,7 @@ def _json_set_postgresql(element: JsonSet, compiler: Any, **kw: Any) -> str:
     column = compiler.process(element.column, **kw)
     path = compiler.process(sa.literal(_brace_path(element.path)), **kw)
     value = compiler.process(sa.literal(element.encoded), **kw)
-    return f"JSONB_SET(CAST({column} AS JSONB), {path}, CAST({value} AS JSONB))"
+    return f"JSONB_SET(CAST({column} AS JSONB), CAST({path} AS text[]), CAST({value} AS JSONB))"
 
 
 @compiles(JsonSet)

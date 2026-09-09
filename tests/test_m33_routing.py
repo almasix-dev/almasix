@@ -309,9 +309,7 @@ def test_middleware_takes_names_a_list_or_both(router: Router) -> None:
         ("where_ulid", ULID_PATTERN),
     ],
 )
-def test_each_where_shorthand_writes_its_pattern(
-    router: Router, method: str, pattern: str
-) -> None:
+def test_each_where_shorthand_writes_its_pattern(router: Router, method: str, pattern: str) -> None:
     route = router.get("/x/{id}", lambda: None)
     getattr(route, method)("id")
 
@@ -441,10 +439,7 @@ def test_with_trashed_and_scope_bindings_are_switches(router: Router) -> None:
 def test_a_resource_registers_laravels_seven(router: Router) -> None:
     router.resource("photos", PhotoController)
 
-    assert [
-        ("|".join(route.methods), route.uri, route.get_name())
-        for route in router.routes
-    ] == [
+    assert [("|".join(route.methods), route.uri, route.get_name()) for route in router.routes] == [
         ("GET|HEAD", "/photos", "photos.index"),
         ("GET|HEAD", "/photos/create", "photos.create"),
         ("POST", "/photos", "photos.store"),
@@ -554,18 +549,14 @@ def test_shallow_on_an_unnested_resource_changes_nothing(router: Router) -> None
 
 
 def test_names_renames_the_routes_per_action_or_all_at_once(router: Router) -> None:
-    router.resource("a", PhotoController).only("index", "show").names(
-        {"index": "a.list"}
-    )
+    router.resource("a", PhotoController).only("index", "show").names({"index": "a.list"})
     router.resource("b", PhotoController).only("index").names("shelf")
 
     assert [route.get_name() for route in router.routes] == ["a.list", "a.show", "shelf.index"]
 
 
 def test_parameters_renames_the_uri_parameter(router: Router) -> None:
-    router.resource("users", PhotoController).only("show").parameters(
-        {"users": "admin_user"}
-    )
+    router.resource("users", PhotoController).only("show").parameters({"users": "admin_user"})
     router.resource("posts", PhotoController).only("show").parameters("slug")
 
     assert [route.uri for route in router.routes] == [
@@ -575,8 +566,10 @@ def test_parameters_renames_the_uri_parameter(router: Router) -> None:
 
 
 def test_scoped_binds_a_nested_child_through_its_parent(router: Router) -> None:
-    pending = router.resource("photos.comments", CommentController).only("show").scoped(
-        {"comment": "slug"}
+    pending = (
+        router.resource("photos.comments", CommentController)
+        .only("show")
+        .scoped({"comment": "slug"})
     )
     (route,) = pending.routes
 
@@ -594,9 +587,7 @@ def test_scoped_with_no_columns_still_scopes(router: Router) -> None:
 
 def test_resource_middleware_applies_to_all_actions_or_some(router: Router) -> None:
     router.resource("a", PhotoController).only("index", "store").middleware("auth")
-    router.resource("b", PhotoController).only("index", "store").middleware(
-        {"store": ["csrf"]}
-    )
+    router.resource("b", PhotoController).only("index", "store").middleware({"store": ["csrf"]})
 
     routes = by_name(router)
     assert routes["a.index"].middleware_names == ["auth"]
@@ -811,7 +802,10 @@ def test_an_action_describes_itself_however_it_was_written() -> None:
     assert describe_action([PhotoController, "show"]) == "PhotoController@show"
     assert describe_action(("PhotoController", "show")) == "PhotoController@show"
     assert describe_action("app.Controller@show") == "app.Controller@show"
-    assert describe_action(handler) == "test_an_action_describes_itself_however_it_was_written.<locals>.handler"
+    assert (
+        describe_action(handler)
+        == "test_an_action_describes_itself_however_it_was_written.<locals>.handler"
+    )
     assert describe_action(RedirectAction("/x")) == "redirect -> /x (302)"
     assert describe_action(3) == "3"
 

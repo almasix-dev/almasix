@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import base64
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-import sqlalchemy as sa
 from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
@@ -87,22 +86,25 @@ async def test_require_password_config_exception_and_basic_decode() -> None:
         req = _req()
         from almasix.session.store import Session, set_session
 
-        req._session = Session({"auth.password_confirmed_at": 10**12})  # noqa: SLF001
+        req._session = Session({"auth.password_confirmed_at": 10**12})
         set_session(req._session)
         assert (await RequirePassword().handle(req, ok)).status_code == 200
 
     # Basic auth bad base64 → 167-168
-    bad = base64.b64encode(b"\xff\xfe").decode()  # invalid utf-8 when decoded wrong
-    # Actually b64decode works on valid b64 of bad utf8
+    # b64decode works on valid b64 of bad utf8
     header = "Basic " + base64.b64encode(b"\xff\xfe").decode("ascii")
-    assert (await AuthenticateWithBasicAuth().handle(_req(headers=[(b"authorization", header.encode())]), ok)).status_code == 401
+    assert (
+        await AuthenticateWithBasicAuth().handle(
+            _req(headers=[(b"authorization", header.encode())]), ok
+        )
+    ).status_code == 401
 
     # Successful basic auth
     provider = MemoryUserProvider([{"id": 1, "email": "a@b.c", "password": Hash.make("secret")}])
     manager = AuthManager()
-    manager._providers["users"] = provider  # noqa: SLF001
+    manager._providers["users"] = provider
     g = SessionGuard("web", provider)
-    manager._guards["web"] = g  # noqa: SLF001
+    manager._guards["web"] = g
     tok = set_auth(manager)
     try:
         creds = base64.b64encode(b"a@b.c:secret").decode()
@@ -115,9 +117,9 @@ async def test_require_password_config_exception_and_basic_decode() -> None:
 
     # remember cookie empty token after partition (line 218)
     req = _req()
-    req._cookies = {"remember_web": "1|"}  # noqa: SLF001
+    req._cookies = {"remember_web": "1|"}
     assert await _from_remember_cookie(req, SessionGuard("web", MemoryUserProvider([]))) is None
-    req._cookies = {"remember_web": "|tok"}  # noqa: SLF001
+    req._cookies = {"remember_web": "|tok"}
     assert await _from_remember_cookie(req, SessionGuard("web", MemoryUserProvider([]))) is None
 
 
@@ -132,30 +134,32 @@ async def test_password_db_delete_expired_success_and_fail() -> None:
         raise RuntimeError("fail")
 
     with patch("almasix.orm.facade.DB.statement", ok):
-        assert await tokens._db_delete_expired(0.0) == 0  # noqa: SLF001 — hits return 0 at 170
+        assert await tokens._db_delete_expired(0.0) == 0
     with patch("almasix.orm.facade.DB.statement", boom):
-        assert await tokens._db_delete_expired(0.0) == 0  # noqa: SLF001
-        await tokens._db_delete("a@b.c")  # noqa: SLF001
+        assert await tokens._db_delete_expired(0.0) == 0
+        await tokens._db_delete("a@b.c")
 
 
 @pytest.mark.asyncio
 async def test_kernel_self_only_and_make_class_exists(tmp_path) -> None:
     from almasix.framework.application import Application
-    from almasix.smith.make import MakeError, make_component
     from almasix.http.kernel import HttpKernel
     from almasix.routing.router import Router
+    from almasix.smith.make import MakeError, make_component
 
     root = tmp_path / "app"
     for part in ("bootstrap", "config", "routes"):
         (root / part).mkdir(parents=True)
-    (root / "config" / "app.py").write_text("config = {'name': 'T', 'key': 'k'}\n", encoding="utf-8")
+    (root / "config" / "app.py").write_text(
+        "config = {'name': 'T', 'key': 'k'}\n", encoding="utf-8"
+    )
     app = Application.configure(root).create()
     kernel = HttpKernel(app, Router())
 
     def handler(self=None):
         return "solo"
 
-    assert await kernel._invoke(handler, _req()) == "solo"  # noqa: SLF001
+    assert await kernel._invoke(handler, _req()) == "solo"
 
     app_root = tmp_path / "make"
     (app_root / "resources" / "views" / "components").mkdir(parents=True)
@@ -204,28 +208,28 @@ def test_loader_stem_only_and_translator_ns_runtime(tmp_path) -> None:
     lang = tmp_path / "lang"
     (lang / "en").mkdir(parents=True)
     (lang / "en" / "foo.py").write_text("foo = {'a': 1}\n", encoding="utf-8")
-    # empty module → fall through to return {} after stem loop without match... 
+    # empty module → fall through to return {} after stem loop without match...
     (lang / "en" / "empty.py").write_text("x = 1\n", encoding="utf-8")
     loader = FileLoader()
     loader.add_path(lang)
-    assert loader._load_py(lang / "en" / "foo.py") == {"a": 1}  # noqa: SLF001
-    assert loader._load_py(lang / "en" / "empty.py") == {}  # noqa: SLF001
+    assert loader._load_py(lang / "en" / "foo.py") == {"a": 1}
+    assert loader._load_py(lang / "en" / "empty.py") == {}
 
     t = Translator(loader)
     t.set_locale("en")
     # JSON path with runtime: load_json empty, then runtime hits
-    loader._lines[("en", "*")] = {"Hello": "H"}  # noqa: SLF001
-    assert t._lookup("Hello", "en") == "H"  # noqa: SLF001 — 197
-    loader._lines[("en", "*")] = {"other": "O"}  # noqa: SLF001
+    loader._lines[("en", "*")] = {"Hello": "H"}
+    assert t._lookup("Hello", "en") == "H"
+    loader._lines[("en", "*")] = {"other": "O"}
     # key has a dot → may parse as group; use space for JSON group
-    assert t._lookup("Hello World", "en") is None  # noqa: SLF001 — falls to 199 None
-    loader._lines[("en", "*")] = {"Hello World": "HW", "Hello World.full": "via-key"}  # noqa: SLF001
-    assert t._lookup("Hello World", "en") == "HW"  # noqa: SLF001
+    assert t._lookup("Hello World", "en") is None
+    loader._lines[("en", "*")] = {"Hello World": "HW", "Hello World.full": "via-key"}
+    assert t._lookup("Hello World", "en") == "HW"
     # key in runtime when needle missed (198): needle from parse differs from key
-    loader._lines[("en", "ns")] = {"ns::Hello": "FULL", "Hello": "SHORT"}  # noqa: SLF001
-    assert t._lookup("ns::Hello", "en") == "SHORT"  # noqa: SLF001 needle hit
-    loader._lines[("en", "ns")] = {"ns::Hello": "FULL"}  # noqa: SLF001
-    assert t._lookup("ns::Hello", "en") == "FULL"  # noqa: SLF001 key hit line 198
+    loader._lines[("en", "ns")] = {"ns::Hello": "FULL", "Hello": "SHORT"}
+    assert t._lookup("ns::Hello", "en") == "SHORT"
+    loader._lines[("en", "ns")] = {"ns::Hello": "FULL"}
+    assert t._lookup("ns::Hello", "en") == "FULL"
 
 
 @pytest.mark.asyncio
@@ -237,7 +241,7 @@ async def test_relations_grouping_and_morph_one() -> None:
         table = "roles"
 
     parent = User()
-    parent._attributes["id"] = 1  # noqa: SLF001
+    parent._attributes["id"] = 1
     rel = BelongsToMany(parent, Role, "role_user", "user_id", "role_id")
     assert rel.grouping_column() == "role_user.user_id"
     assert rel.parent_match_key() == "id"
@@ -254,13 +258,15 @@ async def test_relations_grouping_and_morph_one() -> None:
         table = "comments"
 
     morph = MorphOne(parent, Comment, "commentable")
-    with patch.object(morph, "query", return_value=SimpleNamespace(first=AsyncMock(return_value=None))):
+    with patch.object(
+        morph, "query", return_value=SimpleNamespace(first=AsyncMock(return_value=None))
+    ):
         assert await morph.get() is None
 
 
 def test_loader_stem_and_translator_runtime_key() -> None:
-    from pathlib import Path
     import tempfile
+    from pathlib import Path
 
     with tempfile.TemporaryDirectory() as td:
         lang = Path(td)
@@ -269,17 +275,17 @@ def test_loader_stem_and_translator_runtime_key() -> None:
         (lang / "en" / "onlystem.py").write_text("onlystem = {'z': 1}\n", encoding="utf-8")
         loader = FileLoader()
         loader.add_path(lang)
-        assert loader._load_py(lang / "en" / "onlystem.py")["z"] == 1  # noqa: SLF001
+        assert loader._load_py(lang / "en" / "onlystem.py")["z"] == 1
 
         t = Translator(loader)
         t.set_locale("en")
         # runtime under namespace with key variants 197-199
         loader.add_lines({"Hello world": "X", "other": "Y"}, "en", "custom")
         # force JSON group path with namespace
-        assert t._lookup("custom::Hello world", "en") in {"X", "Hello world", None} or True  # noqa: SLF001
-        loader._lines[("en", "*")] = {"Hello world": "Z", "plain": "P"}  # noqa: SLF001
-        assert t._lookup("Hello world", "en") == "Z"  # noqa: SLF001
-        assert t._lookup("plain", "en") == "P"  # noqa: SLF001
+        assert t._lookup("custom::Hello world", "en") in {"X", "Hello world", None} or True
+        loader._lines[("en", "*")] = {"Hello world": "Z", "plain": "P"}
+        assert t._lookup("Hello world", "en") == "Z"
+        assert t._lookup("plain", "en") == "P"
 
 
 def test_collection_branch_edges() -> None:
@@ -294,8 +300,6 @@ def test_trust_peer_valueerror_match(monkeypatch: pytest.MonkeyPatch) -> None:
     # Force ValueError in loop with peer == spec (otherwise dead)
     import ipaddress
 
-    real_network = ipaddress.ip_network
-
     def boom(spec, strict=False):
         raise ValueError("bad")
 
@@ -306,9 +310,13 @@ def test_trust_peer_valueerror_match(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         ipaddress,
         "ip_address",
-        lambda x: (_ for _ in ()).throw(ValueError("x")) if False else ipaddress.IPv4Address("1.2.3.4")
-        if x == "1.2.3.4"
-        else (_ for _ in ()).throw(ValueError("bad")),
+        lambda x: (
+            (_ for _ in ()).throw(ValueError("x"))
+            if False
+            else ipaddress.IPv4Address("1.2.3.4")
+            if x == "1.2.3.4"
+            else (_ for _ in ()).throw(ValueError("bad"))
+        ),
     )
     # After first parse succeeds for peer, loop: spec "1.2.3.4" without slash uses ip_address which raises
     assert peer_is_trusted("1.2.3.4", ["not-valid"]) is False
@@ -319,5 +327,5 @@ def test_model_getattr_extra_only() -> None:
         table = "widgets"
 
     w = Widget()
-    w._extra["surface"] = "matte"  # noqa: SLF001
-    assert getattr(w, "surface") == "matte"
+    w._extra["surface"] = "matte"
+    assert w.surface == "matte"

@@ -79,7 +79,7 @@ def _as_items(items: Any) -> OrderedDict[Any, Any]:
     if items is None:
         return OrderedDict()
     if isinstance(items, Collection):
-        return OrderedDict(items._items)  # noqa: SLF001
+        return OrderedDict(items._items)
     if isinstance(items, Mapping):
         return OrderedDict(items)
     if isinstance(items, (str, bytes)):
@@ -122,7 +122,7 @@ class Collection(Generic[T]):
         return cls(callback(index) for index in range(1, count + 1))
 
     @classmethod
-    def range(cls, start: int, end: int) -> Self:  # noqa: A003
+    def range(cls, start: int, end: int) -> Self:
         step = 1 if end >= start else -1
         return cls(range(start, end + step, step))
 
@@ -299,7 +299,10 @@ class Collection(Generic[T]):
             return key in self._items.values() or key in self._items
         if value is None:
             return any(data_get(item, str(key)) == operator for item in self._items.values())
-        return any(_compare(data_get(item, str(key)), str(operator), value) for item in self._items.values())
+        return any(
+            _compare(data_get(item, str(key)), str(operator), value)
+            for item in self._items.values()
+        )
 
     def contains_strict(self, value: Any) -> bool:
         return any(item is value for item in self._items.values())
@@ -360,7 +363,9 @@ class Collection(Generic[T]):
         return self._new({key: self._new(values) for key, values in groups.items()})
 
     def map_spread(self, callback: Callable[..., Any]) -> Self:
-        return self.map(lambda item: callback(*item) if isinstance(item, (list, tuple)) else callback(item))
+        return self.map(
+            lambda item: callback(*item) if isinstance(item, (list, tuple)) else callback(item)
+        )
 
     def flat_map(self, callback: Callable[[Any], Any]) -> Self:
         return self.map(callback).collapse()
@@ -544,31 +549,41 @@ class Collection(Generic[T]):
         return sum(v for v in values if v is not None)
 
     def avg(self, key: str | Callable[[Any], Any] | None = None) -> Any:
-        values = [v for v in (value_get(item, key) for item in self._items.values()) if v is not None]
+        values = [
+            v for v in (value_get(item, key) for item in self._items.values()) if v is not None
+        ]
         return (sum(values) / len(values)) if values else None
 
     average = avg
 
     def median(self, key: str | Callable[[Any], Any] | None = None) -> Any:
-        values = sorted(v for v in (value_get(item, key) for item in self._items.values()) if v is not None)
+        values = sorted(
+            v for v in (value_get(item, key) for item in self._items.values()) if v is not None
+        )
         if not values:
             return None
         return statistics.median(values)
 
     def mode(self, key: str | Callable[[Any], Any] | None = None) -> Any:
-        values = [v for v in (value_get(item, key) for item in self._items.values()) if v is not None]
+        values = [
+            v for v in (value_get(item, key) for item in self._items.values()) if v is not None
+        ]
         if not values:
             return None
         counts = Counter(values)
         top = max(counts.values())
         return [value for value, count in counts.items() if count == top]
 
-    def min(self, key: str | Callable[[Any], Any] | None = None) -> Any:  # noqa: A003
-        values = [v for v in (value_get(item, key) for item in self._items.values()) if v is not None]
+    def min(self, key: str | Callable[[Any], Any] | None = None) -> Any:
+        values = [
+            v for v in (value_get(item, key) for item in self._items.values()) if v is not None
+        ]
         return min(values) if values else None
 
-    def max(self, key: str | Callable[[Any], Any] | None = None) -> Any:  # noqa: A003
-        values = [v for v in (value_get(item, key) for item in self._items.values()) if v is not None]
+    def max(self, key: str | Callable[[Any], Any] | None = None) -> Any:
+        values = [
+            v for v in (value_get(item, key) for item in self._items.values()) if v is not None
+        ]
         return max(values) if values else None
 
     def count_by(self, callback: Callable[[Any], Any] | str | None = None) -> Self:
@@ -621,10 +636,14 @@ class Collection(Generic[T]):
         return self._new(OrderedDict(sorted(self._items.items(), key=lambda pair: pair[0])))
 
     def sort_keys_desc(self) -> Self:
-        return self._new(OrderedDict(sorted(self._items.items(), key=lambda pair: pair[0], reverse=True)))
+        return self._new(
+            OrderedDict(sorted(self._items.items(), key=lambda pair: pair[0], reverse=True))
+        )
 
     def sort_keys_using(self, callback: Callable[[Any], Any]) -> Self:
-        return self._new(OrderedDict(sorted(self._items.items(), key=lambda pair: callback(pair[0]))))
+        return self._new(
+            OrderedDict(sorted(self._items.items(), key=lambda pair: callback(pair[0])))
+        )
 
     def reverse(self) -> Self:
         return self._new(OrderedDict(reversed(list(self._items.items()))))
@@ -877,7 +896,11 @@ class Collection(Generic[T]):
                     item = item._values_list()
                 if isinstance(item, Mapping):
                     item = list(item.values())
-                if isinstance(item, Iterable) and not isinstance(item, (str, bytes)) and current < depth:
+                if (
+                    isinstance(item, Iterable)
+                    and not isinstance(item, (str, bytes))
+                    and current < depth
+                ):
                     out.extend(_flatten(item, current + 1))
                 else:
                     out.append(item)
@@ -894,7 +917,7 @@ class Collection(Generic[T]):
             return self._new(values + [value] * max(0, size - len(values)))
         return self._new([value] * max(0, abs(size) - len(values)) + values)
 
-    def zip(self, *items: Any) -> Self:  # noqa: A003
+    def zip(self, *items: Any) -> Self:
         arrays = [self._values_list(), *[Collection(item)._values_list() for item in items]]
         return self._new([list(row) for row in zip(*arrays, strict=False)])
 
@@ -962,7 +985,9 @@ class Collection(Generic[T]):
     def unique_strict(self, key: str | Callable[[Any], Any] | None = None) -> Self:
         return self.unique(key, strict=True)
 
-    def duplicates(self, key: str | Callable[[Any], Any] | None = None, strict: bool = False) -> Self:
+    def duplicates(
+        self, key: str | Callable[[Any], Any] | None = None, strict: bool = False
+    ) -> Self:
         seen: list[Any] = []
         result: OrderedDict[Any, Any] = OrderedDict()
         for map_key, item in self._items.items():
@@ -982,7 +1007,9 @@ class Collection(Generic[T]):
         return self._new({k: self._items[k] for k in wanted if k in self._items})
 
     def except_(self, *keys: Any) -> Self:
-        skipped = set(keys[0] if len(keys) == 1 and isinstance(keys[0], (list, tuple, set)) else keys)
+        skipped = set(
+            keys[0] if len(keys) == 1 and isinstance(keys[0], (list, tuple, set)) else keys
+        )
         return self._new({k: v for k, v in self._items.items() if k not in skipped})
 
     # alias Laravel except
@@ -1051,26 +1078,44 @@ class Collection(Generic[T]):
 
     # --- conditionals -------------------------------------------------------
 
-    def when(self, condition: Any, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Any:
+    def when(
+        self,
+        condition: Any,
+        callback: Callable[[Self], Any],
+        default: Callable[[Self], Any] | None = None,
+    ) -> Any:
         if condition:
             return callback(self)
         if default is not None:
             return default(self)
         return self
 
-    def when_empty(self, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Any:
+    def when_empty(
+        self, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None
+    ) -> Any:
         return self.when(self.is_empty(), callback, default)
 
-    def when_not_empty(self, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Any:
+    def when_not_empty(
+        self, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None
+    ) -> Any:
         return self.when(self.is_not_empty(), callback, default)
 
-    def unless(self, condition: Any, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Any:
+    def unless(
+        self,
+        condition: Any,
+        callback: Callable[[Self], Any],
+        default: Callable[[Self], Any] | None = None,
+    ) -> Any:
         return self.when(not condition, callback, default)
 
-    def unless_empty(self, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Any:
+    def unless_empty(
+        self, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None
+    ) -> Any:
         return self.when_not_empty(callback, default)
 
-    def unless_not_empty(self, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Any:
+    def unless_not_empty(
+        self, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None
+    ) -> Any:
         return self.when_empty(callback, default)
 
     # --- nesting / dots -----------------------------------------------------
@@ -1142,16 +1187,35 @@ class MultipleItemsFoundError(LookupError):
     """Raised by ``sole`` when more than one item matches."""
 
 
-
 _MESSAGE_SENTINEL = object()
 
 #: The collection methods Laravel exposes as higher order messages.
 HIGHER_ORDER_MESSAGES = frozenset(
     {
-        "average", "avg", "contains", "each", "every", "filter", "first", "flat_map",
-        "group_by", "key_by", "map", "max", "min", "partition", "reject", "skip_until",
-        "skip_while", "some", "sort_by", "sort_by_desc", "sum", "take_until",
-        "take_while", "unique",
+        "average",
+        "avg",
+        "contains",
+        "each",
+        "every",
+        "filter",
+        "first",
+        "flat_map",
+        "group_by",
+        "key_by",
+        "map",
+        "max",
+        "min",
+        "partition",
+        "reject",
+        "skip_until",
+        "skip_while",
+        "some",
+        "sort_by",
+        "sort_by_desc",
+        "sum",
+        "take_until",
+        "take_while",
+        "unique",
     }
 )
 

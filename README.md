@@ -40,7 +40,8 @@ managers, and dataclasses are used where Python has the better answer.
 | --- | --- |
 | **Almasix** (`almasix`) | the framework |
 | **`almasix new`** | the application installer |
-| **Smith** (`smith …`) | the in-app CLI — `smith serve`, `smith make:model`, `smith queue:work`, `smith loupe` |
+| **Smith** (`python smith …`) | the in-app CLI — prefer `python smith serve` / `make:model` / `loupe`; bare `smith` only after `pip install -e .` of the **app** |
+
 | **Prism** (`almasix.prism`) | the view engine — `.prism.html` templates, directives, components, stacks |
 | **Articulate** (`almasix.orm`) | the ORM — models, relationships, migrations, pagination, on SQLAlchemy Core |
 
@@ -139,14 +140,14 @@ pip install almasix
 almasix new blog
 cd blog
 pip install -e .        # the framework requirement is already satisfied
-smith serve             # or: python smith serve
+python smith serve      # always works; bare `smith` also works after this install
 ```
 
 `almasix new` writes a complete application: `app/`, `bootstrap/`, `config/`, `routes/`,
 `resources/views` with error pages, `database/migrations`, `storage/`, a Vite config, and a root
-`smith` script. Installing the application (`pip install -e .`) puts `smith` on your `PATH` inside
-that project's environment; `python smith …` runs the root script without any install step.
-Installing the framework itself only gives you the global `almasix` command.
+`smith` script. Prefer **`python smith …`** from the app root (same idea as `php artisan`).
+Installing the application (`pip install -e .`) also links a `smith` console script into **that**
+virtualenv. Installing only the framework gives you the global `almasix` command — not `smith`.
 
 ### Work on the framework
 
@@ -209,20 +210,19 @@ The gates are enforced in CI on Python 3.11, 3.12, and 3.13:
 
 | Gate | Command |
 | --- | --- |
+| Lint + format (pinned ruff) | `make lint` |
 | Milestone smoke tests | `make smoke` |
 | Contract regressions | `make regression` |
 | Full suite, coverage **≥ 98%** (aim 100%) | `make test-cov` |
 
-`make lint` runs ruff locally but is not a CI gate yet, and does not pass — choosing a rule set and
-clearing the backlog is [M51](docs/PLAN.md).
+`make lint` runs `ruff check` and `ruff format --check` against an exact
+`ruff==0.16.6` pin and an explicit rule selection (`E4,E7,E9,F,I,UP,B,RUF100`).
 
 Currently **1,886 tests** at **99.38%** coverage.
 
 ## Status
 
-**25 of 51 milestones closed.** M5 (Articulate ORM) and M30 (Smith console exhaust) are
-deliberately partial, with the remainder scheduled. Next up: **M42 — query builder and database
-exhaust**.
+**M39 docs journey** and **M38 deployment ops** closed on the stability track (after M51, M44, and the M25 Mongo audit). Package version is **0.4.0** in-tree — tag/publish when you cut the GitHub Release. Next up: **M37 — API tokens**. See [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Repository layout
 
@@ -252,7 +252,7 @@ docs/            # PLAN.md, SMOKE.md — the binding project documents
 website/         # the documentation site (Astro Starlight)
 examples/        # the living example application
 tests/           # unit, smoke, and regression suites
-smith            # root script → the same CLI as `smith`
+smith            # root script → run as `python smith …`
 ```
 
 ## Contributing

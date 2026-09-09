@@ -590,7 +590,8 @@ class Post(SoftDeletes, Model):
 Two things on Laravel's page are deliberately absent:
 
 - **Scoped relationships** (`withAttributes`), which push a relation's
-  constraints into the models it creates, land with the subquery work in M42.
+  constraints into the models it creates, are not shipped yet — they belong
+  with advanced subquery work on the query builder.
 - **Automatic eager loading** (`automaticallyEagerLoadRelationships`) has no
   counterpart, because Almasix does not lazy-load in the first place — see
   [preventing N+1 by default](#preventing-n1-by-default).

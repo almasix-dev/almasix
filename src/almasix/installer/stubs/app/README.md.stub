@@ -8,13 +8,15 @@ Almasix application generated with `almasix new {{ app_name }}`.
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
-smith migrate
-smith serve
+python smith migrate
+python smith serve
 ```
 
 Open http://127.0.0.1:3000
 
-With the venv active, run `smith …` directly. `python smith …` also works via the root script.
+`almasix new --install` (or answering Yes) creates `.venv` and runs
+`pip`/`uv install -e .` for you. Prefer `python smith …` from the app root —
+it always works. After install, bare `smith …` is also on that virtualenv's PATH.
 
 ## Database
 
@@ -23,8 +25,8 @@ This application talks to **{{ db_label }}**. Connection details live in `.env`;
 create the tables auth, sessions, cache, and the queue need:
 
 ```bash
-smith migrate
-smith migrate:status
+python smith migrate
+python smith migrate:status
 ```
 {{ frontend_section }}
 Create more apps with `almasix new`.

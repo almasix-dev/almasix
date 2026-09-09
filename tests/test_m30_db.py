@@ -59,9 +59,7 @@ def build(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Build]:
     set_cache_manager(None)
 
 
-def test_db_wipe_drops_every_table(
-    build: Build, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_db_wipe_drops_every_table(build: Build, capsys: pytest.CaptureFixture[str]) -> None:
     kernel = build()
     make_tables("posts", "users")
 

@@ -204,7 +204,7 @@ class Dispatcher:
             if self._container is not None and hasattr(self._container, "make"):
                 try:
                     return self._container.make(listener)
-                except Exception:  # noqa: BLE001
+                except Exception:
                     return listener()
             return listener()
         if isinstance(listener, str):

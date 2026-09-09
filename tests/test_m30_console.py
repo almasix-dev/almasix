@@ -342,7 +342,7 @@ def test_artisan_kernel_boots_from_cwd_when_nothing_is_bound(
 
 
 def test_signature_parameters_gives_up_on_unsupported_callables() -> None:
-    from almasix.console.facade import _signature_parameters, _resolve_parameters
+    from almasix.console.facade import _resolve_parameters, _signature_parameters
 
     assert _signature_parameters(print) is not None
     assert _resolve_parameters(Command(), object()) == {}
@@ -540,7 +540,9 @@ def test_isolation_uses_the_cache_lock_when_the_cache_is_booted(
     assert isolation._cache_lock("demo", 30) is sentinel
 
 
-def test_isolation_reports_a_held_cache_lock(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_isolation_reports_a_held_cache_lock(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     from almasix.console import isolation
 
     class HeldLock:

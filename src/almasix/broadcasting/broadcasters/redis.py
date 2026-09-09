@@ -39,9 +39,7 @@ class RedisBroadcaster(Broadcaster):
             from almasix.redis.manager import RedisManager
 
             application = current_application()
-            manager = (
-                application.make(RedisManager) if application is not None else RedisManager()
-            )
+            manager = application.make(RedisManager) if application is not None else RedisManager()
             self._client = manager.connection(self.config.get("connection"))
         return self._client
 

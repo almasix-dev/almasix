@@ -149,7 +149,9 @@ class Connection:
             from sqlalchemy import event
 
             @event.listens_for(engine.sync_engine, "connect")
-            def _sqlite_foreign_keys(dbapi_connection: Any, _record: Any) -> None:  # pragma: no cover
+            def _sqlite_foreign_keys(
+                dbapi_connection: Any, _record: Any
+            ) -> None:  # pragma: no cover
                 cursor = dbapi_connection.cursor()
                 cursor.execute("PRAGMA foreign_keys=ON")
                 cursor.close()
@@ -226,7 +228,7 @@ class Connection:
             compiled = statement.compile(dialect=self._engine.dialect)
             sql = str(compiled)
             bindings = [compiled.params[key] for key in compiled.positiontup or compiled.params]
-        except Exception:  # noqa: BLE001 — a listener must never break the query
+        except Exception:
             sql = str(statement)
             bindings = []
         if isinstance(parameters, Mapping):
@@ -279,7 +281,9 @@ class Connection:
 
         recorded = _pretending.get()
         if recorded is not None:
-            recorded.append(QueryExecuted(sql=sql, bindings=[], time=0.0, connection_name=self.name))
+            recorded.append(
+                QueryExecuted(sql=sql, bindings=[], time=0.0, connection_name=self.name)
+            )
             return True
         self._mark_written()
         try:

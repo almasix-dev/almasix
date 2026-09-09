@@ -34,7 +34,7 @@ def test_container_instance_edge() -> None:
     container = Container()
     container.instance("app_name", "Almasix")
     assert container.resolve("app_name") == "Almasix"
-    container._instances["orphan"] = 42  # noqa: SLF001
+    container._instances["orphan"] = 42
     assert container.resolve("orphan") == 42
 
 

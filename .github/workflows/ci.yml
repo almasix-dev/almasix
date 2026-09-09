@@ -6,6 +6,33 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    name: Lint + format (ruff)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Ruff version pin
+        run: python -c "import importlib.metadata as m; v=m.version('ruff'); assert v=='0.16.6', v"
+
+      - name: Lint + format
+        run: |
+          ruff check src tests
+          ruff format --check src tests
+
   smoke:
     name: Smoke (regression gate)
     runs-on: ubuntu-latest
@@ -82,3 +109,65 @@ jobs:
 
       - name: Regression suite
         run: pytest -q -m regression
+
+  # M44 — claimed engines must execute, not only compile.
+  orm-engines:
+    name: ORM engines (${{ matrix.engine }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: sqlite
+          - engine: pgsql
+            db_port: "5432"
+          - engine: mysql
+            db_port: "3306"
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: almasix
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: almasix_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U almasix -d almasix_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_USER: almasix
+          MYSQL_PASSWORD: secret
+          MYSQL_DATABASE: almasix_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -ualmasix -psecret"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e ".[dev,pgsql,mysql]"
+
+      - name: Dialect conformance
+        env:
+          ALMASIX_TEST_DB: ${{ matrix.engine }}
+          DB_HOST: 127.0.0.1
+          DB_USERNAME: almasix
+          DB_PASSWORD: secret
+          DB_DATABASE: almasix_test
+          DB_PORT: ${{ matrix.db_port }}
+        run: pytest -q tests/test_m44_conformance.py

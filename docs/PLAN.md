@@ -2,14 +2,17 @@
 
 > **Status:** Binding. This document is the source of truth for architecture and milestones.
 > Change it deliberately (PR / explicit decision), not casually mid-implementation.
-> Last aligned: 2026-09-08 (M0–M20 complete, **M5 Articulate ORM** included now that M42 and
-> M43 closed its query builder and schema layer; exhaust milestones M30/M31, M40–M43 and
-> M49/M50 landed; **M44 — multi-engine database CI** is next).
+> Last aligned: 2026-09-09 (**Laravel 13** is the parity reference; user-facing docs are
+> for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
+> and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
+> closed — package line **0.4.0** ready to tag; **M39** docs journey + Prologue
+> closed; stability track continues with M37).
 
 ## Working identity
 
 - **Project / repo / distribution:** `almasix` (PyPI: `almasix`)
 - **Import root:** `almasix` with intentional **subpackages**
+- **Parity reference:** **[Laravel 13.x documentation](https://laravel.com/docs/13.x)** — not 11.x / 12.x. When a Laravel page moves, grows, or corrects itself in 13.x, Almasix chases **that** page. Older Laravel links in historical milestone prose are not the contract; rewrite them when touching the surface.
 - **CLIs (Laravel parallel):**
   - **`almasix new <app>`** — installer / project creator (like `laravel new`) — `almasix.installer`
   - **`python smith …`** — in-app commands via a root `smith` script (like `php artisan …`) — `almasix.smith`
@@ -227,6 +230,7 @@ M5 shipped the **SQL** Eloquent ladder on SQLAlchemy Core (exhaust scheduled as 
 | Divergent DX | Schema builder / SQL migrations do **not** fake-map onto document collections; relationships are reference/embed (or driver-documented equivalents), not SQL join theater; query builder exposes only what the driver can honor |
 | Escape hatches | Driver-native APIs behind documented façades (e.g. Mongo collection access) — never leak motor/pymongo types into happy-path app signatures |
 | Exhaust rule | M25 exhausts **MongoDB** as the first document driver end-to-end (config → model → query → tests → docs). Other NoSQL (Cosmos API, Dynamo-shaped, …) may follow as additional drivers under the same store abstraction — do not claim them in M25 unless exhausted |
+| Parity reference | **Laravel 13 [MongoDB](https://laravel.com/docs/13.x/mongodb)** + [`mongodb/laravel-mongodb`](https://github.com/mongodb/laravel-mongodb). The claim “Laravel ships no NoSQL” was **wrong** and is withdrawn. Chase the L13-documented Eloquent-on-Mongo surface; name only honest deviations |
 | Non-goals | Replacing SQL Articulate; dual-write magic; automatic SQL↔document sync; pretending `belongs_to_many` pivots exist on documents |
 
 **Until M25:** do not add ad-hoc Mongo helpers outside this contract. SQL M5 APIs may keep evolving, but new Articulate internals should prefer connection/driver seams that M25 can plug into rather than hard-wiring SQLAlchemy types into every public path.
@@ -256,63 +260,85 @@ M5 shipped the **SQL** Eloquent ladder on SQLAlchemy Core (exhaust scheduled as 
 
 ## Decision: Documentation site (`website/`)
 
-App-facing docs live in Astro Starlight under [`website/`](../website/). `PLAN.md` / `SMOKE.md` stay contributor contracts in `docs/`.
+App-facing docs live in Astro Starlight under [`website/`](../website/). `PLAN.md` / `SMOKE.md` stay **contributor** contracts in `docs/` — they are for people building Almasix, not for people building *on* Almasix.
+
+### Audience (binding — 2026-09-09)
+
+1. **Assume zero Laravel background.** The majority of readers will not know Laravel, Blade, Artisan, Eloquent, or Echo. Never require that knowledge to understand a page. Comparing to Laravel is optional colour for contributors in `PLAN.md`, not a crutch in Starlight.
+2. **Assume zero Almasix background.** Every page is part of a **journey**: what this is → why you need it → the smallest working example → the full surface → pitfalls. Do not be sketchy. Spell out nouns on first use (`smith` is the in-app CLI; Prism is the template engine; Articulate is the ORM).
+3. **No milestone numbers in user-facing docs.** Do not write “M35”, “as of M7”, or “this milestone.” Users do not care about the framework’s internal roadmap. Version the docs with Almasix releases (`0.x`, `1.x`), not with milestone IDs.
+4. **Milestones stay in `PLAN.md` / `SMOKE.md` / the progress board only** — those are developer-of-the-framework surfaces.
+
+### Shape of the rewrite (binding)
+
+- Rewrite the Starlight corpus so a new Python web developer can go from `almasix new` to production concepts without leaving the site or knowing another framework.
+- **Reorder “The Basics”** (and other groups if needed) for that journey — Laravel’s sidebar order is a *reference map for parity audits*, not a mandate for Almasix’s teaching order. Prefer: install → first request → routing → controllers → requests/responses → views → validation → auth → … advanced topics later.
+- Break language down: short sentences, concrete examples that run, one idea per section, no unexplained jargon.
+- When a page must name an advanced concept early, link forward; when it depends on earlier pages, link back.
+- Tracked primarily under **M39** (docs site rewrite + versioning + Prologue), with ongoing edits as each surface ships.
 
 **Keep in plan (not blocking product milestones forever, but Basics is blocking before M7 code):**
 
 1. **Major-version docs** — publish and switch among major Almasix versions (e.g. `1.x` / `2.x`) from the docs site, Laravel-style. Exact mechanics TBD (Starlight versioning, separate versioned content trees, or a thin version switcher); the requirement is that readers can open docs for the major they run.
-2. **Prologue** — a top-level sidebar group (Laravel “Prologue”) holding **Release Notes / Changelog**, **Upgrade Guide**, and related orientation pages, versioned with the docs set above.
+2. **Prologue** — a top-level sidebar group holding **Release Notes / Changelog**, **Upgrade Guide**, and related orientation pages, written for users (not milestone changelogs dump).
 3. Changelogs and upgrade guides are **first-class docs content**, not only GitHub Releases prose.
-4. **The Basics** — Laravel’s “The Basics” sidebar is the reader’s mental map of the HTTP stack. Almasix must mirror that map (Almasix names where they differ). Empty Basics (only Middleware) is a **docs bug**, not a product gap for most of those topics.
+4. **The Basics** — must teach the HTTP stack as a path a beginner can walk. Empty or insider-only Basics is a **docs bug**.
 
 Do not invent a second docs engine; extend the Starlight site.
 
-### The Basics — Laravel map → Almasix (binding)
+### The Basics — teaching order vs parity map (binding)
 
-Mirror Laravel’s Basics **order and coverage**. Deep Prism how-tos stay in the **Prism** sidebar (like Laravel’s separate Blade section); Basics **Views** is the short entry + pointer.
+**Parity audits** still walk Laravel 13’s Basics list so nothing is silently missing.
+**Starlight’s sidebar order** follows the beginner journey and may diverge from Laravel’s order when that teaches better.
 
-| Laravel Basics | Almasix docs slug (target) | Code status | Docs action |
+| Topic (Almasix) | Docs slug (target) | Code status | Docs action |
 | --- | --- | --- | --- |
-| Routing | `routing` | **Shipped (M2)** — `Route` DSL, groups, polarity | **Done** |
-| Middleware | `middleware` | **Shipped (M2)** | **Done** |
-| CSRF Protection | `csrf` | **Shipped (M7 foundation)** — `VerifyCsrfToken` + `@csrf` | **Done** |
-| Controllers | `controllers` | **Shipped (M2/M3)** — base `Controller`, `make:controller`, DI | **Done** |
-| Requests | `requests` | **Shipped (M2)** — `Request` bag | **Done** |
-| Responses | `responses` | **Shipped (M2)** — `Response`, `html()`, JSON polarity | **Done** |
-| Views | `views` | **Shipped (M6)** — `view()` / `ViewFactory` | **Done** — overview + link to Prism |
-| Blade Templates | *(Prism section)* | **Shipped (M6)** | **Done** as Prism group (not duplicated under Basics) |
-| Asset Bundling | `asset-bundling` | **Partial (M6)** — `asset()` / `@asset` + `public/` on `smith serve`; default `almasix new` ships **Vite + Tailwind** → `public/build`; Python core stays Node-free; starter kits may replace/extend | **Partial** — default scaffold + docs; full `@vite` helper follow-up |
-| URL Generation | `urls` | **Shipped (M33)** — `url()`, `asset()`, `secure_*`, named `route()`, signed URLs, `action()`, `to_route()`, request introspection, per-request defaults | **Done** |
-| Session | `session` | **Shipped (M7 foundation)** — cookie driver, encrypt, flash | **Done** |
-| Authentication | `authentication` | **Shipped (M7)** — guards, remember-me, events, docs | **Done** |
-| Hashing | `hashing` | **Shipped (M7)** — bcrypt + optional argon2id | **Done** |
-| Passwords | `passwords` | **Shipped (M7)** — broker + confirm; outbound mail **M12**/**M13** | **Done** |
-| Validation | `validation` | **Shipped (M3)** — `FormRequest` | **Done** |
-| Error Handling | `errors` | **Shipped (M8)** — Handler, polarity pages, publish | **Done** |
-| Logging | `logging` | **Shipped (M8)** | **Done** |
+| Routing | `routing` | **Shipped** | Rewrite for beginners (no Laravel assumed) |
+| Middleware | `middleware` | **Shipped** | Rewrite for beginners |
+| CSRF Protection | `csrf` | **Shipped** | Rewrite for beginners |
+| Controllers | `controllers` | **Shipped** | Rewrite for beginners |
+| Requests | `requests` | **Shipped** | Rewrite for beginners |
+| Responses | `responses` | **Shipped** | Rewrite for beginners |
+| Views | `views` | **Shipped** | Overview + link to Prism; beginner-first |
+| Asset Bundling | `asset-bundling` | **Partial** | Default Vite + Tailwind; full `@vite` follow-up |
+| URL Generation | `urls` | **Shipped** | Rewrite for beginners |
+| Session | `session` | **Shipped** | Rewrite for beginners |
+| Authentication | `authentication` | **Shipped** | Rewrite for beginners |
+| Hashing | `hashing` | **Shipped** | Rewrite for beginners |
+| Passwords | `passwords` | **Shipped** | Rewrite for beginners |
+| Validation | `validation` | **Shipped** | Rewrite for beginners |
+| Error Handling | `errors` | **Shipped** | Rewrite for beginners |
+| Logging | `logging` | **Shipped** | Rewrite for beginners |
+| Security headers & CORS | `security` | **Shipped** | Rewrite for beginners |
+| Rate Limiting | `rate-limiting` | **Shipped** | Rewrite for beginners |
 
-**Starlight sidebar target for “The Basics”:**
+**Suggested Starlight “The Basics” teaching order** (reorder in `astro.config.mjs` during the docs rewrite):
 
 ```
 The Basics
-  Routing
-  Middleware          # existing
-  CSRF Protection     # M7 (placeholder OK until then)
+  Routing                 # first request path
   Controllers
   Requests
   Responses
+  Middleware
+  CSRF Protection
+  Validation
   Views
   Asset Bundling
   URL Generation
-  Session             # M7
-  Validation
-  Error Handling      # thin now / full M8
-  Logging             # M8
+  Session
+  Authentication          # after session
+  Hashing
+  Passwords
+  Error Handling
+  Logging
+  Security headers & CORS
+  Rate Limiting
 ```
 
-Prism remains its own top-level group (Blade equivalent). Do **not** put the full Prism tutorial under Basics.
+Prism remains its own top-level group. Do **not** put the full Prism tutorial under Basics.
 
-**Gate before starting M7 implementation:** Basics pages for shipped surfaces are published and linked in `website/astro.config.mjs` (**met**). Expand CSRF / Session / Logging placeholders when those milestones land — not fake APIs.
+**Gate before starting M7 implementation:** Basics pages for shipped surfaces are published and linked in `website/astro.config.mjs` (**met**). The **audience rewrite** (no Laravel assumed, no milestone IDs, journey order) is owed under **M39**.
 
 ### Digging Deeper — scheduled surfaces (binding when milestones land)
 
@@ -337,7 +363,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Eloquent: Serialization | `articulate/serialization` | **Done (M40)** | Page published; links out to API Resources |
 | Eloquent: API Resources | `api-resources` | **Done (M23)** | Page published |
 | Eloquent: Factories | `database/factories` | **Done (M24)** | Page published |
-| MongoDB / NoSQL | `articulate/documents` (+ Database Getting Started) | **Done (M25)** | Page published — core Articulate multi-store, not a satellite ORM |
+| MongoDB / NoSQL | `database/documents` + `articulate/documents/*` | **M25** | Database overview + Articulate model docs; L13 compared page |
 | Scout / Search | `search` | **Done (M27)** | Page published |
 | Queues | `queues` | **M11** | Write when queues ship |
 | Mail | `mail` | **M12** | Write when mail ships |
@@ -778,7 +804,7 @@ Eloquent-shaped Active Record on SQLAlchemy Core — see the ORM decision above 
 
 **Shipped since, by M43 (Schema, migrations, and pagination exhaust):** the column catalogue and its modifiers, `change()` and the whole drop family, `Schema.rename` / `drop_all_tables` / foreign-key toggling / schema inspection, transactional and pretendable DDL, a migrator with steps, events, per-migration connections, `should_run`, and squashing, the `migrate*` flag set with production guards, and all three paginators with URL-aware links rendered through Prism.
 
-**Still owed by M44**: the engines themselves — the suite runs against SQLite, so PostgreSQL, MySQL/MariaDB, SQL Server, and Oracle are verified by compiled SQL rather than by execution.
+**Still owed until engines run in CI (M44 — now closed)**: ~~the engines themselves — the suite runs against SQLite, so PostgreSQL, MySQL/MariaDB, SQL Server, and Oracle are verified by compiled SQL rather than by execution.~~ **Closed:** SQLite + PostgreSQL + MySQL execute the conformance suite in CI; SQL Server / Oracle remain compile-only by design.
 
 ### M6 — Prism (`almasix.prism`)
 
@@ -1140,16 +1166,19 @@ Bake **document stores into Articulate core** under the multi-store contract (se
 
 **Gate:** Mongo driver exhausted end-to-end (config → model → query → tests → docs); SQL regressions still green; coverage ≥ 98% on new driver code (aim 100%). Other NoSQL engines are follow-on drivers under the same abstraction — not claimed unless exhausted here. **Met.**
 
-**Status (M25):** `almasix.orm.documents` — a store-agnostic `Query` / `Condition` / `Order` shape, a `DocumentStore` contract, and two drivers: `MongoStore` (Motor behind `almasix[mongodb]`, with the whole operator set translated to Mongo filters, `distinct`, `$inc`, index information, and `raw_aggregate` for native pipelines) and `MemoryStore` (in-process, same semantics, unique-index enforcement — the document answer to `:memory:` SQLite); `DocumentBuilder` spelling the SQL builder's surface for what a collection can answer (the `where` family, dotted paths, ordering, windows, `select` / `distinct`, scopes, `when` / `unless` / `tap`, chunking, `lazy`, both paginators, `insert` / `update` / `upsert` / `increment` / `delete` / `truncate`) plus four document-native filters (`where_regex`, `where_exists_field`, `where_all`, `where_size`) and `where_raw` taking either an engine filter or a predicate; `UnsupportedQueryError` naming the alternative for every SQL-only call rather than pretending; `Document` reusing all of `Model` (casts, accessors, events, observers, soft deletes, factories, serialization) with `_id` keys, collection naming, and declared `indexes`; `EmbeddedDocument` with `embeds_one` / `embeds_many`, write-back on `save()`, and in-memory filtering; references — including document → SQL — through the existing relations and eager loader, with a document-native `with_count`; `DatabaseManager.store()` / `is_document()` telling stores and databases apart and refusing the wrong one; `smith make:document [--factory|--embed]`, `documents:index [--pretend]`, `documents:show`; Starlight **Documents (NoSQL)** + a document section on Database Getting Started; the progress app's `Activity` document with `GET /api/documents` and `progress:documents`.
+**Status (M25):** `almasix.orm.documents` — a store-agnostic `Query` / `Condition` / `Order` shape, a `DocumentStore` contract, and two drivers: `MongoStore` (Motor behind `almasix[mongodb]`, with the whole operator set translated to Mongo filters, `distinct`, `$inc`, index information, and `raw_aggregate` for native pipelines) and `MemoryStore` (in-process, same semantics, unique-index enforcement — the document answer to `:memory:` SQLite); `DocumentBuilder` spelling the SQL builder's surface for what a collection can answer (the `where` family, dotted paths, ordering, windows, `select` / `distinct`, scopes, `when` / `unless` / `tap`, chunking, `lazy`, both paginators, `insert` / `update` / `upsert` / `increment` / `delete` / `truncate`) plus four document-native filters (`where_regex`, `where_exists_field`, `where_all`, `where_size`) and `where_raw` taking either an engine filter or a predicate; `UnsupportedQueryError` naming the alternative for every SQL-only call rather than pretending; `Document` reusing all of `Model` (casts, accessors, events, observers, soft deletes, factories, serialization) with `_id` keys, collection naming, and declared `indexes`; `EmbeddedDocument` with `embeds_one` / `embeds_many`, write-back on `save()`, and in-memory filtering; references — including document → SQL — through the existing relations and eager loader, with a document-native `with_count`; `DatabaseManager.store()` / `is_document()` telling stores and databases apart and refusing the wrong one; `smith make:document [--factory|--embed]`, `documents:index [--pretend]`, `documents:show`; Starlight **Documents** section (`articulate/documents/*`: introduction, getting started, querying, relationships, indexes, aggregations, compared); the progress app's `Activity` document with `GET /api/documents` and `progress:documents`.
 
-**Deliberate deviations (M25):** Laravel ships no NoSQL, so parity here is measured against `mongodb/laravel-mongodb` — the model behaves like every other model, spelled Almasix's way. Transactions stay SQL-only, because Mongo needs a replica set and pretending otherwise would be a lie in the one place it hurts; `_id` is handed back as the store's own value rather than wrapped in an ObjectId type applications must then know about; embeds save through their parent, since an embedded document has no collection of its own; the `memory` driver is a first-class configured store rather than a test double, so the same code path runs in CI and on a laptop with no Mongo.
+**Deliberate deviations (M25):** Transactions stay SQL-only by default, because Mongo needs a replica set and pretending otherwise would be a lie in the one place it hurts; `_id` is handed back as the store's own value rather than wrapped in an ObjectId type applications must then know about; embeds save through their parent, since an embedded document has no collection of its own; the `memory` driver is a first-class configured store rather than a test double, so the same code path runs in CI and on a laptop with no Mongo.
+
+**L13 Mongo audit (2026-09-09) — closed:** Parity reference is [Laravel 13 MongoDB](https://laravel.com/docs/13.x/mongodb) + `mongodb/laravel-mongodb`. Eloquent-on-collections (models, builder, embeds, refs, indexes, soft deletes, factories) **shipped**. Named **partial**: `raw_aggregate` without a fluent Aggregation Builder; text/Atlas search via `where_raw` only. Named **missing** (not claimed): Mongo cache / queue / GridFS / Scout engine / `vectorSearch`, document cursor pagination, Mongo transactions. Named **N/A**: SQL Schema Blueprint on collections; fake `belongs_to_many` pivots. Docs rewritten as `articulate/documents/*` (introduction, getting started, querying, relationships, indexes, aggregations, compared). Prior “Laravel has no NoSQL” claim removed from user docs.
 
 ### M26 — Broadcasting
 
 Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / websocket fan-out (deferred from M13 notification channels).
 
 - Broadcaster drivers (log/null + one real driver — Redis pub/sub or websocket bridge); `ShouldBroadcast` events
-- Channel auth; client contract documented (Echo-shaped JS lives in starter kits)
+- Channel auth; client contract documented
+- **Broadcasting JS client (Echo-class) is not closed here** — owed as **M52** (see below). M26 ships the server; browsers still need a first-party client the way Laravel ships Echo
 - Docs: Starlight **Broadcasting**
 
 **Depends on:** M18 Events; M16 Redis nice-to-have for Redis broadcaster.
@@ -1158,7 +1187,7 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 **Status (M26):** `almasix.broadcasting` — `ShouldBroadcast` (plus `ShouldBroadcastNow` and `ShouldBroadcastAfterCommit`) with `broadcast_on` / `broadcast_as` / `broadcast_with` / `broadcast_when`, payloads reflected off the event's public attributes when it says nothing, and the `InteractsWithSockets` / `InteractsWithBroadcasting` mixins behind `to_others()` and `via()`; the `broadcast()` helper returning a `PendingBroadcast` that dispatches through the event bus on `send()`, on `await`, or when it falls out of scope; a `BroadcastManager` with five drivers — `log` and `null`, Almasix's own in-process `websocket` server, `redis` pub/sub, and `pusher` over its REST API — plus `Broadcast.extend()` for a sixth; `Channel` / `PrivateChannel` / `PresenceChannel` / `EncryptedPrivateChannel`, model channels, and payloads sealed with the application key on encrypted channels; `routes/channels.py` loaded by the provider (so console sees it too) with wildcard patterns, route-model binding from type hints, channel classes resolved from the container, per-channel guards, and presence rosters; `POST /broadcasting/auth` and `/broadcasting/user-auth` answering in Pusher's signed format; a websocket at `/broadcasting/socket` speaking a Pusher-shaped protocol (`subscribe`, `unsubscribe`, `ping`, `client-*`, member added/removed), reached through a new `Route.websocket()` and kernel support; queued broadcasts as a `BroadcastEvent` job whose payload is plain JSON; `BroadcastsEvents` / `BroadcastsEventsAfterCommit` for model writes, on the back of a new `Connection.after_commit()`; a `broadcast` notification channel; `Broadcast.fake()` with the assertion set; `smith make:channel` and `channel:list`; Starlight **Broadcasting**; the progress app's `PostPublished`, broadcasting `Comment`, `GET /api/broadcast`, and `progress:broadcast`.
 
-**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver where Laravel points at Reverb, Pusher, or Ably, and speaks Pusher's protocol so those stay available; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes.
+**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver where Laravel points at Reverb, Pusher, or Ably, and speaks Pusher's protocol so those stay available; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes. **Still owed:** a publishable Echo-class browser client (**M52**).
 
 ### M27 — Search
 
@@ -1409,28 +1438,35 @@ First-party packages in Laravel: [Sanctum](https://laravel.com/docs/sanctum), [P
 
 Laravel [Deployment](https://laravel.com/docs/deployment) — how an Almasix app actually runs in production.
 
-- `smith serve --workers` and the documented ASGI story (uvicorn/gunicorn workers, proxy headers, static + `public/build`)
-- `optimize` / cache-warm story tied to M30's commands; health check endpoint conventions
-- Env / secret handling, log shipping, migration + queue worker deployment notes, container example
-- Docs: Starlight **Deployment**
-- **Releasing Almasix itself** (scheduled 2026-09-08): the distribution name is settled as `almasix` per the Ecosystem growth note above. Tag `v0.x` and publish from CI with PyPI trusted publishing (`.github/workflows/publish.yml`). The README now installs with `pip install almasix` and carries the `pypi/v` + `pypi/dm` badges.
+**Status: complete (2026-09-09).** PyPI / TestPyPI already shipped through **0.3.0** via Trusted Publishing; this milestone closed app deployment ops and prepared the **0.4.0** release line in-tree (tag/publish when you cut the GitHub Release).
+
+- `smith serve --workers` (+ `--proxy-headers` / `--forwarded-allow-ips`) and the documented ASGI story
+- Default `GET /up` health probe via `Application.configure(…).with_health("/up")` (outside Almasix middleware so `smith down` does not 503 it)
+- `optimize` / cache-warm story tied to M30; env/secrets, logs, migrate + queue workers
+- Container sketch: `examples/deploy/` (Dockerfile + compose with Postgres + `queue:work`)
+- Docs: Starlight **Deployment** (`website/.../deployment.md`)
+- **Releasing Almasix:** `.github/workflows/publish.yml` (OIDC Trusted Publishing). Bump version → tag `vX.Y.Z` matching `pyproject.toml` → GitHub Release. Rehearse with workflow_dispatch → TestPyPI. Tree version is **0.4.0** ready to tag.
 
 **Depends on:** M30 (optimize commands), M11 (workers), M34 (headers behind a proxy).
 
-**Gate:** documented and reproducible for at least one container + one bare-metal path; `--workers` shipped; `pip install <distribution>` gives a working `import almasix` from PyPI.
+**Gate:** documented and reproducible for container + bare-metal paths; `--workers` shipped; `pip install almasix` already works from PyPI (0.3.0 live; 0.4.0 prepared).
 
-### M39 — Docs site: versioning + Prologue
+### M39 — Docs site: user journey rewrite + versioning + Prologue
 
-The documentation-site commitments from the Documentation decision above, promoted out of "Later".
+The documentation-site commitments from the Documentation decision above — expanded 2026-09-09.
 
-- **Publish the site** (done 2026-09-08): `.github/workflows/docs.yml` builds `website/` and deploys to GitHub Pages on merges to `main`; pull requests build without deploying, and the repository's Pages source is set to GitHub Actions. Because the site is served from a subpath, `astro.config.mjs` sets `base: '/almasix'` and `website/src/middleware.ts` prefixes Markdown-authored links while rendering — Starlight rebases its own navigation but not author-written links, and Astro 7's default Markdown processor takes no rehype plugins. Doing it in middleware rather than after the build keeps `astro dev`, `astro preview` and the deployed site serving identical links. The README's docs badge points at the live site.
-- Major-version switching (`1.x` / `2.x`) on the Starlight site
-- **Prologue** sidebar group: Release Notes / Changelog, Upgrade Guide, orientation pages
-- Changelogs and upgrade guides authored as docs content, not only GitHub Releases prose
+**Status: complete (2026-09-09).**
 
-**Depends on:** nothing in code; versioning wants a first tagged release (**M38**) to be meaningful, but publishing the site does not and can land first.
+- **Audience rewrite:** Starlight openings and journey spine assume no Laravel / no Almasix background; nouns spelled out; **no milestone IDs** in `website/src/content/docs`
+- **Reorder The Basics** to teaching order (routing → … → rate-limiting); Authentication / Hashing / Passwords live in Basics after Session
+- **Publish the site** (done 2026-09-08): `.github/workflows/docs.yml`
+- **Version switcher:** header select for **main** (unreleased tip / latest) plus majors (`0.x`, later `1.x`); older-docs banner when not on latest; minor tags stay in Release Notes
+- **Prologue** sidebar: How to read these docs, Release Notes, Upgrade Guide, Documentation Versions
+- Changelogs and upgrade guides are first-class docs content
 
-**Gate:** the documentation is readable at a public URL without cloning; a reader can open docs for the major they run; Prologue published and maintained per release.
+**Depends on:** nothing in code for the rewrite; tags already exist through 0.3.0 (0.4.0 ready).
+
+**Gate:** a new developer can follow The Basics without prior framework knowledge; no user-facing page refers to milestone numbers; Prologue published; version switcher present.
 
 ### M40 — Articulate model exhaust (Eloquent parity)
 
@@ -1508,7 +1544,7 @@ Laravel [Migrations](https://laravel.com/docs/migrations) (113 sections) and [Pa
 
 **Gate met:** both pages exhausted or deviations named; column alteration compiled for MySQL, PostgreSQL, SQL Server, and Oracle and refused honestly on SQLite; `almasix.orm.blueprint`, `almasix.orm.schema`, `almasix.orm.migration`, and `almasix.orm.pagination` at 100% statements and branches; docs published; `smith progress:schema` demonstrates the surface.
 
-### M44 — Multi-engine database CI
+### M44 — Multi-engine database CI — **complete**
 
 Today the suite executes against **SQLite only**; PostgreSQL, MySQL/MariaDB, SQL Server, and Oracle are covered by URL construction and offline DDL string compilation. Dialect-native paths (including `upsert`) are therefore unverified.
 
@@ -1519,7 +1555,7 @@ Today the suite executes against **SQLite only**; PostgreSQL, MySQL/MariaDB, SQL
 
 **Depends on:** M42 / M43 (the features under test); ideally lands alongside them rather than after.
 
-**Gate:** green CI on at least PostgreSQL + MySQL in addition to SQLite; the support matrix published and honest.
+**Gate met:** green CI on SQLite + PostgreSQL + MySQL via the `orm-engines` job; `tests/test_m44_conformance.py` executes DDL / upsert / JSON / locks / transactions / pagination on each; support matrix published at `database/engines`; SQL Server / Oracle documented as compile-only; `smith progress:engines` demonstrates the probe. PostgreSQL JSON path `#>` / `JSONB_SET` now cast paths to `text[]` (and columns to `JSONB`) so `json` and `jsonb` columns both execute under asyncpg.
 
 ## IDE and editor tooling (M45–M48)
 
@@ -1626,17 +1662,17 @@ Laravel [Helpers](https://laravel.com/docs/helpers) + [Strings](https://laravel.
 
 ### Docs track (may land anytime)
 
-Not milestones — outstanding pages for code that already shipped:
+Not milestones — outstanding pages for code that already shipped (write for beginners; no milestone IDs):
 
-- Localization Starlight page (M4 code done)
-- Articulate **Mutators & Casts** how-to (M5 code done)
-- Full `@vite` / hot-file Prism directive on top of `asset()` (M6 partial)
+- Localization Starlight page (code done)
+- Full `@vite` / hot-file Prism directive on top of `asset()` (partial)
+- **M25 revisit notes:** gap list vs Laravel 13 Mongo page (feeds the stability-track audit)
 
 ### Later (still deferred)
 
-Everything that had a foreseeable shape has been promoted to **M30–M50** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
+Everything that had a foreseeable shape has been promoted to **M30–M52** above. What remains is deferred because it is genuinely open-ended, not because it is unplanned:
 
-- Additional NoSQL engines beyond Mongo (Cosmos API, Dynamo-shaped, …) — same M25 store abstraction; exhaust per driver when demanded, so there is no honest milestone count
+- Additional NoSQL engines beyond Mongo (Cosmos API, Dynamo-shaped, …) — same M25 store abstraction; exhaust per driver when demanded
 - Full Prism advanced parity — an ongoing **M6 track** by design, not a one-shot milestone
 - Notification inbox SPA / marketing drip — outside framework core; belongs to an application, not Almasix
 - Passport-class full OAuth2 server — scoped inside **M37**, but may stay an optional extra rather than ship
@@ -1651,7 +1687,7 @@ And scheduled on 2026-09-08 during M30: the **lint gate (M51)**, which turned ou
 
 ## Project hygiene (M51)
 
-### M51 — Lint and format gate
+### M51 — Lint and format gate — **complete**
 
 Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gates and **CI has never run it**: the workflow runs smoke, tests, and regression only. `[tool.ruff]` sets `line-length` and `target-version` but selects no rules, and the dev extra pins `ruff>=0.8.0` — so the rule set is whatever the installed ruff defaults to. With 0.16.5, `ruff check src tests` reports 932 findings on `main` (243 unused-noqa, 194 redefined-while-unused, 99 blind-except, 57 unsorted-imports, 57 unused-import, 51 naive `datetime` calls, and a long tail). The README's lint badge and gate row were therefore claims nothing enforced; both are removed until this milestone lands.
 
@@ -1663,7 +1699,50 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 **Depends on:** nothing. Best run between milestones, since fixing findings touches files across every package.
 
-**Gate:** `make lint` green on a pinned ruff with an explicit selection; a CI job enforcing it on every push; the README's claims matching what CI does.
+**Gate met:** `ruff==0.16.6` pinned; explicit `select = [E4, E7, E9, F, I, UP, B, RUF100]` with documented ignores (`E731`, `UP042`, `B008`) and test per-file ignores (`F811`, `B017`, `B018`); `make lint` = check + format --check, green; CI `lint` job on 3.11–3.13; README gate table restored; `smith progress:lint` demonstrates the contract.
+
+## Broadcasting client (M52)
+
+### M52 — Echo-class browser client
+
+Laravel ships [Echo](https://laravel.com/docs/13.x/broadcasting#client-side-installation) so a browser can subscribe to channels without hand-rolling Pusher protocol. Almasix M26 shipped the **server** (websocket driver, auth endpoints, presence). The **client** is still owed.
+
+- First-party JS (or TypeScript) package — working name TBD (`almasix-echo`, `@almasix/echo`, …) — speaking the same Pusher-shaped protocol M26 already uses
+- Private / presence channel auth against `/broadcasting/auth`
+- Install path documented for Vite scaffolds and for the SPA starter kit (**M36**)
+- Progress (or starter kit) demo that receives a broadcast without raw `WebSocket` glue in app code
+- Starlight **Broadcasting** page updated for beginners (no Laravel assumed): server + client as one story
+
+**Depends on:** M26 (server protocol stable).
+
+**Gate:** `npm`/`pnpm` installable client; smoke proves subscribe + private channel; docs teach it from zero.
+
+## Follow-up plan (binding — 2026-09-09)
+
+Recorded from product direction after M35:
+
+1. **Parity reference is Laravel 13** everywhere we audit or extend a surface — not 11.x / 12.x leftovers in old prose.
+2. **M25 Mongo parity** chases Laravel 13’s MongoDB documentation. Prior “Laravel has no NoSQL” language is struck; **audit closed 2026-09-09** — gaps named on `articulate/documents/compared`.
+3. **User-facing docs** assume no Laravel and no Almasix background; never mention milestones; rewrite as a journey; reorder Basics for teaching (**M39**).
+4. **Echo-class websocket client** is a real product surface (**M52**), not a starter-kit footnote.
+5. **Process:** one milestone at a time, exhaust completely, then stop for review. Prefer **stability** milestones before kits/features that widen the API surface.
+
+### Stability sequencing (preferred order)
+
+Work these before starter kits and other growth milestones, unless a concrete blocker says otherwise:
+
+| Order | Milestone | Why it stabilizes the product |
+| --- | --- | --- |
+| 1 | ~~**M44** — Multi-engine database CI~~ **complete** | SQLite-only CI is a lie for claimed PG/MySQL support |
+| 2 | ~~**M25 revisit** — audit Articulate documents vs Laravel 13 Mongo page~~ **complete** | Honest NoSQL parity; gaps named in `articulate/documents/compared` |
+| 3 | ~~**M51** — Lint / format gate~~ **complete** | CI that matches README claims |
+| 4 | ~~**M38** — Deployment + production ops~~ **complete** (0.3.0 already on PyPI; 0.4.0 ready to tag) | Installable, operable release |
+| 5 | ~~**M39** — Docs journey rewrite + Prologue~~ **complete** | Users can learn the framework without insider context |
+| 6 | **M37** — API tokens (Sanctum-class first) | Production auth for API / SPA |
+| 7 | **M52** — Echo-class client | Completes broadcasting for real apps |
+| 8 | **M36** — Starter kits | Growth — after tokens + client exist to wire into kits |
+
+**Still one-at-a-time:** finish the current row’s gate (code + progress proof + smoke + user docs without milestone IDs) before starting the next.
 
 ## Quality bar for “solid core”
 
@@ -1677,42 +1756,22 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 ## Next implementation focus
 
-**M20 HTTP Client gate met** — `Http` façade + fakes + retry + pool + batch + macros + events, exhausted against the Laravel page.
+**Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**M40 Articulate model exhaust gate met** — casting overhaul, serialization controls, Eloquent collections, UUID/ULID keys, strictness, quiet writes, pruning, and cursor/chunk iteration.
+**Suggested next:** **M37 — API tokens (Sanctum-class first)**. Confirm before starting.
 
-**M41 Relationship exhaust gate met** — one-of-many, default models, chaperone, the existence-query family including morph variants, aggregates and their deferred twins, pivot models with `using` / `as_` / timestamps / filtering, morph maps, `touches`, and the relation write helpers. All five parts have shipped: one-of-many and default models, existence queries, aggregates, pivots and morph maps and `touches`, and the docs rewrite that closed the page with `push`, `where_belongs_to`, dynamic relations, and `load_morph`. The two sections Almasix does not implement are named in the docs.
+**Recently closed:** M39 docs journey + Prologue; M38 deployment + production ops (0.4.0 package line ready); M51 lint/format gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
 
-**M42 Query builder + database exhaust gate met** — the where families down to JSON paths and date helpers, joins through closures and subqueries and laterals, unions, pessimistic locking, the write family (`insert_or_ignore`, `insert_using`, `update_or_insert`, `increment_each`, `truncate`, JSON column updates), `sole` / `implode` / `pipe` / `with_attributes`, and the debugging pair. Underneath: read/write connections with `sticky`, `DB.listen` and a cumulative query-time budget, pretend mode, manual transactions with deadlock retries and `after_commit`, pooled connections with a direct twin, and `db`, which opens the engine's own client. What each engine spells differently lives in one grammar module, and an engine that cannot do the work says so.
+**M39** — Prologue published; Basics teaching order; no milestone IDs in Starlight; header version switcher is **latest major** + `main` (never defaulting to `main`) with an older-docs banner when not on latest.
 
-**Now: M30 parts 2–3.** M9 shipped the console ladder but not the Artisan page, and the two command surfaces (Typer callbacks in `almasix/smith/cli.py` vs `Command` classes in `almasix/console/`) must converge before console test helpers (M28) or later `make:*` generators can be built once and work everywhere. **Then: M32**, the interactive installer, which shares M30's stub tree.
+**M25 Articulate documents** — ladder + L13 audit **closed**; integrations Laravel lists (cache, queue, GridFS, Scout Mongo, vectorSearch) remain named missing, not pretended.
 
-**M21 Processes gate met** — `Process.run` / `start` / `pool` / `concurrently` / `pipe`, both timeout flavours, real-time output callbacks, signals and stops, and the whole fake and assertion surface, exhausted against the Laravel page.
+**M26 Broadcasting** — server met; **client owed as M52**.
 
-**M22 Concurrency gate met** — `run` / `defer` / `arun` over four drivers, with the task shape (single, list, keyed map) preserved into the results.
+**M39** — site is published; journey rewrite + Prologue **closed**.
 
-**M23 API Resources gate met** — `JsonResource` and `ResourceCollection` with the whole conditional family, wrapping, pagination `meta` / `links`, `make:resource`, and controllers that return a resource straight from a route.
+**M40–M44, M49–M50** — exhaust gates met (Articulate SQL / collections / helpers / multi-engine CI).
 
-**M24 Model factories gate met** — the Laravel builder in full (states, sequences, `has` / `for_` / `has_attached` / `recycle`, hooks, quiet writes), `make:factory`, and a `DemoSeeder` that builds every row through a factory.
+**M36 / M37** — deferred until tokens (**M37**) and preferably the Echo client (**M52**) can land into kits honestly.
 
-**M25 Articulate NoSQL gate met** — a store abstraction with two drivers (MongoDB through Motor, and an in-process store with the same semantics), `Document` models that keep every Model behaviour, embedded documents, references that cross into SQL, declared indexes with `documents:index` / `documents:show`, and a builder that refuses SQL-only calls by name instead of pretending.
-
-**M26 Broadcasting gate met** — `ShouldBroadcast` events with the whole channel family, five drivers (`log`, `null`, Almasix's own websocket server, Redis pub/sub, Pusher), `routes/channels.py` authorization with model binding and presence rosters, the signed `/broadcasting/auth` endpoints, model broadcasting on the back of `after_commit`, a `broadcast` notification channel, and `Broadcast.fake()`.
-
-**M27 Search gate met** — a `Searchable` mixin that keeps the index in step with every write, the Scout builder in full, four engines (`database`, `collection`, `meilisearch`, `null`) behind a contract anyone can extend, queued and after-commit indexing, soft deletes, eight `scout:*` commands, and `Scout.fake()`.
-
-**M28 Testing toolkit gate met** — a pytest-shaped `TestCase` that boots the application through its own `bootstrap/app.py`, an in-process client over the real middleware stack, the Laravel response assertion set in full, console commands that answer their own prompts, database helpers and two ways to keep a database clean, one door to nine fakes, a clock a test can move, `tests/` in the scaffold with `make:test` and `smith test`, and four Starlight pages.
-
-**Milestone M29** (Package development) keeps its place in the roadmap and is unblocked; **M30–M39** were promoted out of "Later" and are now scheduled with gates.
-
-**M45–M48 (IDE and editor tooling) come after the parity work, by design.** Laravel's editor story — official LSP, bundled Laravel Idea, `ide-helper`, Boost — is the bar, and Prism deserves what Blade gets. But a language server indexes route names, view names, config keys, model columns, and command signatures, and M30–M44 are still changing all five. Building the index first would mean rebuilding it.
-
-**M40–M44 (Articulate + Database exhaust) outrank M33–M39 in priority.** The 2026-09-08 audit found the ORM and database surface materially short of Laravel's Database and Eloquent sections, and every application touches it — so the ORM track should be sequenced ahead of routing sugar, starter kits, and deployment docs, whatever their numbers say.
-
-**M50 Helpers, `Str`, and `Stringable` exhaust gate met** — `Stringable` delegates the whole static surface instead of hand-writing a quarter of it, and is immutable like Laravel's; the `Arr`, `Number`, and `Str` gaps are closed; the global helpers that wrap shipped surfaces exist; and both pages document a method at a time with every example verified by running it. Writing those examples is what found the five behaviour gaps in part 4 — the argument for the format, not just the coverage.
-
-**M49 Support Collections exhaust gate met** — the Method Listing is closed, higher order messages answer both forms, lazy collections stream over sync and async sources and back the ORM's `cursor` / `lazy` reads, and the page documents all 155 methods a section at a time with a smoke contract keeping it that way.
-
-**M31 Task Scheduling exhaust gate met** — the 2026-09-08 audit's last open item. The scheduler went from 8 documented methods to 85 of 86: the whole frequency table, sub-minute tasks with a `schedule:run` that stays inside the minute, day and time and environment constraints, hooks and pings, output to a file or an inbox, groups, one-server claims, background tasks, the five lifecycle events, and six new commands. The page is 640 lines against the old 55.
-
-**Docs (anytime):** see the Docs track above — Localization page (M4 code done); `@vite` directive (M6 partial). The Mutators & Casts how-to shipped with M40.
+**M45–M48** — IDE track stays last; vocabulary still moves until stability + kits settle.

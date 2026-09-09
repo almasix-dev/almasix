@@ -469,7 +469,7 @@ def _dispatch(event: Any) -> None:
 
     try:
         dispatch(event)
-    except Exception:  # noqa: BLE001 — a listener must never break a migration
+    except Exception:
         return
 
 

@@ -82,7 +82,10 @@ _SINGULAR_RULES: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"(tive)s$", re.I), r"\1"),
     (re.compile(r"(hive)s$", re.I), r"\1"),
     (re.compile(r"(^analy)ses$", re.I), r"\1sis"),
-    (re.compile(r"((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$", re.I), r"\1\2sis"),
+    (
+        re.compile(r"((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$", re.I),
+        r"\1\2sis",
+    ),
     (re.compile(r"([ti])a$", re.I), r"\1um"),
     (re.compile(r"(n)ews$", re.I), r"\1ews"),
     (re.compile(r"s$", re.I), ""),
@@ -243,7 +246,9 @@ class Str:
         return all(Str.contains(haystack, needle, ignore_case=ignore_case) for needle in needles)
 
     @staticmethod
-    def doesnt_contain(haystack: str, needles: str | Iterable[str], ignore_case: bool = False) -> bool:
+    def doesnt_contain(
+        haystack: str, needles: str | Iterable[str], ignore_case: bool = False
+    ) -> bool:
         return not Str.contains(haystack, needles, ignore_case=ignore_case)
 
     @staticmethod
@@ -261,7 +266,9 @@ class Str:
         return any(haystack.startswith(item) for item in items if item != "")
 
     @staticmethod
-    def excerpt(text: str, phrase: str = "", *, options: dict[str, Any] | None = None) -> str | None:
+    def excerpt(
+        text: str, phrase: str = "", *, options: dict[str, Any] | None = None
+    ) -> str | None:
         opts = options or {}
         radius = int(opts.get("radius", 100))
         omission = str(opts.get("omission", "..."))
@@ -400,7 +407,13 @@ class Str:
         return value + _fill(pad, max(0, length - len(value)))
 
     @staticmethod
-    def password(length: int = 32, letters: bool = True, numbers: bool = True, symbols: bool = True, spaces: bool = False) -> str:
+    def password(
+        length: int = 32,
+        letters: bool = True,
+        numbers: bool = True,
+        symbols: bool = True,
+        spaces: bool = False,
+    ) -> str:
         alphabet = ""
         if letters:
             alphabet += string.ascii_letters
@@ -531,7 +544,9 @@ class Str:
         return subject
 
     @staticmethod
-    def replace_matches(pattern: str, replace: str | Callable[[re.Match[str]], str], subject: str) -> str:
+    def replace_matches(
+        pattern: str, replace: str | Callable[[re.Match[str]], str], subject: str
+    ) -> str:
         return re.sub(pattern, replace, subject)
 
     @staticmethod
@@ -539,7 +554,12 @@ class Str:
         return value[::-1]
 
     @staticmethod
-    def slug(title: str, separator: str = "-", language: str | None = None, dictionary: dict[str, str] | None = None) -> str:
+    def slug(
+        title: str,
+        separator: str = "-",
+        language: str | None = None,
+        dictionary: dict[str, str] | None = None,
+    ) -> str:
         del language
         value = Str.ascii(title.lower())
         for search, repl in (dictionary or {"@": "at"}).items():
@@ -623,7 +643,9 @@ class Str:
         return len(value.split())
 
     @staticmethod
-    def word_wrap(value: str, characters: int = 75, break_str: str = "\n", cut: bool = False) -> str:
+    def word_wrap(
+        value: str, characters: int = 75, break_str: str = "\n", cut: bool = False
+    ) -> str:
         del cut
         return re.sub(rf"(.{{{characters}}})", rf"\1{break_str}", value)
 
@@ -713,11 +735,7 @@ class Str:
     @staticmethod
     def inline_markdown(value: str, *, options: dict[str, Any] | None = None) -> str:
         del options
-        escaped = (
-            value.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-        )
+        escaped = value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
         escaped = re.sub(r"\*(.+?)\*", r"<em>\1</em>", escaped)
         escaped = re.sub(r"`(.+?)`", r"<code>\1</code>", escaped)
@@ -789,7 +807,12 @@ class Stringable:
 
         return self._new(class_basename(self._value))
 
-    def when(self, condition: Any, callback: Callable[[Self], Any] | None = None, default: Callable[[Self], Any] | None = None) -> Self:
+    def when(
+        self,
+        condition: Any,
+        callback: Callable[[Self], Any] | None = None,
+        default: Callable[[Self], Any] | None = None,
+    ) -> Self:
         """Apply a callback when the condition holds, otherwise the default."""
         chosen = callback if condition else default
         if chosen is None:
@@ -799,7 +822,12 @@ class Stringable:
         # since a fluent call no longer alters its subject.
         return result if result is not None else self
 
-    def unless(self, condition: Any, callback: Callable[[Self], Any], default: Callable[[Self], Any] | None = None) -> Self:
+    def unless(
+        self,
+        condition: Any,
+        callback: Callable[[Self], Any],
+        default: Callable[[Self], Any] | None = None,
+    ) -> Self:
         return self.when(not condition, callback, default)
 
     def pipe(self, callback: Callable[[Self], Any]) -> Any:
@@ -915,7 +943,9 @@ class Stringable:
         """Hash the string with the application's hasher."""
         from almasix.hashing import Hash
 
-        return self._new(Hash.make(self._value) if driver is None else Hash.driver(driver).make(self._value))
+        return self._new(
+            Hash.make(self._value) if driver is None else Hash.driver(driver).make(self._value)
+        )
 
     def encrypt(self) -> Self:
         """Encrypt the string with the application key."""
@@ -944,9 +974,7 @@ class Stringable:
 #: Parameter names ``Str`` uses for the string being operated on. The subject is
 #: not always the first argument — ``Str.replace(search, replace, subject)`` —
 #: so delegation binds it by name rather than by position.
-_SUBJECT_PARAMETERS = frozenset(
-    {"value", "subject", "haystack", "title", "text", "string"}
-)
+_SUBJECT_PARAMETERS = frozenset({"value", "subject", "haystack", "title", "text", "string"})
 
 #: The conditional shortcuts Laravel puts on ``Stringable``, as name -> test.
 _WHEN_TESTS: dict[str, Callable[[Stringable, tuple[Any, ...]], bool]] = {

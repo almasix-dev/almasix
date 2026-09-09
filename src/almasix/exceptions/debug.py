@@ -109,7 +109,5 @@ def _source_excerpt(filename: str, lineno: int, context: int = 5) -> str:
         if not text and number != lineno:
             continue
         css = " class='hl'" if number == lineno else ""
-        lines.append(
-            f"<span{css}>{number:>4} | {html.escape(text.rstrip())}</span>"
-        )
+        lines.append(f"<span{css}>{number:>4} | {html.escape(text.rstrip())}</span>")
     return "\n".join(lines) if lines else html.escape(f"(source unavailable: {filename})")

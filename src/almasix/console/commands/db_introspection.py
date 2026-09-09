@@ -119,7 +119,7 @@ class DbShowCommand(DatabaseIntrospectionCommand):
 
         try:
             overview = asyncio.run(self.overview(connection))
-        except Exception as exc:  # noqa: BLE001 - the database is the user's to fix
+        except Exception as exc:
             self.error(str(exc))
             return self.FAILURE
 
@@ -233,7 +233,7 @@ class DbTableCommand(DatabaseIntrospectionCommand):
 
         try:
             names = asyncio.run(self.table_names(connection))
-        except Exception as exc:  # noqa: BLE001 - the database is the user's to fix
+        except Exception as exc:
             self.error(str(exc))
             return self.FAILURE
 
@@ -373,7 +373,7 @@ class DbMonitorCommand(DatabaseIntrospectionCommand):
                 return connection
             try:
                 sessions = self.sessions(connection)
-            except Exception as exc:  # noqa: BLE001 - the database is the user's to fix
+            except Exception as exc:
                 self.error(f"[{connection.name}] could not be asked: {exc}")
                 return self.FAILURE
             if sessions is None:

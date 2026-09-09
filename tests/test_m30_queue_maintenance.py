@@ -551,7 +551,13 @@ def test_docs_answers_in_a_directory_that_is_not_an_application(
 
 @pytest.mark.parametrize(
     "command",
-    ["queue:failed", "queue:flush --force", "queue:forget 1", "queue:prune-failed", "queue:retry --all"],
+    [
+        "queue:failed",
+        "queue:flush --force",
+        "queue:forget 1",
+        "queue:prune-failed",
+        "queue:retry --all",
+    ],
 )
 def test_a_missing_failed_jobs_table_is_a_sentence_not_a_traceback(
     build: Build, capsys: pytest.CaptureFixture[str], command: str

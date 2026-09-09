@@ -91,11 +91,11 @@ def _require_picklable(task: Task) -> None:
 def _run_task(sender: Any, task: Task) -> None:  # pragma: no cover - child process
     try:
         payload: tuple[bool, Any] = (True, task())
-    except BaseException as exception:  # noqa: BLE001 - reported to the parent
+    except BaseException as exception:
         payload = (False, _portable(exception))
     try:
         sender.send(payload)
-    except Exception:  # noqa: BLE001 - the result itself was the problem
+    except Exception:
         sender.send((False, TaskFailedException(f"{payload[1]!r} could not be returned.")))
     finally:
         sender.close()
@@ -105,7 +105,7 @@ def _portable(exception: BaseException) -> BaseException:  # pragma: no cover - 
     """Return an exception the parent can unpickle, whatever was raised."""
     try:
         pickle.loads(pickle.dumps(exception))
-    except Exception:  # noqa: BLE001 - fall back to the text
+    except Exception:
         return TaskFailedException("".join(traceback.format_exception_only(exception)).strip())
     return exception
 

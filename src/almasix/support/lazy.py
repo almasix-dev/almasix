@@ -147,7 +147,10 @@ def _finish(op: _Op, state: Any) -> list[Any]:
 def _deadline(seconds_or_when: Any) -> float:
     """A monotonic deadline from seconds, a datetime, or a timestamp."""
     if isinstance(seconds_or_when, datetime):
-        return time.monotonic() + (seconds_or_when - datetime.now(seconds_or_when.tzinfo)).total_seconds()
+        return (
+            time.monotonic()
+            + (seconds_or_when - datetime.now(seconds_or_when.tzinfo)).total_seconds()
+        )
     return time.monotonic() + float(seconds_or_when)
 
 

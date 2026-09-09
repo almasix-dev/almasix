@@ -33,7 +33,7 @@ class DeferredTasks:
     def _work(self) -> None:
         try:
             self._results = self._driver.run(self._tasks)
-        except BaseException as exception:  # noqa: BLE001 - re-raised by wait()
+        except BaseException as exception:
             self._failure = exception
 
     def finished(self) -> bool:

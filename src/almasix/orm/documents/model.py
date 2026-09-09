@@ -19,10 +19,10 @@ from almasix.orm.model import Model
 class Document(Model):
     """A model whose rows are documents in a collection.
 
-        class Article(Document):
-            connection = "mongodb"
-            collection = "articles"
-            fillable = ("title", "body", "tags")
+    class Article(Document):
+        connection = "mongodb"
+        collection = "articles"
+        fillable = ("title", "body", "tags")
     """
 
     #: Marks the whole class tree for the parts of Articulate that must know.
@@ -120,7 +120,7 @@ class Document(Model):
     async def sync_indexes(cls) -> list[str]:
         """Create every index the model declares; returns their names.
 
-            indexes = ({"keys": [("email", 1)], "unique": True},)
+        indexes = ({"keys": [("email", 1)], "unique": True},)
         """
         store = cls.get_store()
         created: list[str] = []

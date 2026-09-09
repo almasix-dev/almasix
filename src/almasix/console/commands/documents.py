@@ -61,7 +61,7 @@ class DocumentModelFinder:
         for info in pkgutil.iter_modules([str(Path(entry)) for entry in path]):
             try:
                 modules.append(importlib.import_module(f"app.models.{info.name}"))
-            except Exception as exc:  # noqa: BLE001 — one bad module must not stop the rest
+            except Exception as exc:
                 self.command.warn(f"Could not import app.models.{info.name}: {exc}")
         return modules
 
@@ -69,8 +69,8 @@ class DocumentModelFinder:
 class DocumentsIndexCommand(Command):
     """Create the indexes every `Document` model declares.
 
-        class Article(Document):
-            indexes = ({"keys": [("slug", 1)], "unique": True},)
+    class Article(Document):
+        indexes = ({"keys": [("slug", 1)], "unique": True},)
     """
 
     signature = (
@@ -81,7 +81,9 @@ class DocumentsIndexCommand(Command):
     description = "Create the indexes declared on document models"
 
     def handle(self) -> int:
-        models = DocumentModelFinder(self).find([str(name) for name in (self.option("model") or [])])
+        models = DocumentModelFinder(self).find(
+            [str(name) for name in (self.option("model") or [])]
+        )
         if not models:
             self.info("No document models found.")
             return self.SUCCESS
@@ -92,7 +94,10 @@ class DocumentsIndexCommand(Command):
             if not model.indexes:
                 continue
             for index in model.indexes:
-                keys = ", ".join(f"{field} {'asc' if int(direction) > 0 else 'desc'}" for field, direction in index["keys"])
+                keys = ", ".join(
+                    f"{field} {'asc' if int(direction) > 0 else 'desc'}"
+                    for field, direction in index["keys"]
+                )
                 unique = " (unique)" if index.get("unique") else ""
                 self.line(f"{model.__name__} [{model.get_table()}]: {keys}{unique}")
                 total += 1
@@ -100,7 +105,7 @@ class DocumentsIndexCommand(Command):
                 continue
             try:
                 asyncio.run(model.sync_indexes())
-            except Exception as exc:  # noqa: BLE001 — the store is the user's to fix
+            except Exception as exc:
                 self.error(f"{model.__name__}: {exc}")
                 return self.FAILURE
 
@@ -133,7 +138,7 @@ class DocumentsShowCommand(Command):
 
         try:
             return asyncio.run(self.show(connection))
-        except Exception as exc:  # noqa: BLE001 — the store is the user's to fix
+        except Exception as exc:
             self.error(str(exc))
             return self.FAILURE
 

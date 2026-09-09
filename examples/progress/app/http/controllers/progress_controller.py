@@ -268,6 +268,7 @@ def _milestones() -> list[dict]:
                 "make:document; documents:index; documents:show",
                 "GET /api/documents",
                 "progress:documents",
+                "articulate/documents/* — L13 Mongo parity map",
             ],
         },
         {
@@ -282,6 +283,7 @@ def _milestones() -> list[dict]:
                 "make:channel; channel:list",
                 "GET /api/broadcast",
                 "progress:broadcast",
+                "Echo-class client → M52",
             ],
         },
         {
@@ -412,14 +414,27 @@ def _milestones() -> list[dict]:
         {
             "id": "M38",
             "name": "Deployment + production ops",
-            "status": "planned",
-            "proof": ["smith serve --workers", "optimize / cache warm"],
+            "status": "complete",
+            "proof": [
+                "smith progress:deploy",
+                "smith serve --workers",
+                "GET /up health probe",
+                "docs/deployment + examples/deploy",
+                "PyPI Trusted Publishing (0.4.0 ready)",
+            ],
         },
         {
             "id": "M39",
-            "name": "Docs versioning + Prologue",
-            "status": "planned",
-            "proof": ["major-version switching", "Prologue sidebar group"],
+            "name": "Docs journey rewrite + Prologue",
+            "status": "complete",
+            "proof": [
+                "smith progress:docs",
+                "Prologue: intro / release notes / upgrade / versions",
+                "Basics teaching order + auth in Basics",
+                "header version switcher (latest major + main)",
+                "older-docs banner when not latest",
+                "no milestone IDs in Starlight",
+            ],
         },
         {
             "id": "M40",
@@ -472,8 +487,13 @@ def _milestones() -> list[dict]:
         {
             "id": "M44",
             "name": "Multi-engine database CI",
-            "status": "planned",
-            "proof": ["Postgres + MySQL test matrix"],
+            "status": "complete",
+            "proof": [
+                "smith progress:engines",
+                "CI orm-engines: sqlite + pgsql + mysql",
+                "tests/test_m44_conformance.py",
+                "database/engines support matrix",
+            ],
         },
         {
             "id": "M45",
@@ -521,6 +541,23 @@ def _milestones() -> list[dict]:
                 "377 documented methods",
             ],
         },
+        {
+            "id": "M51",
+            "name": "Lint and format gate",
+            "status": "complete",
+            "proof": [
+                "smith progress:lint",
+                "ruff==0.16.6 pinned",
+                "make lint = check + format --check",
+                "CI lint job on 3.11–3.13",
+            ],
+        },
+        {
+            "id": "M52",
+            "name": "Echo-class broadcasting client",
+            "status": "planned",
+            "proof": ["browser client package", "private/presence auth", "Vite install path"],
+        },
     ]
 
 
@@ -545,10 +582,7 @@ def _board() -> dict:
 class ProgressController(Controller):
     async def index(self) -> Response:
         board = _board()
-        milestones = [
-            {**m, "proof_text": ", ".join(m["proof"])}
-            for m in board["milestones"]
-        ]
+        milestones = [{**m, "proof_text": ", ".join(m["proof"])} for m in board["milestones"]]
         upcoming = next((m["id"] for m in board["milestones"] if m["status"] == "next"), None)
         return view(
             "progress",

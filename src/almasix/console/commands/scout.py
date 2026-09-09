@@ -74,7 +74,7 @@ class SearchableModelFinder:
         for info in pkgutil.iter_modules([str(Path(entry)) for entry in path]):
             try:
                 modules.append(importlib.import_module(f"app.models.{info.name}"))
-            except Exception as exc:  # noqa: BLE001 — one bad module must not stop the rest
+            except Exception as exc:
                 self.command.warn(f"Could not import app.models.{info.name}: {exc}")
         return modules
 
@@ -163,7 +163,7 @@ class ScoutIndexCommand(Command):
         options = {"primaryKey": str(key)} if key and key is not True else {}
         try:
             asyncio.run(Scout.engine().create_index(str(self.argument("name")), options))
-        except Exception as exc:  # noqa: BLE001 — the search service is the user's to fix
+        except Exception as exc:
             self.error(str(exc))
             return self.FAILURE
         self.success(f"Index [{self.argument('name')}] created.")
@@ -181,7 +181,7 @@ class ScoutDeleteIndexCommand(Command):
 
         try:
             asyncio.run(Scout.engine().delete_index(str(self.argument("name"))))
-        except Exception as exc:  # noqa: BLE001 — the search service is the user's to fix
+        except Exception as exc:
             self.error(str(exc))
             return self.FAILURE
         self.success(f"Index [{self.argument('name')}] deleted.")
@@ -199,7 +199,7 @@ class ScoutDeleteAllIndexesCommand(Command):
 
         try:
             asyncio.run(Scout.engine().delete_all_indexes())
-        except Exception as exc:  # noqa: BLE001 — the search service is the user's to fix
+        except Exception as exc:
             self.error(str(exc))
             return self.FAILURE
         self.success("All indexes deleted.")
@@ -224,7 +224,7 @@ class ScoutSyncIndexSettingsCommand(Command):
                 if asyncio.run(model.searchable_using().sync_settings(model)):
                     self.line(f"{model.__name__} -> {model.searchable_as()}: settings updated")
                     synced += 1
-            except Exception as exc:  # noqa: BLE001 — the search service is the user's to fix
+            except Exception as exc:
                 self.error(f"{model.__name__}: {exc}")
                 return self.FAILURE
 

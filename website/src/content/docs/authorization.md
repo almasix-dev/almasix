@@ -298,7 +298,7 @@ class UpdatePostRequest(FormRequest):
         return Gate.allows("update", self.route("post"))
 ```
 
-`False` still raises 403 as in M3.
+`False` still raises HTTP 403.
 
 ## Route middleware
 

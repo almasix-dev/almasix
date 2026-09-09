@@ -2,25 +2,24 @@
 
 from __future__ import annotations
 
+import time
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
-import time
 
 import pytest
 from prompt_toolkit.validation import ValidationError
 
+from almasix.console.prompts import choices as choices_mod
 from almasix.console.prompts import (
     confirm,
     multiselect,
     password,
-    pause,
     select,
     spin,
     suggest,
     text,
     textarea,
 )
-from almasix.console.prompts import choices as choices_mod
 from almasix.console.prompts import inputs as inputs_mod
 from almasix.console.prompts.busy import Progress, progress
 from almasix.console.prompts.inputs import number
@@ -198,7 +197,9 @@ def test_multiselect_validate_retries(interactive) -> None:
 
 def test_suggest_and_search(interactive) -> None:
     with patch.object(choices_mod, "pt_prompt", return_value="Paris") as mocked:
-        assert suggest("City", ["Paris", "Rome"], placeholder="…", hint="h", required=True) == "Paris"
+        assert (
+            suggest("City", ["Paris", "Rome"], placeholder="…", hint="h", required=True) == "Paris"
+        )
         with pytest.raises(ValidationError):
             mocked.call_args.kwargs["validator"].validate(SimpleNamespace(text=""))
 

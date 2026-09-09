@@ -15,8 +15,8 @@ with **Smith** — Almasix’s in-app CLI:
 almasix new blog
 cd blog
 pip install -e .
-smith migrate
-smith serve
+python smith migrate
+python smith serve
 ```
 
 Templates, routing, validation, localization, and the ORM all live behind the
@@ -24,8 +24,10 @@ Templates, routing, validation, localization, and the ORM all live behind the
 compiles your routes, and serves them over ASGI.
 
 :::note
-Almasix is inspired by Laravel’s application shape. The public APIs, CLI, ORM,
-and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**.
+Almasix’s application layout will feel familiar if you have used other
+structured PHP or Node frameworks — but you do not need that background.
+Public APIs, the CLI, the ORM, and the view engine are Almasix’s own:
+**Smith**, **Articulate**, and **Prism**.
 :::
 
 ## Requirements
@@ -55,7 +57,7 @@ and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**
 
    ```text
    Which frontend stack?
-     ● Tailwind CSS — Vite + Tailwind CSS 4 (Laravel's default)
+     ● Tailwind CSS — Vite + Tailwind CSS 4 (recommended default)
        Bootstrap — Vite + Bootstrap 5 Sass
        Plain CSS — Vite, no CSS framework
        No frontend build — Server-rendered Prism only — no Node, no build step
@@ -66,13 +68,13 @@ and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**
        MariaDB
    Scaffold a pytest suite (tests/)?          smith test runs it
    Initialize a git repository?
-   Install Python dependencies now?           uv when available, otherwise pip
+   Install Python dependencies now?           creates .venv, then pip/uv install -e .
    Run npm install and npm run build?
    Run the default migrations?                creates users, sessions, cache, and the queue tables
    ```
 
 3. **Create a virtual environment and install dependencies** — unless you
-   answered yes to `Install Python dependencies now?`, which did it for you:
+   answered yes to creating a `.venv` and installing (which did it for you):
 
    ```bash
    cd blog
@@ -81,12 +83,16 @@ and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**
    pip install -e .
    ```
 
-4. **Run the migrations.** A new application ships the same default migrations
-   Laravel does, so this is what creates `users`, `password_reset_tokens`,
-   `sessions`, `cache`, `cache_locks`, `jobs`, and `failed_jobs`:
+   With `--install` (or answering Yes at the prompt), `almasix new` creates
+   `.venv`, runs `pip`/`uv` `install -e .`, and installs the database extra
+   when you picked PostgreSQL/MySQL/MariaDB.
+
+4. **Run the migrations.** Every new app is scaffolded with the default
+   migrations (`users`, `password_reset_tokens`, `sessions`, plus cache and
+   queue tables). Unless you already answered yes to running them:
 
    ```bash
-   smith migrate
+   python smith migrate
    ```
 
 5. **Build the frontend** (any stack except `none`):
@@ -100,7 +106,7 @@ and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**
 6. **Start the development server:**
 
    ```bash
-   smith serve
+   python smith serve
    ```
 
    Visit the URL Smith prints (typically `http://127.0.0.1:3000`).
@@ -108,14 +114,20 @@ and view engine are Almasix’s own — **Smith**, **Articulate**, and **Prism**
 </Steps>
 
 :::tip[Smith]
-`smith` belongs to your application, not to Almasix itself. Step 3 installs it
-into the project's virtualenv, so with that environment active you can run
-`smith serve`, `smith migrate`, `smith loupe`, and so on. The root `smith` file
-works as `python smith …` without any install step.
+Smith belongs to your **application**, not to a global Almasix install. The
+reliable form from the app root is always:
 
-Installing the framework globally — with `pipx install almasix`, say — gives you
-the `almasix` command only, so one application's CLI never leaks onto your
-`PATH` system-wide.
+```bash
+python smith serve
+python smith migrate
+python smith loupe
+```
+
+That runs the root `smith` script (no PATH entry required). After
+`pip install -e .` of the application, a `smith` console script is also linked
+into **that** virtualenv — then bare `smith …` works with the env active.
+Installing only the framework (`pip install almasix` / `pipx install almasix`)
+gives you the `almasix` installer command, not `smith`.
 :::
 
 ## Every question, and its flag
@@ -130,9 +142,9 @@ Every prompt has a command-line option and a documented default, so the same
 | Database | `--database sqlite\|pgsql\|mysql\|mariadb` | `sqlite` |
 | pytest suite under `tests/` | `--tests` / `--no-tests` | scaffolded |
 | git repository | `--git` / `--no-git`, `--branch NAME` | not initialized |
-| Python dependencies | `--install` / `--no-install`, `--installer auto\|uv\|pip` | not installed |
+| Python dependencies | `--install` / `--no-install`, `--installer auto\|uv\|pip` | not installed (creates `.venv` + `pip install -e .` when yes) |
 | `npm install && npm run build` | `--npm` / `--no-npm` | not run |
-| Default migrations | `--migrate` / `--no-migrate` | not run |
+| Default migrations | `--migrate` / `--no-migrate` | not run (scaffolds users/sessions/cache/jobs; runs them when yes) |
 | Where the app is created | `--path DIR` | the working directory |
 | Which stubs to scaffold from | `--stubs DIR` | Almasix's own |
 

@@ -79,9 +79,7 @@ def task(**kwargs: Any) -> Event:
         ("saturdays", "* * * * 6"),
     ],
 )
-def test_every_frequency_writes_the_expression_laravel_writes(
-    method: str, expression: str
-) -> None:
+def test_every_frequency_writes_the_expression_laravel_writes(method: str, expression: str) -> None:
     assert getattr(task(), method)().expression == expression
 
 
@@ -282,9 +280,7 @@ def test_an_expression_nothing_matches_gives_the_moment_back(monkeypatch: Any) -
 def test_a_sub_minute_task_outside_its_own_hour_waits_for_that_hour() -> None:
     hourly_seconds = task().every_ten_seconds().hourly()
 
-    assert hourly_seconds.next_run_at(datetime(2026, 9, 7, 9, 5, 20)) == datetime(
-        2026, 9, 7, 10, 0
-    )
+    assert hourly_seconds.next_run_at(datetime(2026, 9, 7, 9, 5, 20)) == datetime(2026, 9, 7, 10, 0)
 
 
 # --- identity ----------------------------------------------------------------
@@ -575,9 +571,7 @@ def test_without_a_shared_cache_there_is_only_one_server(tmp_path: Path, no_cach
     assert run_task(event, base_path=tmp_path).skipped is False
 
 
-def test_clear_cache_releases_the_locks_a_stuck_task_left(
-    tmp_path: Path, array_cache: Any
-) -> None:
+def test_clear_cache_releases_the_locks_a_stuck_task_left(tmp_path: Path, array_cache: Any) -> None:
     schedule = Schedule()
     event = schedule.command("stuck").every_minute().without_overlapping()
     schedule.command("free").every_minute()
@@ -642,9 +636,7 @@ def test_a_hook_that_asks_for_output_is_handed_it(tmp_path: Path, no_cache: Any)
     assert seen == ["FROM-THE-TASK\n"]
 
 
-def test_a_hook_with_only_optional_parameters_is_called_bare(
-    tmp_path: Path, no_cache: Any
-) -> None:
+def test_a_hook_with_only_optional_parameters_is_called_bare(tmp_path: Path, no_cache: Any) -> None:
     seen: list[str] = []
 
     def optional(output: Any = None) -> None:
@@ -730,9 +722,7 @@ def test_output_is_written_to_the_file_it_was_sent_to(tmp_path: Path, no_cache: 
     assert path.read_text(encoding="utf-8").split() == ["second", "third"]
 
 
-def test_output_can_be_emailed_always_or_only_on_failure(
-    tmp_path: Path, no_cache: Any
-) -> None:
+def test_output_can_be_emailed_always_or_only_on_failure(tmp_path: Path, no_cache: Any) -> None:
     sent: list[tuple[tuple[str, ...], str, int]] = []
 
     from almasix.console.scheduling import runner as runner_module
@@ -827,25 +817,19 @@ def test_a_mailer_that_fails_does_not_fail_the_task(tmp_path: Path, no_cache: An
 # --- the tick ----------------------------------------------------------------
 
 
-def test_run_due_events_runs_what_is_due_and_leaves_the_rest(
-    tmp_path: Path, no_cache: Any
-) -> None:
+def test_run_due_events_runs_what_is_due_and_leaves_the_rest(tmp_path: Path, no_cache: Any) -> None:
     seen: list[str] = []
     schedule = Schedule()
     schedule.call(lambda: seen.append("minutely"), description="minutely").every_minute()
     schedule.call(lambda: seen.append("daily"), description="daily").daily()
 
-    outcomes = run_due_events(
-        schedule, base_path=tmp_path, at=datetime(2026, 9, 7, 9, 30)
-    )
+    outcomes = run_due_events(schedule, base_path=tmp_path, at=datetime(2026, 9, 7, 9, 30))
 
     assert seen == ["minutely"]
     assert [outcome.event.description for outcome in outcomes] == ["minutely"]
 
 
-def test_a_background_task_runs_alongside_and_is_waited_for(
-    tmp_path: Path, no_cache: Any
-) -> None:
+def test_a_background_task_runs_alongside_and_is_waited_for(tmp_path: Path, no_cache: Any) -> None:
     order: list[str] = []
     schedule = Schedule()
 
@@ -909,9 +893,7 @@ def test_run_schedule_keeps_going_for_the_minute_when_seconds_are_scheduled(
 ) -> None:
     seen: list[int] = []
     schedule = Schedule()
-    schedule.call(
-        lambda: seen.append(len(seen)), description="every-thirty"
-    ).every_thirty_seconds()
+    schedule.call(lambda: seen.append(len(seen)), description="every-thirty").every_thirty_seconds()
 
     moments = iter(
         [
@@ -1107,9 +1089,7 @@ def test_a_shell_task_passes_on_what_it_wrote_to_stderr(tmp_path: Path, no_cache
     assert "oops" in outcome.output
 
 
-def test_a_job_without_a_queue_or_connection_keeps_its_own(
-    tmp_path: Path, no_cache: Any
-) -> None:
+def test_a_job_without_a_queue_or_connection_keeps_its_own(tmp_path: Path, no_cache: Any) -> None:
     dispatched: list[Any] = []
 
     class Heartbeat:
@@ -1191,9 +1171,7 @@ def test_a_closure_command_can_schedule_itself_with_arguments() -> None:
         Artisan.set_kernel(None)
 
 
-def test_the_application_builder_can_define_the_schedule(
-    tmp_path: Path, monkeypatch: Any
-) -> None:
+def test_the_application_builder_can_define_the_schedule(tmp_path: Path, monkeypatch: Any) -> None:
     from almasix.console.scheduling import schedule as task_schedule
     from almasix.framework import Application
 

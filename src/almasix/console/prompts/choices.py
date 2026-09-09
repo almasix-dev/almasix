@@ -19,6 +19,7 @@ from almasix.console.prompts.style import (
     CHECK_OFF,
     CHECK_ON,
     STYLE,
+    TRUE_COLOR,
     html_escape,
     label_html,
     tagged,
@@ -74,33 +75,34 @@ def select(
             lines.append(tagged(style, f"{marker}{text}"))
         if end < len(items):
             lines.append(tagged("muted", "  ..."))
-        lines.append(tagged("hint", "  up/down navigate · enter select"))
+        lines.append(tagged("hint", "  ↑/↓ navigate · enter select"))
         return HTML("\n".join(lines))
 
     kb = KeyBindings()
 
     @kb.add("up")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         state["index"] = (state["index"] - 1) % len(items)
         event.app.invalidate()
 
     @kb.add("down")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         state["index"] = (state["index"] + 1) % len(items)
         event.app.invalidate()
 
     @kb.add("enter")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         event.app.exit(result=items[state["index"]][0])
 
     @kb.add("c-c")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         event.app.exit(exception=KeyboardInterrupt())
 
     app: Application[Any] = Application(
         layout=Layout(HSplit([Window(FormattedTextControl(_render, focusable=True))])),
         key_bindings=kb,
         style=STYLE,
+        color_depth=TRUE_COLOR,
         full_screen=False,
     )
     value = app.run()
@@ -153,23 +155,23 @@ def multiselect(
             lines.append(tagged(style, f"{marker}{box} {text}"))
         if end < len(items):
             lines.append(tagged("muted", "  ..."))
-        lines.append(tagged("hint", "  up/down navigate · space toggle · enter confirm"))
+        lines.append(tagged("hint", "  ↑/↓ navigate · space toggle · enter confirm"))
         return HTML("\n".join(lines))
 
     kb = KeyBindings()
 
     @kb.add("up")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         state["index"] = (state["index"] - 1) % len(items)
         event.app.invalidate()
 
     @kb.add("down")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         state["index"] = (state["index"] + 1) % len(items)
         event.app.invalidate()
 
     @kb.add("space")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         i = state["index"]
         if i in state["selected"]:
             state["selected"].remove(i)
@@ -178,18 +180,19 @@ def multiselect(
         event.app.invalidate()
 
     @kb.add("enter")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         values = [items[i][0] for i in sorted(state["selected"])]
         event.app.exit(result=values)
 
     @kb.add("c-c")
-    def _(event) -> None:  # noqa: ANN001
+    def _(event) -> None:
         event.app.exit(exception=KeyboardInterrupt())
 
     app: Application[list[Any]] = Application(
         layout=Layout(HSplit([Window(FormattedTextControl(_render, focusable=True))])),
         key_bindings=kb,
         style=STYLE,
+        color_depth=TRUE_COLOR,
         full_screen=False,
     )
     value = app.run()
@@ -232,7 +235,7 @@ def suggest(
     from almasix.console.prompts.types import run_validation as _run
 
     class _Validator(Validator):
-        def validate(self, document) -> None:  # noqa: ANN001
+        def validate(self, document) -> None:
             err = _run(document.text, required=required, validate=validate)
             if err:
                 raise ValidationError(message=err, cursor_position=len(document.text))
@@ -244,6 +247,7 @@ def suggest(
         "validator": _Validator(),
         "validate_while_typing": False,
         "style": STYLE,
+        "color_depth": TRUE_COLOR,
     }
     if placeholder:
         kwargs["placeholder"] = placeholder
@@ -276,6 +280,7 @@ def search(
         HTML(f"<label>{html_escape(label)}</label> "),
         placeholder=placeholder or "Search...",
         style=STYLE,
+        color_depth=TRUE_COLOR,
     )
     matches = _normalize_options(options(query))
     if not matches:

@@ -21,13 +21,13 @@ _renders: list[tuple[str, dict[str, Any]]] | None = None
 
 def record_renders() -> list[tuple[str, dict[str, Any]]]:
     """Start recording `(view name, data)` pairs, for `almasix.testing`."""
-    global _renders  # noqa: PLW0603 — one recorder, installed by the test client
+    global _renders
     _renders = []
     return _renders
 
 
 def stop_recording_renders() -> None:
-    global _renders  # noqa: PLW0603
+    global _renders
     _renders = None
 
 
@@ -67,9 +67,7 @@ class Engine:
         self.paths = [Path(p) for p in (paths or [])]
         self.extension = extension
         self.cache_enabled = cache_enabled
-        self.component_namespaces = list(
-            component_namespaces or ["app.view.components"]
-        )
+        self.component_namespaces = list(component_namespaces or ["app.view.components"])
         self._cache: dict[str, tuple[float, RenderFn]] = {}
         self._directives: dict[str, DirectiveHandler] = {}
         self._composers: list[tuple[list[str], ComposerCallback]] = []
@@ -161,11 +159,7 @@ class Engine:
             instance = self._instantiate_component(cls, attrs)
             view_name = instance.render()
             component_data = dict(instance.data())
-            leftover = {
-                key: value
-                for key, value in attrs.items()
-                if key not in component_data
-            }
+            leftover = {key: value for key, value in attrs.items() if key not in component_data}
             leftover.update(instance.attribute_data())
             bag = AttributeBag({**component_data, **leftover})
         else:
@@ -234,8 +228,7 @@ class Engine:
 
         kwargs: dict[str, Any] = {}
         accepts_var_kw = any(
-            p.kind == inspect.Parameter.VAR_KEYWORD
-            for p in signature.parameters.values()
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in signature.parameters.values()
         )
         for key, value in attrs.items():
             if key in signature.parameters or accepts_var_kw:
