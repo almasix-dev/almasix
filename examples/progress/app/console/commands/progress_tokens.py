@@ -15,6 +15,7 @@ from almasix.console.command import Command
 from almasix.hashing import Hash
 from almasix.signet import PersonalAccessToken
 from app.models.user import User
+from app.support.demo_db import ensure_demo_database
 
 
 class ProgressTokensCommand(Command):
@@ -34,6 +35,8 @@ class ProgressTokensCommand(Command):
         return self.SUCCESS
 
     async def _issue(self) -> str:
+        # Fresh CI checkouts have no SQLite schema — migrate + seed first.
+        await ensure_demo_database()
         user = await User.query().where("email", "=", "ada@almasix.dev").first()
         if user is None:
             user = await User.create(
