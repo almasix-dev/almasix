@@ -202,8 +202,9 @@ M0–M28, M30–M35, M38–M44, M49–M51 are closed on the ladder. M32–M35
 closed the installer, routing, security headers/CORS, and rate limiting; M25’s
 Laravel 13 Mongo audit, M51’s lint gate, M38’s deployment ops, and M39’s docs
 journey are closed with them. **Stability track next** (see `docs/PLAN.md`):
-API tokens (**M37**, Signet-class) are closed; next is Echo-class client (**M52**),
-then Carbon-class dates (**M53**), then starter kits. The board on
+API tokens (**M37**, Signet-class) are closed; next autopilot batch is Echo
+compatibility (**M52**) then Carbon-class dates (**M53**), then pause before
+starter kits (**M36**). The board on
 `/progress` lists the full roadmap with a status and proof for each milestone.
 
 ## CLI

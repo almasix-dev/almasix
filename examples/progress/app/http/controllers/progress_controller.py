@@ -283,7 +283,7 @@ def _milestones() -> list[dict]:
                 "make:channel; channel:list",
                 "GET /api/broadcast",
                 "progress:broadcast",
-                "Echo-class client → M52",
+                "Echo compatibility → M52 (laravel-echo, not a first-party client)",
             ],
         },
         {
@@ -560,9 +560,13 @@ def _milestones() -> list[dict]:
         },
         {
             "id": "M52",
-            "name": "Echo-class broadcasting client",
+            "name": "Echo compatibility (laravel-echo)",
             "status": "planned",
-            "proof": ["browser client package", "private/presence auth", "Vite install path"],
+            "proof": [
+                "Pusher-protocol /broadcasting/socket",
+                "laravel-echo + pusher-js",
+                "private channel auth handshake",
+            ],
         },
         {
             "id": "M53",

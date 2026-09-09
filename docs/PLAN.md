@@ -1178,7 +1178,7 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 - Broadcaster drivers (log/null + one real driver — Redis pub/sub or websocket bridge); `ShouldBroadcast` events
 - Channel auth; client contract documented
-- **Broadcasting JS client (Echo-class) is not closed here** — owed as **M52** (see below). M26 ships the server; browsers still need a first-party client the way Laravel ships Echo
+- **Echo / browser subscribe path is not closed here** — owed as **M52** (see below). M26 ships the server; M52 makes the native socket Pusher-compatible so `@laravel/echo` works (no first-party JS client)
 - Docs: Starlight **Broadcasting**
 
 **Depends on:** M18 Events; M16 Redis nice-to-have for Redis broadcaster.
@@ -1187,7 +1187,7 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 **Status (M26):** `almasix.broadcasting` — `ShouldBroadcast` (plus `ShouldBroadcastNow` and `ShouldBroadcastAfterCommit`) with `broadcast_on` / `broadcast_as` / `broadcast_with` / `broadcast_when`, payloads reflected off the event's public attributes when it says nothing, and the `InteractsWithSockets` / `InteractsWithBroadcasting` mixins behind `to_others()` and `via()`; the `broadcast()` helper returning a `PendingBroadcast` that dispatches through the event bus on `send()`, on `await`, or when it falls out of scope; a `BroadcastManager` with five drivers — `log` and `null`, Almasix's own in-process `websocket` server, `redis` pub/sub, and `pusher` over its REST API — plus `Broadcast.extend()` for a sixth; `Channel` / `PrivateChannel` / `PresenceChannel` / `EncryptedPrivateChannel`, model channels, and payloads sealed with the application key on encrypted channels; `routes/channels.py` loaded by the provider (so console sees it too) with wildcard patterns, route-model binding from type hints, channel classes resolved from the container, per-channel guards, and presence rosters; `POST /broadcasting/auth` and `/broadcasting/user-auth` answering in Pusher's signed format; a websocket at `/broadcasting/socket` speaking a Pusher-shaped protocol (`subscribe`, `unsubscribe`, `ping`, `client-*`, member added/removed), reached through a new `Route.websocket()` and kernel support; queued broadcasts as a `BroadcastEvent` job whose payload is plain JSON; `BroadcastsEvents` / `BroadcastsEventsAfterCommit` for model writes, on the back of a new `Connection.after_commit()`; a `broadcast` notification channel; `Broadcast.fake()` with the assertion set; `smith make:channel` and `channel:list`; Starlight **Broadcasting**; the progress app's `PostPublished`, broadcasting `Comment`, `GET /api/broadcast`, and `progress:broadcast`.
 
-**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver where Laravel points at Reverb, Pusher, or Ably, and speaks Pusher's protocol so those stay available; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes. **Still owed:** a publishable Echo-class browser client (**M52**).
+**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver where Laravel points at Reverb, Pusher, or Ably, and speaks Pusher's protocol so those stay available; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes. **Still owed:** Echo compatibility — native socket speaks real Pusher protocol so `@laravel/echo` works (**M52**).
 
 ### M27 — Search
 
@@ -1707,19 +1707,19 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 ## Broadcasting client (M52)
 
-### M52 — Echo-class browser client
+### M52 — Echo compatibility (Pusher protocol + `@laravel/echo`)
 
-Laravel ships [Echo](https://laravel.com/docs/13.x/broadcasting#client-side-installation) so a browser can subscribe to channels without hand-rolling Pusher protocol. Almasix M26 shipped the **server** (websocket driver, auth endpoints, presence). The **client** is still owed.
+Laravel ships [Echo](https://laravel.com/docs/13.x/broadcasting#client-side-installation) so browsers subscribe without hand-rolling websockets. Almasix M26 shipped the **server**; the native socket is only *Pusher-shaped* today (`almasix:*` frames). **M52 does not ship a first-party JS client.** Product decision (2026-09-10): make the built-in driver speak real Pusher protocol so **`laravel-echo` + `pusher-js`** work against Almasix (and against Pusher / Soketi / Reverb-compatible hosts unchanged).
 
-- First-party JS (or TypeScript) package — working name TBD (`almasix-echo`, `@almasix/echo`, …) — speaking the same Pusher-shaped protocol M26 already uses
-- Private / presence channel auth against `/broadcasting/auth`
-- Install path documented for Vite scaffolds and for the SPA starter kit (**M36**)
-- Progress (or starter kit) demo that receives a broadcast without raw `WebSocket` glue in app code
-- Starlight **Broadcasting** page updated for beginners (no Laravel assumed): server + client as one story
+- Align `/broadcasting/socket` with Pusher Channels websocket protocol: `pusher:connection_established`, subscribe/unsubscribe payloads, `pusher:subscription_succeeded`, presence `member_*`, `pusher:pong`, error codes — keep a thin `almasix:*` alias **only** if needed for one release of back-compat, then drop
+- Private / presence auth already answers in Pusher format at `/broadcasting/auth` — verify Echo’s auth handshake end-to-end
+- Starlight **Broadcasting**: install `laravel-echo` + `pusher-js`, configure `broadcaster: 'reverb'` (or `pusher`) pointed at Almasix’s host/key/`authEndpoint`; no Laravel assumed beyond naming the npm packages
+- Living example: progress (or a small Vite page under examples) uses **Echo**, not raw `WebSocket`; `smith progress:broadcast` (or sibling) proves public + private subscribe
+- Explicitly **out of scope:** `@almasix/echo` / fork of Echo — named later only if branding or a thinner API becomes a real need
 
-**Depends on:** M26 (server protocol stable).
+**Depends on:** M26 (server + auth endpoints).
 
-**Gate:** `npm`/`pnpm` installable client; smoke proves subscribe + private channel; docs teach it from zero.
+**Gate:** Echo can subscribe (public + private) to the native Almasix websocket; smoke + docs + progress proof; no new publishable JS package required.
 
 ## Dates and time (M53)
 
@@ -1727,7 +1727,7 @@ Laravel ships [Echo](https://laravel.com/docs/13.x/broadcasting#client-side-inst
 
 Laravel's [Carbon](https://carbon.nesbot.com/) (and the framework's date helpers) is how apps reason about instants, intervals, and human strings without fighting `datetime`. Almasix today has a thin clock (`now` / `today` / `set_test_now` in support helpers) — not a manipulation library.
 
-- First-party Carbon-class type (working name TBD) — immutable-friendly fluent API over aware datetimes: parse, add/sub, start/end of period, compare, diff for humans, format localization hooks
+- First-party Carbon-class type (working name TBD — pick in-milestone; do not block on branding) — immutable-friendly fluent API over aware datetimes: parse, add/sub, start/end of period, compare, diff for humans, format localization hooks
 - Test time travel that freezes / travels / returns (`set_test_now` grows into the Carbon-class surface; existing helpers remain thin aliases)
 - Extend support helpers with the Laravel date/time helper set worth porting (`now`, `today`, and peers once the library exists)
 - Starlight page (no milestone IDs); living example `smith progress:dates` (or extend `progress:helpers`)
@@ -1737,6 +1737,35 @@ Laravel's [Carbon](https://carbon.nesbot.com/) (and the framework's date helpers
 
 **Gate:** library + helpers exhausted with progress proof + smoke + docs; coverage ≥ 98% on the new package.
 
+## Autopilot batch (M52 → M53 → pause)
+
+Binding playbook for agent runs that may exhaust **more than one** milestone before human review. Still **one milestone at a time inside the batch** — finish each gate before starting the next.
+
+### Batch order
+
+| Step | Milestone | Do | Stop if |
+| --- | --- | --- | --- |
+| 1 | **M52** Echo compatibility | Pusher-protocol native socket + Echo docs/demo + smoke | Protocol parity unclear vs pusher-js; or auth handshake needs product call |
+| 2 | **M53** Carbon-class dates | Fluent date type + helpers + docs + `progress:dates` + smoke | Naming blocks publish (use a provisional name and note it) |
+| 3 | **Pause** | Open one PR per milestone (or stacked PRs); wait for merge + human confirm | — |
+| 4 | **M36** Starter kits | Only after human green-light — kits widen surface; not in this autopilot batch | — |
+
+### Per-milestone checklist (non-negotiable)
+
+1. Code + tests (package coverage ≥ 98% when a new package lands)
+2. Progress board status + proof naming a runnable demo
+3. `smith progress:*` (or HTTP) demo; smoke asserts it
+4. Starlight user docs (no milestone IDs); PLAN/SMOKE status in sync
+5. Lint green; do not weaken CI to pass
+
+### Autopilot rules
+
+- **Do not** start `@almasix/echo` under M52
+- **Do not** start M36, Socialite, Passport, or client-credentials API keys in this batch
+- Prefer stacked branches `m52-echo-compat` → `m53-dates` off merged main
+- After each milestone: commit, PR, wait for CI; only continue the batch when CI is green (or fix in-branch)
+- If blocked >15 minutes on an ambiguous product call, stop and ask
+
 ## Follow-up plan (binding — 2026-09-09)
 
 Recorded from product direction after M35:
@@ -1744,7 +1773,7 @@ Recorded from product direction after M35:
 1. **Parity reference is Laravel 13** everywhere we audit or extend a surface — not 11.x / 12.x leftovers in old prose.
 2. **M25 Mongo parity** chases Laravel 13’s MongoDB documentation. Prior “Laravel has no NoSQL” language is struck; **audit closed 2026-09-09** — gaps named on `articulate/documents/compared`.
 3. **User-facing docs** assume no Laravel and no Almasix background; never mention milestones; rewrite as a journey; reorder Basics for teaching (**M39**).
-4. **Echo-class websocket client** is a real product surface (**M52**), not a starter-kit footnote.
+4. **Echo compatibility** (Pusher-protocol native socket + `@laravel/echo`) is a real product surface (**M52**), not a starter-kit footnote. First-party `@almasix/echo` is deferred.
 5. **Process:** one milestone at a time, exhaust completely, then stop for review. Prefer **stability** milestones before kits/features that widen the API surface.
 
 ### Stability sequencing (preferred order)
@@ -1759,7 +1788,7 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 | 4 | ~~**M38** — Deployment + production ops~~ **complete** (0.4.0 on PyPI; 0.5.0 ready to tag) | Installable, operable release |
 | 5 | ~~**M39** — Docs journey rewrite + Prologue~~ **complete** | Users can learn the framework without insider context |
 | 6 | ~~**M37** — API tokens (Signet-class first)~~ **complete** (Socialite / Passport / client API keys deferred) | Production auth for API / SPA / mobile |
-| 7 | **M52** — Echo-class client | Completes broadcasting for real apps |
+| 7 | **M52** — Echo compatibility (`laravel-echo`) | Completes broadcasting for real apps |
 | 8 | **M53** — Carbon-class dates + helpers | Everyday date math without ad-hoc `datetime` |
 | 9 | **M36** — Starter kits | Growth — after tokens + client exist to wire into kits |
 
@@ -1779,7 +1808,7 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**Suggested next:** **M52 — Echo-class browser client**. Confirm before starting. **M53** (Carbon-class dates) is scheduled after M52 unless you want dates sooner.
+**Suggested next:** Autopilot batch **M52 → M53 → pause** (see **Autopilot batch** above). Confirm before starting. **M36** stays out of the batch.
 
 **Recently closed:** M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
 
@@ -1787,12 +1816,12 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **M25 Articulate documents** — ladder + L13 audit **closed**; integrations Laravel lists (cache, queue, GridFS, Scout Mongo, vectorSearch) remain named missing, not pretended.
 
-**M26 Broadcasting** — server met; **client owed as M52**.
+**M26 Broadcasting** — server met; **Echo compatibility owed as M52**.
 
 **M39** — site is published; journey rewrite + Prologue **closed**.
 
 **M40–M44, M49–M50** — exhaust gates met (Articulate SQL / collections / helpers / multi-engine CI).
 
-**M36 / M37** — deferred until tokens (**M37**) and preferably the Echo client (**M52**) can land into kits honestly.
+**M36** — deferred until tokens (**M37**, done) and preferably Echo compatibility (**M52**) can land into kits honestly.
 
 **M45–M48** — IDE track stays last; vocabulary still moves until stability + kits settle.
