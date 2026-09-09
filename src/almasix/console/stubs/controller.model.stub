@@ -1,0 +1,39 @@
+"""{{ class }}."""
+
+from __future__ import annotations
+
+from almasix.http import Controller, Request
+
+from {{ namespacedModel }} import {{ model }}
+
+
+class {{ class }}(Controller):
+    """The seven actions `Route.resource` registers, bound to {{ model }}.
+
+    The type hints are what implicit binding reads: a request for
+    `/{{ modelVariable }}s/7` arrives here with the {{ model }} already loaded,
+    or 404s before it does.
+    """
+
+    async def index(self):
+        """GET — a listing."""
+        return await {{ model }}.query().get()
+
+    async def create(self):
+        """GET /create — the form that stores one."""
+
+    async def store(self, request: Request):
+        """POST — persist a new {{ modelVariable }}."""
+
+    async def show(self, {{ modelVariable }}: {{ model }}):
+        """GET /{id} — one {{ modelVariable }}."""
+        return {{ modelVariable }}
+
+    async def edit(self, {{ modelVariable }}: {{ model }}):
+        """GET /{id}/edit — the form that updates one."""
+
+    async def update(self, request: Request, {{ modelVariable }}: {{ model }}):
+        """PUT|PATCH /{id} — persist a change."""
+
+    async def destroy(self, {{ modelVariable }}: {{ model }}):
+        """DELETE /{id} — remove one."""

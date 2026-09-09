@@ -9,6 +9,8 @@ from typing import Any
 from starlette.datastructures import UploadFile
 from starlette.requests import Request as StarletteRequest
 
+from almasix.http.spoofing import REAL_METHOD
+
 _current: ContextVar[Request | None] = ContextVar("almasix_request", default=None)
 
 
@@ -107,6 +109,9 @@ class Request:
         self._csrf_token: str | None = None
         self._route_polarity: str | None = None
         self._route_name: str | None = None
+        self._matched_route: Any = None
+        self._spoofed_method: str | None = None
+        self._extra_path_params: dict[str, Any] = {}
 
     @classmethod
     async def create(cls, request: StarletteRequest) -> Request:
@@ -174,7 +179,32 @@ class Request:
 
     @property
     def method(self) -> str:
-        return self._request.method
+        """The verb the request is treated as, `_method` spoofing included.
+
+        Spoofing happens in ASGI middleware, before routing, so by the time a
+        handler asks this the scope already says PUT. The `_spoofed_method`
+        override exists for a test that wants to claim a verb by hand.
+        """
+        return self._spoofed_method or self._request.method
+
+    @property
+    def real_method(self) -> str:
+        """The verb actually on the wire, whatever `_method` claimed."""
+        real = self._request.scope.get(REAL_METHOD)
+        return str(real) if real else self._request.method
+
+    @property
+    def spoofed_method(self) -> str | None:
+        """The verb `_method` asked for, or `None` if nothing was spoofed."""
+        if self._spoofed_method:
+            return self._spoofed_method
+        if self._request.scope.get(REAL_METHOD):
+            return self._request.method
+        return None
+
+    @spoofed_method.setter
+    def spoofed_method(self, value: str | None) -> None:
+        self._spoofed_method = value.upper() if value else None
 
     @property
     def url(self) -> str:
@@ -227,7 +257,29 @@ class Request:
 
     @property
     def path_params(self) -> dict[str, Any]:
-        return dict(self._request.path_params)
+        return {**self._request.path_params, **self._extra_path_params}
+
+    def merge_path_params(self, values: Mapping[str, Any]) -> None:
+        """Add parameters Starlette did not route on — a `{subdomain}`, say."""
+        self._extra_path_params.update(dict(values))
+
+    @property
+    def matched_route(self) -> Any:
+        """The `RouteDefinition` answering this request, or ``None``."""
+        return self._matched_route
+
+    @matched_route.setter
+    def matched_route(self, value: Any) -> None:
+        self._matched_route = value
+
+    def route_is(self, *patterns: str) -> bool:
+        """Whether the matched route's name matches (Laravel ``routeIs``)."""
+        route = self._matched_route
+        return bool(route is not None and route.named(*patterns))
+
+    def route_named(self, *patterns: str) -> bool:
+        """`route_is` under Laravel's `$request->route()->named()` spelling."""
+        return self.route_is(*patterns)
 
     def is_method(self, method: str) -> bool:
         return self.method.upper() == method.upper()

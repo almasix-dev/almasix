@@ -108,7 +108,7 @@ def test_route_dsl_groups_and_compile(tmp_path: Path, monkeypatch: pytest.Monkey
         routes = {route.uri: route for route in app.router.routes}
         assert "/" in routes
         assert "/api/ping" in routes
-        assert routes["/api/ping"].middleware == ["tag"]
+        assert routes["/api/ping"].middleware_names == ["tag"]
 
         client = TestClient(app.asgi)
         assert client.get("/").json() == {"pong": "ok"}
@@ -187,4 +187,6 @@ def test_router_methods_and_groups() -> None:
         router.get("items", lambda: None)
     uris = {route.uri for route in router.routes}
     assert "/v1/items" in uris
-    assert any(route.middleware == ["auth"] for route in router.routes if route.uri == "/v1/items")
+    assert any(
+        route.middleware_names == ["auth"] for route in router.routes if route.uri == "/v1/items"
+    )

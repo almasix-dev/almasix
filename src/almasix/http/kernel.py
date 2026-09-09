@@ -4,19 +4,20 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import re
 from collections.abc import Awaitable, Callable, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, get_type_hints
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi import Request as FastAPIRequest
-from fastapi import WebSocket
 from starlette.responses import Response as StarletteResponse
 
 from almasix.http.exceptions import HttpException, NotFoundHttpException
-from almasix.http.middleware import Middleware
+from almasix.http.middleware import FRAMEWORK_ALIASES, Middleware
 from almasix.http.request import Request, reset_request, set_request
 from almasix.http.response import make_response
+from almasix.routing.binding import BindingMissing
 from almasix.routing.router import (
     Action,
     RouteDefinition,
@@ -157,6 +158,13 @@ class HttpKernel:
                         name=f"public-{folder}",
                     )
 
+        if self.app.config.get("http.spoof_methods", True):
+            from almasix.http.spoofing import SpoofMethodASGI
+
+            # Starlette middleware runs before the router, which is the whole
+            # point: the verb has to be right by the time a path is matched.
+            asgi.add_middleware(SpoofMethodASGI)
+
         from almasix.http.subpath import mount_asgi
 
         asgi = mount_asgi(asgi, str(self.app.config.get("app.base_path", "") or ""))
@@ -202,12 +210,19 @@ class HttpKernel:
 
     def _register_route(self, asgi: FastAPI, route: RouteDefinition) -> None:
         endpoint = self._build_endpoint(route)
-        asgi.add_api_route(
-            route.uri,
-            endpoint,
-            methods=list(route.methods),
-            name=route.name,
-        )
+        # One definition can be several paths: `where` constraints compile into
+        # convertors, and every optional parameter adds a shorter path that
+        # answers without it.
+        for index, uri in enumerate(route.compiled_uris()):
+            asgi.add_api_route(
+                uri,
+                endpoint,
+                methods=list(route.methods),
+                # FastAPI keeps route names unique, and only the longest form
+                # of an optional route is the one `route()` generates.
+                name=route.route_name if index == 0 else None,
+                include_in_schema=index == 0 and not route.fallback,
+            )
 
     def _register_websocket(self, asgi: FastAPI, route: WebSocketRouteDefinition) -> None:
         """Mount a websocket handler.
@@ -222,31 +237,41 @@ class HttpKernel:
         async def endpoint(websocket: WebSocket) -> None:
             await action(websocket)
 
-        asgi.add_api_websocket_route(route.uri, endpoint, name=route.name)
+        asgi.add_api_websocket_route(route.uri, endpoint, name=route.route_name)
 
     def _build_endpoint(
         self,
         route: RouteDefinition,
     ) -> Callable[..., Awaitable[StarletteResponse]]:
-        polarity = polarity_from_middleware(route.middleware)
+        middleware = route.gather_middleware()
+        polarity = polarity_from_middleware(middleware)
 
         async def endpoint(request: FastAPIRequest) -> StarletteResponse:
             almasix_request = await Request.create(request)
             almasix_request.route_polarity = polarity
-            almasix_request.route_name = route.name
+            almasix_request.route_name = route.route_name
+            almasix_request.matched_route = route
+            if not _domain_matches(route, almasix_request):
+                # A host-scoped route that another host reached is not this
+                # route at all. Starlette already matched on the path, so the
+                # miss is handled here — by handing the request to the
+                # fallback, which is where anything unmatched belongs.
+                return await self._answer_unmatched(almasix_request, polarity=polarity)
             action = self._resolve_action(route.action)
 
             async def call_controller(req: Request) -> StarletteResponse:
                 # Convert inside the pipeline so middleware still sees the
                 # response on the way out (Laravel handler placement).
                 try:
-                    result = await self._invoke(action, req)
+                    result = await self._invoke(action, req, route)
+                except BindingMissing as missing:
+                    result = await self._call_missing(missing, req)
                 except Exception as exc:
                     return self._handle_exception(req, exc, polarity=polarity)
                 return make_response(result)
 
             pipeline = self._build_middleware_pipeline(
-                route.middleware,
+                middleware,
                 call_controller,
                 polarity=polarity,
             )
@@ -258,6 +283,29 @@ class HttpKernel:
 
         return endpoint
 
+    async def _answer_unmatched(
+        self,
+        request: Request,
+        *,
+        polarity: str = "api",
+    ) -> StarletteResponse:
+        """What answers a request no route claims: the fallback, or a 404."""
+        fallback = self.app.router.fallback_route
+        if fallback is None:
+            return self._handle_exception(
+                request,
+                NotFoundHttpException("Not Found"),
+                polarity=polarity,
+            )
+        request.matched_route = fallback
+        request.route_name = fallback.route_name
+        try:
+            return make_response(
+                await self._invoke(self._resolve_action(fallback.action), request, fallback)
+            )
+        except Exception as exc:
+            return self._handle_exception(request, exc, polarity=polarity)
+
     def _build_middleware_pipeline(
         self,
         names: Sequence[str],
@@ -265,7 +313,13 @@ class HttpKernel:
         *,
         polarity: str = "api",
     ) -> Callable[[Request], Awaitable[StarletteResponse]]:
-        aliases = self.app.config.get("http.middleware_aliases", {}) or {}
+        # The framework's own aliases sit underneath, so `signed` resolves in an
+        # application that never opened `bootstrap/app.py` to alias it. An app's
+        # entry for the same name still wins.
+        aliases = {
+            **FRAMEWORK_ALIASES,
+            **(self.app.config.get("http.middleware_aliases", {}) or {}),
+        }
         groups = self.app.config.get("http.middleware_groups", {}) or {}
         global_middleware = list(self.app.config.get("http.middleware", []) or [])
         chain_names = self._expand_groups([*global_middleware, *names], groups)
@@ -292,7 +346,7 @@ class HttpKernel:
             return True
         try:
             cls = self._import_string(target) if isinstance(target, str) else target
-        except Exception:  # noqa: BLE001 — an unresolvable name is not the skip list's problem
+        except Exception:
             return False
         return cls in self._skipped
 
@@ -391,7 +445,12 @@ class HttpKernel:
         module = importlib.import_module(module_path)
         return getattr(module, name)
 
-    async def _invoke(self, handler: Callable[..., Any], request: Request) -> Any:
+    async def _invoke(
+        self,
+        handler: Callable[..., Any],
+        request: Request,
+        route: RouteDefinition | None = None,
+    ) -> Any:
         try:
             signature = inspect.signature(handler)
         except (TypeError, ValueError):
@@ -413,7 +472,11 @@ class HttpKernel:
             elif annotation is Request or name in {"request", "req"}:
                 kwargs[name] = request
             elif name in request.path_params:
-                kwargs[name] = request.path_params[name]
+                kwargs[name] = await self._bind_parameter(
+                    name, request.path_params[name], annotation, request, route, kwargs
+                )
+            elif route is not None and name in route.default_values:
+                kwargs[name] = route.default_values[name]
             elif (
                 annotation is not inspect.Parameter.empty
                 and isinstance(annotation, type)
@@ -433,6 +496,87 @@ class HttpKernel:
         if inspect.isawaitable(result):
             return await result
         return result
+
+    async def _bind_parameter(
+        self,
+        name: str,
+        value: Any,
+        annotation: Any,
+        request: Request,
+        route: RouteDefinition | None,
+        resolved: dict[str, Any],
+    ) -> Any:
+        """Turn a path segment into whatever the controller asked for.
+
+        Explicit binding wins, then the type hint, then the raw string — a
+        controller that takes `post_id: str` still gets the string it asked for.
+        """
+        from almasix.orm.builder import ModelNotFoundError
+        from almasix.routing import binding
+
+        explicit = await self._explicit_binding(name, value)
+        if explicit is not _UNBOUND:
+            return explicit
+
+        if not binding.is_bindable(annotation):
+            return value
+
+        field = (route.binding_fields().get(name) if route is not None else None) or None
+        parent = None
+        relationship = None
+        if route is not None and route.scoped_bindings:
+            order = route.parameter_names()
+            parent = binding.parent_of(name, resolved, order)
+            if parent is not None:
+                relationship = binding.relationship_name(name)
+
+        try:
+            return await binding.resolve(
+                annotation,
+                value,
+                field=field,
+                trashed=bool(route.trashed) if route is not None else False,
+                parent=parent,
+                relationship=relationship,
+            )
+        except ModelNotFoundError:
+            if route is not None and route.missing_handler is not None:
+                raise binding.BindingMissing(route.missing_handler, name) from None
+            raise
+
+    async def _explicit_binding(self, name: str, value: Any) -> Any:
+        """`Route.bind` and `Route.model` — registered by name, so they win."""
+        resolver = self.router.binder_for(name)
+        if resolver is not None:
+            result = resolver(value)
+            return await result if inspect.isawaitable(result) else result
+
+        registered = self.router.model_for(name)
+        if registered is None:
+            return _UNBOUND
+
+        from almasix.orm.builder import ModelNotFoundError
+        from almasix.routing import binding
+
+        model, missing = registered
+        try:
+            return await binding.resolve(model, value)
+        except ModelNotFoundError:
+            if missing is None:
+                raise
+            raise binding.BindingMissing(missing, name) from None
+
+    async def _call_missing(self, missing: BindingMissing, request: Request) -> Any:
+        """Whatever the route's `missing()` decided a 404 should look like."""
+        result = self._invoke_missing(missing.handler, request)
+        return await result if inspect.isawaitable(result) else result
+
+    def _invoke_missing(self, handler: Callable[..., Any], request: Request) -> Any:
+        try:
+            signature = inspect.signature(handler)
+        except (TypeError, ValueError):  # pragma: no cover — builtins only
+            return handler()
+        return handler(request) if signature.parameters else handler()
 
     def _authorize_controller_resource(
         self,
@@ -476,3 +620,36 @@ def _form_request() -> type:
     from almasix.validation.form_request import FormRequest
 
     return FormRequest
+
+
+class _Unbound:
+    """Distinguishes "no explicit binding" from a binding that returned None."""
+
+    def __repr__(self) -> str:  # pragma: no cover — debugging aid
+        return "<unbound>"
+
+
+_UNBOUND = _Unbound()
+
+def _domain_matches(route: RouteDefinition, request: Request) -> bool:
+    """Whether the request's host is the one a `domain()` route answers on.
+
+    Starlette routes on the path alone, so the host is checked here and any
+    `{subdomain}` in the pattern is added to the path parameters — which is
+    what lets a controller take `subdomain` like any other parameter.
+    """
+    pattern = route.domain_pattern
+    if not pattern:
+        return True
+    from almasix.routing.constraints import PARAMETER_RE
+
+    host = (request.header("host") or "").split(":", 1)[0].lower()
+    regex = PARAMETER_RE.sub(
+        lambda match: f"(?P<{match.group('name')}>[^.]+)",
+        re.escape(pattern).replace("\\{", "{").replace("\\}", "}"),
+    )
+    matched = re.fullmatch(regex, host, flags=re.IGNORECASE)
+    if matched is None:
+        return False
+    request.merge_path_params(matched.groupdict())
+    return True

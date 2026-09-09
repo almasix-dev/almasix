@@ -12,6 +12,15 @@ if TYPE_CHECKING:
 
 NextCall = Callable[["Request"], Awaitable[StarletteResponse]]
 
+#: Aliases the framework itself provides, so a route can say `signed` without
+#: every application repeating the import. These sit underneath whatever the
+#: application aliases, so an app entry of the same name wins — and they apply
+#: even to an app that never opened `bootstrap/app.py`.
+FRAMEWORK_ALIASES: dict[str, str] = {
+    "signed": "almasix.routing.middleware.ValidateSignature",
+    "url.defaults": "almasix.routing.middleware.SetUrlDefaults",
+}
+
 
 class Middleware:
     """Laravel-style middleware with ``handle(request, next)``."""

@@ -171,6 +171,14 @@ class Application:
     def resolve(self, abstract: type | str) -> Any:
         return self.container.resolve(abstract)
 
+    def bound(self, abstract: type | str) -> bool:
+        """Whether something is registered for ``abstract``.
+
+        Distinct from whether `make` would succeed: a plain class with
+        constructible arguments autowires whether or not anyone configured it.
+        """
+        return self.container.bound(abstract)
+
     def set_locale(self, locale: str) -> None:
         """Set the active locale for the current request/task context."""
         from almasix.translation.helpers import get_translator

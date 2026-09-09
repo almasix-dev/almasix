@@ -262,6 +262,26 @@ class Engine:
             from almasix.routing.url import asset
 
             ctx["asset"] = asset
+        if "route" not in ctx:
+            from almasix.routing.url import (
+                action,
+                route,
+                secure_asset,
+                secure_url,
+                signed_route,
+            )
+
+            ctx["route"] = route
+            ctx["signed_route"] = signed_route
+            ctx["action"] = action
+            ctx["secure_url"] = secure_url
+            ctx["secure_asset"] = secure_asset
+        if "route_is" not in ctx:
+            from almasix.routing.router import Route
+
+            # `@if(route_is('posts.*'))` is how a nav link marks itself active.
+            ctx["route_is"] = Route.is_
+            ctx["current_route_name"] = Route.current_route_name
         if "vite" not in ctx:
             from almasix.prism.vite import vite, vite_react_refresh
 

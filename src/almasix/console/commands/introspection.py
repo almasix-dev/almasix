@@ -188,13 +188,24 @@ class RouteListCommand(Command):
         "route:list {--method= : Only routes answering this HTTP method} "
         "{--name= : Only routes whose name contains this text} "
         "{--path= : Only routes whose URI contains this text} "
+        "{--except-path= : Skip routes whose URI contains this text} "
+        "{--domain= : Only routes answering on this domain} "
+        "{--action= : Only routes whose action contains this text} "
+        "{--sort= : Sort by uri, name, method, action, or domain (default: uri)} "
+        "{--reverse : Reverse the sort} "
+        "{--except-vendor : Skip routes the framework registered} "
+        "{--only-vendor : Only routes the framework registered} "
+        "{--middleware : Show each route's middleware} "
         "{--json : Output as JSON}"
     )
     description = "List the application's registered routes"
 
+    #: Routes whose action lives here came with the framework, not the app.
+    VENDOR_PREFIX = "almasix."
+
     def handle(self) -> int:
         self.app.load_routes()
-        routes = sorted(self.app.router.routes, key=lambda route: (route.uri, route.methods))
+        routes = self._sorted(self.app.router.routes)
         if not routes:
             self.line("Your application has no registered routes.")
             return self.SUCCESS
@@ -205,39 +216,90 @@ class RouteListCommand(Command):
             return self.SUCCESS
 
         if self.option("json"):
-            self.line(
-                to_json(
-                    [
-                        {
-                            "methods": list(route.methods),
-                            "uri": route.uri,
-                            "name": route.name,
-                            "action": _action(route.action),
-                        }
-                        for route in matched
-                    ]
-                )
+            self.line(to_json([self._as_dict(route) for route in matched]))
+            return self.SUCCESS
+
+        # Middleware is a column only when asked for: most routes carry the
+        # whole `web` group and it would push the URI off an 80-column terminal.
+        if self.option("middleware") or self.option("verbose"):
+            self.table(
+                ("Method", "Domain", "URI", "Name", "Action", "Middleware"),
+                [
+                    (
+                        "|".join(route.methods),
+                        route.get_domain() or "",
+                        route.uri,
+                        route.get_name() or "",
+                        _action(route.action),
+                        ", ".join(route.gather_middleware()),
+                    )
+                    for route in matched
+                ],
             )
             return self.SUCCESS
 
         self.table(
             ("Method", "URI", "Name", "Action"),
             [
-                ("|".join(route.methods), route.uri, route.name or "", _action(route.action))
+                (
+                    "|".join(route.methods),
+                    route.uri,
+                    route.get_name() or "",
+                    _action(route.action),
+                )
                 for route in matched
             ],
         )
         return self.SUCCESS
+
+    def _as_dict(self, route: RouteDefinition) -> dict[str, Any]:
+        return {
+            "methods": list(route.methods),
+            "uri": route.uri,
+            "name": route.get_name(),
+            "action": _action(route.action),
+            "domain": route.get_domain(),
+            "middleware": route.gather_middleware(),
+        }
+
+    def _sorted(self, routes: list[RouteDefinition]) -> list[RouteDefinition]:
+        keys = {
+            "uri": lambda route: (route.uri, route.methods),
+            "name": lambda route: (route.get_name() or "", route.uri),
+            "method": lambda route: (route.methods, route.uri),
+            "action": lambda route: (_action(route.action), route.uri),
+            "domain": lambda route: (route.get_domain() or "", route.uri),
+        }
+        chosen = str(self.option("sort") or "uri").strip().lower()
+        key = keys.get(chosen)
+        if key is None:
+            self.warn(f"Unknown sort {chosen!r}; sorting by uri. Try: {', '.join(keys)}.")
+            key = keys["uri"]
+        return sorted(routes, key=key, reverse=bool(self.option("reverse")))
 
     def _matches(self, route: RouteDefinition) -> bool:
         method = str(self.option("method") or "").strip().upper()
         if method and method not in route.methods:
             return False
         name = str(self.option("name") or "").strip().lower()
-        if name and name not in (route.name or "").lower():
+        if name and name not in (route.get_name() or "").lower():
             return False
         path = str(self.option("path") or "").strip().lower()
-        return not path or path in route.uri.lower()
+        if path and path not in route.uri.lower():
+            return False
+        excluded = str(self.option("except-path") or "").strip().lower()
+        if excluded and excluded in route.uri.lower():
+            return False
+        domain = str(self.option("domain") or "").strip().lower()
+        if domain and domain not in (route.get_domain() or "").lower():
+            return False
+        action = str(self.option("action") or "").strip().lower()
+        if action and action not in _action(route.action).lower():
+            return False
+        vendor = _action(route.action).startswith(self.VENDOR_PREFIX)
+        if self.option("except-vendor") and vendor:
+            return False
+        return not (self.option("only-vendor") and not vendor)
 
 
 class ConfigShowCommand(Command):

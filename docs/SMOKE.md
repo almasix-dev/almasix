@@ -859,6 +859,43 @@ pytest -q tests/test_m50_*.py tests/smoke/test_m50_smoke.py
 
 ---
 
+## M33 — Routing DX + named routes
+
+```bash
+pytest -q tests/test_m33_*.py tests/smoke/test_m33_smoke.py
+```
+
+### M33 exit criteria
+
+- [x] Every verb and shape: `head`, `match`, `any`, `redirect` / `permanent_redirect` (302 / 301), `view`, and a `fallback` registered last wherever it is written
+- [x] A GET route answers HEAD, and `route:list` prints `GET|HEAD`
+- [x] The fluent route: `name`, `middleware`, `without_middleware`, `can`, `where` + the six typed variants, `where_in`, `defaults`, `domain`, `missing`, `scope_bindings`, `with_trashed`
+- [x] Constraints are enforced while routing, so a value that fails one does not match the route and a later route may claim the path
+- [x] `Route.pattern` / `Route.patterns` apply a constraint to every route that names the parameter
+- [x] `/greet/{name?}` compiles to `/greet/{name}` and `/greet`, and answers both
+- [x] Named routes: `name()` on routes and groups, `Route.has`, and a `DuplicateRouteName` that names both URIs
+- [x] Groups merge prefix, name, middleware, `without_middleware`, domain, controller, `where`, and `scope_bindings`, and nest
+- [x] `route()` takes a scalar, list, tuple, mapping, or keyword arguments; reads a model's route key; sends leftovers to the query string; honours `absolute=False` and the base path
+- [x] `route()`'s own arguments are positional-only, so a route parameter may be called `name`
+- [x] Resource routing exhausted: `resource`, `api_resource`, `resources`, `api_resources`, `only`, `except_`, `names`, `parameters`, `shallow`, `scoped`, `middleware`, `without_middleware`, `where`, `missing`, `with_trashed`
+- [x] Singleton routing: `singleton`, `api_singleton`, the plurals, `creatable`, `destroyable`
+- [x] Nesting is by dot; a slash is a URI prefix that does not enter the route name (`api/tags` → `/api/tags`, named `tags.*`)
+- [x] `set_resource_verbs` translates the `create` and `edit` URI segments
+- [x] A bare `Route.resource(...)` registers with no trailing call, and a fluent call afterwards rewrites those routes rather than adding a second set
+- [x] Implicit binding: type hint, `get_route_key_name`, `{post:slug}`, backed enums including int-backed, 404 or `missing()`, `with_trashed`, and scoped through a parent
+- [x] Explicit binding: `Route.model` and `Route.bind` win over the type hint
+- [x] Domain routing matches the host and passes `{subdomain}` to the handler; a mismatch falls through to the fallback
+- [x] `_method` and `X-HTTP-Method-Override` rewrite the verb before routing; only POST may spoof, only into PUT / PATCH / DELETE; `request.real_method` reports what arrived
+- [x] Signed URLs: `signed_route`, `temporary_signed_route`, absolute and relative, query order irrelevant, an edited link and an expired one distinguishable, and the `signed` middleware answering 403
+- [x] URL defaults fill only parameters a URI names, never the query string, and are scoped to the request so concurrent requests do not leak into each other
+- [x] The rest of the URL family: `secure_url`, `secure_asset`, `action`, `to_route`, `to_action`, `current`, `full`, `previous`, `previous_path`, `query`, `force_scheme`, `force_root_url`
+- [x] `route:list` gains name / domain / middleware columns and the filters; `make:controller` gains `--resource`, `--api`, `--model`, `--singleton`, `--invokable`; Prism gains `@route` and `@signedRoute`
+- [x] Living example: `smith progress:routing` walks verbs, constraints, groups, all six resource shapes, binding, every `route()` shape, signed URLs, and defaults; the board marks M33 complete with proof naming the command
+- [x] 100% line and branch coverage on `almasix.routing` and `almasix.http.spoofing`
+- [x] Deviations named: positional-only route arguments, eager resource registration, leftover positional parameters raising, per-request URL defaults
+
+---
+
 ## M32 — Installer + scaffold stacks
 
 ```bash

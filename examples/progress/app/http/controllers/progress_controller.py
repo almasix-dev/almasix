@@ -362,8 +362,16 @@ def _milestones() -> list[dict]:
         {
             "id": "M33",
             "name": "Routing DX + named routes",
-            "status": "planned",
-            "proof": ["match / any / fallback / redirect", "route() + resources"],
+            "status": "complete",
+            "proof": [
+                "smith progress:routing",
+                "head / match / any / redirect / view / fallback",
+                "route() · signed_route() · action() · to_route()",
+                "resource / api_resource / singleton — nested, shallow, scoped",
+                "where + global patterns · optional {name?} · domains",
+                "implicit binding · missing() · _method spoofing",
+                "smith route:list --middleware --sort=name",
+            ],
         },
         {
             "id": "M34",

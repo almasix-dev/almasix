@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import inspect
-import re
 from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from almasix.console.scheduling.cron import cron_matches, last_day_of_month, next_run_at
+from almasix.aliases import install_camel_aliases
 
 Callback = Callable[..., Any]
 
@@ -555,16 +555,6 @@ def call_hook(callback: Callback, output: str | None) -> Any:
     from almasix.support import str_
 
     return callback(str_(output or ""))
-
-
-def install_camel_aliases(cls: type) -> None:
-    """Add Laravel's camelCase spelling for every fluent method."""
-    for name, member in list(vars(cls).items()):
-        if name.startswith("_") or "_" not in name:
-            continue
-        camel = re.sub(r"_(\w)", lambda match: match.group(1).upper(), name)
-        if not hasattr(cls, camel):
-            setattr(cls, camel, member)
 
 
 install_camel_aliases(Event)

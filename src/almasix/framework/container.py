@@ -16,6 +16,15 @@ class ResolutionError(KeyError):
     """Raised when the container cannot resolve a dependency."""
 
 
+class CircularDependencyError(ResolutionError):
+    """Two classes each need the other built first.
+
+    A subclass because it is not the same problem as an unbound name: a
+    parameter's default can stand in for something nobody registered, but a
+    cycle is a mistake in the wiring and has to be reported.
+    """
+
+
 class Container:
     """Laravel-style service container."""
 
@@ -72,7 +81,7 @@ class Container:
     def _autowire(self, cls: type[T]) -> T:
         if cls in self._build_stack:
             cycle = " -> ".join(str(item) for item in [*self._build_stack, cls])
-            raise ResolutionError(f"Circular dependency detected: {cycle}")
+            raise CircularDependencyError(f"Circular dependency detected: {cycle}")
 
         self._build_stack.append(cls)
         try:
@@ -99,9 +108,22 @@ class Container:
                 if isinstance(annotation, str):
                     annotation = self._evaluate_string_annotation(annotation, globalns, localns)
 
+                has_default = param.default is not inspect.Parameter.empty
                 if annotation is not inspect.Parameter.empty and annotation is not Any:
-                    kwargs[name] = self.resolve(annotation)
-                elif param.default is not inspect.Parameter.empty:
+                    try:
+                        kwargs[name] = self.resolve(annotation)
+                    except CircularDependencyError:
+                        # A cycle is a mistake in the wiring, and a default
+                        # cannot stand in for it — report it either way.
+                        raise
+                    except ResolutionError:
+                        # A parameter that says what it wants *and* what to do
+                        # without it is optional: `mode: str | None = None` on a
+                        # middleware means "the container may fill this", not
+                        # "refuse to build me unless str is bound".
+                        if not has_default:
+                            raise
+                elif has_default:
                     continue
                 else:
                     raise ResolutionError(

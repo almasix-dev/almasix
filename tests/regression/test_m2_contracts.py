@@ -42,16 +42,16 @@ def test_nested_groups_compose_prefix_and_middleware() -> None:
     users, health, home = router.routes
 
     assert users.uri == "/api/v1/users"
-    assert users.middleware == ["throttle", "auth"]
-    assert users.name == "users.index"
+    assert users.middleware_names == ["throttle", "auth"]
+    assert users.get_name() == "users.index"
 
     # Sibling route sees only the outer group; the inner stack frame is popped.
     assert health.uri == "/api/health"
-    assert health.middleware == ["throttle", "cache"]
+    assert health.middleware_names == ["throttle", "cache"]
 
     # Group stack fully unwound outside the `with` blocks.
     assert home.uri == "/"
-    assert home.middleware == []
+    assert home.middleware_names == []
 
 
 def test_scaffold_m2_bootstrap_has_no_fastapi(tmp_path: Path) -> None:

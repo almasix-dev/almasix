@@ -84,6 +84,8 @@ _TAG_RE = re.compile(
     rf"|@dump\b"
     rf"|@dd\b"
     rf"|@asset\b"
+    rf"|@signedRoute\b"
+    rf"|@route\b"
     rf"|@viteReactRefresh\b"
     rf"|@vite\b"
     rf"|@endcache\b"
@@ -102,6 +104,8 @@ _BALANCED_ALWAYS = frozenset(
         "@each",
         "@isset",
         "@asset",
+        "@route",
+        "@signedRoute",
         "@vite",
         "@cache",
         "@if",
@@ -406,6 +410,8 @@ def _tag_kind(
         ("@dump", "dump"),
         ("@dd", "dd"),
         ("@asset", "asset"),
+        ("@signedRoute", "signed_route"),
+        ("@route", "route"),
         ("@viteReactRefresh", "vite_react_refresh"),
         ("@vite", "vite"),
         ("@endcache", "endcache"),
@@ -946,6 +952,12 @@ def _compile_fragment(
         elif kind == "asset":
             args = _paren_inner(match.group(0) or "")
             emit(f"__w(__e(str(__eval({_py_str(f'asset({args})')}))))")
+        elif kind == "route":
+            args = _paren_inner(match.group(0) or "")
+            emit(f"__w(__e(str(__eval({_py_str(f'route({args})')}))))")
+        elif kind == "signed_route":
+            args = _paren_inner(match.group(0) or "")
+            emit(f"__w(__e(str(__eval({_py_str(f'signed_route({args})')}))))")
         elif kind == "vite":
             # Tags are markup, so they are written through rather than escaped.
             args = _paren_inner(match.group(0) or "")

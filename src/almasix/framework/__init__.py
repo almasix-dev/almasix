@@ -2,7 +2,11 @@
 
 from almasix.framework.application import Application
 from almasix.framework.bootstrap import ApplicationBuilder, Middleware
-from almasix.framework.container import Container, ResolutionError
+from almasix.framework.container import (
+    CircularDependencyError,
+    Container,
+    ResolutionError,
+)
 from almasix.framework.helpers import (
     app,
     current_application,
@@ -16,6 +20,7 @@ __all__ = [
     "ApplicationBuilder",
     "Container",
     "Middleware",
+    "CircularDependencyError",
     "ResolutionError",
     "app",
     "current_application",
