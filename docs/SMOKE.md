@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.4.0` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.5.0` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -306,7 +306,7 @@ curl -sH 'Authorization: Bearer demo' http://127.0.0.1:3000/api/me
 - [x] Status mapping (`ModelNotFoundError` → 404, …) + `ServiceUnavailableHttpException`
 - [x] Unmatched routes: path polarity (`/api/*` JSON, else HTML 404)
 - [x] `errors:publish` + default/tailwind/bootstrap bundles (CDN-free); production error views
-- [x] `config/logging.py` + `log()` / `with_()` context; `report()` writes through channels
+- [x] `config/logging.py` + `Log` façade / `log()` / `with_()` context; `report()` writes through channels
 - [x] Error catalog `lang/en/errors.py`; Prism-off HTML fallback
 - [x] Progress `/boom` (HTML) + `/api/explode` (JSON); Error Handling / Logging docs
 - [x] Smoke `tests/smoke/test_m8_smoke.py`; coverage ≥ 98% (exceptions + log aim 100%)
@@ -678,7 +678,7 @@ pytest -q tests/test_m28_testing.py tests/smoke/test_m28_smoke.py
 - [x] Headers, cookies, content type, and downloads; `assert_see` / `assert_see_text` / `assert_see_in_order` with HTML escaping, `assert_content`, `assert_streamed_content`
 - [x] JSON: `assert_json` (loose and strict), `assert_exact_json`, dotted `assert_json_path` with a value or a callback, `assert_json_missing_path`, fragments, counts, `*`-wildcard `assert_json_structure`, array / object shape
 - [x] Validation (`assert_valid` / `assert_invalid` by key, keys, or key → message), session assertions, and view assertions reading what Prism was given
-- [x] `artisan()` — `expects_question` / `expects_confirmation` / `expects_choice` / `expects_output` / `doesnt_expect_output` / `expects_table`, `assert_exit_code` / `assert_successful` / `assert_failed` / `assert_output_contains` / `assert_asked` / `assert_nothing_asked`; an unanswered question takes the command's default
+- [x] `smith()` — `expects_question` / `expects_confirmation` / `expects_choice` / `expects_output` / `doesnt_expect_output` / `expects_table`, `assert_exit_code` / `assert_successful` / `assert_failed` / `assert_output_contains` / `assert_asked` / `assert_nothing_asked`; an unanswered question takes the command's default
 - [x] Database: `assert_database_has` / `missing` / `count` / `empty` (by table or model), `assert_model_exists` / `missing`, `assert_soft_deleted` / `not_soft_deleted`; a failure prints the rows the table holds
 - [x] `fake()` / `fakeable()` / `restore_fakes()` reach mail, queue, notification, storage, event, http, process, broadcast, and scout; `FakeQueue`, `FakeNotifications`, and `FakeDisk` are new here
 - [x] `without_middleware()` / `with_middleware()` by alias, by class, or all of it, on the back of `HttpKernel.skip_middleware()`
@@ -699,7 +699,7 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 
 - [x] Laravel signature grammar (optional / default / array arguments, option shortcuts, arrays, descriptions)
 - [x] `Command` I/O surface, `fail`, `trap`, `with_progress_bar`, `Isolatable`, `PromptsForMissingInput`
-- [x] `Artisan` façade — `call`, `output`, `queue`, closure commands with container injection
+- [x] `Smith` façade — `call`, `output`, `queue`, closure commands with container injection
 - [x] Console events (`ConsoleStarting`, `CommandStarting`, `CommandFinished`) + `--isolated` locking
 - [x] One surface: the ~30 Typer callbacks are `Command` classes, `cli.py` declares none of its own, and what the front door offers is exactly what the kernel knows
 - [x] Discovery survives a broken command module, names it on every run rather than only on `list`, and reports a module discovered mid-import instead of dropping its commands
@@ -709,7 +709,7 @@ pytest -q tests/test_m30_*.py tests/smoke/test_m30_smoke.py
 - [x] `ServiceProvider.publishes()` + `smith vendor:publish` by provider, by tag, with `--force` / `--existing`; the framework declares `almasix-stubs` and `almasix-lang`
 - [x] Loupe allow-list: `config/loupe.py` `commands` / `alias` / `dont_alias`, with commands as callables in the shell
 - [x] The built-in catalogue — 102 commands (84 at M30, plus what later milestones brought), including `about`, `help`, `env`, `docs`, `route:list`, `config:show`, `db:show` / `db:table` / `db:monitor` / `db:wipe`, `model:show`, `migrate:install` / `reset` / `refresh`, the `queue:*` maintenance set, `env:encrypt` / `env:decrypt`, `cache:*`, `view:*`, `optimize`, `storage:unlink`, and the eleven `make:*` generators
-- [x] `console` rewritten in Laravel's Artisan section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
+- [x] `console` rewritten in Laravel's Smith section order with a generated command reference; the smoke contract fails if a section moves, a command is missing a row, or a description drifts from the command's own
 - [x] Living example: `smith progress:console` reports the one surface, the stub count, and the publish tags; the board marks M30 complete
 - [x] Deliberate deviations recorded in `docs/PLAN.md` with reasons — `config:cache` / `route:cache` / `event:cache` measured and declined, `view:cache` verifying rather than persisting, `db:show` without a size column, `db:wipe` refusing `--drop-views`
 - [x] 100% line and branch coverage on `almasix.console` and `almasix.smith`, the interactive prompt layer included: `tests/test_m9_prompts_driven.py` types into a real terminal over a pipe (arrows, space, Ctrl-C, corrections) instead of taking the non-interactive branch, and fails rather than hangs when a prompt is left waiting
@@ -871,7 +871,7 @@ cd examples/progress && python smith progress:deploy
 - [x] Default `GET /up` health probe (`ApplicationBuilder.with_health`); outside Almasix middleware stacks
 - [x] Starlight **Deployment** page (env, serve, optimize, migrate/queues, bare metal, container, releasing)
 - [x] `examples/deploy/` Dockerfile + compose (web + queue worker + Postgres, `/up` healthcheck)
-- [x] Package version **0.4.0** in `pyproject.toml` / `__version__` (0.3.0 already on PyPI; tag `v0.4.0` to publish)
+- [x] Package version **0.5.0** in `pyproject.toml` / `__version__` (0.3.0 already on PyPI; tag `v0.5.0` to publish)
 - [x] Living example: `smith progress:deploy`; the board marks M38 complete
 
 ---
@@ -1030,13 +1030,13 @@ pytest -q tests/test_m32_*.py tests/smoke/test_m32_smoke.py
 - [x] Every question has a flag and a documented `--no-interaction` default: `--stack`, `--database`, `--tests/--no-tests`, `--git` / `--branch`, `--install` / `--installer`, `--npm`, `--migrate`, `--path`, `--stubs`
 - [x] npm and the migrations are skipped rather than asked about when the answer could only be one thing (no Node / no `package.json`; dependencies not being installed)
 - [x] Without a terminal the whole run takes the documented defaults, so a pipeline never gets an install or a migration it did not ask for
-- [x] Four stacks boot: `tailwind`, `bootstrap`, `plain`, `none` — each with its own frontend and its own `errors:publish` bundle
-- [x] Four databases write `.env` and `config/database.py`; SQLite's file is created; a real `APP_KEY` is generated
+- [x] Four stacks boot: `tailwind`, `bootstrap`, `plain`, `none` — each with branded landing, `layouts/minimal` + `layouts/app`, login/register/dashboard, and stack-styled errors (Almasix orange accents, app-name branding)
+- [x] Five databases write `.env` and `config/database.py` (`sqlite` / `pgsql` / `mysql` / `mariadb` / `mongodb`); SQLite's file is created for `sqlite` and for `mongodb` (documents + SQLite SQL default); a real `APP_KEY` is generated
 - [x] `@vite` / `@viteReactRefresh`: the dev server while `public/hot` exists, the manifest once it does not, one link for a stylesheet a JS entry imports, a comment under `APP_DEBUG` and an error without it when nothing has been built
 - [x] The default migrations ship and run: `users`, `password_reset_tokens`, `sessions`, `cache`, `cache_locks`, `jobs`, `failed_jobs` — plus `app/models/user.py` and a `UserFactory`
 - [x] `cache:table`, `queue:table`, `queue:failed-table`, `session:table`, `notifications:table` render the same stubs the scaffold does
 - [x] `SESSION_DRIVER=database` reads and writes the `sessions` table, expires rows on read, and deletes on destroy
-- [x] Post-create steps report rather than raise: git init and commit, `uv` or `pip` install, `npm install && npm run build`, `smith migrate --force`; the next steps printed are only the ones still owed
+- [x] Post-create steps report rather than raise: git init and commit, `uv` or `pip` install, `npm install && npm run build`, `smith migrate --force`; each command's stdout/stderr streams live; the next steps printed are only the ones still owed
 - [x] Living example: `smith progress:install` scaffolds every stack and database, migrates one, boots it over HTTP, and forks the stub tree; the board marks M32 complete with proof naming the command
 - [x] Deviations named: no test-runner choice (pytest is the only one), no `job_batches` table (no batching feature to read it), the SPA stack stays with M36
 
@@ -1060,7 +1060,7 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 - [x] Groups hold attributes on the schedule and replay them onto every task defined inside, nesting included
 - [x] Hooks in Laravel's order, a hook taking a parameter handed the output as a `Stringable`, and the eight-method ping family over the M20 client
 - [x] Output to a file (replacing or appending) and to an inbox (always or only on failure), captured around every kind of task
-- [x] Tasks from a callback (sync or `async`), a Smith command, a queued job with its queue and connection, and a shell line; plus `Artisan.command(...).schedule([...])` and `Application.configure(...).with_schedule(...)`
+- [x] Tasks from a callback (sync or `async`), a Smith command, a queued job with its queue and connection, and a shell line; plus `Smith.command(...).schedule([...])` and `Application.configure(...).with_schedule(...)`
 - [x] The five lifecycle events on the event bus, with `ScheduledTaskSkipped` carrying why
 - [x] Commands: `schedule:run` / `work` / `list` / `test` / `interrupt` / `clear-cache`, and loading `routes/console.py` twice no longer schedules everything twice
 - [x] `scheduling` rewritten to 640 lines in Laravel's section order; the smoke contract fails if a documented method loses its mention, a section disappears, or a command loses its registration

@@ -1,4 +1,7 @@
-"""Logging channels."""
+"""Logging channels.
+
+App code: ``from almasix.log import Log`` then ``Log.info(...)``.
+"""
 
 from almasix.config import env
 

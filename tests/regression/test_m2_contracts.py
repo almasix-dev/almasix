@@ -93,7 +93,7 @@ def test_scaffolded_app_serves_via_route_dsl(
 
         page = client.get("/")
         assert page.headers["content-type"].startswith("text/html")
-        assert "Welcome to Almasix" in page.text
+        assert "Build something remarkable" in page.text
         assert "M2Serve" in page.text
 
         health = client.get("/api/health")

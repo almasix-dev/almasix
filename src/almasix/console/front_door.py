@@ -2,7 +2,7 @@
 
 Every Smith command is a :class:`~almasix.console.command.Command`. Typer's only
 job is to turn a terminal line into ``name`` plus ``argv`` and hand it to the
-kernel, so the CLI, ``Artisan.call``, and the scheduler all reach the same
+kernel, so the CLI, ``Smith.call``, and the scheduler all reach the same
 command through the same parser.
 """
 
@@ -51,7 +51,7 @@ class FrontDoor:
         ``routes/console.py`` — which needs a booted application, so that boot
         happens here, once, and only there.
         """
-        from almasix.console.facade import Artisan, drain_pending
+        from almasix.console.facade import Smith, drain_pending
 
         kernel = ConsoleKernel.for_cwd(root)
         kernel.discover_framework_commands()
@@ -64,7 +64,7 @@ class FrontDoor:
             except Exception as exc:
                 kernel.failures.append(DiscoveryFailure("the application", exc))
 
-        Artisan.set_kernel(kernel)
+        Smith.set_kernel(kernel)
         drain_pending(kernel)
         return kernel
 

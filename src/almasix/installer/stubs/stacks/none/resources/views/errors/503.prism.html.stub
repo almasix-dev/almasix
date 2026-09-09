@@ -1,0 +1,11 @@
+@extends('layouts.minimal')
+
+@section('title', '{{ status }} — {{ name }}')
+
+@section('content')
+  <div class="error-page">
+    <p class="code">{{ status }}</p>
+    <p class="lede">{{ message }}</p>
+    <p><a href="/">Back to {{ name }}</a></p>
+  </div>
+@endsection

@@ -101,7 +101,7 @@ def new(
     npm: bool | None = typer.Option(
         None,
         "--npm/--no-npm",
-        help="Run npm install and npm run build (default: no unless asked)",
+        help="Run npm install and npm run build (default: yes for Vite stacks when npm is on PATH)",
     ),
     migrate: bool | None = typer.Option(
         None,
@@ -167,6 +167,8 @@ def new(
         f"  tests     {'tests/ with pytest' if plan.tests else 'none'}"
     )
 
+    if any((plan.git, plan.install, plan.npm, plan.migrate)):
+        typer.echo("\nSetting up the application…")
     results = run_steps(plan, root)
     _report(results)
     _next_steps(plan, root, results)

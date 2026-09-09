@@ -62,7 +62,7 @@ def test_m2_s2_progress_routes_via_kernel(
         page = client.get("/")
         assert page.status_code == 200
         assert page.headers["content-type"].startswith("text/html")
-        assert "Welcome to Almasix" in page.text
+        assert "Build something remarkable" in page.text
 
         health = client.get("/api/health")
         assert health.status_code == 200

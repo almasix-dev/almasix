@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>@yield('title', 'Almasix')</title>
+  <link rel="icon" href="{{ asset('images/favicon.svg', absolute=False) }}" type="image/svg+xml">
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("almasix-theme");
+        var theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ asset('css/app.css', absolute=False) }}">
+  @yield('head')
+</head>
+<body>
+  <div class="shell shell-minimal">
+    <header class="site-header">
+      <a class="brand" href="/">Almasix</a>
+      <nav class="site-nav">
+        @guest
+          <a class="muted" href="/login">Sign in</a>
+          <a class="btn btn-primary" href="/register">Sign up</a>
+        @else
+          <a class="muted" href="/dashboard">Dashboard</a>
+        @endguest
+      </nav>
+    </header>
+    <main>
+      @yield('content')
+    </main>
+    <footer class="site-footer">
+      <p>Almasix · <code>examples/progress</code></p>
+    </footer>
+  </div>
+  <script src="{{ asset('js/app.js', absolute=False) }}" defer></script>
+  @stack('scripts')
+</body>
+</html>

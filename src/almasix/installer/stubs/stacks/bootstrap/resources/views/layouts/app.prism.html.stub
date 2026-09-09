@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>@yield('title', '{{ app_display }}')</title>
+  @vite(['resources/css/app.scss', 'resources/js/app.js'])
+</head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+  <header class="border-bottom bg-white">
+    <div class="container py-3 d-flex align-items-center justify-content-between">
+      <a href="/dashboard" class="fs-5 fw-semibold text-decoration-none text-dark">{{ name }}</a>
+      <nav class="d-flex align-items-center gap-3 small fw-medium">
+        <a class="text-secondary text-decoration-none" href="/">Home</a>
+        <a class="text-secondary text-decoration-none" href="/dashboard">Dashboard</a>
+        <form method="post" action="/logout" class="d-inline">
+          @csrf
+          <button type="submit" class="btn btn-link btn-sm text-secondary text-decoration-none p-0">Log out</button>
+        </form>
+      </nav>
+    </div>
+  </header>
+  <main class="flex-grow-1 container py-5">
+    @yield('content')
+  </main>
+</body>
+</html>

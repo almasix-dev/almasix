@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from almasix.console.command import Command
 from almasix.framework import app
-from almasix.log import logger
+from almasix.log import Log
 from almasix.support import Arr, Number, Str, blank, data_get, str_
 
 
@@ -42,7 +42,9 @@ class ProgressHelpersCommand(Command):
 
         # The global helpers wrap what the container already holds.
         self.info(f"app() → {app().base_path.name}")
-        logger("progress:helpers ran", {"milestone": "M50"})
+        Log.info("progress:helpers ran", extra={"milestone": "M50"})
+        Log.debug("helpers detail")
+        Log.success("helpers logged")
 
         self.success("helpers demo ok")
         return 0

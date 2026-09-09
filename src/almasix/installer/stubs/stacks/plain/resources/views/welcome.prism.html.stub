@@ -1,21 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{{ name }}</title>
-  {{-- Points at the Vite dev server while `npm run dev` runs, and at the
-       built files in public/build once `npm run build` has. --}}
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body>
-  <main>
-    <h1>Welcome to Almasix</h1>
-    <p>{{ name }} is running in {{ env }}.</p>
-    <p>
-      Web routes render HTML; API routes return JSON — try
-      <a href="{{ health_url }}">{{ health_url }}</a>.
-    </p>
-  </main>
-</body>
-</html>
+@extends('layouts.minimal')
+
+@section('title', '{{ app_display }}')
+
+@section('content')
+  <div class="wrap hero">
+    @isset(status)
+      <p class="flash flash-status" role="status">{{ status }}</p>
+    @endisset
+    <p class="eyebrow">{{ name }}</p>
+    <h1>Build something remarkable.</h1>
+    <p class="lede">{{ name }} is running in {{ env }}. Routing, auth, Articulate, and Prism are ready.</p>
+    <div class="actions">
+      @guest
+        <a class="btn" href="{{ register_url }}">Get started</a>
+        <a class="btn btn-ghost" href="{{ login_url }}">Log in</a>
+      @else
+        <a class="btn" href="{{ dashboard_url }}">Open dashboard</a>
+      @endguest
+      <a class="muted" href="{{ health_url }}">{{ health_url }}</a>
+    </div>
+    <div class="grid">
+      <div class="card"><h2>Session auth</h2><p>Login and registration with CSRF protection.</p></div>
+      <div class="card"><h2>Articulate ORM</h2><p>Models, migrations, and relationships.</p></div>
+      <div class="card"><h2>Prism views</h2><p>Layouts and Blade-familiar directives.</p></div>
+    </div>
+  </div>
+@endsection

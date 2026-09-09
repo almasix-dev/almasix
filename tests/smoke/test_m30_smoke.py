@@ -1,4 +1,4 @@
-"""M30 smoke — Artisan-shaped console surface in the living example."""
+"""M30 smoke — Smith-shaped console surface in the living example."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from almasix.console.facade import Artisan
+from almasix.console.facade import Smith
 from almasix.console.kernel import ConsoleKernel
 from almasix.smith.cli import app as smith_app
 from tests.support import purge_generated_app_modules, without_base_path
@@ -29,7 +29,7 @@ def progress_kernel(monkeypatch: pytest.MonkeyPatch) -> ConsoleKernel:
     kernel.load_console_routes()
     kernel.register_on_typer(smith_app)
     yield kernel
-    Artisan.set_kernel(None)
+    Smith.set_kernel(None)
 
 
 def test_signature_shortcuts_arrays_and_output(progress_kernel: ConsoleKernel) -> None:
@@ -62,16 +62,16 @@ def test_isolatable_command_takes_and_releases_its_lock(progress_kernel: Console
     held.release()
 
 
-def test_artisan_call_reaches_example_commands(progress_kernel: ConsoleKernel) -> None:
-    assert Artisan.call_silently("progress:hello", {"name": "Smith"}) == 0
-    assert "Hello, Smith" in Artisan.output()
-    assert Artisan.has("progress:console") is True
+def test_smith_call_reaches_example_commands(progress_kernel: ConsoleKernel) -> None:
+    assert Smith.call_silently("progress:hello", {"name": "Smith"}) == 0
+    assert "Hello, Smith" in Smith.output()
+    assert Smith.has("progress:console") is True
 
 
 PAGE = Path(__file__).resolve().parents[2] / "website" / "src" / "content" / "docs" / "console.md"
 
-#: Laravel's Artisan page, section for section. Almasix's extras follow them.
-ARTISAN_ORDER = [
+#: Laravel Artisan doc order, mapped onto Almasix headings (first section is Smith).
+LARAVEL_ARTISAN_DOC_ORDER = [
     "Smith",
     "Loupe REPL",
     "Writing commands",
@@ -112,11 +112,13 @@ def framework_commands() -> dict[str, type]:
     return {cls.name(): cls for cls in kernel.commands.values()}
 
 
-def test_the_page_follows_laravels_artisan_order() -> None:
+def test_the_page_follows_laravels_artisan_doc_order() -> None:
     """Someone reading both pages side by side should not have to hunt."""
     sections = page_sections()
 
-    assert [name for name in sections if name in ARTISAN_ORDER] == ARTISAN_ORDER
+    assert [
+        name for name in sections if name in LARAVEL_ARTISAN_DOC_ORDER
+    ] == LARAVEL_ARTISAN_DOC_ORDER
 
 
 def test_every_command_the_framework_ships_is_in_the_reference() -> None:

@@ -219,7 +219,7 @@ class QueuePruneFailedCommand(FailedJobCommand):
         hours = self.retention_hours()
         if hours is False:
             return self.INVALID
-        # ``Artisan.call`` passes the options it was given, not the signature's.
+        # ``Smith.call`` passes the options it was given, not the signature's.
         window = DEFAULT_RETENTION_HOURS if hours is None else hours
 
         repository = self.repository()

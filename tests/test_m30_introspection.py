@@ -15,7 +15,7 @@ import pytest
 from almasix import __version__
 from almasix.console.command import Command
 from almasix.console.commands.introspection import HelpCommand
-from almasix.console.facade import Artisan
+from almasix.console.facade import Smith
 from almasix.console.kernel import ConsoleKernel
 
 ROUTES = '''
@@ -52,9 +52,9 @@ def kernel(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[ConsoleK
     monkeypatch.chdir(tmp_path)
     built = ConsoleKernel.for_cwd(tmp_path)
     built.discover_framework_commands()
-    Artisan.set_kernel(built)
+    Smith.set_kernel(built)
     yield built
-    Artisan.set_kernel(None)
+    Smith.set_kernel(None)
 
 
 def configure(kernel: ConsoleKernel, values: dict[str, object]) -> None:

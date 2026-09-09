@@ -1,7 +1,18 @@
 """Web routes — browser facing, stateful, HTML responses."""
 
+from app.http.controllers.auth_controller import AuthController, DashboardController
 from app.http.controllers.welcome_controller import WelcomeController
 from almasix.routing import Route
 
 with Route.group(middleware=["web"]):
-    Route.get("/", [WelcomeController, "index"])
+    Route.get("/", [WelcomeController, "index"], name="home")
+
+    with Route.group(middleware=["guest"]):
+        Route.get("/login", [AuthController, "show_login"], name="login")
+        Route.post("/login", [AuthController, "login"])
+        Route.get("/register", [AuthController, "show_register"], name="register")
+        Route.post("/register", [AuthController, "register"])
+
+    with Route.group(middleware=["auth"]):
+        Route.get("/dashboard", [DashboardController, "index"], name="dashboard")
+        Route.post("/logout", [AuthController, "logout"], name="logout")

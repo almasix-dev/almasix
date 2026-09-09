@@ -46,6 +46,8 @@ def test_m32_demo_command_scaffolds_every_stack_and_migrates() -> None:
         "stack none       -> no Node",
         "database sqlite   -> DB_CONNECTION=sqlite, sqlite file: True",
         "database pgsql    -> DB_CONNECTION=pgsql, sqlite file: False",
+        "database mongodb  -> DB_CONNECTION=sqlite + MONGODB_*, sqlite file: True, sql default: sqlite",
+        "ui kit -> layouts + auth + dashboard",
         "0001_01_01_000000_create_users_table.py",
         "0001_01_01_000001_create_cache_table.py",
         "0001_01_01_000002_create_jobs_table.py",
@@ -84,6 +86,8 @@ def test_m32_docs_cover_the_installer_and_the_stacks() -> None:
         "--migrate",
     ):
         assert flag in installation, flag
+    assert "mongodb" in installation
+    assert "almasix[mongodb]" in installation
     for command in ("cache:table", "queue:table", "queue:failed-table", "session:table"):
         assert command in installation, command
 
@@ -99,6 +103,7 @@ def test_m32_board_marks_the_installer_complete(progress_client: TestClient) -> 
 
     assert by_id["M32"]["status"] == "complete"
     assert "smith progress:install" in by_id["M32"]["proof"]
+    assert any("layout" in item.lower() or "auth" in item.lower() for item in by_id["M32"]["proof"])
 
 
 def test_m32_readme_points_at_the_demo() -> None:

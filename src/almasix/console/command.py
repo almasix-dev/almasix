@@ -204,15 +204,15 @@ class Command:
 
     def call(self, command: str, arguments: dict[str, Any] | None = None) -> int:
         """Laravel ``$this->call()`` — run another command, showing its output."""
-        from almasix.console.facade import Artisan
+        from almasix.console.facade import Smith
 
-        return Artisan.call(command, arguments, app=self.app, kernel=self.kernel)
+        return Smith.call(command, arguments, app=self.app, kernel=self.kernel)
 
     def call_silently(self, command: str, arguments: dict[str, Any] | None = None) -> int:
         """Laravel ``$this->callSilently()`` — run another command, muting output."""
-        from almasix.console.facade import Artisan
+        from almasix.console.facade import Smith
 
-        return Artisan.call(command, arguments, app=self.app, silent=True, kernel=self.kernel)
+        return Smith.call(command, arguments, app=self.app, silent=True, kernel=self.kernel)
 
     # --- lifecycle ------------------------------------------------------
 

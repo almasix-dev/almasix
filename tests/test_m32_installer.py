@@ -26,6 +26,7 @@ from almasix.installer.scaffold import (
     find_stack,
     publish_scaffold_stubs,
     scaffold_app,
+    sql_connection_name,
     title_case,
     validate_app_name,
 )
@@ -59,9 +60,26 @@ def test_every_stack_scaffolds_a_tree_with_its_own_frontend(tmp_path: Path) -> N
 def test_the_stack_picks_the_error_view_bundle(tmp_path: Path) -> None:
     tailwind = scaffold_app("tw", destination=tmp_path / "tw", stack="tailwind")
     plain = scaffold_app("pl", destination=tmp_path / "pl", stack="plain")
+    none = scaffold_app("nn", destination=tmp_path / "nn", stack="none")
 
-    assert "class=" in (tailwind / "resources" / "views" / "errors" / "404.prism.html").read_text()
-    assert "<style>" in (plain / "resources" / "views" / "errors" / "404.prism.html").read_text()
+    tw_error = (tailwind / "resources" / "views" / "errors" / "404.prism.html").read_text()
+    plain_error = (plain / "resources" / "views" / "errors" / "404.prism.html").read_text()
+    none_error = (none / "resources" / "views" / "errors" / "404.prism.html").read_text()
+
+    assert "@extends('layouts.minimal')" in tw_error
+    assert "text-brand" in tw_error
+    assert "@extends('layouts.minimal')" in plain_error
+    assert "@extends('layouts.minimal')" in none_error
+    assert (tailwind / "resources" / "views" / "layouts" / "minimal.prism.html").is_file()
+    assert (tailwind / "resources" / "views" / "auth" / "login.prism.html").is_file()
+    login = (tailwind / "resources" / "views" / "auth" / "login.prism.html").read_text()
+    register = (tailwind / "resources" / "views" / "auth" / "register.prism.html").read_text()
+    assert "form_action" in login and "form_action" in register
+    auth = (tailwind / "app" / "http" / "controllers" / "auth_controller.py").read_text()
+    assert '"form_action"' in auth
+    welcome = (tailwind / "resources" / "views" / "welcome.prism.html").read_text()
+    assert "Build something remarkable" in welcome
+    assert "Welcome to Almasix" not in welcome
 
 
 def test_readme_and_env_carry_the_chosen_database(tmp_path: Path) -> None:
@@ -82,6 +100,20 @@ def test_sqlite_gets_its_file_created(tmp_path: Path) -> None:
 
     assert (root / "database" / "database.sqlite").is_file()
     assert "DB_DATABASE=database/database.sqlite" in (root / ".env").read_text()
+
+
+def test_mongodb_configures_documents_and_keeps_sqlite(tmp_path: Path) -> None:
+    root = scaffold_app("docs_app", destination=tmp_path / "docs_app", database="mongodb")
+
+    env = (root / ".env").read_text(encoding="utf-8")
+    assert "DB_CONNECTION=sqlite" in env
+    assert "DB_DATABASE=database/database.sqlite" in env
+    assert "MONGODB_HOST=127.0.0.1" in env
+    assert "MONGODB_PORT=27017" in env
+    assert "MONGODB_DATABASE=docs_app" in env
+    assert (root / "database" / "database.sqlite").is_file()
+    assert 'env("DB_CONNECTION", "sqlite")' in (root / "config" / "database.py").read_text()
+    assert find_database("mongodb").extra == "almasix[mongodb]"
 
 
 def test_the_app_key_is_generated_not_a_placeholder(tmp_path: Path) -> None:
@@ -196,7 +228,11 @@ def test_names_and_labels() -> None:
     assert title_case("my-shiny_app") == "MyShinyApp"
     assert find_database("mariadb").label == "MariaDB"
     assert "DB_DATABASE=shop" in database_env(find_database("mysql"), app_name="shop")
-    assert set(DATABASE_NAMES) == {"sqlite", "pgsql", "mysql", "mariadb"}
+    assert set(DATABASE_NAMES) == {"sqlite", "pgsql", "mysql", "mariadb", "mongodb"}
+    mongo = find_database("mongodb")
+    assert mongo.extra == "almasix[mongodb]"
+    assert sql_connection_name(mongo) == "sqlite"
+    assert "MONGODB_DATABASE=shop" in database_env(mongo, app_name="shop")
 
 
 # -- the questions -----------------------------------------------------------
@@ -241,12 +277,14 @@ def test_no_interaction_takes_the_documented_defaults(tmp_path: Path) -> None:
         Answers(),
         interactive=False,
         prompter=prompter,
+        node_available=lambda: True,
     )
 
     assert prompter.asked == []
     assert (plan.stack, plan.database) == ("tailwind", "sqlite")
     assert plan.tests is True
-    assert (plan.git, plan.install, plan.npm, plan.migrate) == (False, False, False, False)
+    assert (plan.git, plan.install, plan.migrate) == (False, False, False)
+    assert plan.npm is True
     assert plan.asked == []
 
 
@@ -364,7 +402,7 @@ def _plan(tmp_path: Path, **kwargs: object) -> InstallPlan:
 
 
 def test_nothing_runs_when_nothing_was_asked_for(tmp_path: Path) -> None:
-    results = run_steps(_plan(tmp_path), tmp_path)
+    results = run_steps(_plan(tmp_path, npm=False), tmp_path)
 
     assert [result.name for result in results] == ["git", "venv", "install", "npm", "migrate"]
     assert all(not result.ran for result in results)
@@ -428,10 +466,24 @@ def test_the_installer_prefers_uv_and_falls_back_to_pip(tmp_path: Path, monkeypa
     assert steps._python_install_command(_plan(tmp_path, installer="poetry"), root) is None
 
 
-def test_each_step_runs_its_commands_and_reports_the_first_error(
-    tmp_path: Path,
-    monkeypatch,
+def test_run_streams_subprocess_output_instead_of_capturing(
+    tmp_path: Path, monkeypatch, capsys
 ) -> None:
+    from almasix.installer import steps
+
+    calls: list[dict] = []
+
+    def fake_subprocess_run(*args, **kwargs):
+        calls.append(kwargs)
+        return subprocess.CompletedProcess(args[0], 0, stdout=None, stderr=None)
+
+    monkeypatch.setattr(steps.subprocess, "run", fake_subprocess_run)
+    completed = steps._run(("echo", "hello"), tmp_path)
+
+    assert completed.returncode == 0
+    assert calls and calls[0].get("capture_output") is False
+    assert "$ echo hello" in capsys.readouterr().out
+
     from almasix.installer import steps
 
     ran: list[list[str]] = []
@@ -499,10 +551,10 @@ def test_a_migration_failure_names_itself(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(steps.shutil, "which", lambda _name: "/usr/bin/git")
     results = {result.name: result for result in run_steps(plan, tmp_path)}
 
-    assert results["git"].detail.endswith("failed")
+    assert "failed" in results["git"].detail
     assert results["venv"].ok
-    assert results["install"].detail == "dependency install failed"
-    assert results["migrate"].detail == "smith migrate failed"
+    assert "dependency install failed" in results["install"].detail
+    assert "smith migrate failed" in results["migrate"].detail
 
 
 def test_step_result_reads_as_a_sentence() -> None:
@@ -657,11 +709,13 @@ def test_without_a_terminal_new_takes_the_non_interactive_defaults(
 
     monkeypatch.setattr(installer_cli, "run_steps", spy)
     monkeypatch.setattr("almasix.console.prompts.types.sys.stdin.isatty", lambda: False)
+    monkeypatch.setattr("almasix.installer.options._node_available", lambda: True)
     result = runner.invoke(almasix_app, ["new", "quiet", "--path", str(tmp_path)])
 
     assert result.exit_code == 0, result.stdout
     plan = seen[0]
-    assert (plan.install, plan.migrate, plan.git, plan.npm) == (False, False, False, False)
+    assert (plan.install, plan.migrate, plan.git) == (False, False, False)
+    assert plan.npm is True
     assert plan.asked == []
 
 

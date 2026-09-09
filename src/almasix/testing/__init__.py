@@ -24,7 +24,7 @@ from almasix.notifications.testing import (
 from almasix.queue.testing import FakeQueue, RecordedJob, fake_queue
 from almasix.testing.case import TestCase, boot_application
 from almasix.testing.client import TestClient
-from almasix.testing.console import AnswerSink, PendingCommand, artisan
+from almasix.testing.console import AnswerSink, PendingCommand, smith
 from almasix.testing.database import (
     assert_database_count,
     assert_database_empty,
@@ -61,7 +61,7 @@ __all__ = [
     "TestClient",
     "TestResponse",
     "TimeTraveller",
-    "artisan",
+    "smith",
     "assert_database_count",
     "assert_database_empty",
     "assert_database_has",

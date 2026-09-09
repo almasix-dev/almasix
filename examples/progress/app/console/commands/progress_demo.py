@@ -25,7 +25,7 @@ class ProgressDigestJob(QueueShouldQueue, Job):
 
 
 class WelcomeMail(ShouldQueue, Mailable):
-    def __init__(self, name: str = "Artisan") -> None:
+    def __init__(self, name: str = "Ada") -> None:
         self.name = name
 
     def envelope(self) -> Envelope:

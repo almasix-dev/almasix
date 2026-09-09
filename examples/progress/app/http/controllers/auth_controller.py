@@ -15,7 +15,7 @@ class AuthController(Controller):
         return view(
             "auth.login",
             {
-                "action": url("/login", absolute=False),
+                "form_action": url("/login", absolute=False),
                 "home_url": url("/", absolute=False),
             },
         )
@@ -56,7 +56,7 @@ class AuthController(Controller):
     async def show_confirm(self) -> Response:
         return view(
             "auth.confirm_password",
-            {"action": url("/confirm-password", absolute=False)},
+            {"form_action": url("/confirm-password", absolute=False)},
         )
 
     async def confirm(self, request: Request) -> Response:

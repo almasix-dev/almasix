@@ -532,6 +532,6 @@ def test_db_monitor_refuses_input_it_cannot_read_as_a_threshold(
 def test_db_monitor_can_be_called_in_process(
     kernel: ConsoleKernel, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """``Artisan.call`` passes no options, so every flag has to be optional."""
+    """``Smith.call`` passes no options, so every flag has to be optional."""
     assert kernel.run_command("db:monitor") == 0
     assert ["sqlite", "-"] in cells(capsys.readouterr().out)

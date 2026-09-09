@@ -34,7 +34,7 @@ methods pytest calls, and coroutines pytest awaits.
 | Base class | `src/almasix/testing/case.py` — `TestCase`, `boot_application()` |
 | HTTP client | `src/almasix/testing/client.py` — `TestClient` |
 | Response assertions | `src/almasix/testing/response.py` — `TestResponse` |
-| Console assertions | `src/almasix/testing/console.py` — `artisan()`, `PendingCommand` |
+| Console assertions | `src/almasix/testing/console.py` — `smith()`, `PendingCommand` |
 | Database helpers | `src/almasix/testing/database.py` |
 | Fakes | `src/almasix/testing/fakes.py` — `fake()`, `fakeable()`, `restore_fakes()` |
 | Middleware | `src/almasix/testing/middleware.py` |

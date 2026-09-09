@@ -2244,6 +2244,11 @@ Writes a message at INFO level to the default log channel and returns `None`.
 The optional second argument is context, which is appended to the line as
 `[key='value']` pairs.
 
+For day-to-day application logging prefer the [`Log` façade](/logging/) —
+`from almasix.log import Log`, then `Log.info(...)`, `Log.debug(...)`,
+`Log.success(...)`. Do not import Python's stdlib `logging` module for app
+messages; that API is a different thing.
+
 ```python
 from almasix.log import info
 

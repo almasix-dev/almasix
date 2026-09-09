@@ -1,4 +1,4 @@
-"""Smith — Almasix's in-app CLI (Artisan equivalent). Prefer ``python smith …``.
+"""Smith — Almasix's in-app CLI (Laravel Artisan equivalent). Prefer ``python smith …``.
 
 ``app`` is resolved on attribute access rather than imported here. Importing
 it eagerly would build the CLI — and with it discover every command module —

@@ -23,7 +23,7 @@ in a monorepo — does **not** put `smith` on `PATH`.
 
 `python smith list` prints every command Smith can reach, grouped by namespace, and `python smith help <command>` describes one. [Command reference](#command-reference) lists what ships with the framework.
 
-Framework commands (`serve`, `migrate`, `make:*`, …) live on the same surface as the `Command` classes your application declares — there is no second kind of command, which is why `Artisan.call` and the scheduler reach all of them.
+Framework commands (`serve`, `migrate`, `make:*`, …) live on the same surface as the `Command` classes your application declares — there is no second kind of command, which is why `Smith.call` and the scheduler reach all of them.
 
 ## Loupe REPL
 
@@ -97,13 +97,13 @@ Commands do not need a class. Define them in `routes/console.py`, the way Larave
 
 ```python
 # routes/console.py
-from almasix.console import Artisan
+from almasix.console import Smith
 
 def send(user: str, queue: str) -> int:
     print(f"Sending to {user} on {queue}")
     return 0
 
-Artisan.command("mail:send {user} {--queue=default}", send).purpose("Send a message")
+Smith.command("mail:send {user} {--queue=default}", send).purpose("Send a message")
 ```
 
 Parameters are filled by name from the command's arguments and options. A parameter named `command` receives the `Command` instance itself, and any parameter type-hinted with a class is resolved from the container:
@@ -113,7 +113,7 @@ def report(command, reports: ReportService, format: str = "text") -> int:
     command.info(reports.render(format))
     return 0
 
-Artisan.command("report:daily {--format=text}", report)
+Smith.command("report:daily {--format=text}", report)
 ```
 
 `purpose()` (aliased as `describe()`) sets the description shown by `smith list`. Without it, the callable's first docstring line is used.
@@ -226,7 +226,7 @@ sent = self.with_progress_bar(users, lambda user: mailer.send(user))
 3. Files under `app/console/commands/*.py`, when that directory is not an importable package
 4. Closure commands defined in `routes/console.py`
 
-There is no list to maintain: a `Command` subclass with a `signature` in one of those places is a command. Everything Smith can run is a `Command` class, which is why `Artisan.call`, the scheduler, and the CLI all reach exactly the same set.
+There is no list to maintain: a `Command` subclass with a `signature` in one of those places is a command. Everything Smith can run is a `Command` class, which is why `Smith.call`, the scheduler, and the CLI all reach exactly the same set.
 
 A command module that fails to import does not take the rest of the CLI down with it. Smith reports it and carries on:
 
@@ -239,21 +239,21 @@ Failed command *runs* report through the exception `Handler` before exiting.
 
 ## Programmatically executing commands
 
-The `Artisan` façade runs commands from anywhere — controllers, jobs, other commands:
+The `Smith` façade runs commands from anywhere — controllers, jobs, other commands:
 
 ```python
-from almasix.console import Artisan
+from almasix.console import Smith
 
-Artisan.call("mail:send 7 --queue=bulk")
-Artisan.call("mail:send", {"user": 7, "--queue": "bulk", "--cc": ["a@x.test", "b@x.test"]})
+Smith.call("mail:send 7 --queue=bulk")
+Smith.call("mail:send", {"user": 7, "--queue": "bulk", "--cc": ["a@x.test", "b@x.test"]})
 ```
 
-Keys beginning with `--` are options; a `True` boolean passes the flag and `False` omits it; lists repeat the option. `Artisan.output()` returns everything the last call printed, and `Artisan.call_silently()` runs without echoing it.
+Keys beginning with `--` are options; a `True` boolean passes the flag and `False` omits it; lists repeat the option. `Smith.output()` returns everything the last call printed, and `Smith.call_silently()` runs without echoing it.
 
-To run a command on a queue worker, `await Artisan.queue()` (Almasix's queue dispatch is async):
+To run a command on a queue worker, `await Smith.queue()` (Almasix's queue dispatch is async):
 
 ```python
-await Artisan.queue("mail:send", {"user": 7}, queue="bulk")
+await Smith.queue("mail:send", {"user": 7}, queue="bulk")
 ```
 
 ### Calling commands from other commands

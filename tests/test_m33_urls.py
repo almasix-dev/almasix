@@ -560,3 +560,20 @@ def test_the_route_directives_and_helpers_reach_templates(routed: Router, tmp_pa
     # Outside a request there is no current route, so the name is empty and
     # `route_is` is False rather than an error in the middle of a page.
     assert "<p>|False</p>" in rendered
+
+
+def test_a_view_action_string_is_not_replaced_by_the_action_helper(
+    routed: Router, tmp_path: Any
+) -> None:
+    """Forms pass ``action="/register"``; the ``action()`` helper must not win."""
+    from almasix.prism.engine import Engine
+
+    (tmp_path / "form.prism.html").write_text(
+        '<form method="post" action="{{ action }}"></form>\n',
+        encoding="utf-8",
+    )
+
+    rendered = Engine(paths=[tmp_path]).render("form", {"action": "/register"})
+
+    assert 'action="/register"' in rendered
+    assert "function action" not in rendered

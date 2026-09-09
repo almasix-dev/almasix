@@ -11,6 +11,24 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.5.0
+
+- **Breaking: `Artisan` → `Smith`** — console façade is `Smith.call` /
+  `Smith.command` / `Smith.queue`; testing helper is `smith()` /
+  `TestCase.smith()`. No deprecated alias — see the
+  [Upgrade Guide](/prologue/upgrade/)
+- **Installer UX** — MongoDB as a documents option; live step logs; rich UI kit
+  (layouts, auth, dashboard, stack error pages); default `npm install && npm
+  run build` for Vite stacks when Node is available
+- **Console polish** — One Dark Pro styled output; schedule worker timestamps
+  and task output; `inspire` / `list` / `route:list` / `about` colors
+- **Logging** — `Log` façade (`Log.info`, `Log.success`, …); docs warn against
+  importing stdlib `logging` for app messages
+- **Prism** — view data is not overwritten by URL helpers named the same
+  (`action` / `form_action` fix for auth forms)
+
+Tag `v0.5.0` after merge to publish to PyPI.
+
 ## 0.4.0
 
 - **Deployment** — production guide for ASGI apps: `smith serve --workers`,

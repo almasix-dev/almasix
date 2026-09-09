@@ -79,8 +79,8 @@ class ProgressDeployCommand(Command):
         self.info("publish.yml -> Trusted Publishing (PyPI + TestPyPI)")
 
         self.info(f"almasix.__version__ -> {__version__}")
-        if __version__ != "0.4.0":
-            self.error("expected package version 0.4.0 for this release line")
+        if __version__ != "0.5.0":
+            self.error("expected package version 0.5.0 for this release line")
             return 1
 
         self.success("deployment + production ops ok")

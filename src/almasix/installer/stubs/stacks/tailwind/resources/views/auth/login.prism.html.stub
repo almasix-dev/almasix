@@ -1,0 +1,38 @@
+@extends('layouts.minimal')
+
+@section('title', 'Log in — {{ app_display }}')
+
+@section('content')
+  <div class="mx-auto max-w-md px-6 py-16">
+    <h1 class="text-2xl font-semibold tracking-tight">Log in to {{ name }}</h1>
+    <p class="mt-2 text-sm text-muted">Welcome back. Use the account you registered with.</p>
+    @isset(error)
+      <p class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">{{ error }}</p>
+    @endisset
+    @isset(status)
+      <p class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">{{ status }}</p>
+    @endisset
+    <form method="post" action="{{ form_action }}" class="mt-8 space-y-4">
+      @csrf
+      <label class="block text-sm font-medium">
+        Email
+        <input type="email" name="email" required autocomplete="username"
+               class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"/>
+      </label>
+      <label class="block text-sm font-medium">
+        Password
+        <input type="password" name="password" required autocomplete="current-password"
+               class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"/>
+      </label>
+      <label class="flex items-center gap-2 text-sm text-muted">
+        <input type="checkbox" name="remember" value="1" class="rounded border-slate-300 text-brand focus:ring-brand"/>
+        Remember me
+      </label>
+      <button type="submit" class="w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-soft">Log in</button>
+    </form>
+    <p class="mt-6 text-center text-sm text-muted">
+      No account?
+      <a class="font-medium text-brand hover:underline" href="{{ register_url }}">Sign up</a>
+    </p>
+  </div>
+@endsection

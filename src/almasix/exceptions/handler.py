@@ -27,6 +27,15 @@ ReportCallback = Callable[[BaseException], bool | None]
 RenderCallback = Callable[[Any, BaseException], StarletteResponse | None]
 
 
+def _app_name() -> str:
+    try:
+        from almasix.config import config
+
+        return str(config("app.name", "Almasix"))
+    except Exception:
+        return "Almasix"
+
+
 class Handler:
     """Application exception handler (Laravel-shaped)."""
 
@@ -221,7 +230,12 @@ class Handler:
             return None
         return view(
             name,
-            {"status": status, "message": message},
+            {
+                "status": status,
+                "message": message,
+                "name": _app_name(),
+                "__authenticated": False,
+            },
             status=status,
         )
 

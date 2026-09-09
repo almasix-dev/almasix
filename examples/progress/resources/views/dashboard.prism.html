@@ -1,0 +1,16 @@
+@extends('layouts.app')
+
+@section('title', 'Dashboard — Almasix')
+
+@section('content')
+  <section class="section">
+    @isset(status)
+      <p class="flash flash-status" role="status">{{ status }}</p>
+    @endisset
+    <h1>Hello, {{ user_name }}</h1>
+    <p class="sub">
+      Signed-in landing page from the installer UI kit — progress keeps the path
+      so scaffold gaps stay visible.
+    </p>
+  </section>
+@endsection

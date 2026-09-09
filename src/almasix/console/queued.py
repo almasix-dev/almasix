@@ -1,4 +1,4 @@
-"""Queue job wrapper for ``Artisan.queue``.
+"""Queue job wrapper for ``Smith.queue``.
 
 Kept out of ``almasix.console.facade`` so importing the console does not pull in
 the ORM-backed queue package (and its import cycle) at startup.
@@ -30,6 +30,6 @@ class CallQueuedCommand(Job, ShouldQueue):
             self.queue = queue
 
     def handle(self) -> int:
-        from almasix.console.facade import Artisan
+        from almasix.console.facade import Smith
 
-        return Artisan.call(self.command, self.parameters, silent=True)
+        return Smith.call(self.command, self.parameters, silent=True)

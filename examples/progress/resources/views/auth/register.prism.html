@@ -1,0 +1,37 @@
+@extends('layouts.app')
+
+@section('title', 'Sign up — Almasix')
+
+@section('content')
+  <section class="section auth-panel">
+    <h1>Create an account</h1>
+    <p class="sub">
+      Session + CSRF + registration scaffold path — kept so progress stays a
+      superset of <code>almasix new</code>.
+    </p>
+    @isset(error)
+      <p class="flash flash-error" role="alert">{{ error }}</p>
+    @endisset
+    <form method="post" action="{{ form_action }}" class="auth-form">
+      @csrf
+      <label>
+        Name
+        <input type="text" name="name" required autocomplete="name">
+      </label>
+      <label>
+        Email
+        <input type="email" name="email" required autocomplete="username">
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" required autocomplete="new-password">
+      </label>
+      <label>
+        Confirm password
+        <input type="password" name="password_confirmation" required autocomplete="new-password">
+      </label>
+      <button type="submit" class="btn btn-primary">Create account</button>
+    </form>
+    <p class="sub"><a href="{{ login_url }}">Already registered? Sign in</a></p>
+  </section>
+@endsection

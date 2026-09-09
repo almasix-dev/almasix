@@ -139,11 +139,11 @@ Every prompt has a command-line option and a documented default, so the same
 | Question | Flag | Default without interaction |
 | --- | --- | --- |
 | Frontend stack | `--stack tailwind\|bootstrap\|plain\|none` | `tailwind` |
-| Database | `--database sqlite\|pgsql\|mysql\|mariadb` | `sqlite` |
+| Database | `--database sqlite\|pgsql\|mysql\|mariadb\|mongodb` | `sqlite` |
 | pytest suite under `tests/` | `--tests` / `--no-tests` | scaffolded |
 | git repository | `--git` / `--no-git`, `--branch NAME` | not initialized |
 | Python dependencies | `--install` / `--no-install`, `--installer auto\|uv\|pip` | not installed (creates `.venv` + `pip install -e .` when yes) |
-| `npm install && npm run build` | `--npm` / `--no-npm` | not run |
+| `npm install && npm run build` | `--npm` / `--no-npm` | run for Vite stacks when `npm` is on PATH |
 | Default migrations | `--migrate` / `--no-migrate` | not run (scaffolds users/sessions/cache/jobs; runs them when yes) |
 | Where the app is created | `--path DIR` | the working directory |
 | Which stubs to scaffold from | `--stubs DIR` | Almasix's own |
@@ -171,10 +171,14 @@ for the script that did not say.
 
 | Stack | Ships | Error views |
 | --- | --- | --- |
-| `tailwind` | `package.json`, `vite.config.js`, `resources/css/app.css` importing Tailwind 4 | Tailwind-classed |
-| `bootstrap` | Bootstrap 5 through Sass in `resources/css/app.scss` | Bootstrap-classed |
-| `plain` | Vite with a hand-written stylesheet — no framework | unstyled defaults |
-| `none` | no Node, no build; `public/css/app.css` is served as it is written | unstyled defaults |
+| `tailwind` | Vite + Tailwind 4, rich landing/auth/layouts, branded errors | Tailwind-classed |
+| `bootstrap` | Vite + Bootstrap 5 Sass, same UI kit | Bootstrap-classed |
+| `plain` | Vite + hand-written CSS (Almasix brand tokens), same UI kit | default bundle, kit overrides |
+| `none` | no Node; `public/css/app.css`; same UI kit | default bundle, kit overrides |
+
+Every stack scaffolds **two layouts** (`layouts/minimal`, `layouts/app`), a branded
+landing page, login/register, a dashboard, and stack-styled error pages — centered
+on the application name with Almasix orange accents.
 
 The three Vite stacks ship `vite-plugin-almasix.js`, a dozen lines that write
 `public/hot` while the dev server runs. Prism's `@vite` directive reads that
@@ -183,8 +187,9 @@ point at the manifest `npm run build` wrote. See
 [Asset Bundling](/asset-bundling/).
 
 The stack also picks which error-view bundle is published into
-`resources/views/errors/`, so a 404 page matches the CSS the application
-actually loads. Change your mind later with `smith errors:publish --bundle`.
+`resources/views/errors/`, then the stack's own richer error stubs overwrite
+those files so a 404 matches the CSS the application loads. Change your mind
+later with `smith errors:publish --bundle`.
 
 ## Databases
 
@@ -195,15 +200,20 @@ SQLite works out of the box, and the installer creates
 pip install almasix[pgsql]    # PostgreSQL
 pip install almasix[mysql]    # MySQL
 pip install almasix[mariadb]  # MariaDB
+pip install almasix[mongodb]  # MongoDB (Articulate documents)
 pip install almasix[sqlsrv]   # SQL Server
 pip install almasix[oracle]   # Oracle (optional)
-pip install almasix[db]       # all of the above
+pip install almasix[db]       # all SQL engines above (not Mongo)
 ```
 
-`--database` writes the matching `.env` block and points
-`config/database.py`'s default at it; every other connection stays in the file,
-ready for an environment variable to select it. See
-[Database: Getting Started](/database/).
+`--database` writes the matching `.env` block. For the SQL engines it also
+points `config/database.py`'s default at that connection. Choosing **`mongodb`**
+configures `MONGODB_*` for Articulate document models and still keeps
+**SQLite** as the SQL default so the scaffolded users/sessions/cache/jobs
+migrations can run. Every other connection stays in the file, ready for an
+environment variable to select it. See
+[Database: Getting Started](/database/) and
+[Document stores](/database/documents/).
 
 ## The default migrations
 

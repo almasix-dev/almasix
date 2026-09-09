@@ -1,2 +1,21 @@
-// Import Bootstrap in full, then override it below.
+// Almasix brand accents on Bootstrap 5
+$brand: #f1511b;
+$brand-soft: #ff7a4d;
+
 @import "bootstrap/scss/bootstrap";
+
+:root {
+  --almasix-brand: #{$brand};
+  --almasix-brand-soft: #{$brand-soft};
+}
+
+.text-brand { color: var(--almasix-brand) !important; }
+.bg-brand { background-color: var(--almasix-brand) !important; }
+.btn-brand {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #{$brand};
+  --bs-btn-border-color: #{$brand};
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #{$brand-soft};
+  --bs-btn-hover-border-color: #{$brand-soft};
+}

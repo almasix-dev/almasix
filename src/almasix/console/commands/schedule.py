@@ -7,11 +7,24 @@ clearing up after a stuck one.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-import typer
+from rich.style import Style
+from rich.text import Text
 
 from almasix.console.command import Command
+from almasix.console.output import Output
+from almasix.console.prompts.style import (
+    CHECK,
+    CROSS,
+    OD_COMMENT,
+    OD_CYAN,
+    OD_FG,
+    OD_GREEN,
+    OD_RED,
+    OD_YELLOW,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -20,25 +33,73 @@ if TYPE_CHECKING:
     from almasix.console.scheduling.runner import Outcome, Runner
     from almasix.console.scheduling.schedule import Schedule
 
+_STYLE_STAMP = Style(color=OD_COMMENT)
+_STYLE_RUNNING = Style(color=OD_CYAN, bold=True)
+_STYLE_NAME = Style(color=OD_FG, bold=True)
+_STYLE_DONE = Style(color=OD_GREEN, bold=True)
+_STYLE_FAIL = Style(color=OD_RED, bold=True)
+_STYLE_SKIP = Style(color=OD_YELLOW, bold=True)
+_STYLE_META = Style(color=OD_COMMENT)
+_STYLE_OUT = Style(color=OD_FG)
+
+
+def _stamp() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _format_runtime(seconds: float | None) -> str:
+    if seconds is None:
+        return ""
+    if seconds < 1:
+        return f"{seconds * 1000:.0f}ms"
+    if seconds < 60:
+        return f"{seconds:.2f}s"
+    minutes, rem = divmod(seconds, 60)
+    return f"{int(minutes)}m{rem:04.1f}s"
+
 
 def _report_start(event: Event) -> None:
-    typer.echo(f"Running: {event.summary()}")
+    line = Text()
+    line.append(f"  {_stamp()}  ", style=_STYLE_STAMP)
+    line.append("Running: ", style=_STYLE_RUNNING)
+    line.append(event.summary(), style=_STYLE_NAME)
+    Output().write(line)
 
 
 def _report_finish(outcome: Outcome) -> None:
+    summary = outcome.event.summary()
+    stamp = _stamp()
+    runtime = _format_runtime(outcome.runtime)
+    out = Output()
+
     if outcome.skipped:
-        typer.secho(f"  skipped: {outcome.event.summary()}", fg=typer.colors.YELLOW)
-    elif outcome.code != 0:
-        _red(f"  exit {outcome.code}: {outcome.event.summary()}")
+        line = Text()
+        line.append(f"  {stamp}  ", style=_STYLE_STAMP)
+        line.append("skipped: ", style=_STYLE_SKIP)
+        line.append(summary, style=_STYLE_NAME)
+        out.write(line)
+        return
 
+    if outcome.output and outcome.output.strip():
+        for raw in outcome.output.rstrip().splitlines():
+            body = Text()
+            body.append("                     ", style=_STYLE_STAMP)
+            body.append(raw, style=_STYLE_OUT)
+            out.write(body)
 
-def _red(message: str) -> None:
-    """Red on **stdout**.
-
-    ``self.error()`` writes to stderr; the schedule's failure lines have always
-    gone to stdout, next to the ``Running:`` line they belong to.
-    """
-    typer.secho(message, fg=typer.colors.RED)
+    line = Text()
+    line.append(f"  {stamp}  ", style=_STYLE_STAMP)
+    if outcome.code != 0:
+        line.append(f"{CROSS} ", style=_STYLE_FAIL)
+        line.append(f"exit {outcome.code}: ", style=_STYLE_FAIL)
+        line.append(summary, style=_STYLE_NAME)
+    else:
+        line.append(f"{CHECK} ", style=_STYLE_DONE)
+        line.append("DONE  ", style=_STYLE_DONE)
+        line.append(summary, style=_STYLE_NAME)
+    if runtime:
+        line.append(f"  {runtime}", style=_STYLE_META)
+    out.write(line)
 
 
 def _pick_task(events: Sequence[Event], name: str) -> Event | None:
@@ -64,7 +125,7 @@ class ScheduleCommand(Command):
 
         ``routes/console.py`` is already loaded by the time a command runs, so
         the schedule is simply the one every ``schedule.…`` call built. Tasks
-        go back through ``Artisan``, which means a scheduled command is parsed
+        go back through ``Smith``, which means a scheduled command is parsed
         and run exactly like a typed one.
         """
         from almasix.console.scheduling import schedule
@@ -81,7 +142,7 @@ class ScheduleRunCommand(ScheduleCommand):
 
         schedule, runner = self.scheduler()
         if not schedule.due_events() and not schedule.has_sub_minute_events():
-            self.line("No scheduled tasks are ready.")
+            self.comment("No scheduled tasks are ready.")
             return self.SUCCESS
 
         outcomes = run_schedule(
@@ -113,7 +174,9 @@ class ScheduleWorkCommand(ScheduleCommand):
             return self.INVALID
 
         schedule, runner = self.scheduler()
-        self.line("Schedule worker started. Press Ctrl-C to stop.")
+        self.output.title("Schedule worker started")
+        self.comment("  Press Ctrl-C to stop.")
+        self.line()
         try:
             while True:
                 run_schedule(
@@ -125,7 +188,8 @@ class ScheduleWorkCommand(ScheduleCommand):
                 )
                 time.sleep(max(1, sleep))
         except KeyboardInterrupt:
-            self.line("Schedule worker stopped.")
+            self.line()
+            self.output.label("Schedule worker stopped.")
         return self.SUCCESS
 
 
@@ -134,12 +198,11 @@ class ScheduleListCommand(ScheduleCommand):
     description = "List the scheduled tasks and when each next runs"
 
     def handle(self) -> int:
-        from datetime import datetime
         from zoneinfo import ZoneInfo
 
         schedule, _ = self.scheduler()
         if not schedule.events:
-            self.line("No scheduled tasks are defined.")
+            self.comment("No scheduled tasks are defined.")
             return self.SUCCESS
 
         timezone = str(self.option("timezone") or "")
@@ -163,9 +226,16 @@ class ScheduleListCommand(ScheduleCommand):
             )
 
         width = max(len(row[0]) for row in rows)
+        self.output.label("Scheduled tasks")
         for frequency, summary, description, next_run in rows:
-            suffix = f"  ({description})" if description else ""
-            self.line(f"  {frequency:<{width}}  {summary}{suffix}  next: {next_run}")
+            line = Text()
+            line.append(f"  {frequency:<{width}}  ", style=_STYLE_RUNNING)
+            line.append(summary, style=_STYLE_NAME)
+            if description:
+                line.append(f"  ({description})", style=_STYLE_META)
+            line.append("  next: ", style=_STYLE_META)
+            line.append(next_run, style=_STYLE_DONE)
+            self.output.write(line)
         return self.SUCCESS
 
 
@@ -178,19 +248,21 @@ class ScheduleTestCommand(ScheduleCommand):
 
         schedule, runner = self.scheduler()
         if not schedule.events:
-            self.line("No scheduled tasks are defined.")
+            self.comment("No scheduled tasks are defined.")
             return self.SUCCESS
 
         name = str(self.option("name") or "")
         event = _pick_task(schedule.events, name)
         if event is None:
-            _red(f"No scheduled task matches {name!r}.")
+            line = Text()
+            line.append(f"{CROSS} ", style=_STYLE_FAIL)
+            line.append(f"No scheduled task matches {name!r}.", style=_STYLE_FAIL)
+            self.output.write(line)
             return self.FAILURE
 
-        self.line(f"Running: {event.summary()}")
+        _report_start(event)
         outcome = run_task(event, base_path=self.app.base_path, runner=runner)
-        if outcome.output:
-            self.line(outcome.output.rstrip())
+        _report_finish(outcome)
         return outcome.code
 
 
@@ -203,7 +275,7 @@ class ScheduleInterruptCommand(ScheduleCommand):
 
         schedule, _ = self.scheduler()
         interrupt(base_path=self.app.base_path, store=schedule.cache_store)
-        self.line("Interrupt signalled for the current minute.")
+        self.info("Interrupt signalled for the current minute.")
         return self.SUCCESS
 
 
@@ -217,8 +289,8 @@ class ScheduleClearCacheCommand(ScheduleCommand):
         schedule, _ = self.scheduler()
         cleared = clear_cache(schedule)
         if not cleared:
-            self.line("No scheduled task locks were held.")
+            self.comment("No scheduled task locks were held.")
             return self.SUCCESS
         for name in cleared:
-            self.line(f"Released lock for: {name}")
+            self.success(f"Released lock for: {name}")
         return self.SUCCESS

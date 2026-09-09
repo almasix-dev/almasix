@@ -1,0 +1,35 @@
+@extends('layouts.minimal')
+
+@section('title', 'Log in — {{ app_display }}')
+
+@section('content')
+  <div class="container py-5" style="max-width: 28rem">
+    <h1 class="h3 fw-semibold">Log in to {{ name }}</h1>
+    <p class="text-secondary small">Welcome back. Use the account you registered with.</p>
+    @isset(error)
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    @endisset
+    @isset(status)
+      <div class="alert alert-success" role="status">{{ status }}</div>
+    @endisset
+    <form method="post" action="{{ form_action }}" class="mt-4">
+      @csrf
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" required autocomplete="username" class="form-control"/>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" required autocomplete="current-password" class="form-control"/>
+      </div>
+      <div class="form-check mb-3">
+        <input type="checkbox" name="remember" value="1" class="form-check-input" id="remember"/>
+        <label class="form-check-label" for="remember">Remember me</label>
+      </div>
+      <button type="submit" class="btn btn-brand w-100">Log in</button>
+    </form>
+    <p class="text-center text-secondary small mt-4">
+      No account? <a href="{{ register_url }}">Sign up</a>
+    </p>
+  </div>
+@endsection

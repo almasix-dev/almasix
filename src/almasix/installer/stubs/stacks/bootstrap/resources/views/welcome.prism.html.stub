@@ -1,21 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{{ name }}</title>
-  {{-- Points at the Vite dev server while `npm run dev` runs, and at the
-       built files in public/build once `npm run build` has. --}}
-  @vite(['resources/css/app.scss', 'resources/js/app.js'])
-</head>
-<body class="bg-body-tertiary">
-  <main class="container py-5" style="max-width: 42rem">
-    <h1 class="display-5 fw-semibold">Welcome to Almasix</h1>
-    <p class="text-secondary">{{ name }} is running in {{ env }}.</p>
-    <p class="text-secondary">
-      Web routes render HTML; API routes return JSON — try
-      <a href="{{ health_url }}">{{ health_url }}</a>.
+@extends('layouts.minimal')
+
+@section('title', '{{ app_display }}')
+
+@section('content')
+  <div class="container py-5" style="max-width: 56rem">
+    @isset(status)
+      <div class="alert alert-success" role="status">{{ status }}</div>
+    @endisset
+    <p class="text-brand fw-semibold text-uppercase small mb-2">{{ name }}</p>
+    <h1 class="display-5 fw-semibold">Build something remarkable.</h1>
+    <p class="lead text-secondary col-lg-8 px-0">
+      {{ name }} is running in {{ env }}. Routing, auth, Articulate, and Prism are ready.
     </p>
-  </main>
-</body>
-</html>
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      @guest
+        <a href="{{ register_url }}" class="btn btn-brand">Get started</a>
+        <a href="{{ login_url }}" class="btn btn-outline-secondary">Log in</a>
+      @else
+        <a href="{{ dashboard_url }}" class="btn btn-brand">Open dashboard</a>
+      @endguest
+      <a href="{{ health_url }}" class="btn btn-link">{{ health_url }}</a>
+    </div>
+    <div class="row g-3 mt-5">
+      <div class="col-md-4"><div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h5">Session auth</h2><p class="card-text text-secondary small">Login and registration with CSRF protection.</p></div></div></div>
+      <div class="col-md-4"><div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h5">Articulate ORM</h2><p class="card-text text-secondary small">Models, migrations, and relationships.</p></div></div></div>
+      <div class="col-md-4"><div class="card h-100 shadow-sm"><div class="card-body"><h2 class="h5">Prism views</h2><p class="card-text text-secondary small">Layouts and Blade-familiar directives.</p></div></div></div>
+    </div>
+  </div>
+@endsection

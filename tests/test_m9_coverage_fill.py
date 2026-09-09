@@ -99,12 +99,11 @@ def test_command_helpers_and_unimplemented(monkeypatch: pytest.MonkeyPatch) -> N
     assert NoSigCommand.name() == "NoSigCommand"
 
 
-def test_output_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_output_helpers(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.setenv("ALMASIX_PROMPTS_INTERACTIVE", "0")
     out = Output()
-    echoes: list[str] = []
-    monkeypatch.setattr(typer, "echo", lambda msg="": echoes.append(str(msg)))
-    monkeypatch.setattr(typer, "secho", lambda msg, **_: echoes.append(str(msg)))
     out.line("l")
     out.info("i")
     out.comment("c")
@@ -115,9 +114,19 @@ def test_output_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
     out.new_line(2)
     out.table(["h"], [["r"], []])
     out.table(["a"], [["only", "extra"]])  # extra cell ignored
+    out.table(["Method", "URI"], [["GET|HEAD", "/"]])
+    out.title("Almasix")
+    out.namespace("Usage:")
+    out.two_column("inspire", "Display an inspiring quote", width=8)
+    out.quote("Simplicity is the ultimate sophistication.", "Leonardo da Vinci")
     assert out.confirm("ok?", default=True) is True
-    assert any("✔" in e and "s" in e for e in echoes)
-    assert any("✘" in e and "e" in e for e in echoes)
+    captured = capsys.readouterr()
+    out_text = captured.out + captured.err
+    assert "✔" in out_text and "s" in out_text
+    assert "✘" in out_text and "e" in out_text
+    assert "GET|HEAD" in out_text
+    assert "inspire" in out_text
+    assert "Leonardo da Vinci" in out_text
 
 
 def test_parse_argv_flags_and_required() -> None:
