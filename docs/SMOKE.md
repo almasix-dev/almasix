@@ -871,6 +871,7 @@ pytest -q tests/test_m32_*.py tests/smoke/test_m32_smoke.py
 - [x] `smith stub:publish --scaffold` publishes it and `almasix new --stubs DIR` scaffolds from the published copy
 - [x] Every question has a flag and a documented `--no-interaction` default: `--stack`, `--database`, `--tests/--no-tests`, `--git` / `--branch`, `--install` / `--installer`, `--npm`, `--migrate`, `--path`, `--stubs`
 - [x] npm and the migrations are skipped rather than asked about when the answer could only be one thing (no Node / no `package.json`; dependencies not being installed)
+- [x] Without a terminal the whole run takes the documented defaults, so a pipeline never gets an install or a migration it did not ask for
 - [x] Four stacks boot: `tailwind`, `bootstrap`, `plain`, `none` — each with its own frontend and its own `errors:publish` bundle
 - [x] Four databases write `.env` and `config/database.py`; SQLite's file is created; a real `APP_KEY` is generated
 - [x] `@vite` / `@viteReactRefresh`: the dev server while `public/hot` exists, the manifest once it does not, one link for a stylesheet a JS entry imports, a comment under `APP_DEBUG` and an error without it when nothing has been built

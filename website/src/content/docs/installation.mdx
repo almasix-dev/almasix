@@ -146,6 +146,13 @@ Two questions are skipped rather than asked when the answer could only be one
 thing: `npm` when the stack has no `package.json` or `npm` is not installed, and
 the migrations when the dependencies they need are not being installed.
 
+Without a terminal — a pipeline, a `Dockerfile`, a subprocess — there is nobody
+to answer, so `almasix new` behaves as though `-n` were passed and takes the
+defaults in the table above. It never installs a package or touches a database
+that nothing asked it to: a prompt's *displayed* default is Yes for the person
+at the keyboard who almost always wants it, and the *documented* default is No
+for the script that did not say.
+
 `almasix stacks` lists the stacks and databases without creating anything.
 
 ## Frontend stacks

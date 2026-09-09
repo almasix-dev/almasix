@@ -135,12 +135,18 @@ def new(  # noqa: PLR0913 - one option per prompt, by design
         stubs=stubs,
     )
 
+    # Without a terminal there is nobody to answer, and a prompt's displayed
+    # default is not the documented one: `--install` shows Yes because that is
+    # what someone at a keyboard usually wants, while the non-interactive
+    # default is No precisely so a script never installs anything unasked.
+    from almasix.console.prompts.types import is_interactive
+
     try:
         plan = resolve_plan(
             name,
             destination,
             answers,
-            interactive=not no_interaction,
+            interactive=not no_interaction and is_interactive(),
         )
         root = scaffold_app(
             name,

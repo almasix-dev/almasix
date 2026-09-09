@@ -576,6 +576,30 @@ def test_new_lists_only_the_steps_still_owed(tmp_path: Path, monkeypatch) -> Non
     assert "smith serve" in result.stdout
 
 
+def test_without_a_terminal_new_takes_the_non_interactive_defaults(
+    tmp_path: Path, monkeypatch
+) -> None:
+    # A prompt's displayed default is not the documented one: `--install` shows
+    # Yes for someone at a keyboard, and No for a script. A pipeline that ran
+    # `almasix new` and got a pip install it never asked for is the bug.
+    from almasix.installer import cli as installer_cli
+
+    seen: list[InstallPlan] = []
+
+    def spy(plan: InstallPlan, root: Path) -> list[StepResult]:
+        seen.append(plan)
+        return []
+
+    monkeypatch.setattr(installer_cli, "run_steps", spy)
+    monkeypatch.setattr("almasix.console.prompts.types.sys.stdin.isatty", lambda: False)
+    result = runner.invoke(almasix_app, ["new", "quiet", "--path", str(tmp_path)])
+
+    assert result.exit_code == 0, result.stdout
+    plan = seen[0]
+    assert (plan.install, plan.migrate, plan.git, plan.npm) == (False, False, False, False)
+    assert plan.asked == []
+
+
 def test_version_prints_the_framework_version() -> None:
     from almasix import __version__
 
