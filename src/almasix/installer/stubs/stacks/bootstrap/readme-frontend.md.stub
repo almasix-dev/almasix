@@ -1,0 +1,11 @@
+
+## Frontend (Vite + Bootstrap)
+
+```bash
+npm install
+npm run dev      # Vite HMR during development
+npm run build    # emit into public/build
+```
+
+`resources/css/app.scss` imports Bootstrap's Sass, so its variables can be
+overridden before the import rather than fought with afterwards.

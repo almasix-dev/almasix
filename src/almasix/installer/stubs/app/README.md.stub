@@ -1,0 +1,30 @@
+# {{ app_display }}
+
+Almasix application generated with `almasix new {{ app_name }}`.
+
+## Run
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+smith migrate
+smith serve
+```
+
+Open http://127.0.0.1:3000
+
+With the venv active, run `smith …` directly. `python smith …` also works via the root script.
+
+## Database
+
+This application talks to **{{ db_label }}**. Connection details live in `.env`;
+`config/database.py` names every engine Almasix speaks. The default migrations
+create the tables auth, sessions, cache, and the queue need:
+
+```bash
+smith migrate
+smith migrate:status
+```
+{{ frontend_section }}
+Create more apps with `almasix new`.

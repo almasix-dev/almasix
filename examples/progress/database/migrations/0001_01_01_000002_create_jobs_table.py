@@ -1,14 +1,15 @@
-"""Create the tables the queue stores its work in."""
+"""Create the queue tables (QUEUE_CONNECTION=database)."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from almasix.orm.migration import Migration
-from almasix.orm.schema import Schema
+from almasix.orm import Migration, Schema
 
 
-class CreateQueueTables(Migration):
+class CreateJobsTable(Migration):
+    """Where queued work waits, and where it lands when it fails."""
+
     async def up(self) -> None:
         await Schema.create("jobs", self.jobs)
         await Schema.create("failed_jobs", self.failed_jobs)
@@ -19,8 +20,8 @@ class CreateQueueTables(Migration):
 
     def jobs(self, table: Any) -> None:
         # INTEGER primary key, not BigInteger: SQLite only autoincrements the former.
-        table.id("id")
-        table.string("queue")
+        table.id()
+        table.string("queue").index()
         table.text("payload")
         table.integer("attempts").default(0)
         table.timestamp("reserved_at").nullable()
@@ -28,8 +29,8 @@ class CreateQueueTables(Migration):
         table.timestamp("created_at")
 
     def failed_jobs(self, table: Any) -> None:
-        table.id("id")
-        table.uuid("uuid")
+        table.id()
+        table.uuid("uuid").unique()
         table.text("connection")
         table.text("queue")
         table.text("payload")

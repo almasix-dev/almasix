@@ -62,9 +62,13 @@ def test_scaffold_m2_bootstrap_has_no_fastapi(tmp_path: Path) -> None:
     assert "from fastapi" not in bootstrap
     assert "asgi = application.asgi" in bootstrap
     assert "Route.get" in web
-    assert "html(" in (root / "app" / "http" / "controllers" / "welcome_controller.py").read_text(
+    # M32 moved the welcome page into a Prism view, the way Laravel ships
+    # welcome.blade.php — the contract is that a web route answers HTML, not
+    # that the controller writes the markup itself.
+    assert "view(" in (root / "app" / "http" / "controllers" / "welcome_controller.py").read_text(
         encoding="utf-8"
     )
+    assert (root / "resources" / "views" / "welcome.prism.html").is_file()
     assert "Route.get" in api
     assert (root / "app" / "http" / "controllers" / "health_controller.py").is_file()
     assert (root / "config" / "http.py").exists()

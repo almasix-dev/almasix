@@ -1,0 +1,12 @@
+
+## Frontend (Vite + plain CSS)
+
+```bash
+npm install
+npm run dev      # Vite HMR during development
+npm run build    # emit into public/build
+```
+
+No CSS framework: `resources/css/app.css` is yours to write. The welcome view
+links both entry points with `@vite`, which points at the dev server while
+`npm run dev` is running and at the built files afterwards.

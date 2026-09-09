@@ -84,6 +84,8 @@ _TAG_RE = re.compile(
     rf"|@dump\b"
     rf"|@dd\b"
     rf"|@asset\b"
+    rf"|@viteReactRefresh\b"
+    rf"|@vite\b"
     rf"|@endcache\b"
     rf"|@cache\b",
     re.DOTALL,
@@ -100,6 +102,7 @@ _BALANCED_ALWAYS = frozenset(
         "@each",
         "@isset",
         "@asset",
+        "@vite",
         "@cache",
         "@if",
         "@elseif",
@@ -403,6 +406,8 @@ def _tag_kind(
         ("@dump", "dump"),
         ("@dd", "dd"),
         ("@asset", "asset"),
+        ("@viteReactRefresh", "vite_react_refresh"),
+        ("@vite", "vite"),
         ("@endcache", "endcache"),
         ("@cache", "cache"),
         ("@endsection", "endsection"),
@@ -941,6 +946,12 @@ def _compile_fragment(
         elif kind == "asset":
             args = _paren_inner(match.group(0) or "")
             emit(f"__w(__e(str(__eval({_py_str(f'asset({args})')}))))")
+        elif kind == "vite":
+            # Tags are markup, so they are written through rather than escaped.
+            args = _paren_inner(match.group(0) or "")
+            emit(f"__w(str(__eval({_py_str(f'vite({args})')})))")
+        elif kind == "vite_react_refresh":
+            emit("__w(str(__eval('vite_react_refresh()')))")
         elif kind == "props":
             args = _directive_expr(match, r"@props\s*\((.+)\)")
             emit(f"__prop_defaults = {args}")

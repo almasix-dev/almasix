@@ -262,6 +262,11 @@ class Engine:
             from almasix.routing.url import asset
 
             ctx["asset"] = asset
+        if "vite" not in ctx:
+            from almasix.prism.vite import vite, vite_react_refresh
+
+            ctx["vite"] = vite
+            ctx["vite_react_refresh"] = vite_react_refresh
         if "e" not in ctx:
             from almasix.prism.escape import e
 

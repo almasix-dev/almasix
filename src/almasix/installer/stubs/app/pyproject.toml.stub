@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ app_name }}"
+version = "0.1.0"
+description = "{{ app_display }} — Almasix application"
+requires-python = ">=3.11"
+dependencies = [
+    "almasix",
+]
+
+# Smith drives this application, so it belongs to this project's environment
+# rather than to a global Almasix install.
+[project.scripts]
+smith = "almasix.smith.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app", "bootstrap", "config", "routes"]
+
+[tool.pytest.ini_options]
+# ``smith test`` runs this. Async tests need no decorator, and a test class may
+# be named either ``TestPost`` or ``PostTest`` — ``smith make:test`` writes the
+# second, the way Laravel does.
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Test"]
+
+[tool.pylint.basic]
+# Model meta (`fillable`, `casts`) is snake_case by design, not UPPER_CASE.
+class-attribute-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"
+attr-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"

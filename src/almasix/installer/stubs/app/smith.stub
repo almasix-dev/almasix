@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+"""Smith — Almasix in-application CLI.
+
+Once this project is installed into its virtualenv (``pip install -e .``):
+
+    smith version
+    smith serve
+    smith list
+    smith loupe   # aliases: tinker, repl
+
+Or via this root script, which needs no install step:
+
+    python smith serve
+"""
+
+from __future__ import annotations
+
+from almasix.smith.cli import app
+
+if __name__ == "__main__":
+    app()

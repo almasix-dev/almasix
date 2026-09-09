@@ -350,6 +350,7 @@ What the framework ships, 103 commands, as `smith list` groups them. An applicat
 | --- | --- |
 | `cache:clear` | Flush the application cache |
 | `cache:forget` | Remove one item from the cache |
+| `cache:table` | Create a migration for the cache database tables |
 
 ### `channel`
 
@@ -470,6 +471,12 @@ What the framework ships, 103 commands, as `smith list` groups them. An applicat
 | --- | --- |
 | `optimize:clear` | Clear the application cache and the compiled templates |
 
+### `notifications`
+
+| Command | Description |
+| --- | --- |
+| `notifications:table` | Create a migration for the notifications table |
+
 ### `queue`
 
 | Command | Description |
@@ -482,7 +489,9 @@ What the framework ships, 103 commands, as `smith list` groups them. An applicat
 | `queue:monitor` | Show the size of each named queue, flagging the busy ones |
 | `queue:prune-failed` | Prune stale entries from the failed jobs table |
 | `queue:restart` | Ask every running worker to stop once it finishes its current job |
+| `queue:failed-table` | Create a migration for the failed queue jobs table |
 | `queue:retry` | Retry a failed queue job |
+| `queue:table` | Create a migration for the queue jobs table |
 | `queue:work` | Process the next job on a queue |
 
 ### `route`
@@ -520,6 +529,12 @@ What the framework ships, 103 commands, as `smith list` groups them. An applicat
 | `scout:queue-import` | Import the given model into the search index using queued jobs |
 | `scout:status` | Show the search engine and the models it indexes |
 | `scout:sync-index-settings` | Sync the configured index settings with the search engine |
+
+### `session`
+
+| Command | Description |
+| --- | --- |
+| `session:table` | Create a migration for the session database table |
 
 ### `storage`
 

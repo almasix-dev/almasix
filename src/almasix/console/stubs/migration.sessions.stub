@@ -1,0 +1,25 @@
+"""Create the {{ table }} table (SESSION_DRIVER=database)."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Migration, Schema
+
+
+class {{ class }}(Migration):
+    """{{ class }}."""
+
+    async def up(self) -> None:
+        await Schema.create("{{ table }}", self.sessions)
+
+    async def down(self) -> None:
+        await Schema.drop_if_exists("{{ table }}")
+
+    def sessions(self, table: Any) -> None:
+        table.string("id").primary()
+        table.integer("user_id").nullable().index()
+        table.string("ip_address", 45).nullable()
+        table.text("user_agent").nullable()
+        table.text("payload")
+        table.integer("last_activity").index()
