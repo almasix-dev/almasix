@@ -122,3 +122,42 @@ def test_prism_echo_attribute_completion(progress_index) -> None:
     labels = {item.label for item in items}
     assert "email" in labels
     assert "name" in labels
+
+
+def test_infer_model_name_covers_annotations_union_and_skips() -> None:
+    from almasix.lsp.model_context import infer_model_name, known_model_names
+    from almasix.lsp.schema_context import TableInfo
+
+    tables = {
+        "users": TableInfo(name="users", columns={}, source="model", model="User"),
+        "posts": TableInfo(name="posts", columns={}, source="model", model="Post"),
+    }
+    models = known_model_names(tables)
+    assert models == {"User", "Post"}
+
+    assert infer_model_name("DB.", 2, "DB", models=models) is None
+    assert infer_model_name("User.", 5, "User", models=models) is None
+    assert infer_model_name("", 0, "", models=models) is None
+
+    annotated = "def show(user: User | None):\n    return user."
+    assert infer_model_name(annotated, len(annotated), "user", models=models) == "User"
+
+    optional = "from typing import Optional\ndef show(user: Optional[User]):\n    return user."
+    assert infer_model_name(optional, len(optional), "user", models=models) == "User"
+
+    attr_ann = "user: models.User\nprint(user."
+    assert infer_model_name(attr_ann, len(attr_ann), "user", models=models) == "User"
+
+    incomplete = "user = await User.find(1)\nvalue = user."
+    assert infer_model_name(incomplete, len(incomplete), "user", models=models) == "User"
+
+    # No indexed models → still return the regex/AST guess.
+    assert (
+        infer_model_name(
+            "post = Post.query().first()\nx = post.",
+            len("post = Post.query().first()\nx = post."),
+            "post",
+            models=set(),
+        )
+        == "Post"
+    )

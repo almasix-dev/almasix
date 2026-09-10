@@ -66,14 +66,31 @@ def test_secret_values_are_redacted() -> None:
     assert display_value("APP_NAME", "Progress") == "Progress"
 
 
-def test_discover_env_keys_merges_files_and_config_usages() -> None:
+def test_discover_env_keys_merges_files_and_config_usages(tmp_path: Path) -> None:
+    # Progress may only ship ``.env.example`` in CI (``.env`` is gitignored).
+    example = PROGRESS / ".env.example"
+    assert example.is_file()
     found = discover_env_keys(PROGRESS)
     assert "APP_NAME" in found
-    assert found["APP_NAME"].kind == "env"
+    assert found["APP_NAME"].kind in {"env", "example"}
     assert any("config/app.py" in origin for origin in found["APP_NAME"].used_by)
     # DB_PASSWORD is only declared via env() with an empty default in the progress app.
     assert "DB_PASSWORD" in found
     assert found["DB_PASSWORD"].used_by
+
+    # A real ``.env`` must win over the template.
+    root = tmp_path / "app"
+    root.mkdir()
+    (root / ".env.example").write_text("APP_NAME=Example\n", encoding="utf-8")
+    (root / ".env").write_text("APP_NAME=Live\n", encoding="utf-8")
+    (root / "config").mkdir()
+    (root / "config" / "app.py").write_text(
+        'NAME = env("APP_NAME", "fallback")\n',
+        encoding="utf-8",
+    )
+    merged = discover_env_keys(root)
+    assert merged["APP_NAME"].kind == "env"
+    assert merged["APP_NAME"].value == "Live"
 
 
 def test_env_completion_definition_and_hover(progress_index) -> None:
@@ -92,7 +109,7 @@ def test_env_completion_definition_and_hover(progress_index) -> None:
         language="python",
     )
     assert loc is not None
-    assert loc.path.name == ".env"
+    assert loc.path.name in {".env", ".env.example"}
 
     tip = hover(
         progress_index,
@@ -270,3 +287,65 @@ def test_find_database_calls_capture_table_hints() -> None:
     open_ctx = call_at(source, 0, source.index("posts") + 1, language="python")
     assert open_ctx is not None
     assert open_ctx.kind == "table"
+
+
+def test_migration_replay_handles_drop_rename_and_merge(tmp_path: Path) -> None:
+    from almasix.lsp.schema_context import ColumnInfo, TableInfo, merge_tables
+
+    migrations = tmp_path / "database" / "migrations"
+    migrations.mkdir(parents=True)
+    (migrations / "2024_01_01_000000_shape.py").write_text(
+        """
+from almasix.orm.schema import Schema
+
+
+def up():
+    Schema.create("widgets", lambda table: (
+        table.id(),
+        table.string("name"),
+        table.timestamps(),
+        table.soft_deletes(),
+        table.morphs("owner"),
+    ))
+    Schema.table("widgets", lambda table: (
+        table.rename_column("name", "title"),
+        table.drop_column("title"),
+        table.string("sku"),
+        table.drop_morphs("owner"),
+        table.drop_soft_deletes(),
+        table.drop_timestamps(),
+    ))
+""",
+        encoding="utf-8",
+    )
+    tables = discover_migration_schema(tmp_path)
+    assert "widgets" in tables
+    cols = tables["widgets"].columns
+    assert "sku" in cols
+    assert "name" not in cols
+    assert "title" not in cols
+    assert "owner_type" not in cols
+    assert "deleted_at" not in cols
+
+    modelish = {
+        "widgets": TableInfo(
+            name="widgets",
+            columns={
+                "extra": ColumnInfo(
+                    name="extra",
+                    table="widgets",
+                    type="",
+                    source="model",
+                )
+            },
+            source="model",
+            model="Widget",
+        )
+    }
+    merged = merge_tables(modelish, tables)
+    assert "sku" in merged["widgets"].columns
+    assert "extra" in merged["widgets"].columns
+    assert merged["widgets"].model == "Widget"
+    assert resolve_table("widgets", merged) == "widgets"
+    assert resolve_table("Widget", merged) == "widgets"
+    assert resolve_table("missing", merged) is None

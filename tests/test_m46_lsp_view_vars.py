@@ -241,3 +241,26 @@ def test_merge_vars_data_overrides_helper() -> None:
     }
     merged = merge_vars_for_view("form", view_data=data, helpers=helpers, shared={})
     assert merged["action"].kind == "data"
+
+
+def test_view_dict_regex_fallback_and_name_lookup(tmp_path: Path) -> None:
+    from almasix.lsp.view_context import (
+        _extract_view_dict_keys_regex,
+        auth_shared_vars,
+        builtin_helpers,
+        view_name_for_template,
+    )
+
+    broken = "view('board', {'title': x +})\n"  # intentionally invalid Python
+    keys = _extract_view_dict_keys_regex(broken)
+    assert ("board", "title", 0) in keys
+
+    template = tmp_path / "welcome.prism.html"
+    template.write_text("<p></p>", encoding="utf-8")
+    assert view_name_for_template({"welcome": template}, template) == "welcome"
+    assert view_name_for_template({"welcome": template}, tmp_path / "other.prism.html") is None
+
+    helpers = {info.name for info in builtin_helpers()}
+    assert "csrf_token" in helpers or "route" in helpers
+    shared = {info.name for info in auth_shared_vars()}
+    assert "csrf_token" in shared or "errors" in shared or shared
