@@ -1,0 +1,10 @@
+"""config/conduit.py stub — publish with ``smith vendor:publish --tag=conduit-config``."""
+
+config = {
+    "endpoint": "/conduit/update",
+    "asset_url": "/conduit/conduit.js",
+    "inject_assets": True,
+    "checksum_key": None,
+    "alpine_cdn": "https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js",
+    "coalesce_ms": 16,
+}

@@ -1,0 +1,20 @@
+<div class="conduit-counter" style="padding:1rem;border:1px solid #ccc;border-radius:8px;max-width:20rem">
+  <h2 style="margin:0 0 .5rem">Conduit counter</h2>
+  <p wire:text="count" style="font-size:2rem;margin:.5rem 0">{{ count }}</p>
+  <button type="button" wire:click="decrement" data-loading>−</button>
+  <button type="button" wire:click="increment" data-loading>+</button>
+  <button type="button" wire:click="reset">Reset</button>
+  <div style="margin-top:1rem">
+    <label>Label
+      <input type="text" wire:model.live="label" value="{{ label }}">
+    </label>
+    <p>Hello, <span wire:text="label">{{ label }}</span>!</p>
+  </div>
+  @if(errors)
+    <ul style="color:#b91c1c">
+      @foreach(errors.items() as pair)
+        <li>{{ pair[0] }}: {{ ', '.join(pair[1]) }}</li>
+      @endforeach
+    </ul>
+  @endif
+</div>

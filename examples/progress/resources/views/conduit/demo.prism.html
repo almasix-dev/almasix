@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Conduit demo — Progress</title>
+  {!! conduit_scripts() !!}
+</head>
+<body>
+  <main style="font-family:system-ui;padding:2rem;max-width:40rem;margin:auto">
+    <h1>almasix.conduit</h1>
+    <p>Livewire 4–class counter with Alpine <code>$wire</code> — client <code>wire:text</code> feels instant.</p>
+    {!! counter_html !!}
+  </main>
+</body>
+</html>

@@ -427,6 +427,26 @@ class Router:
             **kwargs,
         )
 
+    def conduit(
+        self,
+        uri: str,
+        component: str | type,
+        *,
+        layout: str | None = None,
+        title: str | None = None,
+        params: Mapping[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> RouteDefinition:
+        """Full-page Conduit component (Livewire ``Route::livewire``)."""
+        from almasix.conduit.routing import mount_full_page
+
+        return self.add(
+            ["GET"],
+            uri,
+            mount_full_page(component, layout=layout, title=title, params=params),
+            **kwargs,
+        )
+
     def fallback(self, action: Action, **kwargs: Any) -> RouteDefinition:
         """Answer anything no other route matched (Laravel ``fallback``).
 
@@ -757,6 +777,21 @@ class Route:
         **kwargs: Any,
     ) -> RouteDefinition:
         return get_router().view(uri, template, data, status, headers, **kwargs)
+
+    @staticmethod
+    def conduit(
+        uri: str,
+        component: str | type,
+        *,
+        layout: str | None = None,
+        title: str | None = None,
+        params: Mapping[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> RouteDefinition:
+        """Full-page Conduit component (Livewire ``Route::livewire``)."""
+        return get_router().conduit(
+            uri, component, layout=layout, title=title, params=params, **kwargs
+        )
 
     @staticmethod
     def fallback(action: Action, **kwargs: Any) -> RouteDefinition:

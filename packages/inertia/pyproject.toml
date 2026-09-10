@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "almasix-inertia"
+version = "0.1.0"
+description = "Server-side Inertia.js adapter for Almasix (official clients + SSR)"
+requires-python = ">=3.11"
+dependencies = [
+    "almasix",
+    "httpx>=0.27.0",
+]
+readme = "README.md"
+license = "MIT"
+
+[project.entry-points."almasix.providers"]
+inertia = "inertia.provider:InertiaServiceProvider"
+
+[project.urls]
+Homepage = "https://github.com/almasix-dev/almasix"
+Repository = "https://github.com/almasix-dev/almasix"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/inertia"]

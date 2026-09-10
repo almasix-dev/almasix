@@ -23,10 +23,12 @@ from almasix.translation import SetLocaleMiddleware
 
 BASE_PATH = Path(__file__).resolve().parent.parent
 
-# In-repo Courier package (M29) — importable without a separate editable install.
-_COURIER_SRC = BASE_PATH.parent.parent / "packages" / "courier" / "src"
-if _COURIER_SRC.is_dir() and str(_COURIER_SRC) not in sys.path:
-    sys.path.insert(0, str(_COURIER_SRC))
+# In-repo packages — importable without a separate editable install.
+_PACKAGES = BASE_PATH.parent.parent / "packages"
+for _pkg in ("courier", "inertia"):
+    _src = _PACKAGES / _pkg / "src"
+    if _src.is_dir() and str(_src) not in sys.path:
+        sys.path.insert(0, str(_src))
 
 
 def configure_middleware(middleware: Middleware) -> None:
@@ -50,11 +52,12 @@ def configure_middleware(middleware: Middleware) -> None:
             "demo.tag": DemoTagMiddleware,
             "abilities": CheckAbilities,
             "ability": CheckForAnyAbility,
+            "inertia": "inertia.middleware.HandleInertiaRequests",
         }
     )
     middleware.web(
         prepend=["cookies.encrypt", "session.start", "csrf", "auth.start"],
-        append=["locale"],
+        append=["locale", "inertia"],
     )
     middleware.api(prepend=["auth.start"], append=["locale", "demo.tag"])
     # Rate limiting is opt-in per route / via middleware.throttle_api() (M35).

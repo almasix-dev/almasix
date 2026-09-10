@@ -11,6 +11,9 @@ from almasix.routing import Route
 with Route.group(middleware=["web"]):
     Route.get("/", [WelcomeController, "index"])
     Route.get("/progress", [ProgressController, "index"])
+    Route.get("/conduit", [ProgressController, "conduit_demo"])
+    Route.get("/flux", [ProgressController, "conduit_demo"])  # rename alias
+    Route.get("/inertia", [ProgressController, "inertia_demo"])
     Route.get("/showcase", [ShowcaseController, "index"])
     Route.get("/boom", [WelcomeController, "boom"])
     Route.get("/dd", [WelcomeController, "dump_demo"])

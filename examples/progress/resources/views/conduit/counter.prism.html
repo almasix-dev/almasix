@@ -1,0 +1,23 @@
+<div class="conduit-counter" data-demo="progress-counter">
+  <h2>Progress Conduit counter</h2>
+  <p class="count" wire:text="count" style="font-size:1.75rem">{{ count }}</p>
+  <button type="button" wire:click="decrement" data-loading>−</button>
+  <button type="button" wire:click="increment" data-loading>+</button>
+  <button type="button" wire:click="reset">Reset</button>
+  <div wire:island="form">
+    <form wire:submit="save" style="margin-top:1rem">
+      <label>Label
+        <input type="text" wire:model.live="label" value="{{ label }}">
+      </label>
+      <button type="submit">Save</button>
+    </form>
+    <p>Hello, <span wire:text="label">{{ label }}</span>!</p>
+  </div>
+  @if(errors)
+    <ul class="errors">
+      @foreach(errors.items() as pair)
+        <li>{{ pair[0] }}: {{ ', '.join(pair[1]) }}</li>
+      @endforeach
+    </ul>
+  @endif
+</div>

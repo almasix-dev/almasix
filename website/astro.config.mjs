@@ -159,6 +159,8 @@ export default defineConfig({
 						{ label: 'Concurrency', slug: 'concurrency' },
 						{ label: 'Search', slug: 'search' },
 						{ label: 'Package Development', slug: 'package-development' },
+						{ label: 'Conduit', slug: 'conduit' },
+						{ label: 'Inertia', slug: 'inertia' },
 					],
 				},
 				{
