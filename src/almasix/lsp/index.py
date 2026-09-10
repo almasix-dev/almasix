@@ -16,6 +16,24 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from almasix.lsp.env_context import EnvVarInfo, discover_env_keys
+from almasix.lsp.schema_context import (
+    TableInfo,
+    discover_live_schema,
+    discover_migration_schema,
+    discover_model_tables,
+    live_schema_enabled,
+    merge_tables,
+)
+from almasix.lsp.view_context import (
+    ViewVarInfo,
+    auth_shared_vars,
+    builtin_helpers,
+    discover_composer_keys,
+    discover_view_data_keys,
+    discover_vite_entries,
+)
+
 
 @dataclass(frozen=True)
 class RouteInfo:
@@ -42,6 +60,15 @@ class AppIndex:
     has_lang: bool = False
     middleware_aliases: tuple[str, ...] = ()
     error: str | None = None
+    # Prism template variables: view() data keys + helpers + composers.
+    view_data: dict[str, dict[str, ViewVarInfo]] = field(default_factory=dict)
+    view_helpers: tuple[ViewVarInfo, ...] = ()
+    view_shared: dict[str, ViewVarInfo] = field(default_factory=dict)
+    vite_entries: dict[str, Path] = field(default_factory=dict)
+    #: ``.env`` / ``.env.*`` declarations plus keys only read via ``env()``.
+    env_keys: dict[str, EnvVarInfo] = field(default_factory=dict)
+    #: Tables and columns from migrations + models (+ a live connection when enabled).
+    tables: dict[str, TableInfo] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -346,6 +373,15 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
     translation_keys = discover_translation_keys(lang_root) if has_lang else ()
     route_locations = discover_route_locations(root / "routes")
     routes_dir = root / "routes"
+    view_data = discover_view_data_keys(root)
+    helpers = tuple(builtin_helpers())
+    shared = {info.name: info for info in auth_shared_vars()}
+    shared.update(discover_composer_keys(root))
+    vite_entries = discover_vite_entries(root)
+    env_keys = discover_env_keys(root)
+    # Migrations describe a table more precisely than a model's `fillable`, so
+    # they are merged last of the two static sources.
+    static_tables = merge_tables(discover_model_tables(root), discover_migration_schema(root))
 
     try:
         app = _boot_application(root)
@@ -357,6 +393,12 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
             config_files=config_files,
             translation_keys=translation_keys,
             has_lang=has_lang,
+            view_data=view_data,
+            view_helpers=helpers,
+            view_shared=shared,
+            vite_entries=vite_entries,
+            env_keys=env_keys,
+            tables=static_tables,
             error=f"Application failed to boot: {type(exc).__name__}: {exc}",
         )
 
@@ -384,6 +426,13 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
         )
 
     config_keys = tuple(sorted(flatten_config(app.config.all())))
+    # The app is booted, so a connection exists — but only reach for it when
+    # asked; see `live_schema_enabled`.
+    tables = (
+        merge_tables(static_tables, discover_live_schema())
+        if live_schema_enabled()
+        else static_tables
+    )
     return AppIndex(
         base_path=root,
         views=views,
@@ -394,4 +443,10 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
         translation_keys=translation_keys,
         has_lang=has_lang,
         middleware_aliases=tuple(sorted(aliases)),
+        view_data=view_data,
+        view_helpers=helpers,
+        view_shared=shared,
+        vite_entries=vite_entries,
+        env_keys=env_keys,
+        tables=tables,
     )

@@ -566,6 +566,8 @@ def _compile_fragment(
     indent = 1
     python_mode = False
     python_buf: list[str] = []
+    #: Pending C-style ``@for`` increment statements (``None`` = Python ``for``).
+    for_steps: list[str | None] = []
     matches = list(_iter_tags(source, extra_balanced=extra))
     i = 0
     pos = 0
@@ -585,6 +587,16 @@ def _compile_fragment(
     def emit_code(code: str) -> None:
         for line in code.splitlines():
             emit(line)
+
+    def emit_ns_sync() -> None:
+        emit(
+            "__ns.update({k: v for k, v in locals().items() "
+            "if isinstance(k, str) and not k.startswith('_') "
+            "and k not in ('context', 'engine')})"
+        )
+        emit(
+            "context.update({k: __ns[k] for k in list(__ns) if not str(k).startswith('__')})"
+        )
 
     while i < len(matches):
         match = matches[i]
@@ -824,26 +836,30 @@ def _compile_fragment(
             emit("context['loop'] = __ns.get('loop')")
         elif kind == "for":
             header = _directive_expr(match, r"@for\s*\((.+)\)")
-            emit(f"for {header}:")
-            indent += 1
-            emit(
-                "__ns.update({k: v for k, v in locals().items() "
-                "if isinstance(k, str) and not k.startswith('_') "
-                "and k not in ('context', 'engine')})"
-            )
-            emit("context.update({k: __ns[k] for k in list(__ns) if not str(k).startswith('__')})")
+            c_style = _split_c_style_for(header)
+            if c_style is not None:
+                init, cond, step = c_style
+                if init:
+                    emit(f"__exec({_py_str(_rewrite_c_for_incr(init))})")
+                emit(f"while __eval({_py_str(cond)}):")
+                indent += 1
+                emit_ns_sync()
+                for_steps.append(_rewrite_c_for_incr(step) if step else None)
+            else:
+                emit(f"for {header}:")
+                indent += 1
+                emit_ns_sync()
+                for_steps.append(None)
         elif kind == "endfor":
+            step = for_steps.pop() if for_steps else None
+            if step:
+                emit(f"__exec({_py_str(step)})")
             indent -= 1
         elif kind == "while":
             cond = _directive_expr(match, r"@while\s*\((.+)\)")
             emit(f"while __eval({_py_str(cond)}):")
             indent += 1
-            emit(
-                "__ns.update({k: v for k, v in locals().items() "
-                "if isinstance(k, str) and not k.startswith('_') "
-                "and k not in ('context', 'engine')})"
-            )
-            emit("context.update({k: __ns[k] for k in list(__ns) if not str(k).startswith('__')})")
+            emit_ns_sync()
         elif kind == "endwhile":
             indent -= 1
         elif kind == "stack":
@@ -1197,6 +1213,66 @@ def _foreach_args(match: re.Match[str] | _TagMatch, name: str) -> tuple[str, str
     m = re.search(rf"@{name}\s*\((.+?)\s+as\s+(\w+)\)", match.group(0) or "", re.DOTALL)
     assert m is not None
     return m.group(1).strip(), m.group(2)
+
+
+def _split_c_style_for(header: str) -> tuple[str, str, str] | None:
+    """Blade-shaped ``init; cond; step`` — ``None`` when the header is Python ``for``."""
+    parts: list[str] = []
+    buf: list[str] = []
+    depth = 0
+    in_single = False
+    in_double = False
+    i = 0
+    while i < len(header):
+        ch = header[i]
+        if ch == "\\" and (in_single or in_double):
+            buf.append(ch)
+            if i + 1 < len(header):
+                buf.append(header[i + 1])
+                i += 2
+                continue
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        elif not in_single and not in_double:
+            if ch in "([{":
+                depth += 1
+            elif ch in ")]}":
+                depth = max(0, depth - 1)
+            elif ch == ";" and depth == 0:
+                parts.append("".join(buf).strip())
+                buf = []
+                i += 1
+                continue
+        buf.append(ch)
+        i += 1
+    parts.append("".join(buf).strip())
+    if len(parts) != 3:
+        return None
+    init, cond, step = parts
+    if not cond:
+        raise SyntaxError("@for C-style form requires a condition: (init; cond; step)")
+    return init, cond, step
+
+
+_C_FOR_INCR_RE = re.compile(
+    r"^(?P<pre>\+\+|--)(?P<name>[A-Za-z_][\w]*)$"
+    r"|^(?P<name2>[A-Za-z_][\w]*)(?P<post>\+\+|--)$"
+)
+
+
+def _rewrite_c_for_incr(expr: str) -> str:
+    """Translate ``i++`` / ``++i`` / ``i--`` into Python assignments."""
+    text = expr.strip()
+    match = _C_FOR_INCR_RE.match(text)
+    if match is None:
+        return text
+    if match.group("name"):
+        name, op = match.group("name"), match.group("pre")
+    else:
+        name, op = match.group("name2"), match.group("post")
+    return f"{name} += 1" if op == "++" else f"{name} -= 1"
 
 
 def _yield_args(match: re.Match[str] | _TagMatch) -> tuple[str, str]:

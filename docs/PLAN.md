@@ -1585,7 +1585,7 @@ The baseline every editor needs before anything smarter is possible: something t
 
 **Depends on:** M6 Prism (the directive vocabulary must be stable; adding directives after the grammar ships means grammar churn).
 
-**Status: complete (2026-09-10).** `editors/prism/` ships TextMate + language-configuration + snippets + minimal tree-sitter; `almasix.prism.formatter.format_prism` and `smith prism:format` (`--check` / write); Starlight **Prism language support**; `smith progress:prism-lang`. Extension packaging remains M47.
+**Status: complete (2026-09-10).** TextMate + language-configuration + snippets + minimal tree-sitter live in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support) (`prism/`); `almasix.prism.formatter.format_prism` and `smith prism:format` (`--check` / write) remain in the framework; Starlight **Prism language support**; `smith progress:prism-lang`. Extension packaging is M47 / `almasix-dev/ide-support`.
 
 **Gate:** grammar covers every shipped directive with a fixture per construct; formatter idempotent on the whole `examples/` and `website/` template corpus; TextMate + tree-sitter grammars published and consumable outside VS Code (Linguist / docs site highlighting); CI golden fixtures fail if a shipped directive loses highlighting. **Met for the language-support baseline** (assets + formatter + CI unit/smoke); Marketplace / Linguist publish and corpus-wide golden runs deepen under M47.
 
@@ -1606,29 +1606,40 @@ One LSP server, so every editor benefits from one implementation instead of each
 
 **Depends on:** M45 (grammar), M30 (a single console surface to enumerate commands), M33 (named routes must exist before completing them), M40 (model metadata: casts, appends, relations).
 
-**Status: complete (2026-09-10).** Package `almasix.lsp` on `pygls` 2.x + `lsprotocol`; extras `lsp` / `dev`; entry points `almasix-lsp`, `python -m almasix.lsp`, `smith lsp:serve`. Index boots via `bootstrap.app` when present (views, named routes with source locations, config keys/files, models, translation keys from `lang/`, middleware aliases). Shipped features: completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans`/`@lang` / `.middleware()`; diagnostics for unknown views and (when `lang/` exists) translation keys; hover for Prism directives + helpers; go-to-definition for views, routes, and config files; document links; find-references for view names; code action to create a missing view; wire-protocol conformance; `smith progress:lsp`; Starlight **Language server**; package coverage ≥ 99% (statement coverage 100%).
+**Status: complete (2026-09-10).** Package `almasix.lsp` on `pygls` 2.x + `lsprotocol`; extras `lsp` / `dev`; entry points `almasix-lsp`, `python -m almasix.lsp`, `smith lsp:serve`. Index boots via `bootstrap.app` when present (views, named routes with source locations, config keys/files, models, translation keys from `lang/`, middleware aliases, **view() data keys + Prism helpers / shared composers**). Shipped features: completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans`/`@lang` / `.middleware()` / **`{{ var }}` template variables**; diagnostics for unknown views and (when `lang/` exists) translation keys; hover for Prism directives + helpers + template vars; go-to-definition for views, routes, config files, and **template variable sources**; document links; find-references for view names; code action to create a missing view; wire-protocol conformance; `smith progress:lsp`; Starlight **Language server**; package coverage ≥ 99% (statement coverage 100%). Template helper strings (`route` / `route_is` / `vite` / `url` / `asset` / `config` / `trans`) are recognized **anywhere in a template**, not only inside an echo, so `route('')` completes before a character is typed; an explicitly invoked completion in plain markup returns the `@directive` list plus that template's globals rather than nothing. **Env keys** come from `.env` / `.env.*` plus every `env("KEY")` under `config/` (secret values redacted on hover); **`${VAR}`** inside a dotenv file completes the same set. **Tables and columns** are replayed from `database/migrations` (method-style blueprints included) and model `fillable`/`casts`; `DB.table` / `Schema.*` / `.where` / `.order_by` complete against them, and `Post.where` resolves the model class. Live schema via `Schema.table_names()` is opt-in (`ALMASIX_LSP_DB_SCHEMA=1`).
 
-**Deliberate gaps vs full checklist (named for follow-up / M47 depth):** disk / queue / cache / gate / relation / column / cast / `<x-…>` / Smith command / env / Signet completions and diagnostics; Prism structural diagnostics (unclosed directive, `@section` without `@extends`, missing `@props`); Starlight-sourced hover (static directive table ships now); go-to-definition for relations; rename; additional code actions (config key, migration, extract partial); inlay / signature help; filesystem watchers (re-index on save + `almasix.rebuildIndex` instead).
+**Deliberate gaps vs full checklist (named for follow-up / M47 depth):** disk / queue / cache / gate / relation / cast / `<x-…>` / Smith command / Signet completions and diagnostics; Prism structural diagnostics (unclosed directive, `@section` without `@extends`, missing `@props`); Starlight-sourced hover (static directive table ships now); go-to-definition for relations; rename; additional code actions (config key, migration, extract partial); inlay / signature help; filesystem watchers (re-index on save + `almasix.rebuildIndex` instead); **nested attribute chains in `{{ user.name }}`** and layout-inherited view data beyond this template’s own `view()` call sites. Env keys and migration-derived tables/columns now ship (see status above); live DB schema remains opt-in.
 
 **Gate:** the server answers every completion, diagnostic, hover, link, and code action above against `examples/progress`; a conformance test suite drives it over **LSP wire protocol** (not internal APIs); cold index under a second on the living example; CI job runs the conformance suite on 3.11–3.13. **Met for the M46 baseline** (core string surfaces + wire conformance + progress proof); remaining checklist items named above.
 
 ### M47 — Editor integrations and type stubs (full VS Code + JetBrains)
 
-**Status: complete (2026-09-10).** Local-first packaging ships: `editors/vscode/`
-produces `almasix-*.vsix` (`npm install && npm run package` / `npx @vscode/vsce`);
-`editors/jetbrains/` produces `build/distributions/*.zip` (`./gradlew buildPlugin`,
-JDK 17, LSP4IJ → `almasix-lsp`); `smith ide:install` / `ide:stubs`; Starlight
-**Editor setup** with VS Code ↔ PyCharm parity matrix; `smith progress:ide`.
-Marketplace / Open VSX / JetBrains listings remain a **publish follow-up** (not a gate).
+**Status: complete (2026-09-10).** Editor packages ship from
+[`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support) (VS Code VSIX +
+JetBrains zip; Marketplace publish workflows + GitHub Releases);
+`smith ide:install` / `ide:stubs`; Starlight **Editor setup** with VS Code ↔
+PyCharm parity matrix; `smith progress:ide`.
 
-#### Local-first, publish later (decided 2026-09-10)
+**JetBrains Prism editor (0.1.8, 2026-09-10).** Highlighting is native and
+composed at the editor level: `PrismLexer` separates Prism constructs from HTML
+host spans, and `PrismEditorHighlighterProvider` builds a
+`LayeredLexerEditorHighlighter` that hands every `TEMPLATE_DATA` span to the
+platform HTML highlighter as one joined stream (a tag split by `{{ … }}` still
+highlights). A `MultiplePsiFilesPerDocumentFileViewProvider` adds an HTML PSI
+root for HTML completion / inspections, and `PrismTypedHandler` closes `{{` as
+`{{  }}` with a centered caret. Headless platform tests
+(`almasix-dev/ide-support` JetBrains `./gradlew test`) assert file-type ownership, HTML color keys
+across an echo split, and the typing behaviour — the earlier attempts
+(lexer-level `LayeredLexer` → blank editor; TextMate grammar → uncolored file)
+each traded one silent regression for another because nothing tested them.
 
-Publisher accounts for Visual Studio Marketplace / Open VSX / JetBrains Marketplace are **not** required to close M47. Develop and QA by **sideloading**:
+#### Packaging (updated 2026-09-10)
 
-- VS Code family: `vsce package` → install the `.vsix` (Extensions → Install from VSIX…). Cursor / VSCodium same path; Open VSX publish waits until an account exists.
-- JetBrains: Gradle `buildPlugin` → **Install Plugin from Disk…** on the `.zip`. Marketplace upload waits until an account exists.
-
-CI must still **build** those artifacts on every IDE-track change so publish is a later upload, not a rewrite. Starlight documents sideload first; marketplace badges land when listings go live (follow-up, not a gate).
+Editor packages live in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).
+Install from the Visual Studio Marketplace / JetBrains Marketplace, or sideload
+Release artifacts. CI + publish workflows in that repo build `.vsix` / `.zip` and
+upload to Marketplaces on `vX.Y.Z` Releases (secrets: `VSCE_PAT`,
+`JETBRAINS_PUBLISH_TOKEN`).
 
 #### VS Code family (VS Code, Cursor, VSCodium)
 
@@ -1644,9 +1655,10 @@ CI must still **build** those artifacts on every IDE-track change so publish is 
 
 - **Architecture (decided):** **LSP-first** — the plugin is a thin Platform shell (Prism file type, highlighter, run configurations, New… generators, settings) that **runs `almasix-lsp`** for completions / diagnostics / navigation. Reimplement on native APIs only where LSP cannot express the UX; document any native-only pieces in the parity matrix. Avoid a second full intelligence stack.
 - Plugin project producing an installable `.zip` via Gradle
+- **Highlighting is native, not TextMate**: the IDE's HTML highlighter is layered over the template's HTML spans, Prism overlays on top; `TextMateBackedFileType` / `TextMateSyntaxHighlighterFactory` do not bind to a compound `*.prism.html` name
 - Smith **run configurations** and **New…** for `make:controller`, `make:model`, `make:migration`, `make:command`, `make:channel`, etc.
 - Debugger templates for serve / queue / tests
-- CI: `buildPlugin` on a supported IDE version; UI-less tests where the Platform allows
+- CI: `buildPlugin` on a supported IDE version; headless platform tests (`./gradlew test`) cover file type, layered colors, and `{{ }}` typing
 
 #### Shared / other editors
 
@@ -1658,7 +1670,7 @@ CI must still **build** those artifacts on every IDE-track change so publish is 
 
 **Depends on:** M45, M46. `ide:stubs` also depends on M43 (schema inspection).
 
-**Gate (M47):** fresh `almasix new` → working Prism + completions in **both** VS Code-family and PyCharm via **local install** (`smith ide:install` and/or documented VSIX / Install from Disk); CI produces `.vsix` + JetBrains `.zip`; stubs type-check test; VS Code ↔ PyCharm parity matrix with no silent gaps. **Not required for M47:** live Marketplace / Open VSX / JetBrains listings (tracked as publish follow-up once accounts exist). **Met** for sideload path + stubs + parity docs; CI editor jobs document `make editors-vscode` / `make editors-jetbrains`.
+**Gate (M47):** fresh `almasix new` → working Prism + completions in **both** VS Code-family and PyCharm via Marketplace / Release install (`smith ide:install` + `almasix-dev/ide-support`); stubs type-check test; VS Code ↔ PyCharm parity matrix with no silent gaps. **Met**; packages and publish workflows live in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).
 
 **Named follow-ups (not gate blockers):** Marketplace / Open VSX / JetBrains listings; JetBrains New… generators and debugger templates; optional Prism inheritance preview; deeper type-checker plugins (`Model.query()` generics); live-schema column stubs beyond fillable/casts; committed CI artifacts for `.vsix` / `.zip` on every PR (local `make` targets ship now).
 
@@ -1776,7 +1788,7 @@ Ship:
 
 **Gate:** default docs and demo use Sonar server + `@almasix/sonar`; private channel works; Pusher / Ably / Socket.IO alternatives documented; smoke + progress proof.
 
-**Status: complete (2026-09-10).** Driver alias `sonar` → websocket broadcaster; npm package `@almasix/sonar` under `packages/sonar/`; Starlight Broadcasting leads with Sonar; `smith progress:sonar`; board M52 complete.
+**Status: complete (2026-09-10).** Driver alias `sonar` → websocket broadcaster; npm package `@almasix/sonar` at [`almasix-dev/sonar`](https://github.com/almasix-dev/sonar); Starlight Broadcasting leads with Sonar; `smith progress:sonar`; board M52 complete.
 
 ## Dates and time (M53)
 

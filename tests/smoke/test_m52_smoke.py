@@ -1,9 +1,8 @@
-"""M52 smoke — Sonar realtime demo + board proof + package layout."""
+"""M52 smoke — Sonar realtime demo + board proof."""
 
 from __future__ import annotations
 
 import importlib
-import json
 import subprocess
 import sys
 from pathlib import Path
@@ -16,8 +15,6 @@ from tests.support import purge_generated_app_modules, without_base_path
 pytestmark = [pytest.mark.smoke, pytest.mark.regression]
 
 PROGRESS = Path(__file__).resolve().parents[2] / "examples" / "progress"
-REPO = PROGRESS.parents[1]
-SONAR = REPO / "packages" / "sonar"
 
 
 @pytest.fixture()
@@ -43,23 +40,12 @@ def test_m52_demo_command_runs() -> None:
     for line in (
         "sonar   ->",
         "package -> @almasix/sonar",
+        "https://www.npmjs.com/package/@almasix/sonar",
+        "https://github.com/almasix-dev/sonar",
         "private ->",
         "sonar demo ok",
     ):
         assert line in out, line
-
-
-def test_m52_sonar_package_layout() -> None:
-    package = json.loads((SONAR / "package.json").read_text(encoding="utf-8"))
-    assert package["name"] == "@almasix/sonar"
-    assert (SONAR / "src" / "index.ts").is_file()
-    assert (SONAR / "src" / "sonar.ts").is_file()
-    assert (SONAR / "README.md").is_file()
-    # Built artifacts when `npm run build` has run (CI sonar job / local gate).
-    dist_index = SONAR / "dist" / "index.js"
-    if dist_index.is_file():
-        text = dist_index.read_text(encoding="utf-8")
-        assert "almasix:connection_established" in text or "Sonar" in text
 
 
 def test_m52_board_marks_sonar_complete(progress_client: TestClient) -> None:

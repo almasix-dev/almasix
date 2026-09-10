@@ -13,7 +13,7 @@ description: "Conditionals, loops, and @python blocks in Prism."
 | `@empty(expr)` / `@endempty` | Body when `expr` is empty / falsy |
 | `@foreach(items as item)` / `@endforeach` | Loop with `loop` helpers |
 | `@forelse` / `@empty` / `@endforelse` | Loop or empty state |
-| `@for` / `@endfor` | Python `for` header |
+| `@for` / `@endfor` | C-style (`i = 0; i < n; i++`) or Python (`i in range(n)`) |
 | `@while` / `@endwhile` | While loop |
 | `@auth` / `@endauth` | Body when `auth_user` or `__authenticated` is set |
 | `@guest` / `@endguest` | Inverse of `@auth` |
@@ -30,6 +30,14 @@ Inside `@foreach` / `@forelse`, `loop` exposes:
 @foreach(users as user)
   <li @if(loop.first)class="first"@endif>{{ user.name }}</li>
 @endforeach
+
+@for(i = 0; i < 3; i++)
+  <li>Item {{ i + 1 }}</li>
+@endfor
+
+@for(i in range(3))
+  <li>Item {{ i + 1 }}</li>
+@endfor
 ```
 
 Bare `@empty` inside `@forelse` remains the empty branch. Standalone

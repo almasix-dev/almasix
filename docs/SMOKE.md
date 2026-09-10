@@ -939,26 +939,30 @@ cd examples/progress && python smith progress:prism-lang
 
 ### M45 exit criteria
 
-- [x] TextMate grammar + language configuration + snippets under `editors/prism/`
+- [x] TextMate grammar + language configuration + snippets in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support) (`prism/`)
 - [x] Minimal tree-sitter grammar + highlights queries + README build notes
 - [x] `format_prism` library entry + `smith prism:format` (`--check` / write)
 - [x] Starlight **Prism language support**; living example `smith progress:prism-lang`
 - [x] Board marks M45 complete with proof naming the demo
-- [x] Unit + smoke coverage for formatter and grammar load
+- [x] Unit + smoke coverage for formatter
 
 ## M46 — Almasix Language Server
 
 - [x] `pip install 'almasix[lsp]'` (or `[dev]`) provides `almasix-lsp`
 - [x] `python -m almasix.lsp` and `smith lsp:serve` start the stdio server
-- [x] Index boots the app: views, named routes (+ source), config, models, translations, middleware
-- [x] Completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans` / middleware
+- [x] Index boots the app: views, named routes (+ source), config, models, controllers, translations, middleware, view() data keys + helpers
+- [x] Completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans` / middleware / `[Controller, "method"]` / Prism `{{ var }}`
 - [x] Diagnostics for unknown `view("…")` and translation keys (when `lang/` exists)
-- [x] Hover for Prism directives and known route / config / translation / middleware names
-- [x] Go-to-definition for views, routes, and config files; document links
+- [x] Hover for Prism directives and known route / config / translation / middleware / action / template-var names
+- [x] Go-to-definition for views, routes, config files, controller actions, and template variables; document links
 - [x] Find-references for view names; code action to create a missing view
 - [x] Wire-protocol conformance tests (initialize + completion / definition / references / codeAction)
-- [x] `smith progress:lsp` prints counts and `lsp ok`
-- [x] Board marks M46 complete with proof naming the demo
+- [x] Completion for `route`/`route_is`/`vite`/`url`/`asset` string args anywhere in a template, including an empty `route('')`
+- [x] Explicitly invoked completion in plain markup returns `@directive` names + template globals
+- [x] Completion for `env("…")` and dotenv `${…}` from `.env` / `.env.*` / `config/` usages (secret values redacted)
+- [x] Completion for table / column names from migrations + models (`DB.table`, `Schema.*`, `.where` / `.order_by` / …); live DB opt-in via `ALMASIX_LSP_DB_SCHEMA=1`
+- [x] `smith progress:lsp` prints counts, proves `{{ app_name }}` complete+definition, `route('')` names, `ctrl+space` items, indented `@if`/`@endif` snippets, `textDocument/formatting` → `format_prism`, `env()` / `${}` keys, `DB.table` / columns (quote-safe), `user.` model attributes, and `lsp ok`
+- [x] Board marks M46 complete with proof naming the demo (incl. template vars)
 - [x] Starlight **Language server**; package coverage ≥ 99% (statement coverage 100%)
 
 ## M47 — VS Code + JetBrains integrations
@@ -966,38 +970,38 @@ cd examples/progress && python smith progress:prism-lang
 ```bash
 pytest -q tests/smoke/test_m47_smoke.py
 cd examples/progress && python smith progress:ide
-# package artifacts (optional local / CI):
-#   make editors-vscode      # editors/vscode/*.vsix via npx @vscode/vsce
-#   make editors-jetbrains   # editors/jetbrains/build/distributions/*.zip
+# Editor packages (build / publish) live in almasix-dev/ide-support:
+#   https://github.com/almasix-dev/ide-support
 ```
 
-**Local-first:** sideload `.vsix` + JetBrains `.zip`; Marketplace publish later.
+Packages ship from [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support)
+(VS Marketplace + JetBrains Marketplace + GitHub Release artifacts).
 LSP-first PyCharm shell (LSP4IJ → `almasix-lsp`). Starlight **Editor setup**
 holds the VS Code ↔ PyCharm parity matrix.
 
 ### M47 exit criteria
 
-- [x] VS Code-family extension packages to `.vsix` (`npm install && npm run package`)
-- [x] JetBrains plugin `buildPlugin` zip (Prism file type + LSP4IJ + Smith run config)
+- [x] VS Code-family extension in `almasix-dev/ide-support` (Marketplace + Release VSIX)
+- [x] JetBrains plugin in `almasix-dev/ide-support` (Marketplace + Release zip)
+- [x] JetBrains Prism editor: HTML colors layered under Prism overlays, HTML PSI root, `{{ }}` auto-close — asserted by editors-repo `./gradlew test`
 - [x] `smith ide:install` + `smith ide:stubs`
 - [x] Living example `progress:ide` + smoke; board marks M47 complete
 - [x] Parity matrix documented (no silent gaps)
-- [ ] Marketplace / Open VSX / JetBrains listings (publish follow-up)
+- [x] Publish workflows for VS / JetBrains Marketplaces (`almasix-dev/ide-support`)
 
 ## M52 — Sonar realtime
 
 ```bash
 pytest -q tests/test_m52_sonar.py tests/smoke/test_m52_smoke.py
 cd examples/progress && python smith progress:sonar
-# optional client package gate:
-# cd packages/sonar && npm ci && npm run build && npm test
+# client package: https://github.com/almasix-dev/sonar (`npm i @almasix/sonar`)
 ```
 
 Default = **Sonar** server + `@almasix/sonar`. Pusher.js / Ably / Socket.IO documented as alternatives.
 
 ### M52 exit criteria
 
-- [x] `@almasix/sonar` speaks to native Sonar `/broadcasting/socket` (public + private); package under `packages/sonar/`
+- [x] `@almasix/sonar` speaks to native Sonar `/broadcasting/socket` (public + private); package at [`almasix-dev/sonar`](https://github.com/almasix-dev/sonar) / npm
 - [x] Default docs/demo do **not** require `pusher-js` (`progress:sonar` + Broadcasting docs)
 - [x] Pusher / Ably / Socket.IO alternative paths documented (Starlight Broadcasting)
 - [x] Living example + smoke; board marks M52 complete; `sonar` driver alias for `websocket`

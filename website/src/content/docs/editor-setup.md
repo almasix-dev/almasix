@@ -1,12 +1,15 @@
 ---
 title: Editor setup
-description: Sideload the Almasix VS Code extension and JetBrains plugin — local-first, Marketplace later.
+description: Install the Almasix VS Code extension and JetBrains plugin from the Marketplaces or GitHub Releases.
 ---
 
-Almasix editor support is **local-first**. You install a `.vsix` or JetBrains
-`.zip` built from this repository. Visual Studio Marketplace / Open VSX /
-JetBrains Marketplace listings land later (when publisher accounts exist) —
-they are **not** required to develop or QA.
+Almasix editor packages live in
+[`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support): VS Code /
+Cursor / VSCodium extension, JetBrains plugin, and shared Prism grammar assets.
+
+Install from the **Visual Studio Marketplace** / **JetBrains Marketplace**, or
+sideload a `.vsix` / `.zip` from
+[GitHub Releases](https://github.com/almasix-dev/ide-support/releases).
 
 For language features themselves, see [Prism language support](/prism-language/)
 and the [Language server](/language-server/).
@@ -20,28 +23,16 @@ smith ide:install          # .vscode settings + JetBrains note
 smith ide:stubs            # .pyi for models + route name Literal
 ```
 
-Then sideload the editor package for your IDE (below).
+Then install the editor package for your IDE (below).
 
 ## VS Code / Cursor / VSCodium
 
-### Build the VSIX
-
-```bash
-cd editors/vscode
-npm install
-npm run package
-# → almasix-0.1.0.vsix
-```
-
-`npm run package` invokes `npx @vscode/vsce package` — you do **not** need a
-global `vsce` install.
-
-### Install from VSIX
-
-1. Extensions view → **⋯** → **Install from VSIX…**
-2. Choose `editors/vscode/almasix-*.vsix`
-3. Open a folder that contains `bootstrap/app.py`
-4. Confirm the status bar shows **Almasix** (not “LSP missing”)
+1. Install **Almasix** from the
+   [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=almasix.almasix)
+   (publisher `almasix`), **or** **Install from VSIX…** with a release artifact
+   from [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support/releases).
+2. Open a folder that contains `bootstrap/app.py`
+3. Confirm the status bar shows **Almasix** (not “LSP missing”)
 
 Settings written by `smith ide:install`:
 
@@ -52,86 +43,57 @@ Settings written by `smith ide:install`:
 Commands: **Almasix: Rebuild LSP Index**, **Show Application Info**,
 **Restart Language Server**.
 
-Full details: [`editors/vscode/README.md`](https://github.com/almasix-dev/almasix/blob/main/editors/vscode/README.md).
+Full details: [`almasix-dev/ide-support` README](https://github.com/almasix-dev/ide-support)
+and [`vscode/README.md`](https://github.com/almasix-dev/ide-support/blob/main/vscode/README.md).
 
 ## JetBrains (PyCharm / IntelliJ)
 
 Architecture is **LSP-first**: the plugin is a Platform shell (file type,
-TextMate, run configs) that runs `almasix-lsp` through LSP4IJ.
+native HTML+Prism highlighter, run configs) that runs `almasix-lsp` through
+LSP4IJ.
 
-Prism files must show as language **Prism** (not HTML). The plugin overrides
-`*.prism.html` so the built-in HTML type cannot steal them, and ships a VS Code–
-shaped TextMate `package.json` so directive / `{{ }}` scopes color correctly.
+Prism files must show as language **Prism** (not HTML). Highlighting is native:
+the IDE's own HTML highlighter is layered over the template's HTML spans, with
+`@directives`, `{{ }}` and `{{-- --}}` painted on top. Each file also gets a
+second HTML PSI root, so HTML completion and inspections keep working, and
+typing `{{` closes itself as `{{  }}` with the caret in the middle.
 
-### Build the zip
+Completions and Ctrl-click for `{{ globals }}`, `route()`, `url()`, `asset()`,
+and `vite()` paths come from `almasix-lsp` (wired by language + `*.prism.html`
+filename). Ctrl+Space anywhere in a template offers the `@directive` list plus
+the globals and `view()` data available to that template. The same server also
+completes `env("…")` / dotenv `${…}` keys and table / column names from
+migrations; `.env` files are mapped to the LSP in both editors.
 
-```bash
-cd editors/jetbrains
-./gradlew buildPlugin
-# → build/distributions/*.zip
-```
+### Install
 
-Requires JDK 17+.
-
-### Install Plugin from Disk
-
-1. **Settings → Plugins → ⚙ → Install Plugin from Disk…**
-2. Choose the zip under `editors/jetbrains/build/distributions/`
-3. Restart; open an Almasix app with `almasix[lsp]` in the venv
+1. Install **Almasix** from the JetBrains Marketplace (plugin id
+   `com.almasix.ide`), **or** **Settings → Plugins → ⚙ → Install Plugin from
+   Disk…** with a zip from
+   [`almasix-dev/ide-support` Releases](https://github.com/almasix-dev/ide-support/releases)
+2. Restart; open an Almasix app with `almasix[lsp]` in the venv
 
 `smith ide:install` also writes `.idea/almasix-editor.md` with these steps.
 
-Full details: [`editors/jetbrains/README.md`](https://github.com/almasix-dev/almasix/blob/main/editors/jetbrains/README.md).
+Full details: [`jetbrains/README.md`](https://github.com/almasix-dev/ide-support/blob/main/jetbrains/README.md).
 
 ## Type stubs
 
 ```bash
 smith ide:stubs
-# → .almasix/stubs/models/*.pyi
-# → .almasix/stubs/routes.pyi   (RouteName = Literal[...])
 ```
 
-Point pyright `stubPath` / mypy `mypy_path` at `.almasix/stubs`. Column names
-come from each model's `fillable` / `casts` (schema inspection optional).
+Writes `.pyi` stubs for Articulate models and a `Literal[...]` of route names
+so the editor can complete `route("…")` without runtime imports.
 
-## Other editors
+## VS Code ↔ PyCharm parity
 
-Generic LSP recipes (Neovim, Helix, Zed, …) stay on the
-[Language server](/language-server/) page — same `almasix-lsp` binary.
-
-## Marketplace (when published)
-
-| Channel | Status |
-| --- | --- |
-| Visual Studio Marketplace | Not required yet — sideload VSIX |
-| Open VSX | Same |
-| JetBrains Marketplace | Same — Install from Disk |
-
-When listings go live, `smith ide:install` will gain recommendation IDs;
-until then the in-repo artifacts are the supported install path.
-
-## Parity matrix
-
-| Capability | VS Code family | PyCharm / IntelliJ |
+| Surface | VS Code | JetBrains |
 | --- | --- | --- |
-| Prism highlighting (TextMate) | Extension grammar (`prism-html`) | File type override + TextMate bundle (not HTML) |
-| Snippets | Bundled | Via TextMate / live templates follow-up |
-| LSP completions / diagnostics / hover / definition | `vscode-languageclient` → `almasix-lsp` | LSP4IJ → `almasix-lsp` |
-| Find references (view names) | Same LSP (pruned app scan) | Same LSP (pruned app scan) |
-| Rebuild index / app info | Command palette → LSP commands | LSP4IJ execute command / notification |
-| Format Prism | `smith prism:format` / extension formatter hook | External tool / Smith run config |
-| Smith serve / queue / migrate | tasks.json (optional) | **Almasix Smith** run configuration type |
-| Type stubs | `smith ide:stubs` (shared) | Same |
-| Local install helper | `smith ide:install` → `.vscode/*` | `smith ide:install` → `.idea/almasix-editor.md` |
-| Marketplace | Sideload first | Sideload first |
+| Prism file type / highlighting | `prism-html` TextMate | Native Prism + HTML layer |
+| `almasix-lsp` | vscode-languageclient | LSP4IJ |
+| `smith` run configs | tasks.json via `ide:install` | Smith run configuration |
+| Marketplace | VS Marketplace | JetBrains Marketplace |
 
-No silent gap: both editors get Prism association + the same language server.
-Native-only New… wizards and debugger templates on JetBrains are named
-follow-ups in PLAN (not blockers for the editor-integration gate).
-
-## Demo
-
-```bash
-cd examples/progress
-smith progress:ide
-```
+Language intelligence is shared (`almasix-lsp`). Packaging and Marketplace
+publish live in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).

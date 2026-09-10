@@ -1,0 +1,272 @@
+"""Env-key and database-schema intelligence for the language server."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from almasix.lsp.analysis import (
+    call_at,
+    context_at,
+    dotenv_context_at,
+    find_database_calls,
+)
+from almasix.lsp.env_context import (
+    discover_env_keys,
+    display_value,
+    is_secret_key,
+    parse_env_file,
+)
+from almasix.lsp.features import completions, definition, hover
+from almasix.lsp.index import build_index
+from almasix.lsp.schema_context import (
+    discover_migration_schema,
+    discover_model_tables,
+    merge_tables,
+    resolve_table,
+)
+from tests.support import purge_generated_app_modules, without_base_path
+
+PROGRESS = Path(__file__).resolve().parents[1] / "examples" / "progress"
+
+
+@pytest.fixture()
+def progress_index(monkeypatch: pytest.MonkeyPatch):
+    without_base_path(monkeypatch)
+    purge_generated_app_modules()
+    monkeypatch.chdir(PROGRESS)
+    monkeypatch.syspath_prepend(str(PROGRESS))
+    index = build_index(PROGRESS)
+    assert index.ok, index.error
+    return index
+
+
+def test_parse_env_file_handles_quotes_comments_and_export(tmp_path: Path) -> None:
+    path = tmp_path / ".env"
+    path.write_text(
+        "# greeting\n"
+        "APP_NAME=Progress\n"
+        "export APP_URL='http://localhost'\n"
+        'APP_KEY="base64:secret"  # keep\n'
+        "EMPTY=\n",
+        encoding="utf-8",
+    )
+    parsed = parse_env_file(path)
+    assert parsed["APP_NAME"] == ("Progress", 1)
+    assert parsed["APP_URL"] == ("http://localhost", 2)
+    assert parsed["APP_KEY"] == ("base64:secret", 3)
+    assert parsed["EMPTY"] == ("", 4)
+
+
+def test_secret_values_are_redacted() -> None:
+    assert is_secret_key("APP_KEY")
+    assert is_secret_key("DB_PASSWORD")
+    assert display_value("APP_KEY", "base64:abc") == "********"
+    assert display_value("APP_NAME", "Progress") == "Progress"
+
+
+def test_discover_env_keys_merges_files_and_config_usages() -> None:
+    found = discover_env_keys(PROGRESS)
+    assert "APP_NAME" in found
+    assert found["APP_NAME"].kind == "env"
+    assert any("config/app.py" in origin for origin in found["APP_NAME"].used_by)
+    # DB_PASSWORD is only declared via env() with an empty default in the progress app.
+    assert "DB_PASSWORD" in found
+    assert found["DB_PASSWORD"].used_by
+
+
+def test_env_completion_definition_and_hover(progress_index) -> None:
+    source = 'name = env("APP_")'
+    items = completions(progress_index, source, 0, source.index("APP_") + 4, language="python")
+    labels = {item.label for item in items}
+    assert "APP_NAME" in labels
+    assert "APP_KEY" in labels
+
+    closed = 'name = env("APP_NAME")'
+    loc = definition(
+        progress_index,
+        closed,
+        0,
+        closed.index("APP_NAME") + 1,
+        language="python",
+    )
+    assert loc is not None
+    assert loc.path.name == ".env"
+
+    tip = hover(
+        progress_index,
+        closed,
+        0,
+        closed.index("APP_NAME") + 1,
+        language="python",
+    )
+    assert tip is not None
+    assert "APP_NAME" in tip.contents
+
+    secret = 'key = env("APP_KEY")'
+    secret_tip = hover(
+        progress_index,
+        secret,
+        0,
+        secret.index("APP_KEY") + 1,
+        language="python",
+    )
+    assert secret_tip is not None
+    assert "********" in secret_tip.contents
+    assert "base64:" not in secret_tip.contents
+
+
+def test_dotenv_interpolation_and_key_completion(progress_index) -> None:
+    source = "APP_NAME=Progress\nAPP_TITLE=${APP_}\n"
+    line = source.splitlines()[1]
+    char = line.index("${APP_") + len("${APP_")
+    ctx = dotenv_context_at(source, 1, char)
+    assert ctx is not None
+    assert ctx.kind == "env"
+    assert ctx.prefix == "APP_"
+    labels = {
+        item.label for item in completions(progress_index, source, 1, char, language="dotenv")
+    }
+    assert "APP_NAME" in labels
+
+    # Typing a new key at the start of a line still offers known names.
+    key_line = "DB_\n"
+    key_ctx = dotenv_context_at(key_line, 0, 3)
+    assert key_ctx is not None
+    key_labels = {
+        item.label for item in completions(progress_index, key_line, 0, 3, language="dotenv")
+    }
+    assert "DB_CONNECTION" in key_labels or "DB_DATABASE" in key_labels
+
+
+def test_migration_schema_replays_create_alter_and_method_blueprints() -> None:
+    tables = discover_migration_schema(PROGRESS)
+    assert "posts" in tables
+    assert "users" in tables
+    assert "slug" in tables["posts"].columns
+    assert tables["posts"].columns["slug"].type == "string"
+    assert "email" in tables["users"].columns
+    # Soft deletes and timestamps expand to their fixed names.
+    assert "deleted_at" in tables["posts"].columns
+    assert "created_at" in tables["posts"].columns
+    # Morphs expand to _type / _id.
+    assert "commentable_type" in tables["comments"].columns
+    assert "commentable_id" in tables["comments"].columns
+
+
+def test_model_tables_and_resolve_table() -> None:
+    models = discover_model_tables(PROGRESS)
+    assert models["posts"].model == "Post"
+    assert "title" in models["posts"].columns
+    tables = merge_tables(models, discover_migration_schema(PROGRESS))
+    assert resolve_table("posts", tables) == "posts"
+    assert resolve_table("Post", tables) == "posts"
+    assert resolve_table("Missing", tables) is None
+
+
+def test_table_and_column_completion(progress_index) -> None:
+    table_source = 'q = DB.table("")'
+    table_labels = {
+        item.label
+        for item in completions(
+            progress_index,
+            table_source,
+            0,
+            table_source.index('("")') + 2,
+            language="python",
+        )
+    }
+    assert "posts" in table_labels
+    assert "users" in table_labels
+
+    column_source = 'rows = DB.table("posts").where("")'
+    column_labels = {
+        item.label
+        for item in completions(
+            progress_index,
+            column_source,
+            0,
+            len(column_source) - 2,
+            language="python",
+        )
+    }
+    assert "title" in column_labels
+    assert "slug" in column_labels
+
+    model_source = 'rows = Post.where("")'
+    model_labels = {
+        item.label
+        for item in completions(
+            progress_index,
+            model_source,
+            0,
+            len(model_source) - 2,
+            language="python",
+        )
+    }
+    assert "slug" in model_labels
+
+    has_column = 'ok = await Schema.has_column("users", "")'
+    user_labels = {
+        item.label
+        for item in completions(
+            progress_index,
+            has_column,
+            0,
+            len(has_column) - 2,
+            language="python",
+        )
+    }
+    assert "email" in user_labels
+
+
+def test_column_definition_and_hover(progress_index) -> None:
+    source = 'rows = DB.table("posts").order_by("slug")'
+    loc = definition(
+        progress_index,
+        source,
+        0,
+        source.index("slug") + 1,
+        language="python",
+    )
+    assert loc is not None
+    assert "add_slug_to_posts" in loc.path.name
+
+    tip = hover(
+        progress_index,
+        source,
+        0,
+        source.index("slug") + 1,
+        language="python",
+    )
+    assert tip is not None
+    assert "posts.slug" in tip.contents
+
+    table_tip = hover(
+        progress_index,
+        source,
+        0,
+        source.index("posts") + 1,
+        language="python",
+    )
+    assert table_tip is not None
+    assert "**table**" in table_tip.contents
+
+
+def test_find_database_calls_capture_table_hints() -> None:
+    source = 'rows = DB.table("posts").where("title").order_by("slug")'
+    calls = find_database_calls(source)
+    kinds = {(call.kind, call.value, call.table) for call in calls}
+    assert ("table", "posts", None) in kinds
+    assert ("column", "title", "posts") in kinds
+    assert ("column", "slug", "posts") in kinds
+
+    ctx = context_at(source, 0, source.index("title") + 1, language="python")
+    assert ctx is not None
+    assert ctx.kind == "column"
+    assert ctx.table == "posts"
+
+    open_ctx = call_at(source, 0, source.index("posts") + 1, language="python")
+    assert open_ctx is not None
+    assert open_ctx.kind == "table"

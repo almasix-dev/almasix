@@ -60,41 +60,71 @@ def create_server() -> AlmasixLanguageServer:
 
     @server.feature(
         types.TEXT_DOCUMENT_COMPLETION,
-        types.CompletionOptions(trigger_characters=['"', "'", ".", "@"]),
+        # No "{": the editor auto-closes ``{{ }}`` and a popup mid-brace fights it.
+        # "$" opens env-key completion inside a dotenv ``${…}`` reference.
+        types.CompletionOptions(trigger_characters=['"', "'", ".", "@", "$"]),
     )
     def completion(
         ls: AlmasixLanguageServer, params: types.CompletionParams
     ) -> types.CompletionList:
         doc = ls.workspace.get_text_document(params.text_document.uri)
+        path = to_fs_path(params.text_document.uri)
+        uri_path = Path(path) if path else None
+        language = _document_language(doc, uri_path)
         items = feat.completions(
             ls.index,
             doc.source,
             params.position.line,
             params.position.character,
-            language=_language_id(doc),
+            language=language,
+            uri_path=uri_path,
         )
         return types.CompletionList(
             is_incomplete=False,
-            items=[
-                types.CompletionItem(
-                    label=item.label,
-                    kind=_completion_kind(item.kind),
-                    detail=item.detail or None,
-                    insert_text=item.label,
-                )
-                for item in items
-            ],
+            items=[_to_completion_item(item) for item in items],
         )
+
+    @server.feature(types.TEXT_DOCUMENT_FORMATTING)
+    def formatting(
+        ls: AlmasixLanguageServer, params: types.DocumentFormattingParams
+    ) -> list[types.TextEdit] | None:
+        doc = ls.workspace.get_text_document(params.text_document.uri)
+        path = to_fs_path(params.text_document.uri)
+        uri_path = Path(path) if path else None
+        language = _document_language(doc, uri_path)
+        formatted = feat.format_document(doc.source, language=language, uri_path=uri_path)
+        if formatted is None or formatted == doc.source:
+            return None
+        return [_full_document_edit(doc.source, formatted)]
+
+    @server.feature(types.TEXT_DOCUMENT_RANGE_FORMATTING)
+    def range_formatting(
+        ls: AlmasixLanguageServer, params: types.DocumentRangeFormattingParams
+    ) -> list[types.TextEdit] | None:
+        # format_prism is whole-document; still honor the request so Reformat
+        # Selection / LSP4IJ's range path works the same as full format.
+        doc = ls.workspace.get_text_document(params.text_document.uri)
+        path = to_fs_path(params.text_document.uri)
+        uri_path = Path(path) if path else None
+        language = _document_language(doc, uri_path)
+        formatted = feat.format_document(doc.source, language=language, uri_path=uri_path)
+        if formatted is None or formatted == doc.source:
+            return None
+        return [_full_document_edit(doc.source, formatted)]
 
     @server.feature(types.TEXT_DOCUMENT_HOVER)
     def hover(ls: AlmasixLanguageServer, params: types.HoverParams) -> types.Hover | None:
         doc = ls.workspace.get_text_document(params.text_document.uri)
+        path = to_fs_path(params.text_document.uri)
+        uri_path = Path(path) if path else None
+        language = _document_language(doc, uri_path)
         item = feat.hover(
             ls.index,
             doc.source,
             params.position.line,
             params.position.character,
-            language=_language_id(doc),
+            language=language,
+            uri_path=uri_path,
         )
         if item is None:
             return None
@@ -111,12 +141,16 @@ def create_server() -> AlmasixLanguageServer:
         ls: AlmasixLanguageServer, params: types.DefinitionParams
     ) -> types.Location | None:
         doc = ls.workspace.get_text_document(params.text_document.uri)
+        path = to_fs_path(params.text_document.uri)
+        uri_path = Path(path) if path else None
+        language = _document_language(doc, uri_path)
         item = feat.definition(
             ls.index,
             doc.source,
             params.position.line,
             params.position.character,
-            language=_language_id(doc),
+            language=language,
+            uri_path=uri_path,
         )
         return _location(item)
 
@@ -361,13 +395,90 @@ def _language_id(doc: Any) -> str:
     return getattr(doc, "language_id", None) or "plaintext"
 
 
+def _full_document_edit(original: str, new_text: str) -> types.TextEdit:
+    """Replace the entire document (LSP formatting response)."""
+    lines = original.split("\n")
+    end_line = len(lines) - 1
+    end_char = len(lines[-1])
+    return types.TextEdit(
+        range=types.Range(
+            start=types.Position(line=0, character=0),
+            end=types.Position(line=end_line, character=end_char),
+        ),
+        new_text=new_text,
+    )
+
+
+def _to_completion_item(item: feat.CompletionItem) -> types.CompletionItem:
+    insert = item.insert_text if item.insert_text is not None else item.label
+    fmt = (
+        types.InsertTextFormat.Snippet
+        if item.insert_text_format == "snippet"
+        else types.InsertTextFormat.PlainText
+    )
+    text_edit: types.TextEdit | None = None
+    if (
+        item.start_line is not None
+        and item.start_character is not None
+        and item.end_line is not None
+        and item.end_character is not None
+    ):
+        text_edit = types.TextEdit(
+            range=types.Range(
+                start=types.Position(line=item.start_line, character=item.start_character),
+                end=types.Position(line=item.end_line, character=item.end_character),
+            ),
+            new_text=insert,
+        )
+    return types.CompletionItem(
+        label=item.label,
+        kind=_completion_kind(item.kind),
+        detail=item.detail or None,
+        insert_text=insert if text_edit is None else None,
+        insert_text_format=fmt,
+        text_edit=text_edit,
+        filter_text=item.filter_text or item.label,
+    )
+
+
+def _document_language(doc: Any, uri_path: Path | None) -> str:
+    """The language id, corrected by filename where clients disagree.
+
+    A ``*.prism.html`` file arrives as HTML from dual-root editors, and ``.env``
+    files are plain text in any client without a dotenv extension installed.
+    """
+    language = _language_id(doc)
+    if uri_path is None:
+        return language
+    name = uri_path.name
+    if name.endswith(".prism.html"):
+        return "prism-html"
+    if name == ".env" or name.startswith(".env."):
+        return "dotenv"
+    return language
+
+
 def _completion_kind(kind: str) -> types.CompletionItemKind:
-    if kind in {"view", "include", "extends"}:
+    if kind in {"view", "include", "extends", "vite", "asset", "url"}:
         return types.CompletionItemKind.File
     if kind == "route":
         return types.CompletionItemKind.Reference
+    if kind == "env":
+        return types.CompletionItemKind.Constant
+    if kind == "table":
+        return types.CompletionItemKind.Struct
+    if kind == "column":
+        return types.CompletionItemKind.Field
+    if kind == "attr":
+        return types.CompletionItemKind.Field
     if kind in {"config", "trans", "middleware"}:
         return types.CompletionItemKind.Value
+    if kind == "action":
+        return types.CompletionItemKind.Method
+    if kind == "directive":
+        return types.CompletionItemKind.Keyword
+    if kind == "var":
+        return types.CompletionItemKind.Variable
     return types.CompletionItemKind.Text
 
 
