@@ -318,6 +318,11 @@ def _safe_build_index(ls: AlmasixLanguageServer, root: Path | None) -> AppIndex:
     except Exception:  # pragma: no cover - client may omit progress support
         began = False
     try:
+        if root is None:
+            return AppIndex(
+                base_path=Path.cwd().resolve(),
+                error="No Almasix application found (missing bootstrap/app.py).",
+            )
         return build_index(root)
     finally:
         if began:

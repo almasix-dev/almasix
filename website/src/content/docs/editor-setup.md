@@ -59,6 +59,10 @@ Full details: [`editors/vscode/README.md`](https://github.com/almasix-dev/almasi
 Architecture is **LSP-first**: the plugin is a Platform shell (file type,
 TextMate, run configs) that runs `almasix-lsp` through LSP4IJ.
 
+Prism files must show as language **Prism** (not HTML). The plugin overrides
+`*.prism.html` so the built-in HTML type cannot steal them, and ships a VS Code–
+shaped TextMate `package.json` so directive / `{{ }}` scopes color correctly.
+
 ### Build the zip
 
 ```bash
@@ -110,9 +114,10 @@ until then the in-repo artifacts are the supported install path.
 
 | Capability | VS Code family | PyCharm / IntelliJ |
 | --- | --- | --- |
-| Prism highlighting (TextMate) | Extension grammar (`prism-html`) | File type + TextMate bundle |
+| Prism highlighting (TextMate) | Extension grammar (`prism-html`) | File type override + TextMate bundle (not HTML) |
 | Snippets | Bundled | Via TextMate / live templates follow-up |
 | LSP completions / diagnostics / hover / definition | `vscode-languageclient` → `almasix-lsp` | LSP4IJ → `almasix-lsp` |
+| Find references (view names) | Same LSP (pruned app scan) | Same LSP (pruned app scan) |
 | Rebuild index / app info | Command palette → LSP commands | LSP4IJ execute command / notification |
 | Format Prism | `smith prism:format` / extension formatter hook | External tool / Smith run config |
 | Smith serve / queue / migrate | tasks.json (optional) | **Almasix Smith** run configuration type |

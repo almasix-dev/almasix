@@ -3,6 +3,12 @@
 Prism highlighting + snippets + **almasix-lsp** client. Marketplace publish is
 not required — install the `.vsix` from this repo.
 
+Prism syntax highlighting is first-class here (language id ``prism-html``). The
+JetBrains plugin needed extra work to keep ``*.prism.html`` off the HTML file
+type; VS Code already associates the extension correctly. Find-references /
+definition for view names go through the shared ``almasix-lsp`` server in both
+editors.
+
 ## Install from VSIX (sideload)
 
 1. Build the package (from the Almasix repo):

@@ -23,7 +23,9 @@ Marketplace publish is **not** required — install the zip from Disk.
    - Choose the zip from `build/distributions/`
    - Restart when prompted
 
-3. Open an Almasix app. Ensure the project venv has the language server:
+3. Open an Almasix app (folder with `bootstrap/app.py`). Opening the framework
+   monorepo is OK — the LSP prefers `examples/progress` when nested. Ensure the
+   project venv has the language server:
 
    ```bash
    pip install 'almasix[lsp]'
@@ -32,16 +34,23 @@ Marketplace publish is **not** required — install the zip from Disk.
 4. LSP4IJ starts `almasix-lsp` from `.venv/bin/almasix-lsp` (or
    `python -m almasix.lsp`). Prism (`.prism.html`) and Python files are mapped.
 
-5. Optional: `smith ide:install` writes `.idea/almasix-editor.md` with these
+5. Confirm Prism highlighting:
+
+   - Status bar / file type should say **Prism**, not HTML
+   - Settings → Editor → File Types → `*.prism.html` under **Prism**
+   - Settings → Editor → TextMate Bundles → **prism** enabled
+
+6. Optional: `smith ide:install` writes `.idea/almasix-editor.md` with these
    steps.
 
 ## Features
 
 | Piece | Status |
 | --- | --- |
-| Prism file type (`.prism.html`) | Shipped |
-| TextMate grammar bundle | Bundled under `resources/textMate/prism/` |
+| Prism file type (`.prism.html`) | Shipped (overrides HTML for `*.prism.html`) |
+| TextMate grammar bundle | VS Code–shaped `package.json` under `resources/textMate/prism/` |
 | LSP → `almasix-lsp` (LSP4IJ) | Shipped |
+| Go to definition / references | View / route / config string names via LSP |
 | Smith run configuration type | Shipped (`Almasix Smith`) |
 | New… generators / debugger templates | Follow-up (see PLAN M47 notes) |
 | Marketplace listing | Post-gate (needs publisher account) |

@@ -49,11 +49,45 @@ class AppIndex:
 
 
 def find_app_root(start: Path | None = None) -> Path | None:
-    """Walk upward from ``start`` looking for ``bootstrap/app.py``."""
+    """Locate an Almasix app root (directory with ``bootstrap/app.py``).
+
+    Walks upward from ``start``, then does a shallow downward search so opening
+    the framework monorepo still resolves ``examples/progress`` (or another
+    nested demo app) instead of indexing the whole tree.
+    """
     current = (start or Path.cwd()).resolve()
     for candidate in (current, *current.parents):
         if (candidate / "bootstrap" / "app.py").is_file():
             return candidate
+    return _find_nested_app_root(current)
+
+
+def _find_nested_app_root(root: Path) -> Path | None:
+    """Prefer known demo apps, then ``examples/*``, then one-level children."""
+    preferred = (
+        root / "examples" / "progress",
+        root / "examples" / "web",
+        root / "examples" / "deploy",
+    )
+    for candidate in preferred:
+        if (candidate / "bootstrap" / "app.py").is_file():
+            return candidate.resolve()
+    examples = root / "examples"
+    if examples.is_dir():
+        try:
+            children = sorted(examples.iterdir())
+        except OSError:  # pragma: no cover
+            children = []
+        for child in children:
+            if child.is_dir() and (child / "bootstrap" / "app.py").is_file():
+                return child.resolve()
+    try:
+        siblings = sorted(root.iterdir())
+    except OSError:  # pragma: no cover
+        return None
+    for child in siblings:
+        if child.is_dir() and (child / "bootstrap" / "app.py").is_file():
+            return child.resolve()
     return None
 
 

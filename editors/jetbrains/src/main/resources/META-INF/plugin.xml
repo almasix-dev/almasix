@@ -22,7 +22,10 @@
         implementationClass="com.almasix.ide.PrismFileType"
         fieldName="INSTANCE"
         language="Prism"
-        extensions="prism.html"/>
+        extensions="prism.html"
+        fileNamePatterns="*.prism.html"/>
+
+    <fileType.fileTypeOverrider implementation="com.almasix.ide.PrismFileTypeOverrider"/>
 
     <configurationType implementation="com.almasix.ide.SmithConfigurationType"/>
     <textMate.bundleProvider implementation="com.almasix.ide.PrismTextMateBundleProvider"/>

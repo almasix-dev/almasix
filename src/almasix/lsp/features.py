@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,6 +20,36 @@ from almasix.lsp.analysis import (
 )
 from almasix.lsp.directives import directive_hover
 from almasix.lsp.index import AppIndex, config_file_for_key, view_path_for_name
+
+# Directories never descended into while scanning for view references.
+_SKIP_DIR_NAMES = frozenset(
+    {
+        ".git",
+        ".idea",
+        ".tox",
+        ".venv",
+        "__pycache__",
+        "build",
+        "dist",
+        "htmlcov",
+        "node_modules",
+        "storage",
+        "vendor",
+        "website",
+        "editors",
+        "docs",
+    }
+)
+
+# Relative roots under the app (or monorepo) that may contain view() / @include.
+_REFERENCE_SCAN_DIRS = (
+    "app",
+    "routes",
+    "resources/views",
+    "database",
+    "bootstrap",
+    "tests",
+)
 
 
 @dataclass(frozen=True)
@@ -296,6 +328,48 @@ def document_links(
     return links
 
 
+def _iter_reference_sources(root: Path) -> Iterator[tuple[Path, str]]:
+    """Yield ``(path, language)`` for files that may reference views.
+
+    Scans only app-relevant subtrees and prunes heavy directories (``.venv``,
+    ``node_modules``, ``website``, …) so find-references cannot hang when the
+    workspace root is a monorepo.
+    """
+    if not root.is_dir():
+        return
+
+    bases: list[Path] = []
+    for relative in _REFERENCE_SCAN_DIRS:
+        candidate = root / relative
+        if candidate.is_dir():
+            bases.append(candidate)
+    if not bases:
+        # No conventional layout — still avoid a full-tree rglob("*").
+        bases = [root]
+
+    seen_files: set[Path] = set()
+    for base in bases:
+        for dirpath, dirnames, filenames in os.walk(base, followlinks=False):
+            dirnames[:] = sorted(
+                name
+                for name in dirnames
+                if name not in _SKIP_DIR_NAMES and not name.startswith(".")
+            )
+            for name in sorted(filenames):
+                if name.endswith(".py"):
+                    language = "python"
+                elif name.endswith(".prism.html"):
+                    language = "prism"
+                else:
+                    continue
+                path = Path(dirpath, name)
+                resolved = path.resolve()
+                if resolved in seen_files:
+                    continue
+                seen_files.add(resolved)
+                yield resolved, language
+
+
 def find_view_references(
     index: AppIndex,
     view_name: str,
@@ -326,28 +400,15 @@ def find_view_references(
             if call.kind in {"view", "include", "extends"} and call.value == view_name:
                 _add(path, call)
 
-    root = index.base_path
-    if root.is_dir():
-        for path in sorted(root.rglob("*")):
-            if not path.is_file():
-                continue
-            if any(part in {"__pycache__", ".venv", "node_modules", ".git"} for part in path.parts):
-                continue
-            if path.suffix == ".py":
-                language = "python"
-                finder = find_python_calls
-            elif path.name.endswith(".prism.html"):
-                language = "prism"
-                finder = find_prism_calls
-            else:
-                continue
-            try:
-                text = path.read_text(encoding="utf-8")
-            except OSError:  # pragma: no cover
-                continue
-            for call in finder(text):
-                if call.kind in {"view", "include", "extends"} and call.value == view_name:
-                    _add(path.resolve(), call)
+    for path, language in _iter_reference_sources(index.base_path):
+        finder = find_python_calls if language == "python" else find_prism_calls
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:  # pragma: no cover
+            continue
+        for call in finder(text):
+            if call.kind in {"view", "include", "extends"} and call.value == view_name:
+                _add(path, call)
     return locations
 
 
