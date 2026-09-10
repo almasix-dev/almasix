@@ -71,10 +71,11 @@ class PersonalAccessToken(Model):
             return False
         current = clock_now()
         # Compare aware/naive safely by stripping tz if needed.
-        if expires.tzinfo is not None and current.tzinfo is None:  # pragma: no cover
+        if expires.tzinfo is not None and current.tzinfo is None:
             expires = expires.replace(tzinfo=None)
-        elif expires.tzinfo is None and current.tzinfo is not None:  # pragma: no cover
-            current = current.replace(tzinfo=None)
+        elif expires.tzinfo is None and current.tzinfo is not None:
+            to_datetime = getattr(current, "to_datetime", None)
+            current = (to_datetime() if callable(to_datetime) else current).replace(tzinfo=None)
         return expires <= current
 
     async def touch_last_used(self) -> None:

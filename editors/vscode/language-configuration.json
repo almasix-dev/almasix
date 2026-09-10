@@ -1,0 +1,46 @@
+{
+  "comments": {
+    "blockComment": ["{{--", "--}}"]
+  },
+  "brackets": [
+    ["<!--", "-->"],
+    ["<", ">"],
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["{{", "}}"],
+    ["{!!", "!!}"],
+    ["{{--", "--}}"]
+  ],
+  "autoClosingPairs": [
+    { "open": "{{", "close": "}}" },
+    { "open": "{!!", "close": "!!}" },
+    { "open": "{{--", "close": "--}}" },
+    { "open": "<", "close": ">" },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] },
+    { "open": "\"", "close": "\"", "notIn": ["string", "comment"] },
+    { "open": "(", "close": ")" },
+    { "open": "[", "close": "]" }
+  ],
+  "surroundingPairs": [
+    ["<", ">"],
+    ["'", "'"],
+    ["\"", "\""],
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["{{", "}}"],
+    ["{!!", "!!}"]
+  ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*@(if|unless|isset|empty|for|foreach|forelse|while|section|component|slot|push|prepend|once|auth|guest|can|canany|cannot|cannotany|error|cache|python)\\b",
+      "end": "^\\s*@(endif|endunless|endisset|endempty|endfor|endforeach|endforelse|endwhile|endsection|endcomponent|endslot|endpush|endprepend|endonce|endauth|endguest|endcan|endcanany|endcannot|endcannotany|enderror|endcache|endpython)\\b"
+    }
+  },
+  "indentationRules": {
+    "increaseIndentPattern": "^\\s*@(if|unless|isset|for|foreach|forelse|while|section|component|slot|push|prepend|once|auth|guest|can|canany|cannot|cannotany|error|cache|python)\\b.*$|^\\s*<(?!/?\\s*(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)\\b)[^>]*[^/]>\\s*$",
+    "decreaseIndentPattern": "^\\s*@(endif|endunless|endisset|endempty|endfor|endforeach|endforelse|endwhile|endsection|endcomponent|endslot|endpush|endprepend|endonce|endauth|endguest|endcan|endcanany|endcannot|endcannotany|enderror|endcache|endpython|else|elseif|empty|show)\\b|^\\s*</[^>]+>\\s*$"
+  },
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>/\\?\\s]+)"
+}

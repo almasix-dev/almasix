@@ -34,9 +34,15 @@ class DatabaseCommand(Command):
         connection: str | None = None,
         path: str | Path | Sequence[str | Path] | None = None,
     ) -> Migrator:
+        from almasix.orm.migration import package_migration_paths
+
         given = [path] if isinstance(path, (str, Path)) else list(path or [])
         directories = [Path(one) for one in given] or [Path("database/migrations")]
         rooted = [one if one.is_absolute() else self.root() / one for one in directories]
+        # Package paths registered via ``load_migrations_from`` join the search
+        # unless the caller already named an explicit ``--path``.
+        if not given:
+            rooted.extend(package_migration_paths())
         return Migrator(rooted, connection)
 
     def resolve_migrator(self) -> Migrator | None:

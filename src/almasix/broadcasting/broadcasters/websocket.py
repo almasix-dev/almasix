@@ -1,4 +1,4 @@
-"""Almasix's own websocket broadcaster — no third party involved."""
+"""Sonar — Almasix's first-party websocket broadcaster (driver: websocket|sonar)."""
 
 from __future__ import annotations
 
@@ -10,11 +10,12 @@ from almasix.broadcasting.sockets import SocketHub, get_hub
 
 
 class WebsocketBroadcaster(Broadcaster):
-    """Delivers straight to the connections held by this process.
+    """Sonar: delivers straight to the connections held by this process.
 
-    Good for a single worker, a dev server, or a dedicated socket process
-    fed over Redis. Run more than one worker without Redis in front and each
-    worker only reaches its own browsers.
+    Configured as driver ``websocket`` or the ``sonar`` alias. Good for a
+    single worker, a dev server, or a dedicated socket process fed over Redis.
+    Run more than one worker without Redis in front and each worker only
+    reaches its own browsers. Pair with the ``@almasix/sonar`` browser client.
     """
 
     driver = "websocket"

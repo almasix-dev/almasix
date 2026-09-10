@@ -1,0 +1,10 @@
+"""{{ name }} package routes."""
+
+from almasix.routing import Route
+
+
+def {{ module }}_home() -> dict[str, str]:
+    return {"package": "{{ module }}", "status": "ok"}
+
+
+Route.get("/{{ module }}", {{ module }}_home)

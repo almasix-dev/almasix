@@ -21,9 +21,7 @@ ROOT = Path(__file__).resolve().parents[5]  # …/almasix (repo root)
 
 class ProgressDeployCommand(Command):
     signature = "progress:deploy"
-    description = (
-        "Demo deployment ops — serve --workers, optimize, /up, docs, release path (M38)"
-    )
+    description = "Demo deployment ops — serve --workers, optimize, /up, docs, release path (M38)"
 
     def handle(self) -> int:
         signature = ServeCommand.signature
@@ -71,9 +69,7 @@ class ProgressDeployCommand(Command):
         self.info("examples/deploy -> Dockerfile + compose")
 
         publish = ROOT / ".github" / "workflows" / "publish.yml"
-        if not publish.is_file() or "Trusted Publishing" not in publish.read_text(
-            encoding="utf-8"
-        ):
+        if not publish.is_file() or "Trusted Publishing" not in publish.read_text(encoding="utf-8"):
             self.error("publish.yml Trusted Publishing workflow missing")
             return 1
         self.info("publish.yml -> Trusted Publishing (PyPI + TestPyPI)")

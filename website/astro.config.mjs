@@ -143,6 +143,7 @@ export default defineConfig({
 						{ label: 'Notifications', slug: 'notifications' },
 						{ label: 'Collections', slug: 'collections' },
 						{ label: 'Helpers', slug: 'helpers' },
+						{ label: 'Dates (Chrono)', slug: 'dates' },
 						{ label: 'Strings', slug: 'strings' },
 						{ label: 'Cache', slug: 'cache' },
 						{ label: 'Redis', slug: 'redis' },
@@ -152,6 +153,7 @@ export default defineConfig({
 						{ label: 'Processes', slug: 'processes' },
 						{ label: 'Concurrency', slug: 'concurrency' },
 						{ label: 'Search', slug: 'search' },
+						{ label: 'Package Development', slug: 'package-development' },
 					],
 				},
 				{
@@ -213,6 +215,9 @@ export default defineConfig({
 						{ label: 'Control Structures', slug: 'prism/control' },
 						{ label: 'Including Subviews', slug: 'prism/includes' },
 						{ label: 'Stacks & Directives', slug: 'prism/stacks' },
+						{ label: 'Language support', slug: 'prism-language' },
+						{ label: 'Language server', slug: 'language-server' },
+						{ label: 'Editor setup', slug: 'editor-setup' },
 					],
 				},
 				{

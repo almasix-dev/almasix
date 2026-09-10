@@ -1,0 +1,260 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Prism",
+  "scopeName": "text.html.prism",
+  "fileTypes": ["prism.html"],
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#raw-echo" },
+    { "include": "#echo" },
+    { "include": "#python-block" },
+    { "include": "#directives" },
+    { "include": "text.html.basic" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.block.prism",
+      "begin": "\\{\\{--",
+      "end": "--\\}\\}",
+      "patterns": [
+        {
+          "name": "comment.block.prism",
+          "match": "."
+        }
+      ]
+    },
+    "echo": {
+      "name": "meta.embedded.expression.prism",
+      "begin": "\\{\\{",
+      "end": "\\}\\}",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.expression.begin.prism" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.expression.end.prism" }
+      },
+      "patterns": [
+        {
+          "name": "source.python.embedded.prism",
+          "match": "[^}]+"
+        }
+      ]
+    },
+    "raw-echo": {
+      "name": "meta.embedded.raw.prism",
+      "begin": "\\{\\!\\!",
+      "end": "\\!\\!\\}",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.raw.begin.prism" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.raw.end.prism" }
+      },
+      "patterns": [
+        {
+          "name": "source.python.embedded.prism",
+          "match": "[^!]+"
+        }
+      ]
+    },
+    "python-block": {
+      "name": "meta.embedded.block.python.prism",
+      "begin": "(@python)\\b",
+      "end": "(@endpython)\\b",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.directive.prism" }
+      },
+      "endCaptures": {
+        "1": { "name": "keyword.control.directive.prism" }
+      },
+      "contentName": "source.python",
+      "patterns": [
+        { "include": "source.python" }
+      ]
+    },
+    "directives": {
+      "patterns": [
+        { "include": "#directive-control" },
+        { "include": "#directive-layout" },
+        { "include": "#directive-include" },
+        { "include": "#directive-component" },
+        { "include": "#directive-stack" },
+        { "include": "#directive-auth" },
+        { "include": "#directive-misc" }
+      ]
+    },
+    "directive-args": {
+      "begin": "\\(",
+      "end": "\\)",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.parameters.begin.prism" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.parameters.end.prism" }
+      },
+      "patterns": [
+        {
+          "name": "string.quoted.single.prism",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            { "name": "constant.character.escape.prism", "match": "\\\\." }
+          ]
+        },
+        {
+          "name": "string.quoted.double.prism",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.prism", "match": "\\\\." }
+          ]
+        },
+        {
+          "name": "constant.numeric.prism",
+          "match": "\\b\\d+(\\.\\d+)?\\b"
+        },
+        {
+          "name": "keyword.operator.prism",
+          "match": "[,=]"
+        },
+        {
+          "name": "variable.other.prism",
+          "match": "[A-Za-z_][\\w.]*"
+        }
+      ]
+    },
+    "directive-control": {
+      "patterns": [
+        {
+          "name": "meta.directive.control.prism",
+          "begin": "@(if|elseif|unless|isset|empty|for|foreach|forelse|while)\\b",
+          "end": "(?=\\s|$)",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.directive.prism" }
+          },
+          "patterns": [
+            { "include": "#directive-args" }
+          ]
+        },
+        {
+          "name": "keyword.control.directive.prism",
+          "match": "@(else|endif|endunless|endisset|endempty|endfor|endforeach|endforelse|endwhile)\\b"
+        }
+      ]
+    },
+    "directive-layout": {
+      "patterns": [
+        {
+          "name": "meta.directive.layout.prism",
+          "begin": "@(extends|section|yield|include|includeIf|includeWhen|includeUnless|each)\\b",
+          "end": "(?=\\s|$)",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.directive.prism" }
+          },
+          "patterns": [
+            { "include": "#directive-args" }
+          ]
+        },
+        {
+          "name": "keyword.control.directive.prism",
+          "match": "@(show|parent|endsection)\\b"
+        }
+      ]
+    },
+    "directive-include": {
+      "patterns": [
+        {
+          "name": "meta.directive.include.prism",
+          "begin": "@(include|includeIf|includeWhen|includeUnless|each)\\b",
+          "end": "(?=\\s|$)",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.directive.prism" }
+          },
+          "patterns": [
+            { "include": "#directive-args" }
+          ]
+        }
+      ]
+    },
+    "directive-component": {
+      "patterns": [
+        {
+          "name": "meta.directive.component.prism",
+          "begin": "@(component|slot|props|aware)\\b",
+          "end": "(?=\\s|$)",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.directive.prism" }
+          },
+          "patterns": [
+            { "include": "#directive-args" }
+          ]
+        },
+        {
+          "name": "keyword.control.directive.prism",
+          "match": "@(endcomponent|endslot)\\b"
+        }
+      ]
+    },
+    "directive-stack": {
+      "patterns": [
+        {
+          "name": "meta.directive.stack.prism",
+          "begin": "@(push|prepend|stack)\\b",
+          "end": "(?=\\s|$)",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.directive.prism" }
+          },
+          "patterns": [
+            { "include": "#directive-args" }
+          ]
+        },
+        {
+          "name": "keyword.control.directive.prism",
+          "match": "@(once|endpush|endprepend|endonce)\\b"
+        }
+      ]
+    },
+    "directive-auth": {
+      "patterns": [
+        {
+          "name": "meta.directive.auth.prism",
+          "begin": "@(auth|guest|can|canany|cannot|cannotany|error)\\b",
+          "end": "(?=\\s|$)",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.directive.prism" }
+          },
+          "patterns": [
+            { "include": "#directive-args" }
+          ]
+        },
+        {
+          "name": "keyword.control.directive.prism",
+          "match": "@(endauth|endguest|endcan|endcanany|endcannot|endcannotany|enderror)\\b"
+        }
+      ]
+    },
+    "directive-misc": {
+      "patterns": [
+        {
+          "name": "meta.directive.misc.prism",
+          "begin": "@(csrf|asset|lang|choice|cache|dump|dd|vite|viteReactRefresh|route|signedRoute)\\b",
+          "end": "(?=\\s|$)",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.directive.prism" }
+          },
+          "patterns": [
+            { "include": "#directive-args" }
+          ]
+        },
+        {
+          "name": "keyword.control.directive.prism",
+          "match": "@(endcache)\\b"
+        },
+        {
+          "name": "keyword.control.directive.prism",
+          "match": "@[A-Za-z_][\\w]*\\b"
+        }
+      ]
+    }
+  }
+}

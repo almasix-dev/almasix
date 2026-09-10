@@ -296,7 +296,7 @@ class QueryBuilder:
         """A builder handed in where a value belongs is a scalar subquery."""
         if isinstance(value, QueryBuilder):
             return value.to_select().scalar_subquery()
-        return value
+        return _writable_value(value)
 
     @staticmethod
     def _resolve_operator(operator: Any) -> Callable[[Any, Any], Any]:
@@ -463,7 +463,7 @@ class QueryBuilder:
         if isinstance(values, QueryBuilder):
             clause = target.in_(values.to_select().scalar_subquery())
         else:
-            clause = target.in_(list(values))
+            clause = target.in_([_writable_value(item) for item in values])
         return self._push_where(boolean, ~clause if negate else clause)
 
     def or_where_in(self, column: str, values: Iterable[Any] | QueryBuilder) -> QueryBuilder:
@@ -2550,9 +2550,33 @@ def _writable_value(value: Any) -> Any:
 
     The builder's table clauses carry no column types, so nothing downstream
     would know to encode it; Laravel encodes here for the same reason.
+
+    ``Chrono`` (and other ``datetime`` subclasses) become a plain ``datetime``
+    so aiosqlite can bind them on untyped inserts.
     """
     if isinstance(value, (dict, list)):
         return json.dumps(value)
+    if isinstance(value, datetime.datetime) and type(value) is not datetime.datetime:
+        to_datetime = getattr(value, "to_datetime", None)
+        if callable(to_datetime):
+            return to_datetime()
+        return datetime.datetime(
+            value.year,
+            value.month,
+            value.day,
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond,
+            value.tzinfo,
+            fold=value.fold,
+        )
+    if (
+        isinstance(value, datetime.date)
+        and type(value) is not datetime.date
+        and not isinstance(value, datetime.datetime)
+    ):
+        return datetime.date(value.year, value.month, value.day)
     return value
 
 
@@ -2713,13 +2737,16 @@ def _clock_now() -> Any:
     """The current moment, as the app's clock reports it."""
     from almasix.support.helpers import now
 
-    return now().replace(tzinfo=None)
+    moment = now()
+    to_datetime = getattr(moment, "to_datetime", None)
+    base = to_datetime() if callable(to_datetime) else moment
+    return base.replace(tzinfo=None)
 
 
 def _clock_today() -> Any:
     from almasix.support.helpers import today
 
-    return today()
+    return _writable_value(today())
 
 
 def _as_date_text(value: Any) -> Any:

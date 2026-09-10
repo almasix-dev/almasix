@@ -20,8 +20,10 @@ class DemoSeeder(Seeder):
         if await User.query().count() > 0:
             return
 
-        ada = await User.factory().with_token("secret-token").create(
-            {"email": "ada@almasix.dev", "name": "Ada"}
+        ada = (
+            await User.factory()
+            .with_token("secret-token")
+            .create({"email": "ada@almasix.dev", "name": "Ada"})
         )
         grace = await User.factory().create({"email": "grace@almasix.dev", "name": "Grace"})
 
@@ -31,15 +33,14 @@ class DemoSeeder(Seeder):
         await ada.roles().attach(editor, {"level": "writer"})
         await grace.roles().attach(editor)
 
-        notes = await Post.factory().for_(ada, "author").create(
-            {"title": "Notes on engines", "views": 3}
+        notes = (
+            await Post.factory()
+            .for_(ada, "author")
+            .create({"title": "Notes on engines", "views": 3})
         )
         await Post.factory().for_(ada, "author").create({"title": "Eager loading", "views": 1})
         draft = await (
-            Post.factory()
-            .draft()
-            .for_(grace, "author")
-            .create({"title": "Draft: soft deletes"})
+            Post.factory().draft().for_(grace, "author").create({"title": "Draft: soft deletes"})
         )
 
         await notes.comments().create(body="Ship it.")

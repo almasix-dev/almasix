@@ -34,8 +34,8 @@ def get_broadcast_manager() -> BroadcastManager:
 def current_socket_id() -> str | None:
     """The socket that made the current request, from the `X-Socket-ID` header.
 
-    Echo sends this on every HTTP request once it has connected, which is how
-    `to_others()` knows whom to leave out.
+    Sonar (and Echo-compatible clients) send this on every HTTP request once
+    connected, which is how `to_others()` knows whom to leave out.
     """
     from almasix.http.request import get_request
 
@@ -112,16 +112,19 @@ def default_broadcasting_config() -> dict[str, Any]:
     """The shape of `config/broadcasting.py`."""
     from almasix.config import env
 
+    _sonar = {
+        "driver": "websocket",
+        "key": env("BROADCAST_KEY", "almasix"),
+        "secret": env("BROADCAST_SECRET"),
+        "path": env("BROADCAST_PATH", "/broadcasting/socket"),
+        "client_events": bool(env("BROADCAST_CLIENT_EVENTS", False)),
+    }
     return {
         "default": env("BROADCAST_CONNECTION", "log"),
         "connections": {
-            "websocket": {
-                "driver": "websocket",
-                "key": env("BROADCAST_KEY", "almasix"),
-                "secret": env("BROADCAST_SECRET"),
-                "path": env("BROADCAST_PATH", "/broadcasting/socket"),
-                "client_events": bool(env("BROADCAST_CLIENT_EVENTS", False)),
-            },
+            # Sonar — first-party realtime (driver may also be written `sonar`).
+            "websocket": dict(_sonar),
+            "sonar": {**_sonar, "driver": "sonar"},
             "pusher": {
                 "driver": "pusher",
                 "key": env("PUSHER_APP_KEY"),

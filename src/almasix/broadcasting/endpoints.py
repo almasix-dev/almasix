@@ -38,14 +38,14 @@ class BroadcastingController:
 
 
 class BroadcastingSocket:
-    """Almasix's websocket server, in one handler.
+    """Sonar — Almasix's first-party websocket server, in one handler.
 
-    The protocol is deliberately small and Pusher-shaped, so an existing
-    client library — or twenty lines of `WebSocket` in a browser — can talk
-    to it:
+    The protocol is deliberately small (and familiar to Pusher-shaped clients),
+    so ``@almasix/sonar`` — or twenty lines of ``WebSocket`` in a browser —
+    can talk to it:
 
     - the server opens with `almasix:connection_established`, carrying the
-      `socket_id` the client must send back on HTTP requests;
+      `socket_id` the client must send back on HTTP requests (`X-Socket-ID`);
     - the client sends `subscribe` with a channel, plus the `auth` signature
       from `/broadcasting/auth` when the channel is private;
     - the server answers `almasix:subscription_succeeded` and thereafter

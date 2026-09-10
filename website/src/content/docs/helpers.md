@@ -2318,13 +2318,15 @@ str(method_field("delete"))
 
 ### now
 
-Returns the current moment as a timezone-aware `datetime.datetime`, in UTC
-unless you pass a `tzinfo`. The result is a stdlib `datetime`, not a
-Carbon-style wrapper, and the default is UTC rather than the configured
-application timezone.
+Returns the current moment as a ``Chrono`` (a timezone-aware ``datetime``
+subclass), in UTC unless you pass a ``tz``. See [Dates (Chrono)](/dates/).
 
 ```python
 from almasix.support import now
+
+type(now()).__name__
+
+# 'Chrono'
 
 now().tzinfo
 
@@ -2782,21 +2784,22 @@ caught
 
 ### today
 
-Returns today's `datetime.date` in UTC, or in `tz` when you pass one — it is
-`now(tz).date()`. As with `now`, this is a stdlib `date` rather than a Carbon
-instance set to midnight.
+Returns the start of today as a ``Chrono`` (midnight in ``tz``, default UTC).
+Equivalent to ``Chrono.today(tz)``.
 
 ```python
 from almasix.support import now, today
 
-today() == now().date()
+today() == now().start_of_day()
 
 # True
 
 type(today()).__name__
 
-# 'date'
+# 'Chrono'
 ```
+
+See [Dates (Chrono)](/dates/) for the full fluent API.
 
 ### trait_uses_recursive
 
@@ -2971,7 +2974,7 @@ a gap you have to discover:
 | Laravel utility | Status in Almasix |
 | --- | --- |
 | **Benchmarking** (`Benchmark::dd`) | Not built. Time code with `time.perf_counter` or your profiler. |
-| **Dates** (`Carbon`) | Not built as a wrapper. Almasix returns `datetime` / `date` from `now()` and `today()`, and the ORM casts to them; Python's `datetime` and `zoneinfo` cover what Carbon does. |
+| **Dates** (`Chrono`) | `almasix.chrono` — Carbon-class fluent API; `now()` / `today()` return `Chrono`. See [Dates (Chrono)](/dates/). |
 | **Deferred functions** (`defer`) | Not built. Queue a job instead — see [Queues](/queues/). |
 | **Lottery** (`Lottery::odds`) | Not built. |
 | **Pipeline** (`Pipeline::send`) | Not built as a public utility, though the HTTP kernel runs middleware as a pipeline internally. |

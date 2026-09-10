@@ -100,6 +100,10 @@ class ConsoleKernel:
         self.app.load_configuration()
         self.app.apply_middleware_callbacks()
         self.app.register_configured_providers()
+        # Providers (Signet, Prism, …) register commands onto ``app.make(ConsoleKernel)``.
+        # Bind this FrontDoor kernel so those registrations land on the CLI kernel,
+        # not a second instance created by the container factory.
+        self.app.container.instance(ConsoleKernel, self)
         self.app.boot()
         self.app._bootstrapped = True
 
@@ -119,6 +123,20 @@ class ConsoleKernel:
     def discover_framework_commands(self) -> None:
         """Register the commands Almasix itself ships — no application needed."""
         self._load_package("almasix.console.commands")
+        try:
+            from almasix.lsp.commands.serve import LspServeCommand
+
+            self.register(LspServeCommand)
+        except ImportError:  # pragma: no cover - package always present in-tree
+            pass
+        try:
+            from almasix.ide.commands.install import IdeInstallCommand
+            from almasix.ide.commands.stubs import IdeStubsCommand
+
+            self.register(IdeInstallCommand)
+            self.register(IdeStubsCommand)
+        except ImportError:  # pragma: no cover - package always present in-tree
+            pass
 
     def register(self, command_cls: type[Command]) -> None:
         if not command_cls.signature:

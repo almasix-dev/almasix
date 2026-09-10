@@ -32,9 +32,7 @@ class AppServiceProvider(ServiceProvider):
         )
         RateLimiter.for_(
             "progress",
-            lambda request: Limit.per_minute(3).by(
-                f"progress:{request.ip() or '0.0.0.0'}"
-            ),
+            lambda request: Limit.per_minute(3).by(f"progress:{request.ip() or '0.0.0.0'}"),
         )
 
 

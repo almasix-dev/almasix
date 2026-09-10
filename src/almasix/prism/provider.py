@@ -31,3 +31,14 @@ class PrismServiceProvider(ServiceProvider):
 
     def boot(self) -> None:
         set_engine(self.app.make(Engine))
+        self._register_commands()
+
+    def _register_commands(self) -> None:
+        try:
+            from almasix.console.kernel import ConsoleKernel
+            from almasix.prism.commands.format import PrismFormatCommand
+
+            kernel = self.app.make(ConsoleKernel)
+            kernel.register(PrismFormatCommand)
+        except Exception:  # pragma: no cover - soft boot
+            pass

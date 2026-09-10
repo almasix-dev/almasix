@@ -303,10 +303,40 @@ def test_the_manager_resolves_every_shipped_driver() -> None:
     assert isinstance(manager.connection("log"), LogBroadcaster)
     assert isinstance(manager.connection("null"), NullBroadcaster)
     assert isinstance(manager.connection("websocket"), WebsocketBroadcaster)
+    assert isinstance(manager.connection("sonar"), WebsocketBroadcaster)
     assert isinstance(manager.connection("redis"), RedisBroadcaster)
     assert isinstance(manager.connection("pusher"), PusherBroadcaster)
     assert manager.get_default_driver() == "log"
     assert manager.connection("log") is manager.connection("log")
+
+
+def test_sonar_is_an_alias_for_the_websocket_driver() -> None:
+    """M52 — product name Sonar resolves to the same broadcaster class."""
+    manager = BroadcastManager(
+        config={
+            "default": "sonar",
+            "connections": {
+                "sonar": {
+                    "driver": "sonar",
+                    "key": "k",
+                    "secret": "s",
+                    "path": "/broadcasting/socket",
+                },
+                "websocket": {
+                    "driver": "websocket",
+                    "key": "k",
+                    "secret": "s",
+                    "path": "/broadcasting/socket",
+                },
+            },
+        }
+    )
+    sonar = manager.connection("sonar")
+    websocket = manager.connection("websocket")
+    assert isinstance(sonar, WebsocketBroadcaster)
+    assert isinstance(websocket, WebsocketBroadcaster)
+    assert sonar is not websocket
+    assert manager.connection_config("sonar")["driver"] == "sonar"
 
 
 def test_a_connection_is_cached_until_it_is_purged(_isolated_manager: BroadcastManager) -> None:

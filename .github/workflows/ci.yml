@@ -171,3 +171,53 @@ jobs:
           DB_DATABASE: almasix_test
           DB_PORT: ${{ matrix.db_port }}
         run: pytest -q tests/test_m44_conformance.py
+
+  editors-vscode:
+    name: Package VS Code VSIX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Package extension
+        run: |
+          cd editors/vscode
+          npm install
+          npm run package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: almasix-vscode-vsix
+          path: editors/vscode/*.vsix
+
+  editors-jetbrains:
+    name: Package JetBrains plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: buildPlugin
+        working-directory: editors/jetbrains
+        run: ./gradlew buildPlugin --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: almasix-jetbrains-zip
+          path: editors/jetbrains/build/distributions/*.zip
+
+  sonar-client:
+    name: Build @almasix/sonar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build and test
+        working-directory: packages/sonar
+        run: |
+          npm ci
+          npm run build
+          npm test

@@ -129,7 +129,9 @@ class BroadcastManager:
             from almasix.broadcasting.broadcasters.log import LogBroadcaster
 
             return LogBroadcaster(name, cfg)
-        if driver == "websocket":
+        if driver in ("websocket", "sonar"):
+            # `sonar` is the product name for Almasix's first-party realtime
+            # server; the implementation is the websocket broadcaster.
             from almasix.broadcasting.broadcasters.websocket import WebsocketBroadcaster
 
             return WebsocketBroadcaster(name, cfg)

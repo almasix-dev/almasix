@@ -107,7 +107,10 @@ class ProgressDocsCommand(Command):
             return 1
         self.info("user docs -> no milestone IDs (M##)")
 
-        if not VERSION_SELECT.is_file() or not (ROOT / "website" / "src" / "versions.mjs").is_file():
+        if (
+            not VERSION_SELECT.is_file()
+            or not (ROOT / "website" / "src" / "versions.mjs").is_file()
+        ):
             self.error("Header / VersionSelect / versions.mjs missing")
             return 1
         header = HEADER.read_text(encoding="utf-8")
@@ -116,7 +119,10 @@ class ProgressDocsCommand(Command):
             return 1
         version_src = VERSION_SELECT.read_text(encoding="utf-8")
         versions_mjs = (ROOT / "website" / "src" / "versions.mjs").read_text(encoding="utf-8")
-        if "LATEST_VERSION = '0.x'" not in versions_mjs and 'LATEST_VERSION = "0.x"' not in versions_mjs:
+        if (
+            "LATEST_VERSION = '0.x'" not in versions_mjs
+            and 'LATEST_VERSION = "0.x"' not in versions_mjs
+        ):
             self.error("versions.mjs must set LATEST_VERSION to 0.x (never main)")
             return 1
         if "0.x" not in versions_mjs or "DOCS_VERSIONS" not in versions_mjs:

@@ -6,7 +6,7 @@
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
 > closed; package line **0.5.0** published; **M39** docs journey + Prologue closed;
-> **M37** Signet-class tokens closed; stability track continues with M52).
+> **M37** Signet-class tokens closed; autopilot **M53 → M45 → M46 → M47 → M52** closed).
 
 ## Working identity
 
@@ -369,7 +369,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Mail | `mail` | **M12** | Write when mail ships |
 | Notifications | `notifications` | **M13** | Write when notifications ship |
 | Testing | `testing` (+ HTTP / Console / Database / Mocking subpages) | **Done (M28)** | Pages published |
-| Packages | `packages` | **M29** | Write package-dev guidelines when that milestone lands |
+| Packages | `package-development` | **M29** | Package development guidelines — **shipped** |
 
 Starlight **Digging Deeper** / **Security** / **Database** / **Packages** sidebars grow with those pages.
 
@@ -1178,7 +1178,7 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 - Broadcaster drivers (log/null + one real driver — Redis pub/sub or websocket bridge); `ShouldBroadcast` events
 - Channel auth; client contract documented
-- **Broadcasting JS client (Echo-class) is not closed here** — owed as **M52** (see below). M26 ships the server; browsers still need a first-party client the way Laravel ships Echo
+- **Browser subscribe path** — closed as **M52** (Sonar + `@almasix/sonar`; Pusher/Ably/Socket.IO alternatives). M26 ships the server; M52 brands it Sonar and ships the first-party client
 - Docs: Starlight **Broadcasting**
 
 **Depends on:** M18 Events; M16 Redis nice-to-have for Redis broadcaster.
@@ -1187,7 +1187,7 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 **Status (M26):** `almasix.broadcasting` — `ShouldBroadcast` (plus `ShouldBroadcastNow` and `ShouldBroadcastAfterCommit`) with `broadcast_on` / `broadcast_as` / `broadcast_with` / `broadcast_when`, payloads reflected off the event's public attributes when it says nothing, and the `InteractsWithSockets` / `InteractsWithBroadcasting` mixins behind `to_others()` and `via()`; the `broadcast()` helper returning a `PendingBroadcast` that dispatches through the event bus on `send()`, on `await`, or when it falls out of scope; a `BroadcastManager` with five drivers — `log` and `null`, Almasix's own in-process `websocket` server, `redis` pub/sub, and `pusher` over its REST API — plus `Broadcast.extend()` for a sixth; `Channel` / `PrivateChannel` / `PresenceChannel` / `EncryptedPrivateChannel`, model channels, and payloads sealed with the application key on encrypted channels; `routes/channels.py` loaded by the provider (so console sees it too) with wildcard patterns, route-model binding from type hints, channel classes resolved from the container, per-channel guards, and presence rosters; `POST /broadcasting/auth` and `/broadcasting/user-auth` answering in Pusher's signed format; a websocket at `/broadcasting/socket` speaking a Pusher-shaped protocol (`subscribe`, `unsubscribe`, `ping`, `client-*`, member added/removed), reached through a new `Route.websocket()` and kernel support; queued broadcasts as a `BroadcastEvent` job whose payload is plain JSON; `BroadcastsEvents` / `BroadcastsEventsAfterCommit` for model writes, on the back of a new `Connection.after_commit()`; a `broadcast` notification channel; `Broadcast.fake()` with the assertion set; `smith make:channel` and `channel:list`; Starlight **Broadcasting**; the progress app's `PostPublished`, broadcasting `Comment`, `GET /api/broadcast`, and `progress:broadcast`.
 
-**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver where Laravel points at Reverb, Pusher, or Ably, and speaks Pusher's protocol so those stay available; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes. **Still owed:** a publishable Echo-class browser client (**M52**).
+**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver (Sonar) where Laravel points at Reverb, Pusher, or Ably; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes. **Follow-up (M52):** first-party `@almasix/sonar` client + Sonar branding; Pusher / Ably / Socket.IO remain documented alternatives.
 
 ### M27 — Search
 
@@ -1235,6 +1235,10 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 **Depends on:** providers + lang namespaces (done); Prism/view publish patterns useful.
 
 **Gate:** guidelines published and followed by at least one in-repo optional package or documented example.
+
+**Status (M29):** `ServiceProvider` gained Laravel-shaped helpers — `merge_config_from`, `load_routes_from`, `load_views_from` (Prism `namespace::view` + vendor overrides), `load_migrations_from` (picked up by `smith migrate`), `load_translations_from`, `publishes_migrations` (timestamp rewrite on publish), and `commands([...])`; `PackageManifest` discovers providers from the `almasix.providers` entry-point group after `config/app.providers`, honouring `app.skip_provider_discovery` and `app.dont_discover`; `smith make:package` scaffolds under `packages/{name}/`; in-repo `packages/courier` exercises the surface; Starlight **Package Development**; `smith progress:packages`.
+
+**Gate met.**
 
 ### M30 — Smith Console exhaust (Artisan parity)
 
@@ -1567,7 +1571,7 @@ Laravel's editor story is no longer a community afterthought: there is an **offi
 
 Almasix should reach the same bar, and Prism templates specifically deserve the treatment Blade gets. Python starts ahead in one way (real type hints instead of generated docblocks) and behind in another (nothing knows what `.prism.html` is).
 
-**Sequencing:** this track lands **after** the parity milestones it describes. Tooling that completes half a framework teaches the wrong shape, and every milestone from M30 onwards changes the very vocabulary the language server would index — command signatures, route names, cast names, relation names. Target it once M40–M44 close and the router / installer work (M32–M33) settles.
+**Sequencing (2026-09-10):** vocabulary for routes / installer / ORM exhaust is stable enough. Autopilot batch runs **M53 → M45 → M46 → M47 → M52** with no pause. **M48** (MCP / agents) stays later. IDE work must be **thorough** — full VS Code-family and JetBrains (PyCharm) support, not a thin demo.
 
 ### M45 — Prism language support
 
@@ -1581,38 +1585,82 @@ The baseline every editor needs before anything smarter is possible: something t
 
 **Depends on:** M6 Prism (the directive vocabulary must be stable; adding directives after the grammar ships means grammar churn).
 
-**Gate:** grammar covers every shipped directive with a fixture per construct; formatter idempotent on the whole `examples/` and `website/` template corpus; grammars published and consumable outside VS Code (Linguist PR opened).
+**Status: complete (2026-09-10).** `editors/prism/` ships TextMate + language-configuration + snippets + minimal tree-sitter; `almasix.prism.formatter.format_prism` and `smith prism:format` (`--check` / write); Starlight **Prism language support**; `smith progress:prism-lang`. Extension packaging remains M47.
+
+**Gate:** grammar covers every shipped directive with a fixture per construct; formatter idempotent on the whole `examples/` and `website/` template corpus; TextMate + tree-sitter grammars published and consumable outside VS Code (Linguist / docs site highlighting); CI golden fixtures fail if a shipped directive loses highlighting. **Met for the language-support baseline** (assets + formatter + CI unit/smoke); Marketplace / Linguist publish and corpus-wide golden runs deepen under M47.
 
 ### M46 — Almasix Language Server (`almasix-lsp`)
 
-One LSP server, so every editor benefits from one implementation instead of each plugin reimplementing framework knowledge. Python-hosted (`pygls`) and shipped as part of `almasix[dev]` so it is present in the same virtualenv as the app it introspects.
+One LSP server, so every editor benefits from one implementation instead of each plugin reimplementing framework knowledge. Python-hosted (`pygls` or equivalent) and shipped so it is present in the same virtualenv as the app it introspects (`almasix[dev]` / `almasix[lsp]`).
 
-- **Completion** for the string-keyed surfaces where a type checker cannot help: view names in `view()` / `@include` / `@extends`, route names in `route()` / `redirect().route()`, config keys in `config()`, translation keys in `__()` / `trans()` / `@lang`, disk names in `Storage.disk()`, queue and connection names, cache stores, gate / policy abilities in `can()` / `@can`, middleware names and aliases in route definitions, relation names in `with_()` / `load()` / `has()`, model columns in `where()` / `order_by()` / `select()`, cast names in `casts`, and component names in `<x-…>` tags
+- **Completion** for the string-keyed surfaces where a type checker cannot help: view names in `view()` / `@include` / `@extends`, route names in `route()` / `redirect().route()`, config keys in `config()`, translation keys in `__()` / `trans()` / `@lang`, disk names in `Storage.disk()`, queue and connection names, cache stores, gate / policy abilities in `can()` / `@can`, middleware names and aliases in route definitions, relation names in `with_()` / `load()` / `has()`, model columns in `where()` / `order_by()` / `select()`, cast names in `casts`, component names in `<x-…>` tags, **Smith command names / signatures**, env keys from `.env.example`, and Signet / auth guard names where configured
 - **Diagnostics**: unknown view, route, config key, translation key, disk, middleware, ability, relation, or column — the checks that make a typo a squiggle instead of a 500 at runtime. Plus Prism-specific ones: unclosed directive, `@section` without `@extends`, unknown component, missing required `@props`
-- **Hover** carrying the docs: directive signatures, facade methods, and model column types, sourced from the Starlight site so documentation and tooling cannot disagree
-- **Document links and go-to-definition**: `view("posts.index")` jumps to the template, `@include` / `@extends` / `<x-…>` jump to the included file, `route("posts.show")` jumps to the route definition, `config("mail.default")` jumps to the config file, a relation jumps to its declaration
-- **Code actions**: create the missing view, create the missing config key, generate a migration for a column that does not exist, extract a partial from a selection, convert `@include` to a component
+- **Hover** carrying the docs: directive signatures, façade methods, and model column types, sourced from the Starlight site so documentation and tooling cannot disagree
+- **Document links and go-to-definition / find-references**: `view("posts.index")` jumps to the template, `@include` / `@extends` / `<x-…>` jump to the included file, `route("posts.show")` jumps to the route definition, `config("mail.default")` jumps to the config file, a relation jumps to its declaration; references find call sites for named routes and views
+- **Rename** (where safe): route names, view names, and config keys with workspace edits — or explicitly documented as unsupported with a diagnostic pointing at the limitation
+- **Code actions**: create the missing view, create the missing config key, generate a migration for a column that does not exist, extract a partial from a selection, convert `@include` to a component, run a suggested `smith make:*`
+- **Inlay / signature help** for façade helpers and Prism directives where the protocol allows
 - **Index and invalidation**: build the symbol index by booting the application once (as `smith` does) and watching `routes/`, `config/`, `lang/`, `resources/views/`, and `app/models/` — never by regex-scraping source, which is how community tooling drifts from reality
+- **Multi-root / monorepo**: detect `bootstrap/app.py` (or configured base path) so a workspace with several apps still indexes the right one
+- **Progress / logging**: LSP `$/progress` while indexing; clear error when the app fails to boot
 
 **Depends on:** M45 (grammar), M30 (a single console surface to enumerate commands), M33 (named routes must exist before completing them), M40 (model metadata: casts, appends, relations).
 
-**Gate:** the server answers every completion, diagnostic, hover, link, and code action above against `examples/progress`; a conformance test suite drives it over LSP itself rather than through internal APIs; cold index under a second on the living example.
+**Status: complete (2026-09-10).** Package `almasix.lsp` on `pygls` 2.x + `lsprotocol`; extras `lsp` / `dev`; entry points `almasix-lsp`, `python -m almasix.lsp`, `smith lsp:serve`. Index boots via `bootstrap.app` when present (views, named routes with source locations, config keys/files, models, translation keys from `lang/`, middleware aliases). Shipped features: completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans`/`@lang` / `.middleware()`; diagnostics for unknown views and (when `lang/` exists) translation keys; hover for Prism directives + helpers; go-to-definition for views, routes, and config files; document links; find-references for view names; code action to create a missing view; wire-protocol conformance; `smith progress:lsp`; Starlight **Language server**; package coverage ≥ 99% (statement coverage 100%).
 
-### M47 — Editor integrations and type stubs
+**Deliberate gaps vs full checklist (named for follow-up / M47 depth):** disk / queue / cache / gate / relation / column / cast / `<x-…>` / Smith command / env / Signet completions and diagnostics; Prism structural diagnostics (unclosed directive, `@section` without `@extends`, missing `@props`); Starlight-sourced hover (static directive table ships now); go-to-definition for relations; rename; additional code actions (config key, migration, extract partial); inlay / signature help; filesystem watchers (re-index on save + `almasix.rebuildIndex` instead).
 
-The packaging layer — what a developer actually installs — plus the typing work that makes Almasix's *own* API complete under a type checker.
+**Gate:** the server answers every completion, diagnostic, hover, link, and code action above against `examples/progress`; a conformance test suite drives it over **LSP wire protocol** (not internal APIs); cold index under a second on the living example; CI job runs the conformance suite on 3.11–3.13. **Met for the M46 baseline** (core string surfaces + wire conformance + progress proof); remaining checklist items named above.
 
-- **VS Code extension**: bundles the grammar, snippets, and LSP client; view / route / config completion; run Smith commands from the palette; a `.prism.html` preview of resolved template inheritance
-- **JetBrains plugin (PyCharm)**: the Laravel Idea equivalent — Prism file type with directive completion, the same string-key completions, Smith run configurations, and `make:*` generators wired into the New… menu
-- **Generic LSP recipes** for Neovim, Zed, Helix, and Sublime, kept in the docs and tested in CI so they cannot rot
-- **`smith ide:stubs`** — generate `.pyi` stubs for the surfaces Python's type system cannot infer: model columns (from migrations and the live schema), facade proxies, config keys as literal types, and route names as a literal union. This is the honest analogue of `laravel-ide-helper`: needed for the dynamic edges, not for the whole framework
-- **`smith ide:install`** — detect the editor(s) in a project and write their configuration, the way `boost:install` does, so setup is one command rather than a documentation page
-- **Type-checker plugin** (mypy, and pyright where its API allows): `Model.query()` returning a builder generic in the model, `Attribute` descriptors typing as their accessor's return type, cast-aware attribute types, relation descriptors resolving to the related model or a collection of it
-- **Debugger configuration**: `debugpy` launch configs for `smith serve`, `smith queue:work`, and the test suite
+### M47 — Editor integrations and type stubs (full VS Code + JetBrains)
 
-**Depends on:** M45, M46. `ide:stubs` also depends on M43 (schema inspection) to read columns from a live database rather than only from migration files.
+**Status: complete (2026-09-10).** Local-first packaging ships: `editors/vscode/`
+produces `almasix-*.vsix` (`npm install && npm run package` / `npx @vscode/vsce`);
+`editors/jetbrains/` produces `build/distributions/*.zip` (`./gradlew buildPlugin`,
+JDK 17, LSP4IJ → `almasix-lsp`); `smith ide:install` / `ide:stubs`; Starlight
+**Editor setup** with VS Code ↔ PyCharm parity matrix; `smith progress:ide`.
+Marketplace / Open VSX / JetBrains listings remain a **publish follow-up** (not a gate).
 
-**Gate:** a fresh `almasix new` project gets working completion in VS Code and PyCharm with no manual configuration; stubs verified by a type-check test that would fail if the dynamic surface drifted; recipes for the other editors exercised in CI.
+#### Local-first, publish later (decided 2026-09-10)
+
+Publisher accounts for Visual Studio Marketplace / Open VSX / JetBrains Marketplace are **not** required to close M47. Develop and QA by **sideloading**:
+
+- VS Code family: `vsce package` → install the `.vsix` (Extensions → Install from VSIX…). Cursor / VSCodium same path; Open VSX publish waits until an account exists.
+- JetBrains: Gradle `buildPlugin` → **Install Plugin from Disk…** on the `.zip`. Marketplace upload waits until an account exists.
+
+CI must still **build** those artifacts on every IDE-track change so publish is a later upload, not a rewrite. Starlight documents sideload first; marketplace badges land when listings go live (follow-up, not a gate).
+
+#### VS Code family (VS Code, Cursor, VSCodium)
+
+- Extension project in-repo (or sibling package) producing a installable `.vsix`
+- Bundles TextMate grammar, snippets, language configuration, and the **LSP client** wired to `almasix-lsp` from the project venv (clear status-bar error if missing)
+- Prism language mode: highlighting, folding, comment toggle, Emmet in markup, format-on-save via `smith prism:format` / LSP formatting
+- Command palette: common Smith commands, open `routes/*.py`, rebuild LSP index, “Almasix: Show application info”
+- Debug / tasks: `launch.json` + tasks for `smith serve`, `smith queue:work`, migrate, pytest
+- Optional Prism inheritance preview — ship if stable; else named deferred in M47 notes
+- CI: package `.vsix`; smoke activation against `examples/progress`
+
+#### JetBrains (PyCharm Professional / Community, IntelliJ + Python)
+
+- **Architecture (decided):** **LSP-first** — the plugin is a thin Platform shell (Prism file type, highlighter, run configurations, New… generators, settings) that **runs `almasix-lsp`** for completions / diagnostics / navigation. Reimplement on native APIs only where LSP cannot express the UX; document any native-only pieces in the parity matrix. Avoid a second full intelligence stack.
+- Plugin project producing an installable `.zip` via Gradle
+- Smith **run configurations** and **New…** for `make:controller`, `make:model`, `make:migration`, `make:command`, `make:channel`, etc.
+- Debugger templates for serve / queue / tests
+- CI: `buildPlugin` on a supported IDE version; UI-less tests where the Platform allows
+
+#### Shared / other editors
+
+- **`smith ide:stubs`** — `.pyi` for model columns (migrations + live schema), façade proxies, config key literals, route name unions
+- **`smith ide:install`** — write local editor config + recommend / path-to the sideload artifacts (and later marketplace IDs when published)
+- **Type-checker plugins** (mypy + pyright/pylance): `Model.query()` generic in the model, cast-aware attributes, relation descriptors
+- **Generic LSP recipes** for Neovim, Zed, Helix, Sublime — documented and CI-checked
+- Starlight **Editor setup**: sideload VS Code + PyCharm from zero; marketplace section marked “when published”
+
+**Depends on:** M45, M46. `ide:stubs` also depends on M43 (schema inspection).
+
+**Gate (M47):** fresh `almasix new` → working Prism + completions in **both** VS Code-family and PyCharm via **local install** (`smith ide:install` and/or documented VSIX / Install from Disk); CI produces `.vsix` + JetBrains `.zip`; stubs type-check test; VS Code ↔ PyCharm parity matrix with no silent gaps. **Not required for M47:** live Marketplace / Open VSX / JetBrains listings (tracked as publish follow-up once accounts exist). **Met** for sideload path + stubs + parity docs; CI editor jobs document `make editors-vscode` / `make editors-jetbrains`.
+
+**Named follow-ups (not gate blockers):** Marketplace / Open VSX / JetBrains listings; JetBrains New… generators and debugger templates; optional Prism inheritance preview; deeper type-checker plugins (`Model.query()` generics); live-schema column stubs beyond fillable/casts; committed CI artifacts for `.vsix` / `.zip` on every PR (local `make` targets ship now).
 
 ### M48 — AI agent support (MCP server + guidelines)
 
@@ -1707,27 +1755,36 @@ Scheduled on 2026-09-08, during M30. `make lint` is described as one of the gate
 
 ## Broadcasting client (M52)
 
-### M52 — Echo-class browser client
+### M52 — Sonar (first-party realtime server + `@almasix/sonar`)
 
-Laravel ships [Echo](https://laravel.com/docs/13.x/broadcasting#client-side-installation) so a browser can subscribe to channels without hand-rolling Pusher protocol. Almasix M26 shipped the **server** (websocket driver, auth endpoints, presence). The **client** is still owed.
+Almasix M26 already ships a **first-class in-process websocket server** (`BROADCAST_CONNECTION=websocket`, `/broadcasting/socket`). That server is the **default** realtime path — product name **Sonar** (same brand as the browser client).
 
-- First-party JS (or TypeScript) package — working name TBD (`almasix-echo`, `@almasix/echo`, …) — speaking the same Pusher-shaped protocol M26 already uses
-- Private / presence channel auth against `/broadcasting/auth`
-- Install path documented for Vite scaffolds and for the SPA starter kit (**M36**)
-- Progress (or starter kit) demo that receives a broadcast without raw `WebSocket` glue in app code
-- Starlight **Broadcasting** page updated for beginners (no Laravel assumed): server + client as one story
+**Product decision (2026-09-10, revised):**
 
-**Depends on:** M26 (server protocol stable).
+1. **Default stack:** **Sonar** server + **`@almasix/sonar`** client speaking Sonar’s protocol, with private/presence auth against `/broadcasting/auth`.
+2. **Alternatives (supported, not default):** [Pusher](https://pusher.com/) (`pusher-js`), [Ably](https://ably.com/), and [Socket.IO](https://socket.io/) — document how to point those clients / Echo connectors at the matching broadcaster backends.
+3. Protocol may align with familiar frame shapes where useful, but the default path must **not** require `pusher-js`, Ably, or Socket.IO.
 
-**Gate:** `npm`/`pnpm` installable client; smoke proves subscribe + private channel; docs teach it from zero.
+Ship:
+
+- Brand the native websocket surface as Sonar in docs/config comments (driver may remain `websocket` internally with a `sonar` alias if clean)
+- npm package **`@almasix/sonar`**: public / private / presence; socket id / `toOthers`; client events when enabled
+- Starlight **Broadcasting / Sonar**: default path first; Pusher / Ably / Socket.IO as secondary sections
+- Progress demo uses `@almasix/sonar` against the native server
+
+**Depends on:** M26 (server + auth endpoints).
+
+**Gate:** default docs and demo use Sonar server + `@almasix/sonar`; private channel works; Pusher / Ably / Socket.IO alternatives documented; smoke + progress proof.
+
+**Status: complete (2026-09-10).** Driver alias `sonar` → websocket broadcaster; npm package `@almasix/sonar` under `packages/sonar/`; Starlight Broadcasting leads with Sonar; `smith progress:sonar`; board M52 complete.
 
 ## Dates and time (M53)
 
-### M53 — Carbon-class dates + date/time helpers
+### M53 — Chrono (`almasix.chrono`) + date/time helpers
 
 Laravel's [Carbon](https://carbon.nesbot.com/) (and the framework's date helpers) is how apps reason about instants, intervals, and human strings without fighting `datetime`. Almasix today has a thin clock (`now` / `today` / `set_test_now` in support helpers) — not a manipulation library.
 
-- First-party Carbon-class type (working name TBD) — immutable-friendly fluent API over aware datetimes: parse, add/sub, start/end of period, compare, diff for humans, format localization hooks
+- First-party **`Chrono`** type in **`almasix.chrono`** — immutable-friendly fluent API over aware datetimes: parse, add/sub, start/end of period, compare, diff for humans, format localization hooks
 - Test time travel that freezes / travels / returns (`set_test_now` grows into the Carbon-class surface; existing helpers remain thin aliases)
 - Extend support helpers with the Laravel date/time helper set worth porting (`now`, `today`, and peers once the library exists)
 - Starlight page (no milestone IDs); living example `smith progress:dates` (or extend `progress:helpers`)
@@ -1735,7 +1792,53 @@ Laravel's [Carbon](https://carbon.nesbot.com/) (and the framework's date helpers
 
 **Depends on:** M50 helpers (clock primitives already ship).
 
-**Gate:** library + helpers exhausted with progress proof + smoke + docs; coverage ≥ 98% on the new package.
+**Status: complete (2026-09-10).** `almasix.chrono.Chrono` subclasses `datetime`; helpers `now` / `today` / `set_test_now` share the test clock; Starlight **Dates (Chrono)**; `smith progress:dates`; package coverage **100%**.
+
+**Gate:** library + helpers exhausted with progress proof + smoke + docs; coverage ≥ 98% on the new package. **Met at 100%.**
+
+## Autopilot batch (M53 → M45 → M46 → M47 → M52)
+
+Binding playbook for agent runs that exhaust this sequence **without pauses** between milestones. Still **one milestone at a time inside the batch** — finish each gate (PR + green CI) before starting the next. **No human pause** between items; **stop and ask** only on the explicit discuss points below. Everything else (M36 kits, M48 MCP, Socialite/Passport, …) is **out of batch — later**.
+
+### Batch order
+
+| Step | Milestone | Do | Ask / stop only if |
+| --- | --- | --- | --- |
+| 1 | **M53** Chrono | `almasix.chrono` + helpers + rich docs + `progress:dates` + smoke (~100% cov) | — |
+| 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | done 2026-09-10 |
+| 3 | ~~**M46** `almasix-lsp`~~ | Full LSP surface + wire-protocol conformance CI | done 2026-09-10 |
+| 4 | ~~**M47** VS Code + JetBrains~~ | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | done 2026-09-10 (marketplace publish is post-gate) |
+| 5 | ~~**M52** Sonar~~ | Sonar server + `@almasix/sonar`; Pusher / Ably / Socket.IO alternatives | done 2026-09-10 |
+| — | **Later** | M36, M48, Socialite, Passport, client API keys, … | Not in this batch |
+
+### Per-milestone checklist (non-negotiable)
+
+1. Code + tests (package coverage ≥ 98% when a new package lands; IDE packages have their own CI build/test)
+2. Progress board status + proof naming a runnable demo / install path
+3. Smoke (and IDE conformance where applicable)
+4. Starlight user docs (no milestone IDs); PLAN/SMOKE in sync
+5. Lint green; do not weaken CI to pass
+6. Commit + PR + wait for green CI, then continue to the next row immediately
+
+### Decisions locked for this batch (2026-09-10)
+
+| Topic | Decision |
+| --- | --- |
+| Marketplace accounts | **Not blocking.** Sideload locally / from CI artifacts; publish when accounts exist |
+| PyCharm architecture | **LSP-first** thin shell + `almasix-lsp`; native only where required |
+| Dates library | **`almasix.chrono`** / class **`Chrono`** (Carbon-class) |
+| Realtime brand | **Sonar** — first-party websocket **server** and **`@almasix/sonar`** client share the name |
+| Optional realtime clients | **pusher-js**, **Ably**, and **Socket.IO** — documented alternatives, not default |
+| Autopilot cadence | **No pauses** between M53→M45→M46→M47→M52; coverage aim **~100%**; rich organized Starlight docs |
+
+### Autopilot rules
+
+- **Do not** start M36, M48, Socialite, Passport, or client-credentials API keys
+- **Do not** make `pusher-js`, Ably, or Socket.IO required for the default Sonar path
+- Aim for **~100% coverage** on new packages; docs must be rich and well organized
+- Prefer stacked branches off merged main: `m53-dates` → `m45-prism-lang` → `m46-lsp` → `m47-editors` → `m52-realtime-client`
+- Be **thorough** on M45–M47 — full VS Code-family and JetBrains support as specified; thin stubs that only work in one editor fail the gate
+- If blocked >15 minutes on an ambiguous product call listed in “Ask / stop”, stop and ask; otherwise keep going
 
 ## Follow-up plan (binding — 2026-09-09)
 
@@ -1744,24 +1847,23 @@ Recorded from product direction after M35:
 1. **Parity reference is Laravel 13** everywhere we audit or extend a surface — not 11.x / 12.x leftovers in old prose.
 2. **M25 Mongo parity** chases Laravel 13’s MongoDB documentation. Prior “Laravel has no NoSQL” language is struck; **audit closed 2026-09-09** — gaps named on `articulate/documents/compared`.
 3. **User-facing docs** assume no Laravel and no Almasix background; never mention milestones; rewrite as a journey; reorder Basics for teaching (**M39**).
-4. **Echo-class websocket client** is a real product surface (**M52**), not a starter-kit footnote.
-5. **Process:** one milestone at a time, exhaust completely, then stop for review. Prefer **stability** milestones before kits/features that widen the API surface.
+4. **Realtime:** Almasix’s own socket server is the **default**; M52 ships a first-party browser client. Pusher.js / Ably / Echo are **supported alternatives**.
+5. **Process:** one milestone at a time inside the autopilot batch; no pauses between M53→M45→M46→M47→M52. Prefer depth on IDE milestones over thin demos.
 
 ### Stability sequencing (preferred order)
 
 Work these before starter kits and other growth milestones, unless a concrete blocker says otherwise:
 
-| Order | Milestone | Why it stabilizes the product |
+| Order | Milestone | Why |
 | --- | --- | --- |
-| 1 | ~~**M44** — Multi-engine database CI~~ **complete** | SQLite-only CI is a lie for claimed PG/MySQL support |
-| 2 | ~~**M25 revisit** — audit Articulate documents vs Laravel 13 Mongo page~~ **complete** | Honest NoSQL parity; gaps named in `articulate/documents/compared` |
-| 3 | ~~**M51** — Lint / format gate~~ **complete** | CI that matches README claims |
-| 4 | ~~**M38** — Deployment + production ops~~ **complete** (0.4.0 on PyPI; 0.5.0 ready to tag) | Installable, operable release |
-| 5 | ~~**M39** — Docs journey rewrite + Prologue~~ **complete** | Users can learn the framework without insider context |
-| 6 | ~~**M37** — API tokens (Signet-class first)~~ **complete** (Socialite / Passport / client API keys deferred) | Production auth for API / SPA / mobile |
-| 7 | **M52** — Echo-class client | Completes broadcasting for real apps |
-| 8 | **M53** — Carbon-class dates + helpers | Everyday date math without ad-hoc `datetime` |
-| 9 | **M36** — Starter kits | Growth — after tokens + client exist to wire into kits |
+| 1 | ~~**M44** — Multi-engine database CI~~ **complete** | Claimed PG/MySQL support is tested |
+| 2 | ~~**M25 revisit** — L13 Mongo audit~~ **complete** | Honest NoSQL parity |
+| 3 | ~~**M51** — Lint / format gate~~ **complete** | CI matches README |
+| 4 | ~~**M38** — Deployment~~ **complete** | Operable releases |
+| 5 | ~~**M39** — Docs journey~~ **complete** | Teachable without insider context |
+| 6 | ~~**M37** — Signet API tokens~~ **complete** | Production API / SPA auth |
+| **Autopilot** | **M53 → M45 → M46 → M47 → M52** | Dates → thorough IDE → first-party realtime client |
+| Later | **M36**, **M48**, Socialite / Passport, … | Growth / agents — not in this batch |
 
 **Still one-at-a-time:** finish the current row’s gate (code + progress proof + smoke + user docs without milestone IDs) before starting the next.
 
@@ -1779,20 +1881,20 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**Suggested next:** **M52 — Echo-class browser client**. Confirm before starting. **M53** (Carbon-class dates) is scheduled after M52 unless you want dates sooner.
+**Suggested next:** Autopilot batch **M53 → M45 → M46 → M47 → M52** is complete. **Later:** M36 starter kits, M48 MCP / agents (and Socialite / Passport outside Signet).
 
-**Recently closed:** M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
+**Recently closed:** M52 Sonar (`@almasix/sonar` + driver alias); M46 Almasix language server (`almasix-lsp`); M45 Prism language support; M53 Chrono; M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
 
 **M39** — Prologue published; Basics teaching order; no milestone IDs in Starlight; header version switcher is **latest major** + `main` (never defaulting to `main`) with an older-docs banner when not on latest.
 
 **M25 Articulate documents** — ladder + L13 audit **closed**; integrations Laravel lists (cache, queue, GridFS, Scout Mongo, vectorSearch) remain named missing, not pretended.
 
-**M26 Broadcasting** — server met; **client owed as M52**.
+**M26 Broadcasting** — server met; **M52** closed the first-party Sonar client + alternative connectors docs.
 
 **M39** — site is published; journey rewrite + Prologue **closed**.
 
 **M40–M44, M49–M50** — exhaust gates met (Articulate SQL / collections / helpers / multi-engine CI).
 
-**M36 / M37** — deferred until tokens (**M37**) and preferably the Echo client (**M52**) can land into kits honestly.
+**M36 / M48** — out of this autopilot batch; kits and MCP remain later.
 
-**M45–M48** — IDE track stays last; vocabulary still moves until stability + kits settle.
+**M45–M47** — closed in the current autopilot batch (thorough VS Code + JetBrains); **M52** Sonar closed; **M48** later.

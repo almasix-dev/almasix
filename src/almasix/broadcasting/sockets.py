@@ -1,8 +1,9 @@
-"""The socket hub — who is connected, and what they are listening to.
+"""The Sonar socket hub — who is connected, and what they are listening to.
 
-This is the in-process half of Almasix's own websocket server. It knows
-nothing about HTTP or FastAPI: connections arrive as an id and a callable that
-delivers a frame, which is what makes the hub testable without a browser.
+This is the in-process half of Almasix's first-party realtime server (Sonar).
+It knows nothing about HTTP or FastAPI: connections arrive as an id and a
+callable that delivers a frame, which is what makes the hub testable without
+a browser.
 """
 
 from __future__ import annotations

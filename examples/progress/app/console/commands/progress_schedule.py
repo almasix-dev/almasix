@@ -19,7 +19,9 @@ class ProgressScheduleCommand(Command):
         # A frequency writes cron fields, so they combine rather than replace.
         report = schedule.command("progress:hello").weekdays().hourly().between("8:00", "17:00")
         self.info(f"weekday office hours → {report.expression} + a between() window")
-        self.info(f"quarterly on the 4th at 14:00 → {schedule.command('x').quarterly_on(4, '14:00').expression}")
+        self.info(
+            f"quarterly on the 4th at 14:00 → {schedule.command('x').quarterly_on(4, '14:00').expression}"
+        )
 
         # last_day_of_month asks the calendar, so February is right too.
         month_end = schedule.command("y").last_day_of_month("15:00")
@@ -27,7 +29,9 @@ class ProgressScheduleCommand(Command):
 
         # A sub-minute task repeats inside the minute cron cannot reach into.
         pulse = schedule.command("z").every_ten_seconds()
-        self.info(f"every ten seconds → repeats at :{pulse.repeat_seconds}s, cron {pulse.expression}")
+        self.info(
+            f"every ten seconds → repeats at :{pulse.repeat_seconds}s, cron {pulse.expression}"
+        )
 
         self.new_line()
         self.comment("A tick: what runs, what is turned away, and the hooks around it")

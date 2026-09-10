@@ -47,10 +47,7 @@ _FEATURES = [
 class WelcomeController(Controller):
     async def index(self) -> Response:
         app_name = str(config("app.name", "Progress"))
-        links = [
-            {**link, "href": url(link["href"], absolute=False)}
-            for link in _API_LINKS
-        ]
+        links = [{**link, "href": url(link["href"], absolute=False)} for link in _API_LINKS]
         return view(
             "welcome",
             {

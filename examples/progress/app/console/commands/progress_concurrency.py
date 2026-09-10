@@ -26,9 +26,7 @@ class ProgressConcurrencyCommand(Command):
         assert results == ["first", "second"]
         self.info(f"run -> {results} in {elapsed:.2f}s (0.40s if serial)")
 
-        counted = Concurrency.run(
-            {"users": lambda: 3, "posts": lambda: 7, "comments": lambda: 11}
-        )
+        counted = Concurrency.run({"users": lambda: 3, "posts": lambda: 7, "comments": lambda: 11})
         assert counted == {"users": 3, "posts": 7, "comments": 11}
         self.info(f"keys -> {counted}")
 
@@ -56,9 +54,7 @@ class ProgressConcurrencyCommand(Command):
             await asyncio.sleep(0.1)
             return label
 
-        awaited = asyncio.run(
-            Concurrency.arun({"a": lambda: fetch("a"), "b": lambda: fetch("b")})
-        )
+        awaited = asyncio.run(Concurrency.arun({"a": lambda: fetch("a"), "b": lambda: fetch("b")}))
         assert awaited == {"a": "a", "b": "b"}
         self.info(f"arun -> {awaited}")
 

@@ -237,6 +237,97 @@ def command_name(class_name: str) -> str:
     return dashed.lstrip("-") or "command"
 
 
+def make_package(
+    name: str,
+    *,
+    base_path: Path,
+    path: str | Path | None = None,
+    force: bool = False,
+) -> Path:
+    """Scaffold a discoverable Almasix package under ``packages/{name}/``.
+
+    Writes ``pyproject.toml`` with an ``almasix.providers`` entry point, a
+    sample service provider, and stubs for config, routes, views, lang, and
+    migrations — enough to extend the framework the way Laravel packages do.
+    """
+    from almasix.orm.inflector import studly
+
+    raw = name.strip().replace("\\", "/").strip("/")
+    if not raw:
+        raise MakeError("A package name is required.")
+    module = snake(raw.split("/")[-1].replace("-", "_"))
+    if not _SEGMENT_RE.match(module):
+        raise MakeError(
+            f"Invalid package name {name!r}. Use letters, numbers, and underscores; "
+            "must start with a letter."
+        )
+    class_name = studly(module)
+    dist = module.replace("_", "-")
+    root = Path(path) if path else base_path / "packages" / module
+    if not root.is_absolute():
+        root = base_path / root
+    if root.exists() and any(root.iterdir()) and not force:
+        raise MakeError(
+            f"{root.relative_to(base_path) if root.is_relative_to(base_path) else root} "
+            "already exists. Use --force to overwrite."
+        )
+
+    replacements = {
+        "name": class_name,
+        "module": module,
+        "class": class_name,
+        "dist": f"almasix-{dist}" if not dist.startswith("almasix") else dist,
+    }
+
+    files: list[tuple[str, Path]] = [
+        ("package-pyproject.toml.stub", root / "pyproject.toml"),
+        ("package-readme.md.stub", root / "README.md"),
+        ("package-provider.py.stub", root / "src" / module / "provider.py"),
+        ("package-config.py.stub", root / "src" / module / "config" / f"{module}.py"),
+        ("package-routes.py.stub", root / "src" / module / "routes" / "web.py"),
+        (
+            "package-view.prism.html.stub",
+            root / "src" / module / "resources" / "views" / "welcome.prism.html",
+        ),
+        ("package-lang.py.stub", root / "src" / module / "lang" / "en" / "messages.py"),
+        (
+            "package-migration.py.stub",
+            root
+            / "src"
+            / module
+            / "database"
+            / "migrations"
+            / f"0001_01_01_000000_create_{module}_table.py",
+        ),
+    ]
+
+    for stub_name, target in files:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(render(stub_name, replacements, base_path=base_path), encoding="utf-8")
+
+    init = root / "src" / module / "__init__.py"
+    init.parent.mkdir(parents=True, exist_ok=True)
+    if not init.exists() or force:
+        init.write_text(f'"""The {class_name} Almasix package."""\n', encoding="utf-8")
+
+    for package_dir in (
+        root / "src" / module / "config",
+        root / "src" / module / "routes",
+        root / "src" / module / "lang",
+        root / "src" / module / "lang" / "en",
+        root / "src" / module / "database",
+        root / "src" / module / "database" / "migrations",
+    ):
+        marker = package_dir / "__init__.py"
+        if package_dir.name in {"en", "migrations", "views"}:
+            continue
+        if not marker.exists() or force:
+            if package_dir.name != "resources":
+                marker.write_text("", encoding="utf-8")
+
+    return root
+
+
 def _ensure_packages(base_path: Path, parts: tuple[str, ...]) -> None:
     """Generated directories must be importable packages."""
     for depth in range(1, len(parts) + 1):

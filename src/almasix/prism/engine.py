@@ -68,6 +68,8 @@ class Engine:
         self.extension = extension
         self.cache_enabled = cache_enabled
         self.component_namespaces = list(component_namespaces or ["app.view.components"])
+        #: Package view hints — ``namespace -> directory`` for ``ns::view``.
+        self.hints: dict[str, Path] = {}
         self._cache: dict[str, tuple[float, RenderFn]] = {}
         self._directives: dict[str, DirectiveHandler] = {}
         self._composers: list[tuple[list[str], ComposerCallback]] = []
@@ -78,8 +80,19 @@ class Engine:
     def add_path(self, path: Path | str) -> None:
         self.paths.append(Path(path))
 
+    def add_namespace(self, namespace: str, path: Path | str) -> None:
+        """Register a package view namespace (Laravel ``loadViewsFrom``).
+
+        After registration, ``view("courier::welcome")`` resolves against
+        ``path``, with optional app overrides under
+        ``resources/views/vendor/courier/``.
+        """
+        self.hints[namespace] = Path(path)
+
     def find(self, name: str) -> Path:
-        """Resolve a dotted/slash view name to a template file."""
+        """Resolve a dotted/slash or ``namespace::name`` view to a template file."""
+        if "::" in name:
+            return self._find_namespaced(name)
         if name.endswith(self.extension):
             relative = name
         else:
@@ -89,6 +102,25 @@ class Engine:
             if candidate.is_file():
                 return candidate
         searched = ", ".join(str(p) for p in self.paths) or "(no paths)"
+        raise ViewNotFoundError(f"View [{name}] not found in: {searched}")
+
+    def _find_namespaced(self, name: str) -> Path:
+        """Resolve ``namespace::view`` — vendor override first, then the hint."""
+        namespace, _, view = name.partition("::")
+        if not namespace or not view:
+            raise ViewNotFoundError(f"View [{name}] is not a valid namespaced name")
+        relative = f"{view.replace('.', '/')}{self.extension}"
+        # Published overrides win — same order as Laravel's view finder.
+        for root in self.paths:
+            vendor = root / "vendor" / namespace / relative
+            if vendor.is_file():
+                return vendor
+        hint = self.hints.get(namespace)
+        if hint is not None:
+            candidate = Path(hint) / relative
+            if candidate.is_file():
+                return candidate
+        searched = str(hint) if hint is not None else "(no hint)"
         raise ViewNotFoundError(f"View [{name}] not found in: {searched}")
 
     def exists(self, name: str) -> bool:
@@ -350,7 +382,7 @@ class Engine:
         self._created.clear()
 
     def cache_views(self) -> int:
-        """Compile all ``*.prism.html`` templates under configured paths."""
+        """Compile all ``*.prism.html`` templates under configured paths and hints."""
         count = 0
         for root in self.paths:
             if not root.is_dir():
@@ -360,6 +392,16 @@ class Engine:
                     continue
                 rel = path.relative_to(root).as_posix()[: -len(self.extension)]
                 name = rel.replace("/", ".")
+                self._load(name)
+                count += 1
+        for namespace, hint in self.hints.items():
+            if not hint.is_dir():
+                continue
+            for path in sorted(hint.rglob(f"*{self.extension}")):
+                if not path.is_file():
+                    continue
+                rel = path.relative_to(hint).as_posix()[: -len(self.extension)]
+                name = f"{namespace}::{rel.replace('/', '.')}"
                 self._load(name)
                 count += 1
         return count

@@ -80,14 +80,10 @@ class ProgressEnginesCommand(Command):
             }
         )
         multilingual = await (
-            DB.table("engine_demo")
-            .where_json_length("meta->languages", ">", 1)
-            .pluck("name")
+            DB.table("engine_demo").where_json_length("meta->languages", ">", 1).pluck("name")
         )
         contains = await (
-            DB.table("engine_demo")
-            .where_json_contains("meta->languages", "fr")
-            .pluck("name")
+            DB.table("engine_demo").where_json_contains("meta->languages", "fr").pluck("name")
         )
         self.info(f"where_json_length -> {list(multilingual)}")
         self.info(f"where_json_contains -> {list(contains)}")
@@ -112,12 +108,11 @@ class ProgressEnginesCommand(Command):
 
     async def pagination(self) -> None:
         await DB.table("engine_demo").insert(
-            [
-                {"email": f"u{n}@ex.com", "name": f"User {n}", "meta": None}
-                for n in range(1, 6)
-            ]
+            [{"email": f"u{n}@ex.com", "name": f"User {n}", "meta": None} for n in range(1, 6)]
         )
         page = await DB.table("engine_demo").order_by("id").paginate(2, 1)
         cursor = await DB.table("engine_demo").order_by("id").cursor_paginate(2)
         self.info(f"paginate -> page 1 has {len(list(page))} of {page.total}")
-        self.info(f"cursor_paginate -> {len(list(cursor))} rows, has_more={cursor.has_more_pages()}")
+        self.info(
+            f"cursor_paginate -> {len(list(cursor))} rows, has_more={cursor.has_more_pages()}"
+        )

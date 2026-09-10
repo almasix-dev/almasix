@@ -634,7 +634,7 @@ pytest -q tests/test_m26_*.py tests/smoke/test_m26_smoke.py
 - [x] `smith make:channel`, `channel:list`, and `config/broadcasting.py` + `routes/channels.py` in the scaffold
 - [x] Living example: `PostPublished`, a broadcasting `Comment`, `smith progress:broadcast`, `GET /api/broadcast`; the board marks M26 complete
 - [x] Docs + smoke; 100% line and branch coverage on `almasix.broadcasting`
-- [ ] **Still owed:** Echo-class browser client (**M52**) — server is not the full broadcasting product
+- [x] **Follow-up closed by M52:** first-party `@almasix/sonar` client; Pusher.js / Ably / Socket.IO documented as alternatives
 
 ---
 
@@ -913,27 +913,95 @@ Laravel [Sanctum](https://laravel.com/docs/13.x/sanctum) parity as Almasix **Sig
 
 ---
 
-## M52 — Echo-class broadcasting client (planned)
-
-See [`PLAN.md`](PLAN.md) M52. Smoke + progress proof land when the client ships.
-
-## M53 — Carbon-class dates + helpers (planned)
+## M53 — Chrono dates + helpers
 
 ```bash
-# when implemented:
-# pytest -q tests/test_m53_*.py tests/smoke/test_m53_smoke.py
-# cd examples/progress && python smith progress:dates
+pytest -q tests/test_m53_chrono.py tests/smoke/test_m53_smoke.py
+cd examples/progress && python smith progress:dates
 ```
-
-Laravel [Carbon](https://carbon.nesbot.com/) parity — fluent date/time type, test time travel, and date/time helpers extending the M50 clock primitives (`now` / `today` / `set_test_now`).
 
 ### M53 exit criteria
 
-- [ ] Carbon-class fluent type (working name TBD) over aware datetimes
-- [ ] Test freeze / travel / return wired through helpers
-- [ ] Support date/time helpers documented; Starlight page without milestone IDs
-- [ ] Living example (`smith progress:dates` or extended `progress:helpers`); board marks M53 complete
-- [ ] Coverage ≥ 98% on the new package
+- [x] `Chrono` in `almasix.chrono` over aware datetimes
+- [x] Test freeze / travel / return wired through helpers
+- [x] Starlight **Dates (Chrono)** + helpers page updates
+- [x] `smith progress:dates`; board marks M53 complete
+- [x] Coverage **100%** on `almasix.chrono`
+
+---
+
+## M45 — Prism language support
+
+```bash
+pytest -q tests/test_m45_prism_lang.py tests/smoke/test_m45_smoke.py
+cd examples/progress && python smith progress:prism-lang
+```
+
+### M45 exit criteria
+
+- [x] TextMate grammar + language configuration + snippets under `editors/prism/`
+- [x] Minimal tree-sitter grammar + highlights queries + README build notes
+- [x] `format_prism` library entry + `smith prism:format` (`--check` / write)
+- [x] Starlight **Prism language support**; living example `smith progress:prism-lang`
+- [x] Board marks M45 complete with proof naming the demo
+- [x] Unit + smoke coverage for formatter and grammar load
+
+## M46 — Almasix Language Server
+
+- [x] `pip install 'almasix[lsp]'` (or `[dev]`) provides `almasix-lsp`
+- [x] `python -m almasix.lsp` and `smith lsp:serve` start the stdio server
+- [x] Index boots the app: views, named routes (+ source), config, models, translations, middleware
+- [x] Completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans` / middleware
+- [x] Diagnostics for unknown `view("…")` and translation keys (when `lang/` exists)
+- [x] Hover for Prism directives and known route / config / translation / middleware names
+- [x] Go-to-definition for views, routes, and config files; document links
+- [x] Find-references for view names; code action to create a missing view
+- [x] Wire-protocol conformance tests (initialize + completion / definition / references / codeAction)
+- [x] `smith progress:lsp` prints counts and `lsp ok`
+- [x] Board marks M46 complete with proof naming the demo
+- [x] Starlight **Language server**; package coverage ≥ 99% (statement coverage 100%)
+
+## M47 — VS Code + JetBrains integrations
+
+```bash
+pytest -q tests/smoke/test_m47_smoke.py
+cd examples/progress && python smith progress:ide
+# package artifacts (optional local / CI):
+#   make editors-vscode      # editors/vscode/*.vsix via npx @vscode/vsce
+#   make editors-jetbrains   # editors/jetbrains/build/distributions/*.zip
+```
+
+**Local-first:** sideload `.vsix` + JetBrains `.zip`; Marketplace publish later.
+LSP-first PyCharm shell (LSP4IJ → `almasix-lsp`). Starlight **Editor setup**
+holds the VS Code ↔ PyCharm parity matrix.
+
+### M47 exit criteria
+
+- [x] VS Code-family extension packages to `.vsix` (`npm install && npm run package`)
+- [x] JetBrains plugin `buildPlugin` zip (Prism file type + LSP4IJ + Smith run config)
+- [x] `smith ide:install` + `smith ide:stubs`
+- [x] Living example `progress:ide` + smoke; board marks M47 complete
+- [x] Parity matrix documented (no silent gaps)
+- [ ] Marketplace / Open VSX / JetBrains listings (publish follow-up)
+
+## M52 — Sonar realtime
+
+```bash
+pytest -q tests/test_m52_sonar.py tests/smoke/test_m52_smoke.py
+cd examples/progress && python smith progress:sonar
+# optional client package gate:
+# cd packages/sonar && npm ci && npm run build && npm test
+```
+
+Default = **Sonar** server + `@almasix/sonar`. Pusher.js / Ably / Socket.IO documented as alternatives.
+
+### M52 exit criteria
+
+- [x] `@almasix/sonar` speaks to native Sonar `/broadcasting/socket` (public + private); package under `packages/sonar/`
+- [x] Default docs/demo do **not** require `pusher-js` (`progress:sonar` + Broadcasting docs)
+- [x] Pusher / Ably / Socket.IO alternative paths documented (Starlight Broadcasting)
+- [x] Living example + smoke; board marks M52 complete; `sonar` driver alias for `websocket`
+
 
 ---
 
@@ -1113,12 +1181,30 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 ---
 
+## M29 — Package development
+
+```bash
+pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
+```
+
+### M29 exit criteria
+
+- [x] `ServiceProvider` helpers: `merge_config_from`, `load_routes_from`, `load_views_from`, `load_migrations_from`, `load_translations_from`, `publishes_migrations`, `commands`
+- [x] Prism namespaced views (`courier::welcome`) with vendor overrides under `resources/views/vendor/{ns}/`
+- [x] `PackageManifest` discovers `almasix.providers` entry points; `app.skip_provider_discovery` / `app.dont_discover`
+- [x] `smith make:package` scaffolds under `packages/{name}/`
+- [x] In-repo `packages/courier` + `smith progress:packages`; board marks M29 complete
+- [x] Starlight **Package Development**; sidebar link under Digging Deeper
+- [x] Unit + smoke coverage on new modules (aim ~100%)
+
+---
+
 ## Out of scope until later milestones
 
-- Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
-- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Echo-class client (M52), Carbon-class dates (M53)
-- **Stability track (2026-09-10):** M44 + M25 L13 Mongo audit + M51 lint gate + M38 deployment + M39 docs + **M37** Signet tokens complete; prefer M52 → M53 → M36; one milestone at a time
+- Digging Deeper leftovers: starter kits (M36), MCP (M48) — package guidelines (M29) shipped
+- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52)
+- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47 → M52** complete; **M29** complete; M36 / M48 later
 - Parity reference: **Laravel 13.x** docs
-- IDE and editor tooling (M45–M48): Prism grammars + formatter, `almasix-lsp`, VS Code / PyCharm integrations + `ide:stubs`, MCP server — sequenced after the parity milestones, since the language server indexes vocabulary those milestones are still changing
+- IDE and editor tooling: **M45–M47** closed (thorough VS Code-family + JetBrains sideload); **M48** MCP later; **M52** Sonar closed
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)

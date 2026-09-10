@@ -1,0 +1,5 @@
+"""Default configuration for the {{ name }} package."""
+
+config = {
+    "driver": "default",
+}

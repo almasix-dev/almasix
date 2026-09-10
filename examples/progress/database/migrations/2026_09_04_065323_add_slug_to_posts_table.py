@@ -11,15 +11,11 @@ class AddSlugToPostsTable(Migration):
     async def up(self) -> None:
         await Schema.table(
             "posts",
-            lambda table: (
-                table.string("slug").unique().after("title")
-            ),
+            lambda table: table.string("slug").unique().after("title"),
         )
 
     async def down(self) -> None:
         await Schema.table(
             "posts",
-            lambda table: (
-                table.drop_column("slug")
-            ),
+            lambda table: table.drop_column("slug"),
         )

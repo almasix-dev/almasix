@@ -1,0 +1,10 @@
+{
+  "name": "prism",
+  "scopeName": "text.html.prism",
+  "fileTypes": [
+    {
+      "name": "Prism",
+      "extensions": ["prism.html"]
+    }
+  ]
+}

@@ -12,7 +12,7 @@ from pathlib import Path
 from almasix.console.command import Command
 from almasix.orm.inflector import snake, studly, table_name
 from almasix.orm.migration import MigrationError, make_migration
-from almasix.smith.make import MakeError, make, make_component, make_view, view_name
+from almasix.smith.make import MakeError, make, make_component, make_package, make_view, view_name
 from almasix.support.str import Str
 
 
@@ -143,6 +143,33 @@ class MakeProviderCommand(Generator):
     )
     description = "Create a service provider in app/providers"
     kind = "provider"
+
+
+class MakePackageCommand(Command):
+    signature = (
+        "make:package {name : Package name, e.g. courier or acme-billing} "
+        "{--path= : Directory for the package (default packages/NAME)} "
+        "{--force : Overwrite an existing package tree}"
+    )
+    description = "Scaffold a discoverable Almasix package under packages/"
+    boots_application = False
+
+    def handle(self) -> int:
+        root = Path.cwd()
+        try:
+            path = make_package(
+                str(self.argument("name") or ""),
+                base_path=root,
+                path=self.option("path") or None,
+                force=bool(self.option("force")),
+            )
+        except MakeError as exc:
+            self.error(str(exc))
+            return self.FAILURE
+        display = path.relative_to(root) if path.is_relative_to(root) else path
+        self.success(f"Package created: {display}")
+        self.comment("Add an editable install (or list the provider in config/app.py).")
+        return self.SUCCESS
 
 
 class MakeRequestCommand(Generator):
