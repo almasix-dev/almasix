@@ -222,7 +222,7 @@ Currently **1,886 tests** at **99.38%** coverage.
 
 ## Status
 
-**M39 docs journey** and **M38 deployment ops** closed on the stability track (after M51, M44, and the M25 Mongo audit). Package version is **0.5.0** in-tree — tag/publish when you cut the GitHub Release. Next up: **M37 — API tokens**. See [`docs/PLAN.md`](docs/PLAN.md).
+**M39 docs journey** and **M38 deployment ops** closed on the stability track (after M51, M44, and the M25 Mongo audit). Package version is **0.5.1** in-tree — tag/publish when you cut the GitHub Release. Next up: **M37 — API tokens**. See [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Repository layout
 

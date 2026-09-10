@@ -13,6 +13,8 @@
 	--almasix-orange: #f1511b;
 	--almasix-orange-soft: #ff7a4d;
 	--almasix-orange-deep: #c43a0f;
+	--almasix-blue: #286291;
+	--almasix-blue-bright: #4a9bc9;
 	--almasix-glow: rgba(241, 81, 27, 0.22);
 
 	--sl-font: 'Outfit', ui-sans-serif, system-ui, sans-serif;
@@ -123,8 +125,9 @@ nav.sidebar a[aria-current='page'],
 	gap: 0.85rem;
 }
 
-/* Primary CTA — solid brand button */
-.hero .actions a.sl-link-button:not([data-variant='minimal']),
+/* Primary CTA — solid brand orange (#F1511B) */
+.hero .actions a.sl-link-button:not([data-variant='minimal']).primary,
+.hero .actions a.sl-link-button.primary,
 a.sl-link-button.primary {
 	background: linear-gradient(135deg, var(--almasix-orange) 0%, var(--almasix-orange-deep) 100%);
 	color: #ffffff !important;
@@ -138,7 +141,7 @@ a.sl-link-button.primary {
 	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
-.hero .actions a.sl-link-button:not([data-variant='minimal']):hover,
+.hero .actions a.sl-link-button.primary:hover,
 a.sl-link-button.primary:hover {
 	transform: translateY(-2px);
 	filter: brightness(1.04);
@@ -147,7 +150,33 @@ a.sl-link-button.primary:hover {
 		inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
-/* Secondary CTA — outlined, not competing with primary */
+/* Secondary CTA — brand blue (#286291), brighter on dark theme */
+.hero .actions a.sl-link-button.secondary {
+	background: var(--almasix-blue);
+	color: #ffffff !important;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	padding-inline: 1.35rem;
+	font-weight: 650;
+	box-shadow:
+		0 12px 28px color-mix(in srgb, var(--almasix-blue) 38%, transparent),
+		inset 0 1px 0 rgba(255, 255, 255, 0.18);
+	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, background 0.15s ease;
+}
+
+:root:not([data-theme='light']) .hero .actions a.sl-link-button.secondary {
+	background: var(--almasix-blue-bright);
+	box-shadow:
+		0 12px 28px color-mix(in srgb, var(--almasix-blue-bright) 40%, transparent),
+		inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.hero .actions a.sl-link-button.secondary:hover {
+	transform: translateY(-2px);
+	filter: brightness(1.06);
+}
+
+/* Legacy minimal outline (kept for non-hero uses) */
 .hero .actions a.sl-link-button[data-variant='minimal'] {
 	color: var(--sl-color-white) !important;
 	background: transparent;

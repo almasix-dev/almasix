@@ -21,7 +21,8 @@ export default defineConfig({
 			description:
 				'The elegant Python web framework with Articulate, Prism, and the Smith CLI.',
 			logo: {
-				src: './src/assets/almasix-banner.svg',
+				light: './src/assets/almasix-banner-light.svg',
+				dark: './src/assets/almasix-banner-dark.svg',
 				alt: 'Almasix',
 				replacesTitle: true,
 			},
@@ -39,7 +40,11 @@ export default defineConfig({
 			customCss: ['./src/styles/custom.css'],
 			components: {
 				Header: './src/components/Header.astro',
+				Hero: './src/components/Hero.astro',
 				PageFrame: './src/components/PageFrame.astro',
+				SiteTitle: './src/components/SiteTitle.astro',
+				SocialIcons: './src/components/SocialIcons.astro',
+				ThemeSelect: './src/components/ThemeSelect.astro',
 			},
 			expressiveCode: {
 				themes: ['one-dark-pro'],

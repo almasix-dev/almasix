@@ -14,7 +14,7 @@ dependency.
    ```bash
    pip install -U 'almasix==0.5.*'
    # or pin exactly
-   pip install -U almasix==0.5.0
+   pip install -U almasix==0.5.1
    ```
 
 2. **Breaking: `Artisan` → `Smith`** — the console façade and test helper are
