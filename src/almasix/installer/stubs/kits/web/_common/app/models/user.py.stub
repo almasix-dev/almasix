@@ -1,0 +1,78 @@
+"""User — authenticatable, verifiable, notifiable, with teams and 2FA."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.auth import AuthenticatableMixin
+from almasix.notifications import MustVerifyEmail, Notifiable
+from almasix.orm import HasFactory, Model
+
+
+class User(HasFactory, AuthenticatableMixin, MustVerifyEmail, Notifiable, Model):
+    """A registered user of this application."""
+
+    fillable = (
+        "name",
+        "email",
+        "password",
+        "profile_photo_path",
+        "current_team_id",
+        "two_factor_secret",
+        "two_factor_recovery_codes",
+        "two_factor_confirmed_at",
+    )
+    hidden = (
+        "password",
+        "remember_token",
+        "two_factor_secret",
+        "two_factor_recovery_codes",
+    )
+    casts = {
+        "email_verified_at": "datetime",
+        "password": "hashed",
+        "two_factor_confirmed_at": "datetime",
+    }
+
+    def teams(self):
+        from app.models.team import Team
+
+        return self.belongs_to_many(Team, "team_user", "user_id", "team_id")
+
+    def owned_teams(self):
+        from app.models.team import Team
+
+        return self.has_many(Team, "user_id")
+
+    def current_team(self):
+        from app.models.team import Team
+
+        return self.belongs_to(Team, "current_team_id")
+
+    def profile_photo_url(self) -> str | None:
+        path = self.get_attribute("profile_photo_path") if hasattr(self, "get_attribute") else getattr(self, "profile_photo_path", None)
+        if not path:
+            return None
+        from almasix.filesystem import Storage
+
+        try:
+            return Storage.url(str(path))
+        except Exception:
+            return f"/storage/{path}"
+
+    def has_two_factor_enabled(self) -> bool:
+        confirmed = (
+            self.get_attribute("two_factor_confirmed_at")
+            if hasattr(self, "get_attribute")
+            else getattr(self, "two_factor_confirmed_at", None)
+        )
+        secret = (
+            self.get_attribute("two_factor_secret")
+            if hasattr(self, "get_attribute")
+            else getattr(self, "two_factor_secret", None)
+        )
+        return bool(confirmed and secret)
+
+    async def switch_team(self, team: Any) -> None:
+        self.set_attribute("current_team_id", team.get_key() if hasattr(team, "get_key") else team.id)
+        await self.save()

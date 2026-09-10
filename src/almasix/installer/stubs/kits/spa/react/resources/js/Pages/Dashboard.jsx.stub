@@ -1,0 +1,32 @@
+import { Head } from "@inertiajs/react";
+import AuthenticatedLayout from "../Layouts/AuthenticatedLayout";
+
+export default function Dashboard({ userName }) {
+  return (
+    <AuthenticatedLayout title="Dashboard">
+      <Head title="Dashboard" />
+      <div className="mx-auto max-w-3xl">
+        <p className="font-display text-3xl font-semibold tracking-tight">Welcome back, {userName}.</p>
+        <p className="mt-2 text-muted">
+          Your workspace is quiet on purpose — jump into settings, teams, or notifications when you need them.
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {[
+            ["Settings", "Profile, password, 2FA, appearance", "/settings/profile"],
+            ["Teams", "Create and switch workspaces", "/teams"],
+            ["Notifications", "Inbox for database notifications", "/notifications"],
+          ].map(([title, body, href]) => (
+            <a
+              key={href}
+              href={href}
+              className="rounded-2xl border border-line bg-panel p-5 transition hover:border-brand/40"
+            >
+              <p className="font-semibold">{title}</p>
+              <p className="mt-1 text-sm text-muted">{body}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </AuthenticatedLayout>
+  );
+}

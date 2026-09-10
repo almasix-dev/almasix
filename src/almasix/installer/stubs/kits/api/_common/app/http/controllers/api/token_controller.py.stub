@@ -1,0 +1,66 @@
+"""Issue and revoke Signet personal access tokens."""
+
+from __future__ import annotations
+
+from almasix.auth import auth
+from almasix.hashing import Hash
+from almasix.http import Controller, UnauthorizedHttpException
+from almasix.http.exceptions import NotFoundHttpException, UnprocessableEntityHttpException
+from almasix.http.request import Request
+from app.models.user import User
+
+
+class TokenController(Controller):
+    """Token-first auth — no session dashboard."""
+
+    async def store(self, request: Request) -> dict[str, str]:
+        email = str(request.input("email") or "").strip()
+        password = str(request.input("password") or "")
+        device_name = str(request.input("device_name") or "api-token").strip()
+        errors: dict[str, list[str]] = {}
+        if not email:
+            errors["email"] = ["The email field is required."]
+        if not password:
+            errors["password"] = ["The password field is required."]
+        if not device_name:
+            errors["device_name"] = ["The device_name field is required."]
+        if errors:
+            raise UnprocessableEntityHttpException("The given data was invalid.", errors=errors)
+
+        user = await User.query().where("email", "=", email).first()
+        if user is None or not Hash.check(password, str(user.get_attribute("password") or "")):
+            raise UnauthorizedHttpException("The provided credentials are incorrect.")
+
+        abilities = request.input("abilities")
+        if isinstance(abilities, str):
+            ability_list = [part.strip() for part in abilities.split(",") if part.strip()]
+        elif isinstance(abilities, list):
+            ability_list = [str(item) for item in abilities]
+        else:
+            ability_list = ["*"]
+
+        issued = await user.create_token(device_name, ability_list)
+        return {
+            "token": issued.plain_text_token,
+            "token_type": "Bearer",
+        }
+
+    async def destroy_current(self) -> dict[str, bool]:
+        user = auth().guard("signet").user() or auth().user()
+        if user is None:
+            raise UnauthorizedHttpException("Unauthenticated.")
+        current = getattr(user, "current_access_token", lambda: None)()
+        if current is not None and hasattr(current, "delete"):
+            await current.delete()
+            return {"revoked": True}
+        return {"revoked": False}
+
+    async def destroy(self, token_id: str) -> dict[str, bool]:
+        user = auth().guard("signet").user() or auth().user()
+        if user is None:
+            raise UnauthorizedHttpException("Unauthenticated.")
+        token = await user.tokens().where("id", "=", token_id).first()  # type: ignore[attr-defined]
+        if token is None:
+            raise NotFoundHttpException("Token not found.")
+        await token.delete()
+        return {"revoked": True}

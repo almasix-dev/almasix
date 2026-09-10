@@ -1,0 +1,39 @@
+<script setup>
+import { Head, useForm } from "@inertiajs/vue3";
+import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout.vue";
+defineProps({ enabled: Boolean, confirming: Boolean, qrUrl: String, secret: String, recoveryCodes: { type: Array, default: () => [] }, status: String });
+const enable = useForm({});
+const confirm = useForm({ code: "" });
+const disable = useForm({});
+const regen = useForm({});
+</script>
+<template>
+  <AuthenticatedLayout title="Two-factor authentication">
+    <Head title="Two-factor" />
+    <div class="mx-auto max-w-xl space-y-6">
+      <p v-if="status" class="text-sm text-brand">{{ status }}</p>
+      <section class="rounded-2xl border border-line bg-panel p-6">
+        <h2 class="font-display text-xl font-semibold">Authenticator app</h2>
+        <p class="mt-1 text-sm text-muted">{{ enabled ? "Two-factor authentication is enabled." : "Add a second step when signing in." }}</p>
+        <form v-if="!enabled && !confirming" class="mt-6" @submit.prevent="enable.post('/settings/two-factor')">
+          <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Enable</button>
+        </form>
+        <div v-if="confirming" class="mt-6 space-y-4">
+          <p v-if="qrUrl" class="break-all rounded-xl bg-paper p-3 font-mono text-xs">{{ qrUrl }}</p>
+          <p v-if="secret" class="text-sm text-muted">Secret: <code>{{ secret }}</code></p>
+          <form class="space-y-4" @submit.prevent="confirm.post('/settings/two-factor/confirm')">
+            <label class="block space-y-1.5"><span class="text-sm font-medium">Confirmation code</span><input v-model="confirm.code" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+            <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Confirm</button>
+          </form>
+        </div>
+        <div v-if="enabled" class="mt-6 flex flex-wrap gap-3">
+          <form @submit.prevent="regen.post('/settings/two-factor/recovery-codes')"><button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Regenerate recovery codes</button></form>
+          <form @submit.prevent="disable.delete('/settings/two-factor')"><button type="submit" class="rounded-xl border border-line px-4 py-2.5 text-sm">Disable</button></form>
+        </div>
+        <ul v-if="recoveryCodes?.length" class="mt-6 grid grid-cols-2 gap-2 rounded-xl bg-paper p-4 font-mono text-sm">
+          <li v-for="c in recoveryCodes" :key="c">{{ c }}</li>
+        </ul>
+      </section>
+    </div>
+  </AuthenticatedLayout>
+</template>

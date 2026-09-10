@@ -1,0 +1,17 @@
+<script>
+  import { Link } from "@inertiajs/svelte";
+  import ThemeToggle from "../Components/ThemeToggle.svelte";
+  let { title = "", appName = "{{ app_display }}", children } = $props();
+</script>
+<div class="flex min-h-screen flex-col bg-paper text-ink">
+  <header class="flex items-center justify-between px-6 py-5">
+    <Link href="/" class="font-display text-lg font-semibold text-brand">{appName}</Link>
+    <ThemeToggle />
+  </header>
+  <main class="flex flex-1 items-center justify-center px-4 pb-16">
+    <div class="w-full max-w-md">
+      {#if title}<h1 class="font-display mb-6 text-center text-3xl font-semibold tracking-tight">{title}</h1>{/if}
+      <div class="rounded-2xl border border-line bg-panel p-8 shadow-sm">{@render children?.()}</div>
+    </div>
+  </main>
+</div>

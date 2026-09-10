@@ -1,0 +1,29 @@
+@extends('layouts.app')
+
+@section('title', 'Dashboard — {{ app_display }}')
+
+@section('content')
+  @isset(status)
+    <div class="alert alert-success" role="status">{{ status }}</div>
+  @endisset
+  <h1 class="font-display h2 fw-semibold">Hello, {{ user_name }}</h1>
+  <p class="text-secondary">You are signed in to {{ name }}@isset(team_name) · current team <strong>{{ team_name }}</strong>@endisset.</p>
+  <div class="row g-3 mt-3">
+    <div class="col-md-6">
+      <a href="/user/profile" class="card text-decoration-none h-100 border">
+        <div class="card-body">
+          <h2 class="h6 fw-semibold text-body">Settings</h2>
+          <p class="small text-secondary mb-0">Profile, password, appearance, and two-factor.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-6">
+      <a href="/teams" class="card text-decoration-none h-100 border">
+        <div class="card-body">
+          <h2 class="h6 fw-semibold text-body">Teams</h2>
+          <p class="small text-secondary mb-0">Create, switch, invite, and manage members.</p>
+        </div>
+      </a>
+    </div>
+  </div>
+@endsection

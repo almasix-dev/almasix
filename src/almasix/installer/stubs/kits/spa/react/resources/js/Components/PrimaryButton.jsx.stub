@@ -1,0 +1,11 @@
+export default function PrimaryButton({ children, className = "", ...props }) {
+  return (
+    <button
+      type="submit"
+      className={`inline-flex w-full items-center justify-center rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-glow ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}

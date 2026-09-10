@@ -1,0 +1,28 @@
+<script>
+  import { Head, useForm } from "@inertiajs/svelte";
+  import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout.svelte";
+  let { user = {}, status = "" } = $props();
+  const form = useForm({ name: user?.name || "", email: user?.email || "" });
+  const destroy = useForm({ password: "" });
+</script>
+<AuthenticatedLayout title="Profile">
+  <Head title="Profile" />
+  <div class="mx-auto max-w-xl space-y-10">
+    {#if status}<p class="text-sm text-brand">{status}</p>{/if}
+    <section class="rounded-2xl border border-line bg-panel p-6">
+      <h2 class="font-display text-xl font-semibold">Profile information</h2>
+      <form class="mt-6 space-y-4" onsubmit={(e) => { e.preventDefault(); $form.patch("/settings/profile"); }}>
+        <label class="block space-y-1.5"><span class="text-sm font-medium">Name</span><input bind:value={$form.name} class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+        <label class="block space-y-1.5"><span class="text-sm font-medium">Email</span><input bind:value={$form.email} type="email" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+        <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Save</button>
+      </form>
+    </section>
+    <section class="rounded-2xl border border-red-200 bg-panel p-6 dark:border-red-900/40">
+      <h2 class="font-display text-xl font-semibold text-red-700 dark:text-red-400">Delete account</h2>
+      <form class="mt-6 space-y-4" onsubmit={(e) => { e.preventDefault(); $destroy.delete("/settings/profile"); }}>
+        <label class="block space-y-1.5"><span class="text-sm font-medium">Confirm password</span><input bind:value={$destroy.password} type="password" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+        <button type="submit" class="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white">Delete account</button>
+      </form>
+    </section>
+  </div>
+</AuthenticatedLayout>

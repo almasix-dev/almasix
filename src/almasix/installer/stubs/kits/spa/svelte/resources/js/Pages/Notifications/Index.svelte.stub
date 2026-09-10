@@ -1,0 +1,30 @@
+<script>
+  import { Head, useForm } from "@inertiajs/svelte";
+  import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout.svelte";
+  let { notifications = [], status = "" } = $props();
+  const form = useForm({});
+</script>
+<AuthenticatedLayout title="Notifications">
+  <Head title="Notifications" />
+  <div class="mx-auto max-w-2xl">
+    <div class="mb-6 flex items-center justify-between">
+      <p class="text-muted">Database notification inbox.</p>
+      <form onsubmit={(e) => { e.preventDefault(); $form.post("/notifications/mark-all-read"); }}>
+        <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Mark all read</button>
+      </form>
+    </div>
+    {#if status}<p class="mb-4 text-sm text-brand">{status}</p>{/if}
+    {#if !notifications.length}
+      <div class="rounded-2xl border border-dashed border-line bg-panel px-6 py-16 text-center">
+        <p class="font-display text-xl font-semibold">All clear</p>
+        <p class="mt-2 text-sm text-muted">When something needs your attention, it will show up here.</p>
+      </div>
+    {:else}
+      <ul class="space-y-3">
+        {#each notifications as n}
+          <li class="rounded-xl border border-line bg-panel px-4 py-3"><pre class="whitespace-pre-wrap text-sm">{JSON.stringify(n.data, null, 2)}</pre></li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
+</AuthenticatedLayout>

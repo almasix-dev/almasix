@@ -1,0 +1,9 @@
+@extends('layouts.guest')
+@section('title', 'Verify email — {{ app_display }}')
+@section('content')
+  <h1 class="font-display" style="font-size:1.35rem;margin:0">Verify your email</h1>
+  <p class="muted" style="font-size:.875rem">Please confirm your email before continuing.</p>
+  @isset(status)<p class="alert alert-ok">{{ status }}</p>@endisset
+  <form method="post" action="{{ resend_url }}">@csrf<button class="btn" style="width:100%" type="submit">Resend verification email</button></form>
+  <form method="post" action="{{ logout_url }}" style="margin-top:.5rem">@csrf<button type="submit" class="btn-ghost" style="width:100%;border:0">Log out</button></form>
+@endsection

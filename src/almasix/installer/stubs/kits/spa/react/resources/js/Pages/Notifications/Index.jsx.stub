@@ -1,0 +1,36 @@
+import { Head, useForm } from "@inertiajs/react";
+import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout";
+import PrimaryButton from "../../Components/PrimaryButton";
+
+export default function Index({ notifications = [], status }) {
+  const { post, processing } = useForm({});
+  return (
+    <AuthenticatedLayout title="Notifications">
+      <Head title="Notifications" />
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-6 flex items-center justify-between">
+          <p className="text-muted">Database notification inbox.</p>
+          <form onSubmit={(e) => { e.preventDefault(); post("/notifications/mark-all-read"); }}>
+            <PrimaryButton className="w-auto px-4" disabled={processing}>Mark all read</PrimaryButton>
+          </form>
+        </div>
+        {status ? <p className="mb-4 text-sm text-brand">{status}</p> : null}
+        {notifications.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-line bg-panel px-6 py-16 text-center">
+            <p className="font-display text-xl font-semibold">All clear</p>
+            <p className="mt-2 text-sm text-muted">When something needs your attention, it will show up here.</p>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {notifications.map((n) => (
+              <li key={n.id} className="rounded-xl border border-line bg-panel px-4 py-3">
+                <pre className="whitespace-pre-wrap text-sm">{JSON.stringify(n.data, null, 2)}</pre>
+                {!n.read_at ? <span className="mt-2 inline-block text-xs font-medium text-brand">Unread</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </AuthenticatedLayout>
+  );
+}

@@ -1226,13 +1226,24 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] Starlight **Inertia**; extract-ready for `almasix-dev/inertia` (`EXTRACT.md`)
 - [x] `smith progress:inertia`; board marks M55 complete; `tests/smoke/test_m55_smoke.py`
 
+## M36 — Starter kits
+
+### M36 exit criteria
+
+- [x] Kit overlays: `web` (Conduit), `api` (Signet), `react` / `vue` / `svelte` (Inertia)
+- [x] `almasix new --kit …` + interactive prompt; Web stacks Tailwind / Bootstrap / none
+- [x] Forge design language — brand-first landing, authenticated chrome, light/dark
+- [x] Full auth depth: reset, verify, confirm, profile/photo, 2FA, teams, notifications shell, settings
+- [x] Tokens API-only on API kit; SPA depends on `almasix-inertia`
+- [x] Starlight **Starter Kits**; `smith progress:kits`; board M36 complete; `tests/smoke/test_m36_smoke.py`
+
 ---
 
 ## Out of scope until later milestones
 
-- Digging Deeper leftovers: starter kits (M36), MCP (M48) — package guidelines (M29) shipped; **M54 Conduit** + **M55 Inertia** closed (pre-M36)
+- Digging Deeper leftovers: MCP (M48) — **M36 starter kits** closed; package guidelines (M29) shipped; **M54 Conduit** + **M55 Inertia** closed
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52), Conduit (M54), Inertia (M55)
-- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47 → M52** complete; **M29** complete; **M54** + **M55** complete; M36 / M48 later
+- **Autopilot:** **M54** + **M55** + **M36** complete; M48 later
 - Parity reference: **Laravel 13.x** docs
 - IDE and editor tooling: **M45–M47** closed (thorough VS Code-family + JetBrains sideload); **M48** MCP later; **M52** Sonar closed
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)

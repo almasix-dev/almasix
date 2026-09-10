@@ -1,0 +1,32 @@
+<script>
+  import { Head, Link, useForm } from "@inertiajs/svelte";
+  import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout.svelte";
+  let { teams = [], currentTeamId = null, status = "" } = $props();
+  const form = useForm({ name: "" });
+</script>
+<AuthenticatedLayout title="Teams">
+  <Head title="Teams" />
+  <div class="mx-auto max-w-2xl space-y-8">
+    {#if status}<p class="text-sm text-brand">{status}</p>{/if}
+    <section class="rounded-2xl border border-line bg-panel p-6">
+      <h2 class="font-display text-xl font-semibold">Your teams</h2>
+      <ul class="mt-4 divide-y divide-line">
+        {#each teams as t}
+          <li class="flex items-center justify-between py-3">
+            <div><Link href={`/teams/${t.id}`} class="font-medium hover:text-brand">{t.name}</Link>{#if t.id === currentTeamId}<span class="ml-2 text-xs text-brand">current</span>{/if}</div>
+            <Link href={`/teams/${t.id}/switch`} method="post" class="text-sm text-muted hover:text-ink">Switch</Link>
+          </li>
+        {:else}
+          <li class="py-6 text-sm text-muted">No teams yet — create one below.</li>
+        {/each}
+      </ul>
+    </section>
+    <section class="rounded-2xl border border-line bg-panel p-6">
+      <h2 class="font-display text-xl font-semibold">Create team</h2>
+      <form class="mt-4 space-y-4" onsubmit={(e) => { e.preventDefault(); $form.post("/teams"); }}>
+        <label class="block space-y-1.5"><span class="text-sm font-medium">Team name</span><input bind:value={$form.name} class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+        <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Create</button>
+      </form>
+    </section>
+  </div>
+</AuthenticatedLayout>

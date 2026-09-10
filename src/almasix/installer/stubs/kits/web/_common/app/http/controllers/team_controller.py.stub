@@ -1,0 +1,184 @@
+"""Teams — index, create, switch, settings, invite, leave, delete."""
+
+from __future__ import annotations
+
+from app.models.team import Team
+from app.models.team_invitation import TeamInvitation
+
+from almasix.auth import auth
+from almasix.config import config
+from almasix.conduit import conduit
+from almasix.http import Controller, Request, Response, redirect
+from almasix.prism import view
+from almasix.routing import url
+
+
+class TeamController(Controller):
+    async def index(self, request: Request) -> Response:
+        user = auth().user()
+        teams = []
+        if user is not None:
+            try:
+                teams = await user.teams().get()
+            except Exception:
+                teams = []
+        return view(
+            "teams.index",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "teams": teams,
+                "status": request.session.get("status"),
+                "create_url": url("/teams/create", absolute=False),
+                "theme_toggle": conduit("theme_toggle"),
+                "__authenticated": True,
+            },
+        )
+
+    async def create(self, request: Request) -> Response:
+        return view(
+            "teams.create",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "form_action": url("/teams", absolute=False),
+                "error": request.session.get("error"),
+                "theme_toggle": conduit("theme_toggle"),
+                "__authenticated": True,
+            },
+        )
+
+    async def store(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        team_name = str(request.input("name") or "").strip()
+        if not team_name:
+            request.session.flash("error", "Team name is required.")
+            return redirect("/teams/create")
+        team = await Team.create(user_id=user.get_key(), name=team_name, personal_team=False)
+        await user.teams().attach(team.get_key(), {"role": "owner"})
+        await user.switch_team(team)
+        request.session.flash("status", f"Team “{team_name}” created.")
+        return redirect(f"/teams/{team.get_key()}/settings")
+
+    async def switch(self, request: Request, team: str) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        found = await Team.find(team)
+        if found is None:
+            request.session.flash("error", "Team not found.")
+            return redirect("/teams")
+        # Membership check (owner or member)
+        member = await user.teams().where("teams.id", found.get_key()).first()
+        if member is None and str(_attr(found, "user_id")) != str(user.get_key()):
+            request.session.flash("error", "You are not a member of that team.")
+            return redirect("/teams")
+        await user.switch_team(found)
+        request.session.flash("status", f"Switched to {_attr(found, 'name')}.")
+        return redirect("/dashboard")
+
+    async def settings(self, request: Request, team: str) -> Response:
+        user = auth().user()
+        found = await Team.find(team)
+        if found is None:
+            return redirect("/teams")
+        members = []
+        invitations = []
+        try:
+            members = await found.users().get()
+            invitations = await found.invitations().get()
+        except Exception:
+            pass
+        return view(
+            "teams.settings",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "team": found,
+                "team_name": _attr(found, "name"),
+                "team_id": found.get_key(),
+                "is_owner": str(_attr(found, "user_id")) == str(user.get_key() if user else ""),
+                "members": members,
+                "invitations": invitations,
+                "status": request.session.get("status"),
+                "error": request.session.get("error"),
+                "update_url": url(f"/teams/{team}", absolute=False),
+                "invite_url": url(f"/teams/{team}/invitations", absolute=False),
+                "leave_url": url(f"/teams/{team}/leave", absolute=False),
+                "delete_url": url(f"/teams/{team}", absolute=False),
+                "theme_toggle": conduit("theme_toggle"),
+                "__authenticated": True,
+            },
+        )
+
+    async def update(self, request: Request, team: str) -> Response:
+        user = auth().user()
+        found = await Team.find(team)
+        if found is None or user is None:
+            return redirect("/teams")
+        if str(_attr(found, "user_id")) != str(user.get_key()):
+            request.session.flash("error", "Only the owner can rename this team.")
+            return redirect(f"/teams/{team}/settings")
+        team_name = str(request.input("name") or "").strip()
+        if not team_name:
+            request.session.flash("error", "Team name is required.")
+            return redirect(f"/teams/{team}/settings")
+        found.set_attribute("name", team_name)
+        await found.save()
+        request.session.flash("status", "Team updated.")
+        return redirect(f"/teams/{team}/settings")
+
+    async def invite(self, request: Request, team: str) -> Response:
+        user = auth().user()
+        found = await Team.find(team)
+        if found is None or user is None:
+            return redirect("/teams")
+        if str(_attr(found, "user_id")) != str(user.get_key()):
+            request.session.flash("error", "Only the owner can invite members.")
+            return redirect(f"/teams/{team}/settings")
+        email = str(request.input("email") or "").strip().lower()
+        role = str(request.input("role") or "member").strip() or "member"
+        if not email:
+            request.session.flash("error", "Email is required.")
+            return redirect(f"/teams/{team}/settings")
+        await TeamInvitation.create(team_id=found.get_key(), email=email, role=role)
+        request.session.flash("status", f"Invitation sent to {email}.")
+        return redirect(f"/teams/{team}/settings")
+
+    async def leave(self, request: Request, team: str) -> Response:
+        user = auth().user()
+        found = await Team.find(team)
+        if found is None or user is None:
+            return redirect("/teams")
+        if str(_attr(found, "user_id")) == str(user.get_key()):
+            request.session.flash("error", "Owners cannot leave their team. Delete it instead.")
+            return redirect(f"/teams/{team}/settings")
+        await user.teams().detach(found.get_key())
+        if str(_attr(user, "current_team_id")) == str(found.get_key()):
+            user.set_attribute("current_team_id", None)
+            await user.save()
+        request.session.flash("status", "You left the team.")
+        return redirect("/teams")
+
+    async def destroy(self, request: Request, team: str) -> Response:
+        user = auth().user()
+        found = await Team.find(team)
+        if found is None or user is None:
+            return redirect("/teams")
+        if str(_attr(found, "user_id")) != str(user.get_key()):
+            request.session.flash("error", "Only the owner can delete this team.")
+            return redirect(f"/teams/{team}/settings")
+        if _attr(found, "personal_team"):
+            request.session.flash("error", "Personal teams cannot be deleted.")
+            return redirect(f"/teams/{team}/settings")
+        await found.delete()
+        request.session.flash("status", "Team deleted.")
+        return redirect("/teams")
+
+
+def _attr(obj, key: str):
+    if obj is None:
+        return ""
+    if hasattr(obj, "get_attribute"):
+        val = obj.get_attribute(key)
+        return val if val is not None else ""
+    return getattr(obj, key, "") or ""

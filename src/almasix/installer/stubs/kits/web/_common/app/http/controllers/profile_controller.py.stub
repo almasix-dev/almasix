@@ -1,0 +1,139 @@
+"""Profile — update profile, password, photo, delete account."""
+
+from __future__ import annotations
+
+from almasix.auth import auth
+from almasix.config import config
+from almasix.conduit import conduit
+from almasix.hashing import Hash
+from almasix.http import Controller, Request, Response, redirect
+from almasix.prism import view
+from almasix.routing import url
+from almasix.translation import __
+
+
+class ProfileController(Controller):
+    async def edit(self, request: Request) -> Response:
+        user = auth().user()
+        return view(
+            "settings.profile",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "user": user,
+                "user_name": _attr(user, "name"),
+                "user_email": _attr(user, "email"),
+                "photo_url": user.profile_photo_url() if user is not None and hasattr(user, "profile_photo_url") else None,
+                "status": request.session.get("status"),
+                "error": request.session.get("error"),
+                "theme_toggle": conduit("theme_toggle"),
+                "update_url": url("/user/profile-information", absolute=False),
+                "photo_url_action": url("/user/profile-photo", absolute=False),
+                "delete_url": url("/user", absolute=False),
+                "__authenticated": True,
+            },
+        )
+
+    async def update(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        name = str(request.input("name") or "").strip()
+        email = str(request.input("email") or "").strip()
+        if not name or not email:
+            request.session.flash("error", "Name and email are required.")
+            return redirect("/user/profile")
+        user.set_attribute("name", name)
+        if email != _attr(user, "email"):
+            user.set_attribute("email", email)
+            user.set_attribute("email_verified_at", None)
+        await user.save()
+        request.session.flash("status", "Profile updated.")
+        return redirect("/user/profile")
+
+    async def update_password(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        current = str(request.input("current_password") or "")
+        password = str(request.input("password") or "")
+        confirm = str(request.input("password_confirmation") or "")
+        hashed = (
+            user.get_auth_password()
+            if hasattr(user, "get_auth_password")
+            else getattr(user, "password", None)
+        )
+        if not hashed or not Hash.check(current, str(hashed)):
+            request.session.flash("error", __("auth.password"))
+            return redirect("/user/password")
+        if not password or password != confirm:
+            request.session.flash("error", "Password confirmation does not match.")
+            return redirect("/user/password")
+        user.set_attribute("password", password)
+        await user.save()
+        request.session.flash("status", "Password updated.")
+        return redirect("/user/password")
+
+    async def edit_password(self, request: Request) -> Response:
+        return view(
+            "settings.password",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "form_action": url("/user/password", absolute=False),
+                "status": request.session.get("status"),
+                "error": request.session.get("error"),
+                "theme_toggle": conduit("theme_toggle"),
+                "__authenticated": True,
+            },
+        )
+
+    async def appearance(self, request: Request) -> Response:
+        return view(
+            "settings.appearance",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "theme_toggle": conduit("theme_toggle"),
+                "__authenticated": True,
+            },
+        )
+
+    async def update_photo(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        upload = request.file("photo")
+        if upload is None:
+            request.session.flash("error", "Choose a photo to upload.")
+            return redirect("/user/profile")
+        if isinstance(upload, list):
+            upload = upload[0]
+        path = await upload.store("profile-photos")
+        user.set_attribute("profile_photo_path", path)
+        await user.save()
+        request.session.flash("status", "Profile photo updated.")
+        return redirect("/user/profile")
+
+    async def destroy(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        password = str(request.input("password") or "")
+        hashed = (
+            user.get_auth_password()
+            if hasattr(user, "get_auth_password")
+            else getattr(user, "password", None)
+        )
+        if not hashed or not Hash.check(password, str(hashed)):
+            request.session.flash("error", __("auth.password"))
+            return redirect("/user/profile")
+        await auth().logout()
+        await user.delete()
+        request.session.flash("status", "Your account has been deleted.")
+        return redirect("/")
+
+
+def _attr(user, key: str):
+    if user is None:
+        return ""
+    if hasattr(user, "get_attribute"):
+        return user.get_attribute(key) or ""
+    return getattr(user, key, "") or ""

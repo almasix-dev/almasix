@@ -1,0 +1,29 @@
+"""Add two-factor auth columns to users."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Migration, Schema
+
+
+class AddTwoFactorColumnsToUsersTable(Migration):
+    async def up(self) -> None:
+        await Schema.table("users", self.columns)
+
+    async def down(self) -> None:
+        await Schema.table("users", self.drop)
+
+    def columns(self, table: Any) -> None:
+        table.text("two_factor_secret").nullable()
+        table.text("two_factor_recovery_codes").nullable()
+        table.timestamp("two_factor_confirmed_at").nullable()
+        table.string("profile_photo_path").nullable()
+        table.unsigned_big_integer("current_team_id").nullable()
+
+    def drop(self, table: Any) -> None:
+        table.drop_column("two_factor_secret")
+        table.drop_column("two_factor_recovery_codes")
+        table.drop_column("two_factor_confirmed_at")
+        table.drop_column("profile_photo_path")
+        table.drop_column("current_team_id")

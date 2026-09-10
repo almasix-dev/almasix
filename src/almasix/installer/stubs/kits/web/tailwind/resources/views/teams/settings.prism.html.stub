@@ -1,0 +1,71 @@
+@extends('layouts.app')
+
+@section('title', 'Team settings — {{ app_display }}')
+
+@section('content')
+  <h1 class="font-display text-2xl font-semibold tracking-tight">{{ team_name }}</h1>
+  <p class="mt-1 text-sm text-muted">Members, invitations, and ownership.</p>
+  @isset(status)
+    <p class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">{{ status }}</p>
+  @endisset
+  @isset(error)
+    <p class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ error }}</p>
+  @endisset
+
+  @if(is_owner)
+  <form method="post" action="{{ update_url }}" class="mt-8 max-w-md space-y-3">
+    @csrf
+    {!! method_field('PUT') !!}
+    <label class="block text-sm font-medium">Team name
+      <input type="text" name="name" value="{{ team_name }}" required class="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2"/>
+    </label>
+    <button type="submit" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">Save</button>
+  </form>
+
+  <form method="post" action="{{ invite_url }}" class="mt-10 max-w-md space-y-3">
+    @csrf
+    <h2 class="font-semibold">Invite member</h2>
+    <input type="email" name="email" required placeholder="email@example.com" class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm"/>
+    <select name="role" class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm">
+      <option value="member">Member</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button type="submit" class="rounded-lg border border-line px-4 py-2 text-sm font-medium hover:border-brand">Send invite</button>
+  </form>
+  @endif
+
+  <h2 class="mt-10 font-semibold">Members</h2>
+  <ul class="mt-3 divide-y divide-line rounded-xl border border-line bg-surface">
+    @forelse(members as member)
+      <li class="px-4 py-2 text-sm">{{ member.name }} · {{ member.email }}</li>
+    @empty
+      <li class="px-4 py-4 text-sm text-muted">No members loaded.</li>
+    @endforelse
+  </ul>
+
+  @if(invitations)
+  <h2 class="mt-8 font-semibold">Pending invitations</h2>
+  <ul class="mt-3 divide-y divide-line rounded-xl border border-line bg-surface">
+    @foreach(invitations as invite)
+      <li class="px-4 py-2 text-sm">{{ invite.email }} · {{ invite.role }}</li>
+    @endforeach
+  </ul>
+  @endif
+
+  <div class="mt-10 flex flex-wrap gap-3">
+    @unless(is_owner)
+    <form method="post" action="{{ leave_url }}">
+      @csrf
+      {!! method_field('DELETE') !!}
+      <button type="submit" class="rounded-lg border border-line px-4 py-2 text-sm hover:border-red-400 hover:text-red-600">Leave team</button>
+    </form>
+    @endif
+    @if(is_owner)
+    <form method="post" action="{{ delete_url }}">
+      @csrf
+      {!! method_field('DELETE') !!}
+      <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">Delete team</button>
+    </form>
+    @endif
+  </div>
+@endsection

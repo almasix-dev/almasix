@@ -1,0 +1,21 @@
+@extends('layouts.app')
+
+@section('title', 'Appearance — {{ app_display }}')
+
+@section('content')
+
+  <nav class="mb-8 flex flex-wrap gap-2 text-sm font-medium">
+    <a href="/user/profile" class="rounded-lg px-3 py-1.5 hover:bg-surface border border-transparent hover:border-line">Profile</a>
+    <a href="/user/password" class="rounded-lg px-3 py-1.5 hover:bg-surface border border-transparent hover:border-line">Password</a>
+    <a href="/user/two-factor-authentication" class="rounded-lg px-3 py-1.5 hover:bg-surface border border-transparent hover:border-line">Two-factor</a>
+    <a href="/user/appearance" class="rounded-lg px-3 py-1.5 hover:bg-surface border border-transparent hover:border-line">Appearance</a>
+  </nav>
+
+  <h1 class="font-display text-2xl font-semibold tracking-tight">Appearance</h1>
+  <p class="mt-1 text-sm text-muted">Choose light, dark, or follow your system.</p>
+  <div class="mt-8">
+    @isset(theme_toggle)
+      {!! theme_toggle !!}
+    @endisset
+  </div>
+@endsection

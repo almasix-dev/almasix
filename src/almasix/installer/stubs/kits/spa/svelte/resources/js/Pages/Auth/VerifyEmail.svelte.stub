@@ -1,0 +1,15 @@
+<script>
+  import { Head, Link, useForm } from "@inertiajs/svelte";
+  import GuestLayout from "../../Layouts/GuestLayout.svelte";
+  let { status = "", email = "" } = $props();
+  const form = useForm({});
+</script>
+<GuestLayout title="Verify your email">
+  <Head title="Verify email" />
+  <p class="mb-4 text-sm text-muted">We sent a verification link{#if email} to {email}{/if}.</p>
+  {#if status}<p class="mb-4 text-sm text-brand">{status}</p>{/if}
+  <form onsubmit={(e) => { e.preventDefault(); $form.post("/email/verification-notification"); }}>
+    <button type="submit" class="w-full rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Resend verification email</button>
+  </form>
+  <Link href="/logout" method="post" class="mt-4 block w-full text-center text-sm text-muted">Log out</Link>
+</GuestLayout>

@@ -1,0 +1,14 @@
+@extends('layouts.app')
+@section('title', 'Appearance — {{ app_display }}')
+@section('content')
+  <nav class="settings-nav">
+    <a href="/user/profile">Profile</a>
+    <a href="/user/password">Password</a>
+    <a href="/user/two-factor-authentication">Two-factor</a>
+    <a href="/user/appearance">Appearance</a>
+  </nav>
+
+  <h1 class="font-display" style="font-size:1.5rem;margin:0">Appearance</h1>
+  <p class="muted" style="font-size:.875rem">Choose light, dark, or system.</p>
+  <div style="margin-top:1rem">@isset(theme_toggle){!! theme_toggle !!}@endisset</div>
+@endsection

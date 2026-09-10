@@ -1,0 +1,12 @@
+@extends('layouts.guest')
+@section('title', 'Two-factor — {{ app_display }}')
+@section('content')
+  <h1 class="font-display" style="font-size:1.35rem;margin:0">Two-factor challenge</h1>
+  @isset(error)<p class="alert alert-error">{{ error }}</p>@endisset
+  <form method="post" action="{{ form_action }}">@csrf
+    <label class="field">Authentication code<input type="text" name="code" inputmode="numeric"/></label>
+    <p class="muted" style="text-align:center;font-size:.75rem">or</p>
+    <label class="field">Recovery code<input type="text" name="recovery_code"/></label>
+    <button type="submit" class="btn" style="width:100%">Continue</button>
+  </form>
+@endsection

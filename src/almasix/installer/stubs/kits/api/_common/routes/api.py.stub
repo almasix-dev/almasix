@@ -1,0 +1,17 @@
+"""API routes — Signet personal access tokens + JSON polarity."""
+
+from app.http.controllers.api.token_controller import TokenController
+from app.http.controllers.api.user_controller import UserController
+from app.http.controllers.health_controller import HealthController
+from almasix.routing import Route
+
+with Route.group(prefix="/api", middleware=["api"]):
+    Route.get("/health", [HealthController, "index"])
+
+    # Issue a PAT with email + password (no session).
+    Route.post("/tokens", [TokenController, "store"])
+
+    with Route.group(middleware=["auth:signet"]):
+        Route.get("/user", [UserController, "show"])
+        Route.delete("/tokens/current", [TokenController, "destroy_current"])
+        Route.delete("/tokens/{token_id}", [TokenController, "destroy"])

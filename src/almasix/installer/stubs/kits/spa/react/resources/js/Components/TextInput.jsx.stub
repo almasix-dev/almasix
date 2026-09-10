@@ -1,0 +1,12 @@
+export default function TextInput({ label, error, className = "", ...props }) {
+  return (
+    <label className="block space-y-1.5">
+      {label ? <span className="text-sm font-medium text-ink">{label}</span> : null}
+      <input
+        className={`w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm outline-none ring-brand/30 focus:ring-2 ${className}`}
+        {...props}
+      />
+      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+    </label>
+  );
+}

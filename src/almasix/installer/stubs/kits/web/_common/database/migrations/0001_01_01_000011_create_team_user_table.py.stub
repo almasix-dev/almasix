@@ -1,0 +1,23 @@
+"""Create the team_user membership pivot."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Migration, Schema
+
+
+class CreateTeamUserTable(Migration):
+    async def up(self) -> None:
+        await Schema.create("team_user", self.team_user)
+
+    async def down(self) -> None:
+        await Schema.drop_if_exists("team_user")
+
+    def team_user(self, table: Any) -> None:
+        table.id()
+        table.foreign_id("team_id").constrained("teams").cascade_on_delete()
+        table.foreign_id("user_id").constrained("users").cascade_on_delete()
+        table.string("role").nullable()
+        table.timestamps()
+        table.unique(["team_id", "user_id"])

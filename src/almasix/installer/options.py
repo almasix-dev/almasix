@@ -22,6 +22,7 @@ from almasix.installer.scaffold import (
 
 #: What the installer picks when nobody is there to ask.
 DEFAULTS = {
+    "kit": "none",
     "stack": "tailwind",
     "database": "sqlite",
     "tests": True,
@@ -39,6 +40,7 @@ class InstallPlan:
 
     name: str
     destination: Path
+    kit: str = str(DEFAULTS["kit"])
     stack: str = str(DEFAULTS["stack"])
     database: str = str(DEFAULTS["database"])
     tests: bool = bool(DEFAULTS["tests"])
@@ -61,7 +63,16 @@ class InstallPlan:
         return find_database(self.database)
 
     @property
+    def kit_info(self):
+        from almasix.installer.kits import find_kit
+
+        return find_kit(self.kit)
+
+    @property
     def uses_node(self) -> bool:
+        kit = self.kit_info
+        if kit.needs_node:
+            return True
         return self.stack_info.node
 
 
@@ -69,6 +80,7 @@ class InstallPlan:
 class Answers:
     """Flags as given. ``None`` means "not answered, so it may be asked"."""
 
+    kit: str | None = None
     stack: str | None = None
     database: str | None = None
     tests: bool | None = None
@@ -119,12 +131,32 @@ def resolve_plan(
     asker = prompter or Prompter()
     has_node = node_available or _node_available
 
-    if answers.stack is not None:
+    from almasix.installer.kits import KITS, WEB_STACK_NAMES, find_kit
+
+    if answers.kit is not None:
+        plan.kit = find_kit(answers.kit).name
+    elif interactive:
+        plan.kit = asker.select(
+            "Which starter kit?",
+            [(kit.name, f"{kit.label} — {kit.description}") for kit in KITS],
+            str(DEFAULTS["kit"]),
+        )
+        plan.asked.append("kit")
+    else:
+        plan.kit = str(DEFAULTS["kit"])
+
+    kit = find_kit(plan.kit)
+    if kit.force_stack:
+        plan.stack = kit.force_stack
+    elif answers.stack is not None:
         plan.stack = find_stack(answers.stack).name
     elif interactive:
+        stack_choices = STACKS
+        if kit.kind == "web":
+            stack_choices = tuple(s for s in STACKS if s.name in WEB_STACK_NAMES)
         plan.stack = asker.select(
             "Which frontend stack?",
-            [(stack.name, f"{stack.label} — {stack.description}") for stack in STACKS],
+            [(stack.name, f"{stack.label} — {stack.description}") for stack in stack_choices],
             str(DEFAULTS["stack"]),
         )
         plan.asked.append("stack")

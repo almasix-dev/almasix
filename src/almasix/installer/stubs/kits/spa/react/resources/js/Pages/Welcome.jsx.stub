@@ -1,0 +1,42 @@
+import { Head, Link } from "@inertiajs/react";
+import MarketingLayout from "../Layouts/MarketingLayout";
+
+export default function Welcome({ appName = "{{ app_display }}", canLogin, canRegister }) {
+  return (
+    <MarketingLayout appName={appName}>
+      <Head title="Welcome" />
+      <section className="relative flex min-h-screen items-end px-6 pb-20 pt-28 md:items-center md:px-10 md:pb-0">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+        <div className="relative z-10 max-w-3xl">
+          <p className="font-display mb-4 text-5xl font-semibold tracking-tight text-white md:text-7xl">
+            {appName}
+          </p>
+          <h1 className="max-w-2xl text-2xl font-medium leading-snug text-white/95 md:text-4xl">
+            Ship the product, not the scaffolding.
+          </h1>
+          <p className="mt-4 max-w-xl text-base text-white/75 md:text-lg">
+            Auth, teams, settings, and a calm workspace — ready the moment you open the app.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            {canRegister ? (
+              <Link
+                href="/register"
+                className="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-black/20"
+              >
+                Create account
+              </Link>
+            ) : null}
+            {canLogin ? (
+              <Link
+                href="/login"
+                className="rounded-full border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur"
+              >
+                Log in
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    </MarketingLayout>
+  );
+}

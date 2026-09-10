@@ -1,0 +1,38 @@
+import { Head, Link, useForm } from "@inertiajs/react";
+import GuestLayout from "../Layouts/GuestLayout";
+import TextInput from "../Components/TextInput";
+import PrimaryButton from "../Components/PrimaryButton";
+
+export default function Login({ status, canResetPassword, canRegister, appName }) {
+  const { data, setData, post, processing, errors } = useForm({
+    email: "",
+    password: "",
+    remember: false,
+  });
+
+  return (
+    <GuestLayout title="Welcome back" appName={appName}>
+      <Head title="Log in" />
+      {status ? <p className="mb-4 text-sm text-brand">{status}</p> : null}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          post("/login");
+        }}
+        className="space-y-4"
+      >
+        <TextInput label="Email" type="email" value={data.email} onChange={(e) => setData("email", e.target.value)} error={errors.email} autoFocus />
+        <TextInput label="Password" type="password" value={data.password} onChange={(e) => setData("password", e.target.value)} error={errors.password} />
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input type="checkbox" checked={data.remember} onChange={(e) => setData("remember", e.target.checked)} />
+          Remember me
+        </label>
+        <PrimaryButton disabled={processing}>{processing ? "Signing in…" : "Log in"}</PrimaryButton>
+      </form>
+      <div className="mt-6 flex justify-between text-sm text-muted">
+        {canResetPassword ? <Link href="/forgot-password" className="hover:text-brand">Forgot password?</Link> : <span />}
+        {canRegister ? <Link href="/register" className="hover:text-brand">Create account</Link> : null}
+      </div>
+    </GuestLayout>
+  );
+}

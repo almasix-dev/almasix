@@ -1,0 +1,32 @@
+@extends('layouts.guest')
+
+@section('title', 'Register — {{ app_display }}')
+
+@section('content')
+  <h1 class="font-display text-2xl font-semibold tracking-tight">Create your account</h1>
+  <p class="mt-1 text-sm text-muted">Join {{ name }} in a minute.</p>
+  @isset(error)
+    <p class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ error }}</p>
+  @endisset
+  <form method="post" action="{{ form_action }}" class="mt-6 space-y-4">
+    @csrf
+    <label class="block text-sm font-medium">Name
+      <input type="text" name="name" required autocomplete="name"
+             class="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"/>
+    </label>
+    <label class="block text-sm font-medium">Email
+      <input type="email" name="email" required autocomplete="username"
+             class="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"/>
+    </label>
+    <label class="block text-sm font-medium">Password
+      <input type="password" name="password" required autocomplete="new-password"
+             class="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"/>
+    </label>
+    <label class="block text-sm font-medium">Confirm password
+      <input type="password" name="password_confirmation" required autocomplete="new-password"
+             class="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"/>
+    </label>
+    <button type="submit" class="w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-glow">Create account</button>
+  </form>
+  <p class="mt-6 text-center text-sm text-muted">Already registered? <a class="font-medium text-brand hover:underline" href="{{ login_url }}">Log in</a></p>
+@endsection

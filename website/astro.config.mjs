@@ -161,6 +161,7 @@ export default defineConfig({
 						{ label: 'Package Development', slug: 'package-development' },
 						{ label: 'Conduit', slug: 'conduit' },
 						{ label: 'Inertia', slug: 'inertia' },
+						{ label: 'Starter Kits', slug: 'starter-kits' },
 					],
 				},
 				{

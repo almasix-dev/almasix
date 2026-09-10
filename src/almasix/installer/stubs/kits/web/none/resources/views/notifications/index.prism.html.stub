@@ -1,0 +1,21 @@
+@extends('layouts.app')
+@section('title', 'Notifications — {{ app_display }}')
+@section('content')
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem">
+    <div><h1 class="font-display" style="font-size:1.5rem;margin:0">Notifications</h1><p class="muted" style="font-size:.875rem;margin:.25rem 0 0">Your database notification inbox.</p></div>
+    <form method="post" action="{{ mark_all_url }}">@csrf<button class="btn btn-ghost" type="submit">Mark all read</button></form>
+  </div>
+  @isset(status)<p class="alert alert-ok">{{ status }}</p>@endisset
+  @if(empty)
+    <div class="empty">
+      <p class="font-display" style="font-size:1.25rem;font-weight:600;margin:0">You're all caught up</p>
+      <p class="muted" style="font-size:.875rem">When something needs your attention, it will show up here.</p>
+    </div>
+  @else
+    <ul class="list">
+      @foreach(notifications as note)
+        <li style="display:block"><strong>{{ note['type'] }}</strong><div class="muted" style="font-size:.875rem">{{ note['data'] }}</div></li>
+      @endforeach
+    </ul>
+  @endif
+@endsection

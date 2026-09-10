@@ -1,0 +1,18 @@
+"""Theme toggle island — light / dark / system via class on <html>."""
+
+from __future__ import annotations
+
+from almasix.conduit import Component
+
+
+class ThemeToggle(Component):
+    """Cycles appearance preference stored in localStorage (client) + server echo."""
+
+    mode = "system"  # light | dark | system
+
+    def set_mode(self, mode: str) -> None:
+        if mode in {"light", "dark", "system"}:
+            self.mode = mode
+
+    def render(self) -> str:
+        return "conduit.theme_toggle"

@@ -1,0 +1,90 @@
+"""Session login, register, logout — Inertia pages."""
+
+from __future__ import annotations
+
+from app.models.user import User
+
+from almasix.auth import attempt_login, auth
+from almasix.auth.guard import pull_intended_url
+from almasix.config import config
+from almasix.http import Controller, Request, redirect
+from almasix.translation import __
+from inertia import Inertia
+
+
+class AuthController(Controller):
+    async def show_login(self, request: Request):
+        return Inertia.render(
+            "Auth/Login",
+            {
+                "appName": str(config("app.name", "{{ app_display }}")),
+                "status": request.session.get("status"),
+                "canResetPassword": True,
+                "canRegister": True,
+            },
+        )
+
+    async def login(self, request: Request):
+        email = str(request.input("email") or "").strip()
+        password = str(request.input("password") or "")
+        remember = bool(request.boolean("remember"))
+        if not email or not password:
+            request.session.flash("errors", {"email": ["Email and password are required."]})
+            return redirect("/login")
+
+        ok = await attempt_login(
+            {"email": email, "password": password},
+            request=request,
+            remember=remember,
+        )
+        if not ok:
+            request.session.flash("errors", {"email": [__("auth.failed")]})
+            return redirect("/login")
+
+        user = auth().user()
+        if user is not None and getattr(user, "has_two_factor_enabled", lambda: False)():
+            # Stash id and log out until challenge succeeds.
+            request.session["login.id"] = user.get_key()
+            request.session["login.remember"] = remember
+            await auth().logout()
+            return redirect("/two-factor-challenge")
+
+        return redirect(pull_intended_url("/dashboard"))
+
+    async def show_register(self, request: Request):
+        return Inertia.render(
+            "Auth/Register",
+            {"appName": str(config("app.name", "{{ app_display }}"))},
+        )
+
+    async def register(self, request: Request):
+        name = str(request.input("name") or "").strip()
+        email = str(request.input("email") or "").strip()
+        password = str(request.input("password") or "")
+        confirm = str(request.input("password_confirmation") or "")
+        errors: dict[str, list[str]] = {}
+        if not name:
+            errors["name"] = ["Name is required."]
+        if not email:
+            errors["email"] = ["Email is required."]
+        if not password:
+            errors["password"] = ["Password is required."]
+        if password != confirm:
+            errors["password"] = ["Password confirmation does not match."]
+        if errors:
+            request.session.flash("errors", errors)
+            return redirect("/register")
+
+        existing = await User.query().where("email", email).first()
+        if existing is not None:
+            request.session.flash("errors", {"email": ["That email is already registered."]})
+            return redirect("/register")
+
+        await User.create(name=name, email=email, password=password)
+        await attempt_login({"email": email, "password": password}, request=request)
+        return redirect("/dashboard")
+
+    async def logout(self, request: Request):
+        await auth().logout()
+        request.session.flash("status", "Signed out.")
+        return redirect("/")

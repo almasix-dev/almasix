@@ -1,0 +1,89 @@
+import { Link, usePage } from "@inertiajs/react";
+import ThemeToggle from "../Components/ThemeToggle";
+
+const nav = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/notifications", label: "Notifications" },
+  { href: "/settings/profile", label: "Settings" },
+  { href: "/teams", label: "Teams" },
+];
+
+const settingsNav = [
+  { href: "/settings/profile", label: "Profile" },
+  { href: "/settings/password", label: "Password" },
+  { href: "/settings/two-factor", label: "Two-factor" },
+  { href: "/settings/appearance", label: "Appearance" },
+];
+
+export default function AuthenticatedLayout({ children, title }) {
+  const page = usePage();
+  const url = page.url || "";
+  const user = page.props.auth?.user;
+  const appName = page.props.appName || "{{ app_display }}";
+  const inSettings = url.startsWith("/settings");
+
+  return (
+    <div className="flex min-h-screen bg-paper text-ink">
+      <aside className="hidden w-60 shrink-0 border-r border-line bg-panel md:flex md:flex-col">
+        <div className="border-b border-line px-5 py-4">
+          <Link href="/dashboard" className="font-display text-lg font-semibold text-brand">
+            {appName}
+          </Link>
+        </div>
+        <nav className="flex flex-1 flex-col gap-1 p-3">
+          {nav.map((item) => {
+            const active = url.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                  active ? "bg-brand/10 text-brand" : "text-muted hover:bg-paper hover:text-ink"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+          {inSettings ? (
+            <div className="mt-4 border-t border-line pt-4">
+              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">Settings</p>
+              {settingsNav.map((item) => {
+                const active = url.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`rounded-lg px-3 py-2 text-sm ${
+                      active ? "bg-brand/10 text-brand" : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
+        </nav>
+      </aside>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-14 items-center justify-between border-b border-line bg-panel px-4 md:px-6">
+          <h1 className="text-sm font-semibold md:text-base">{title}</h1>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="hidden text-sm text-muted sm:inline">{user?.name || "Account"}</span>
+            <Link
+              href="/logout"
+              method="post"
+              as="button"
+              className="rounded-lg border border-line px-3 py-1.5 text-sm text-muted hover:text-ink"
+            >
+              Log out
+            </Link>
+          </div>
+        </header>
+        <main className="flex-1 p-4 md:p-8">{children}</main>
+      </div>
+    </div>
+  );
+}

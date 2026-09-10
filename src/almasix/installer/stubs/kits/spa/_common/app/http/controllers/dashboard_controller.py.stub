@@ -1,0 +1,25 @@
+"""Signed-in dashboard."""
+
+from __future__ import annotations
+
+from almasix.auth import auth
+from almasix.config import config
+from almasix.http import Controller
+from inertia import Inertia
+
+
+class DashboardController(Controller):
+    async def index(self):
+        user = auth().user()
+        name = (
+            user.get_attribute("name")
+            if user is not None and hasattr(user, "get_attribute")
+            else "there"
+        )
+        return Inertia.render(
+            "Dashboard",
+            {
+                "appName": str(config("app.name", "{{ app_display }}")),
+                "userName": name,
+            },
+        )

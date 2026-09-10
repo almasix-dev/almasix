@@ -1,0 +1,14 @@
+## API kit (Signet)
+
+This application was scaffolded with the **API** starter kit — token-first JSON
+polarity, no session dashboard.
+
+- Issue a personal access token: `POST /api/tokens` with `email`, `password`, and
+  `device_name` (optional `abilities`)
+- Revoke the current token: `DELETE /api/tokens/current` (Bearer required)
+- Revoke a named token: `DELETE /api/tokens/{id}`
+- Authenticated user: `GET /api/user` under the `auth:signet` guard
+- CSRF cookie for first-party SPAs: `GET /signet/csrf-cookie` (framework route)
+
+Use the returned `token` as `Authorization: Bearer {id}|{secret}`. Signet is
+booted by the foundation; no extra provider is required.

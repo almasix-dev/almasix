@@ -1,0 +1,37 @@
+@extends('layouts.app')
+
+@section('title', 'Teams — {{ app_display }}')
+
+@section('content')
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="font-display text-2xl font-semibold tracking-tight">Teams</h1>
+      <p class="mt-1 text-sm text-muted">Switch context or create a new team.</p>
+    </div>
+    <a href="{{ create_url }}" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-glow">New team</a>
+  </div>
+  @isset(status)
+    <p class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">{{ status }}</p>
+  @endisset
+  <ul class="mt-8 divide-y divide-line rounded-xl border border-line bg-surface">
+    @forelse(teams as team)
+      <li class="flex items-center justify-between gap-3 px-4 py-3">
+        <div>
+          <p class="font-medium">{{ team.name }}</p>
+          @if(team.personal_team)
+            <p class="text-xs text-muted">Personal</p>
+          @endif
+        </div>
+        <div class="flex gap-2">
+          <form method="post" action="/teams/{{ team.id }}/switch">
+            @csrf
+            <button type="submit" class="rounded-lg border border-line px-3 py-1.5 text-sm hover:border-brand">Switch</button>
+          </form>
+          <a href="/teams/{{ team.id }}/settings" class="rounded-lg border border-line px-3 py-1.5 text-sm hover:border-brand">Settings</a>
+        </div>
+      </li>
+    @empty
+      <li class="px-4 py-8 text-center text-sm text-muted">No teams yet. Create one to collaborate.</li>
+    @endforelse
+  </ul>
+@endsection

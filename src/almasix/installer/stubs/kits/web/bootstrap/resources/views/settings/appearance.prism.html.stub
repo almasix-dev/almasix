@@ -1,0 +1,15 @@
+@extends('layouts.app')
+@section('title', 'Appearance — {{ app_display }}')
+@section('content')
+
+  <ul class="nav nav-pills gap-1 mb-4 small">
+    <li class="nav-item"><a class="nav-link" href="/user/profile">Profile</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/password">Password</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/two-factor-authentication">Two-factor</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/appearance">Appearance</a></li>
+  </ul>
+
+  <h1 class="font-display h3 fw-semibold">Appearance</h1>
+  <p class="text-secondary small">Choose light, dark, or system.</p>
+  <div class="mt-3">@isset(theme_toggle){!! theme_toggle !!}@endisset</div>
+@endsection

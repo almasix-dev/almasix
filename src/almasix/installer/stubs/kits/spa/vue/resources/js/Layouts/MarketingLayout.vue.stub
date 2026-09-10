@@ -1,0 +1,18 @@
+<script setup>
+import { Link } from "@inertiajs/vue3";
+import ThemeToggle from "../Components/ThemeToggle.vue";
+defineProps({ appName: { type: String, default: "{{ app_display }}" } });
+</script>
+<template>
+  <div class="min-h-screen forge-mesh text-white">
+    <header class="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-5 md:px-10">
+      <Link href="/" class="font-display text-xl font-semibold tracking-tight">{{ appName }}</Link>
+      <div class="flex items-center gap-3">
+        <ThemeToggle class-name="border-white/20 bg-white/10 text-white" />
+        <Link href="/login" class="text-sm text-white/80 hover:text-white">Log in</Link>
+        <Link href="/register" class="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-ink">Get started</Link>
+      </div>
+    </header>
+    <slot />
+  </div>
+</template>

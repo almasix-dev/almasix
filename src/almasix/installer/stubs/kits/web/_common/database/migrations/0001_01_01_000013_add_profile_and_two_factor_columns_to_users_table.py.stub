@@ -1,0 +1,31 @@
+"""Add profile photo, current team, and two-factor columns to users."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Migration, Schema
+
+
+class AddProfileAndTwoFactorColumnsToUsersTable(Migration):
+    async def up(self) -> None:
+        await Schema.table("users", self.add_columns)
+
+    async def down(self) -> None:
+        await Schema.table("users", self.drop_columns)
+
+    def add_columns(self, table: Any) -> None:
+        table.string("profile_photo_path").nullable()
+        table.foreign_id("current_team_id").nullable().constrained("teams").null_on_delete()
+        table.text("two_factor_secret").nullable()
+        table.text("two_factor_recovery_codes").nullable()
+        table.timestamp("two_factor_confirmed_at").nullable()
+
+    def drop_columns(self, table: Any) -> None:
+        table.drop_column(
+            "profile_photo_path",
+            "current_team_id",
+            "two_factor_secret",
+            "two_factor_recovery_codes",
+            "two_factor_confirmed_at",
+        )

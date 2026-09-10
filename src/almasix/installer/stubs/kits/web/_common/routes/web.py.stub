@@ -1,0 +1,71 @@
+"""Web routes — Forge kit: guest auth, verified app, password.confirm gates."""
+
+from app.http.controllers.auth_controller import AuthController
+from app.http.controllers.confirm_password_controller import ConfirmPasswordController
+from app.http.controllers.dashboard_controller import DashboardController
+from app.http.controllers.notification_controller import NotificationController
+from app.http.controllers.password_reset_controller import PasswordResetController
+from app.http.controllers.profile_controller import ProfileController
+from app.http.controllers.team_controller import TeamController
+from app.http.controllers.two_factor_controller import TwoFactorController
+from app.http.controllers.verification_controller import VerificationController
+from app.http.controllers.welcome_controller import WelcomeController
+from almasix.routing import Route
+
+with Route.group(middleware=["web"]):
+    Route.get("/", [WelcomeController, "index"], name="home")
+
+    with Route.group(middleware=["guest"]):
+        Route.get("/login", [AuthController, "show_login"], name="login")
+        Route.post("/login", [AuthController, "login"])
+        Route.get("/register", [AuthController, "show_register"], name="register")
+        Route.post("/register", [AuthController, "register"])
+
+        Route.get("/forgot-password", [PasswordResetController, "show_forgot"], name="password.request")
+        Route.post("/forgot-password", [PasswordResetController, "send_link"], name="password.email")
+        Route.get("/reset-password/{token}", [PasswordResetController, "show_reset"], name="password.reset")
+        Route.post("/reset-password/{token}", [PasswordResetController, "reset"], name="password.update")
+
+        Route.get("/two-factor-challenge", [TwoFactorController, "show_challenge"], name="two-factor.login")
+        Route.post("/two-factor-challenge", [TwoFactorController, "challenge"])
+
+    with Route.group(middleware=["auth"]):
+        Route.post("/logout", [AuthController, "logout"], name="logout")
+
+        Route.get("/email/verify", [VerificationController, "notice"], name="verification.notice")
+        Route.get("/email/verify/{id}/{hash}", [VerificationController, "verify"], name="verification.verify")
+        Route.post("/email/verification-notification", [VerificationController, "resend"], name="verification.send")
+
+        Route.get("/user/confirm-password", [ConfirmPasswordController, "show"], name="password.confirm")
+        Route.post("/user/confirm-password", [ConfirmPasswordController, "store"])
+
+        with Route.group(middleware=["verified"]):
+            Route.get("/dashboard", [DashboardController, "index"], name="dashboard")
+
+            Route.get("/user/profile", [ProfileController, "edit"], name="profile.show")
+            Route.put("/user/profile-information", [ProfileController, "update"], name="profile.update")
+            Route.post("/user/profile-photo", [ProfileController, "update_photo"], name="profile.photo")
+            Route.get("/user/password", [ProfileController, "edit_password"], name="user-password.edit")
+            Route.put("/user/password", [ProfileController, "update_password"], name="user-password.update")
+            Route.get("/user/appearance", [ProfileController, "appearance"], name="appearance.edit")
+
+            Route.get("/notifications", [NotificationController, "index"], name="notifications.index")
+            Route.post("/notifications/mark-all-read", [NotificationController, "mark_all_read"], name="notifications.mark-all")
+
+            Route.get("/teams", [TeamController, "index"], name="teams.index")
+            Route.get("/teams/create", [TeamController, "create"], name="teams.create")
+            Route.post("/teams", [TeamController, "store"], name="teams.store")
+            Route.get("/teams/{team}/settings", [TeamController, "settings"], name="teams.settings")
+            Route.put("/teams/{team}", [TeamController, "update"], name="teams.update")
+            Route.post("/teams/{team}/switch", [TeamController, "switch"], name="teams.switch")
+            Route.post("/teams/{team}/invitations", [TeamController, "invite"], name="teams.invite")
+            Route.delete("/teams/{team}/leave", [TeamController, "leave"], name="teams.leave")
+            Route.delete("/teams/{team}", [TeamController, "destroy"], name="teams.destroy")
+
+            with Route.group(middleware=["password.confirm"]):
+                Route.get("/user/two-factor-authentication", [TwoFactorController, "show"], name="two-factor.show")
+                Route.post("/user/two-factor-authentication", [TwoFactorController, "enable"], name="two-factor.enable")
+                Route.post("/user/confirmed-two-factor-authentication", [TwoFactorController, "confirm"], name="two-factor.confirm")
+                Route.delete("/user/two-factor-authentication", [TwoFactorController, "disable"], name="two-factor.disable")
+                Route.post("/user/two-factor-recovery-codes", [TwoFactorController, "regenerate_recovery_codes"], name="two-factor.recovery")
+                Route.delete("/user", [ProfileController, "destroy"], name="current-user.destroy")

@@ -1,0 +1,35 @@
+@extends('layouts.app')
+@section('title', 'Team settings — {{ app_display }}')
+@section('content')
+  <h1 class="font-display" style="font-size:1.5rem;margin:0">{{ team_name }}</h1>
+  @isset(status)<p class="alert alert-ok">{{ status }}</p>@endisset
+  @isset(error)<p class="alert alert-error">{{ error }}</p>@endisset
+  @if(is_owner)
+  <form method="post" action="{{ update_url }}" style="max-width:22rem;margin-top:1rem">@csrf{!! method_field('PUT') !!}
+    <label class="field">Team name<input type="text" name="name" value="{{ team_name }}" required/></label>
+    <button class="btn" type="submit">Save</button>
+  </form>
+  <form method="post" action="{{ invite_url }}" style="max-width:22rem;margin-top:1.5rem">@csrf
+    <h2 style="font-size:1rem">Invite member</h2>
+    <input type="email" name="email" required placeholder="email@example.com"/>
+    <select name="role" style="margin-top:.5rem"><option value="member">Member</option><option value="admin">Admin</option></select>
+    <button class="btn btn-ghost" type="submit" style="margin-top:.5rem">Send invite</button>
+  </form>
+  @endif
+  <h2 style="font-size:1rem;margin-top:1.5rem">Members</h2>
+  <ul class="list">
+    @forelse(members as member)
+      <li>{{ member.name }} · {{ member.email }}</li>
+    @empty
+      <li class="muted">No members loaded.</li>
+    @endforelse
+  </ul>
+  <div style="display:flex;gap:.75rem;margin-top:1.5rem">
+    @unless(is_owner)
+    <form method="post" action="{{ leave_url }}">@csrf{!! method_field('DELETE') !!}<button class="btn btn-ghost" type="submit">Leave team</button></form>
+    @endunless
+    @if(is_owner)
+    <form method="post" action="{{ delete_url }}">@csrf{!! method_field('DELETE') !!}<button class="btn btn-danger" type="submit">Delete team</button></form>
+    @endif
+  </div>
+@endsection

@@ -1,0 +1,22 @@
+@extends('layouts.app')
+@section('title', 'Teams — {{ app_display }}')
+@section('content')
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem">
+    <div><h1 class="font-display" style="font-size:1.5rem;margin:0">Teams</h1><p class="muted" style="font-size:.875rem;margin:.25rem 0 0">Switch context or create a new team.</p></div>
+    <a class="btn" href="{{ create_url }}">New team</a>
+  </div>
+  @isset(status)<p class="alert alert-ok">{{ status }}</p>@endisset
+  <ul class="list">
+    @forelse(teams as team)
+      <li>
+        <span>{{ team.name }}</span>
+        <span style="display:flex;gap:.5rem">
+          <form method="post" action="/teams/{{ team.id }}/switch">@csrf<button class="btn btn-ghost" type="submit">Switch</button></form>
+          <a class="btn btn-ghost" href="/teams/{{ team.id }}/settings">Settings</a>
+        </span>
+      </li>
+    @empty
+      <li style="justify-content:center" class="muted">No teams yet.</li>
+    @endforelse
+  </ul>
+@endsection

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ app_name }}"
+version = "0.1.0"
+description = "{{ app_display }} — Almasix SPA application"
+requires-python = ">=3.11"
+dependencies = [
+    "almasix",
+    "almasix-inertia",
+]
+
+[project.scripts]
+smith = "almasix.smith.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app", "bootstrap", "config", "routes"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Test"]
+
+[tool.pylint.basic]
+class-attribute-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"
+attr-rgx = "([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)$"

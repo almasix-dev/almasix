@@ -1,0 +1,18 @@
+"""Web routes — minimal surface for an API-first application."""
+
+from almasix.http import Response
+from almasix.routing import Route
+
+
+async def home() -> Response:
+    """Plain-text welcome — no session auth UI in the API kit."""
+    return Response(
+        "{{ app_display }} API\n\n"
+        "Token-first Almasix application.\n"
+        "POST /api/tokens  ·  GET /api/user  ·  GET /api/health\n",
+        media_type="text/plain; charset=utf-8",
+    )
+
+
+with Route.group(middleware=["web"]):
+    Route.get("/", home, name="home")

@@ -1,0 +1,40 @@
+import { Head, Link, useForm } from "@inertiajs/react";
+import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout";
+import TextInput from "../../Components/TextInput";
+import PrimaryButton from "../../Components/PrimaryButton";
+
+export default function Index({ teams = [], currentTeamId, status }) {
+  const form = useForm({ name: "" });
+  return (
+    <AuthenticatedLayout title="Teams">
+      <Head title="Teams" />
+      <div className="mx-auto max-w-2xl space-y-8">
+        {status ? <p className="text-sm text-brand">{status}</p> : null}
+        <section className="rounded-2xl border border-line bg-panel p-6">
+          <h2 className="font-display text-xl font-semibold">Your teams</h2>
+          <ul className="mt-4 divide-y divide-line">
+            {teams.map((t) => (
+              <li key={t.id} className="flex items-center justify-between py-3">
+                <div>
+                  <Link href={`/teams/${t.id}`} className="font-medium hover:text-brand">{t.name}</Link>
+                  {t.id === currentTeamId ? <span className="ml-2 text-xs text-brand">current</span> : null}
+                </div>
+                <Link href={`/teams/${t.id}/switch`} method="post" as="button" className="text-sm text-muted hover:text-ink">
+                  Switch
+                </Link>
+              </li>
+            ))}
+            {teams.length === 0 ? <li className="py-6 text-sm text-muted">No teams yet — create one below.</li> : null}
+          </ul>
+        </section>
+        <section className="rounded-2xl border border-line bg-panel p-6">
+          <h2 className="font-display text-xl font-semibold">Create team</h2>
+          <form className="mt-4 space-y-4" onSubmit={(e) => { e.preventDefault(); form.post("/teams"); }}>
+            <TextInput label="Team name" value={form.data.name} onChange={(e) => form.setData("name", e.target.value)} error={form.errors.name} />
+            <PrimaryButton className="w-auto" disabled={form.processing}>Create</PrimaryButton>
+          </form>
+        </section>
+      </div>
+    </AuthenticatedLayout>
+  );
+}

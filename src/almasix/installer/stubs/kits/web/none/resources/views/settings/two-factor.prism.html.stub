@@ -1,0 +1,36 @@
+@extends('layouts.app')
+@section('title', 'Two-factor — {{ app_display }}')
+@section('content')
+  <nav class="settings-nav">
+    <a href="/user/profile">Profile</a>
+    <a href="/user/password">Password</a>
+    <a href="/user/two-factor-authentication">Two-factor</a>
+    <a href="/user/appearance">Appearance</a>
+  </nav>
+
+  <h1 class="font-display" style="font-size:1.5rem;margin:0">Two-factor authentication</h1>
+  @isset(status)<p class="alert alert-ok">{{ status }}</p>@endisset
+  @isset(error)<p class="alert alert-error">{{ error }}</p>@endisset
+  @if(enabled)
+    <p style="color:var(--brand);font-weight:500">Two-factor is enabled.</p>
+    <form method="post" action="{{ disable_url }}" style="display:inline">@csrf{!! method_field('DELETE') !!}<button class="btn btn-ghost" type="submit">Disable</button></form>
+    <form method="post" action="{{ recovery_url }}" style="display:inline;margin-left:.5rem">@csrf<button class="btn-ghost" style="border:0;background:none;color:var(--brand);cursor:pointer" type="submit">Regenerate recovery codes</button></form>
+  @elseif(pending)
+    <p class="muted" style="font-size:.875rem">Scan this URI, then confirm with a code.</p>
+    <code style="display:block;word-break:break-all;padding:.75rem;border:1px solid var(--line);border-radius:.5rem;font-size:.75rem;background:var(--surface)">{{ qr_uri }}</code>
+    <form method="post" action="{{ confirm_url }}" style="max-width:16rem;margin-top:1rem">@csrf
+      <input type="text" name="code" required placeholder="6-digit code"/>
+      <button class="btn" type="submit" style="margin-top:.5rem">Confirm</button>
+    </form>
+  @else
+    <form method="post" action="{{ enable_url }}" style="margin-top:1rem">@csrf<button class="btn" type="submit">Enable two-factor</button></form>
+  @endif
+  @isset(recovery_codes)
+    <div style="margin-top:1.5rem">
+      <h2 style="font-size:1rem">Recovery codes</h2>
+      <ul style="font-family:ui-monospace,monospace;font-size:.875rem;columns:2">
+        @foreach(recovery_codes as code)<li>{{ code }}</li>@endforeach
+      </ul>
+    </div>
+  @endisset
+@endsection

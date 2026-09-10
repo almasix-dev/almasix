@@ -1,0 +1,19 @@
+<script setup>
+import { Link } from "@inertiajs/vue3";
+import ThemeToggle from "../Components/ThemeToggle.vue";
+defineProps({ title: String, appName: { type: String, default: "{{ app_display }}" } });
+</script>
+<template>
+  <div class="flex min-h-screen flex-col bg-paper text-ink">
+    <header class="flex items-center justify-between px-6 py-5">
+      <Link href="/" class="font-display text-lg font-semibold text-brand">{{ appName }}</Link>
+      <ThemeToggle />
+    </header>
+    <main class="flex flex-1 items-center justify-center px-4 pb-16">
+      <div class="w-full max-w-md">
+        <h1 v-if="title" class="font-display mb-6 text-center text-3xl font-semibold tracking-tight">{{ title }}</h1>
+        <div class="rounded-2xl border border-line bg-panel p-8 shadow-sm"><slot /></div>
+      </div>
+    </main>
+  </div>
+</template>

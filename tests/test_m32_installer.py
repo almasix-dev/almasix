@@ -281,6 +281,7 @@ def test_no_interaction_takes_the_documented_defaults(tmp_path: Path) -> None:
     )
 
     assert prompter.asked == []
+    assert plan.kit == "none"
     assert (plan.stack, plan.database) == ("tailwind", "sqlite")
     assert plan.tests is True
     assert (plan.git, plan.install, plan.migrate) == (False, False, False)
@@ -294,6 +295,7 @@ def test_a_flag_is_never_asked_about(tmp_path: Path) -> None:
         "demo",
         tmp_path / "demo",
         Answers(
+            kit="none",
             stack="bootstrap",
             database="mysql",
             tests=False,
@@ -318,6 +320,7 @@ def test_a_flag_is_never_asked_about(tmp_path: Path) -> None:
 def test_the_prompts_decide_what_the_flags_did_not(tmp_path: Path) -> None:
     prompter = ScriptedPrompter(
         {
+            "Which starter kit?": "none",
             "Which frontend stack?": "plain",
             "Which database will this application use?": "pgsql",
         },
@@ -337,13 +340,14 @@ def test_the_prompts_decide_what_the_flags_did_not(tmp_path: Path) -> None:
         node_available=lambda: True,
     )
 
+    assert plan.kit == "none"
     assert plan.stack == "plain"
     assert plan.database == "pgsql"
     assert plan.git is True
     assert plan.install is True
     assert plan.npm is True
     assert plan.migrate is True
-    assert plan.asked == ["stack", "database", "tests", "git", "install", "npm", "migrate"]
+    assert plan.asked == ["kit", "stack", "database", "tests", "git", "install", "npm", "migrate"]
 
 
 def test_npm_is_not_asked_about_without_node_or_without_a_stack(tmp_path: Path) -> None:

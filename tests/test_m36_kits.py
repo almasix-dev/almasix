@@ -1,0 +1,55 @@
+"""M36 unit tests — kit overlays on the installer."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from almasix.installer.kits import find_kit
+from almasix.installer.options import Answers, resolve_plan
+from almasix.installer.scaffold import ScaffoldError, scaffold_app
+
+
+def test_find_kit_aliases() -> None:
+    assert find_kit("livewire").name == "web"
+    assert find_kit("signet").name == "api"
+    assert find_kit("spa").frontend == "react"
+    with pytest.raises(ScaffoldError):
+        find_kit("angular")
+
+
+def test_scaffold_web_kit_forces_auth_surface(tmp_path: Path) -> None:
+    root = scaffold_app("webkit", destination=tmp_path / "webkit", kit="web", stack="tailwind")
+    routes = (root / "routes" / "web.py").read_text(encoding="utf-8")
+    assert "TwoFactorController" in routes
+    assert "TeamController" in routes
+    assert (root / "resources" / "views" / "settings" / "profile.prism.html").is_file()
+    css = (root / "resources" / "css" / "app.css").read_text(encoding="utf-8")
+    assert "0d9488" in css
+
+
+def test_scaffold_api_kit_forces_none_stack(tmp_path: Path) -> None:
+    root = scaffold_app("apikit", destination=tmp_path / "apikit", kit="api", stack="tailwind")
+    # force_stack=none even if caller asked for tailwind
+    assert not (root / "package.json").is_file()
+    api = (root / "routes" / "api.py").read_text(encoding="utf-8")
+    assert "auth:signet" in api
+
+
+def test_scaffold_spa_react(tmp_path: Path) -> None:
+    root = scaffold_app("spaapp", destination=tmp_path / "spaapp", kit="react")
+    assert (root / "resources" / "js" / "Pages" / "Welcome.jsx").is_file()
+    assert "InertiaServiceProvider" in (root / "config" / "app.py").read_text(encoding="utf-8")
+    assert (root / "package.json").is_file()
+
+
+def test_resolve_plan_kit_flag(tmp_path: Path) -> None:
+    plan = resolve_plan(
+        "x",
+        tmp_path / "x",
+        Answers(kit="vue", database="sqlite"),
+        interactive=False,
+    )
+    assert plan.kit == "vue"
+    assert plan.stack == "tailwind"  # SPA force
