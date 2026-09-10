@@ -187,7 +187,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M37** | `smith progress:tokens` — Signet PATs, abilities, `/api/user`, `/signet/csrf-cookie` |
 | **M53** | `smith progress:dates` — Chrono parse / add / freeze |
 | **M45** | `smith progress:prism-lang` — `format_prism` idempotent; `editors/prism` + `smith prism:format` |
-| **M46** | `smith progress:lsp` — index counts (views/routes/config/middleware/translations); `almasix-lsp` |
+| **M46** | `smith progress:lsp` — index counts (views/routes/config/controllers/…); `view()` + `[Controller, method]` navigation |
 | **M47** | `smith progress:ide` — `ide:install` + `ide:stubs`; VSIX / JetBrains zip sideload |
 | **M52** | `smith progress:sonar` — Sonar alias, private auth, `packages/sonar` (`@almasix/sonar`) |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |

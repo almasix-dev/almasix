@@ -368,6 +368,8 @@ def _completion_kind(kind: str) -> types.CompletionItemKind:
         return types.CompletionItemKind.Reference
     if kind in {"config", "trans", "middleware"}:
         return types.CompletionItemKind.Value
+    if kind == "action":
+        return types.CompletionItemKind.Method
     return types.CompletionItemKind.Text
 
 

@@ -60,12 +60,12 @@ index.
 
 | Feature | Surfaces |
 | --- | --- |
-| **Completion** | `view("…")`, `@include` / `@extends`, `route("…")`, `config("…")`, `__()` / `trans()` / `@lang`, `.middleware("…")` |
+| **Completion** | `view("…")`, `@include` / `@extends`, `route("…")`, `config("…")`, `__()` / `trans()` / `@lang`, `.middleware("…")`, `[Controller, "…"]` action methods |
 | **Diagnostics** | Unknown `view("…")`; unknown translation keys when `lang/` is present |
-| **Hover** | Prism directives (static docs table); route / view / config / translation / middleware strings |
-| **Go to definition** | `view("foo.bar")` → template; `route("name")` → routes file; `config("app.x")` → `config/app.py` |
+| **Hover** | Prism directives (static docs table); route / view / config / translation / middleware / controller-action strings |
+| **Go to definition** | `view("foo.bar")` → template; `route("name")` → routes file; `config("app.x")` → `config/app.py`; `[Controller, "method"]` → controller method |
 | **Find references** | View names — `view("…")` / `@include` / `@extends` across the app |
-| **Document links** | View, route, and config string arguments |
+| **Document links** | View, route, config, and controller-action string arguments |
 | **Code actions** | Create missing view (empty `.prism.html`) for unknown-view diagnostics |
 
 Trigger characters: `"`, `'`, `.`, `@`.

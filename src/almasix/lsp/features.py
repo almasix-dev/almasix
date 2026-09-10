@@ -19,7 +19,14 @@ from almasix.lsp.analysis import (
     find_python_calls,
 )
 from almasix.lsp.directives import directive_hover
-from almasix.lsp.index import AppIndex, config_file_for_key, view_path_for_name
+from almasix.lsp.index import (
+    AppIndex,
+    config_file_for_key,
+    controller_methods,
+    resolve_controller_action,
+    resolve_controller_path,
+    view_path_for_name,
+)
 
 # Directories never descended into while scanning for view references.
 _SKIP_DIR_NAMES = frozenset(
@@ -158,6 +165,19 @@ def completions_for_context(index: AppIndex, ctx: CursorContext) -> list[Complet
     if ctx.kind == "middleware":
         names = _filter_prefix(list(index.middleware_aliases), ctx.prefix)
         return [CompletionItem(label=name, kind="middleware") for name in names]
+    if ctx.kind == "action" and ctx.controller:
+        path = resolve_controller_path(index, ctx.controller)
+        if path is None:
+            return []
+        names = _filter_prefix(sorted(controller_methods(path)), ctx.prefix)
+        return [
+            CompletionItem(
+                label=name,
+                kind="action",
+                detail=f"{ctx.controller}.{name}",
+            )
+            for name in names
+        ]
     return []
 
 
@@ -259,6 +279,15 @@ def _hover_for_call(index: AppIndex, call: StringCall) -> str | None:
         known = call.value in index.middleware_aliases
         status = "alias" if known else "unknown alias"
         return f"**middleware** `{call.value}`\n\n_{status}_"
+    if call.kind == "action" and call.controller:
+        resolved = resolve_controller_action(index, call.controller, call.value, source=None)
+        if resolved is None:
+            return (
+                f"**action** `{call.controller}@{call.value}`\n\n"
+                "_Controller not found under app/http/controllers._"
+            )
+        path, line = resolved
+        return f"**action** `{call.controller}@{call.value}`\n\n`{path}:{line + 1}`"
     return None
 
 
@@ -270,7 +299,7 @@ def definition(
     *,
     language: str,
 ) -> LocationItem | None:
-    """Go-to-definition for view / route / config string names."""
+    """Go-to-definition for view / route / config / controller action strings."""
     call = call_at(source, line, character, language=language)
     if call is None:
         return None
@@ -289,6 +318,16 @@ def definition(
         if path is None or not path.is_file():
             return None
         return LocationItem(path=path)
+    if call.kind == "action" and call.controller:
+        resolved = resolve_controller_action(index, call.controller, call.value, source=source)
+        if resolved is None:
+            return None
+        path, method_line = resolved
+        return LocationItem(
+            path=path,
+            start_line=method_line,
+            end_line=method_line,
+        )
     return None
 
 
@@ -298,7 +337,7 @@ def document_links(
     *,
     language: str,
 ) -> list[DocumentLinkItem]:
-    """Document links for view-like / route / config string arguments."""
+    """Document links for view-like / route / config / action string arguments."""
     links: list[DocumentLinkItem] = []
     for call in find_calls(source, language=language):
         target: Path | None = None
@@ -313,6 +352,11 @@ def document_links(
         elif call.kind == "config":
             target = config_file_for_key(index, call.value)
             tooltip = f"Open config {call.value}"
+        elif call.kind == "action" and call.controller:
+            resolved = resolve_controller_action(index, call.controller, call.value, source=source)
+            if resolved is not None:
+                target = resolved[0]
+                tooltip = f"Open {call.controller}@{call.value}"
         if target is None:
             continue
         links.append(

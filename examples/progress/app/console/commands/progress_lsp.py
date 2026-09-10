@@ -20,6 +20,7 @@ class ProgressLspCommand(Command):
         self.line(f"  routes -> {len(index.routes)}")
         self.line(f"  config -> {len(index.config_keys)}")
         self.line(f"  models -> {len(index.models)}")
+        self.line(f"  controllers -> {len(index.controllers)}")
         self.line(f"  middleware -> {len(index.middleware_aliases)}")
         self.line(f"  translations -> {len(index.translation_keys)}")
         self.line("  run: almasix-lsp  |  python -m almasix.lsp  |  smith lsp:serve")

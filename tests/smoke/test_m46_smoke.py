@@ -50,3 +50,4 @@ def test_m46_board_marks_lsp_complete(progress_client: TestClient) -> None:
     by_id = {m["id"]: m for m in board["milestones"]}
     assert by_id["M46"]["status"] == "complete"
     assert "smith progress:lsp" in by_id["M46"]["proof"]
+    assert any("Controller" in item for item in by_id["M46"]["proof"])

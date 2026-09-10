@@ -950,11 +950,11 @@ cd examples/progress && python smith progress:prism-lang
 
 - [x] `pip install 'almasix[lsp]'` (or `[dev]`) provides `almasix-lsp`
 - [x] `python -m almasix.lsp` and `smith lsp:serve` start the stdio server
-- [x] Index boots the app: views, named routes (+ source), config, models, translations, middleware
-- [x] Completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans` / middleware
+- [x] Index boots the app: views, named routes (+ source), config, models, controllers, translations, middleware
+- [x] Completion for `view` / `@include` / `@extends` / `route` / `config` / `__`/`trans` / middleware / `[Controller, "method"]`
 - [x] Diagnostics for unknown `view("…")` and translation keys (when `lang/` exists)
-- [x] Hover for Prism directives and known route / config / translation / middleware names
-- [x] Go-to-definition for views, routes, and config files; document links
+- [x] Hover for Prism directives and known route / config / translation / middleware / action names
+- [x] Go-to-definition for views, routes, config files, and controller actions; document links
 - [x] Find-references for view names; code action to create a missing view
 - [x] Wire-protocol conformance tests (initialize + completion / definition / references / codeAction)
 - [x] `smith progress:lsp` prints counts and `lsp ok`

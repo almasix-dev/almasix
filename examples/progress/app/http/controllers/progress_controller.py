@@ -525,6 +525,7 @@ def _milestones() -> list[dict]:
                 "smith progress:lsp",
                 "almasix-lsp / python -m almasix.lsp / smith lsp:serve",
                 "completion + diagnostics + hover + definition + links",
+                "view() → template; [Controller, method] → action",
                 "references + create-view code action",
                 "translations + middleware aliases indexed",
                 "LSP wire-protocol conformance tests",

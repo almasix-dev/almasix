@@ -14,12 +14,13 @@ CallKind = Literal[
     "extends",
     "trans",
     "middleware",
+    "action",
 ]
 
 
 @dataclass(frozen=True)
 class StringCall:
-    """A string argument to a framework helper or Prism directive."""
+    """A string argument to a framework helper, Prism directive, or route action."""
 
     kind: CallKind
     value: str
@@ -29,6 +30,7 @@ class StringCall:
     end_character: int
     start_offset: int
     end_offset: int
+    controller: str | None = None
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,7 @@ class CursorContext:
     start_character: int
     end_line: int
     end_character: int
+    controller: str | None = None
 
 
 # ``__`` / ``trans`` → trans; ``.middleware(`` / ``middleware(`` → middleware.
@@ -72,6 +75,11 @@ _PY_KIND_MAP: dict[str, CallKind] = {
     "__": "trans",
     "middleware": "middleware",
 }
+
+# ``[ProgressController, "index"]`` — Almasix route action tuples.
+_CONTROLLER_ACTION_RE = re.compile(
+    r"""\[\s*(?P<ctrl>[A-Za-z_][\w]*)\s*,\s*(?P<q>['"])(?P<value>[^'"]*)(?P=q)"""
+)
 
 
 def _offset_to_position(source: str, offset: int) -> tuple[int, int]:
@@ -115,8 +123,34 @@ def _find_calls(
 
 
 def find_python_calls(source: str) -> list[StringCall]:
-    """Find ``view`` / ``route`` / ``config`` / ``trans`` / ``middleware`` string args."""
-    return _find_calls(source, _PY_CALL_RE, kind_map=_PY_KIND_MAP)
+    """Find ``view`` / ``route`` / ``config`` / ``trans`` / ``middleware`` / action strings."""
+    calls = _find_calls(source, _PY_CALL_RE, kind_map=_PY_KIND_MAP)
+    calls.extend(find_controller_actions(source))
+    return calls
+
+
+def find_controller_actions(source: str) -> list[StringCall]:
+    """Find ``[SomeController, "method"]`` route action string arguments."""
+    calls: list[StringCall] = []
+    for match in _CONTROLLER_ACTION_RE.finditer(source):
+        value_start = match.start("value")
+        value_end = match.end("value")
+        sl, sc = _offset_to_position(source, value_start)
+        el, ec = _offset_to_position(source, value_end)
+        calls.append(
+            StringCall(
+                kind="action",
+                value=match.group("value"),
+                start_line=sl,
+                start_character=sc,
+                end_line=el,
+                end_character=ec,
+                start_offset=value_start,
+                end_offset=value_end,
+                controller=match.group("ctrl"),
+            )
+        )
+    return calls
 
 
 def find_prism_calls(source: str) -> list[StringCall]:
@@ -155,6 +189,7 @@ def context_at(source: str, line: int, character: int, *, language: str) -> Curs
         start_character=call.start_character,
         end_line=call.end_line,
         end_character=call.end_character,
+        controller=call.controller,
     )
 
 
@@ -190,6 +225,9 @@ _OPEN_PY_RE = re.compile(
 _OPEN_PRISM_RE = re.compile(
     r"""@(?P<kind>include(?:If|When|Unless)?|extends|lang)\s*\(\s*(?P<q>['"])(?P<prefix>[^'"]*)$"""
 )
+_OPEN_ACTION_RE = re.compile(
+    r"""\[\s*(?P<ctrl>[A-Za-z_][\w]*)\s*,\s*(?P<q>['"])(?P<prefix>[^'"]*)$"""
+)
 
 
 def _open_string_context(
@@ -200,6 +238,24 @@ def _open_string_context(
         return None
     prefix_line = lines[line][:character]
     lang = language.lower()
+
+    if lang in {"python", "py", "plaintext"} or lang not in {
+        "prism",
+        "html",
+        "prism-html",
+    }:
+        action = _OPEN_ACTION_RE.search(prefix_line)
+        if action is not None:
+            return CursorContext(
+                kind="action",
+                prefix=action.group("prefix"),
+                start_line=line,
+                start_character=action.start("prefix"),
+                end_line=line,
+                end_character=character,
+                controller=action.group("ctrl"),
+            )
+
     patterns: list[tuple[re.Pattern[str], dict[str, CallKind]]] = []
     if lang in {"python", "py", "plaintext"}:
         patterns.append((_OPEN_PY_RE, _PY_KIND_MAP))
@@ -218,12 +274,11 @@ def _open_string_context(
         kind = kind_map.get(raw)
         if kind is None:  # pragma: no cover
             continue
-        start_char = match.start("prefix")
         return CursorContext(
             kind=kind,
             prefix=match.group("prefix"),
             start_line=line,
-            start_character=start_char,
+            start_character=match.start("prefix"),
             end_line=line,
             end_character=character,
         )
