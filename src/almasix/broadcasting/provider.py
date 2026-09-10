@@ -9,9 +9,13 @@ from almasix.broadcasting.helpers import default_broadcasting_config, set_broadc
 from almasix.broadcasting.manager import BroadcastManager
 from almasix.providers.provider import ServiceProvider
 
-#: Where the authorization endpoints live, as every Echo build expects them.
+#: Where the authorization endpoints live — Sonar, Echo, and Pusher-shaped
+#: clients all hit the same paths.
 AUTH_ROUTE = "/broadcasting/auth"
 USER_AUTH_ROUTE = "/broadcasting/user-auth"
+
+#: Drivers that host the in-process Sonar websocket server.
+_SONAR_DRIVERS = frozenset({"websocket", "sonar"})
 
 
 class BroadcastServiceProvider(ServiceProvider):
@@ -89,11 +93,11 @@ class BroadcastServiceProvider(ServiceProvider):
             router.websocket(path, BroadcastingSocket(), name="broadcasting.socket")
 
     def _socket_path(self, manager: BroadcastManager) -> str | None:
-        """The socket path, when the active connection is one we host."""
+        """The Sonar socket path, when the active connection hosts one."""
         try:
             config = manager.connection_config(manager.get_default_driver())
         except KeyError:
             return None
-        if str(config.get("driver") or "") != "websocket":
+        if str(config.get("driver") or "") not in _SONAR_DRIVERS:
             return None
         return str(config.get("path") or "/broadcasting/socket")

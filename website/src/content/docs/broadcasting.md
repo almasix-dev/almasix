@@ -1,6 +1,6 @@
 ---
 title: Broadcasting
-description: Send server-side events to the browser over websockets — channels, authorization, presence, model broadcasting, and the drivers that carry them.
+description: Send server-side events to the browser over Sonar — channels, authorization, presence, model broadcasting, and alternative realtime drivers.
 ---
 
 ## Introduction
@@ -41,8 +41,9 @@ usual.
 | Manager | `src/almasix/broadcasting/manager.py` — `BroadcastManager` |
 | Channels | `src/almasix/broadcasting/channels.py` |
 | Event contracts | `src/almasix/broadcasting/events.py` — `ShouldBroadcast`, mixins |
-| Drivers | `src/almasix/broadcasting/broadcasters/` — log, null, websocket, redis, pusher |
-| Socket server | `src/almasix/broadcasting/sockets.py`, `endpoints.py` |
+| Drivers | `src/almasix/broadcasting/broadcasters/` — log, null, websocket/sonar, redis, pusher |
+| Sonar socket | `src/almasix/broadcasting/sockets.py`, `endpoints.py` |
+| Browser client | `packages/sonar` — `@almasix/sonar` |
 | Queued broadcast | `src/almasix/broadcasting/jobs.py` — `BroadcastEvent` |
 | Model broadcasting | `src/almasix/broadcasting/model.py` — `BroadcastsEvents` |
 | Signing | `src/almasix/broadcasting/signing.py` |
@@ -62,13 +63,117 @@ before you have decided how the browser hears about it.
 | --- | --- |
 | `log` | Writes the event, the channels, and the payload to the log |
 | `null` | Accepts and discards — the off switch |
-| `websocket` | Almasix's own socket server, in the application process |
+| `websocket` / `sonar` | **Sonar** — Almasix's own socket server, in the application process |
 | `redis` | Publishes to Redis for a socket server to relay |
 | `pusher` | Posts to Pusher Channels over its REST API |
+
+`sonar` is a product alias for the same in-process server as `websocket`. Use
+either connection name; both register `/broadcasting/socket` when selected as
+the default.
 
 `Broadcast.extend("mine", resolver)` registers a driver of your own; the
 resolver is called with the connection name and its configuration and returns
 a `Broadcaster`.
+
+## Sonar (default realtime)
+
+**Sonar** is Almasix's first-party realtime stack: the in-process websocket
+server plus the `@almasix/sonar` browser client. It does **not** require
+`pusher-js`, Ably, or Socket.IO.
+
+### Server
+
+With `BROADCAST_CONNECTION=websocket` or `sonar`, the application serves Sonar
+at `/broadcasting/socket` — no third party, no separate process.
+
+```python
+Route.websocket("/live", MyHandler())     # your own sockets, same router
+```
+
+The protocol is small:
+
+| Direction | Frame |
+| --- | --- |
+| server → client | `almasix:connection_established` with the `socket_id` |
+| client → server | `subscribe` with `channel`, plus `auth` when private |
+| server → client | `almasix:subscription_succeeded`, with `members` on presence |
+| client → server | `unsubscribe`, `ping` |
+| server → client | `almasix:member_added`, `almasix:member_removed`, `almasix:pong` |
+| server → client | the broadcast itself: `{event, channel, data}` |
+
+A client may also send `client-*` events, which are forwarded to the rest of
+a private channel it has joined. They are off unless the connection's
+`client_events` is true.
+
+One process serves its own connections. More than one worker means each
+worker only reaches the browsers attached to it; put Redis in front, or use a
+hosted alternative below, when you scale past one.
+
+### `@almasix/sonar` client
+
+```bash
+npm install @almasix/sonar
+```
+
+```js
+import Sonar from "@almasix/sonar";
+
+const sonar = new Sonar({
+  // defaults: same host as the page, path /broadcasting/socket
+  // authEndpoint: "/broadcasting/auth",
+});
+
+await sonar.connect();
+
+sonar.channel("announcements").listen("post.published", (payload) => {
+  console.log(payload);
+});
+
+sonar.private(`orders.${orderId}`).listen("OrderShipped", (payload) => {
+  console.log(payload);
+});
+
+sonar
+  .join("rooms.lobby")
+  .here((members) => console.log(members))
+  .joining((member) => console.log("joined", member))
+  .leaving((member) => console.log("left", member));
+
+// Exclude this tab from server broadcasts (`to_others()`)
+fetch("/orders", {
+  method: "POST",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json",
+    ...sonar.socketIdHeader(), // X-Socket-ID
+  },
+  body: JSON.stringify({ ... }),
+});
+```
+
+Private and presence channels POST `/broadcasting/auth` with cookies
+(`credentials: "include"`). The socket id is available as `sonar.socketId` for
+`to_others()`.
+
+See `packages/sonar/README.md` for options (`wsUrl`, `forceTLS`, reconnect).
+
+### Raw WebSocket (no package)
+
+```js
+const socket = new WebSocket("ws://localhost:8000/broadcasting/socket");
+
+socket.onmessage = (message) => {
+    const frame = JSON.parse(message.data);
+
+    if (frame.event === "almasix:connection_established") {
+        socketId = frame.data.socket_id;
+        socket.send(JSON.stringify({
+            event: "subscribe",
+            data: { channel: "announcements" },
+        }));
+    }
+};
+```
 
 ## Defining broadcast events
 
@@ -122,7 +227,7 @@ broadcast(OrderShipped(order)).via("pusher")
 
 ### Leaving the current user out
 
-Mix in `InteractsWithSockets`. Echo sends an `X-Socket-ID` header once it has
+Mix in `InteractsWithSockets`. Sonar sends an `X-Socket-ID` header once it has
 connected, and `to_others()` reads it:
 
 ```python
@@ -184,59 +289,13 @@ The provider adds these, unless `broadcasting.routes` is `False`:
 | `POST /broadcasting/auth` | May this socket join this channel? |
 | `POST /broadcasting/user-auth` | Who is this socket? |
 
-Both answer in Pusher's format — an `auth` string of `key:signature`, plus
-`channel_data` for presence — so one endpoint serves Almasix's socket server
-and a hosted one alike. The signature is HMAC-SHA256 over
-`socket_id:channel[:channel_data]`, signed with the connection's `secret`,
-falling back to `APP_KEY`.
+Both answer in a signed format shared with Pusher-shaped clients — an `auth`
+string of `key:signature`, plus `channel_data` for presence. The signature is
+HMAC-SHA256 over `socket_id:channel[:channel_data]`, signed with the
+connection's `secret`, falling back to `APP_KEY`.
 
 `broadcasting.middleware` decides what runs in front of them; the default is
 `["web"]`, because that is where sessions live.
-
-## Almasix's own socket server
-
-With the `websocket` driver the application serves its own socket at
-`/broadcasting/socket` — no third party, no separate process.
-
-```python
-Route.websocket("/live", MyHandler())     # your own sockets, same router
-```
-
-The protocol is small and Pusher-shaped:
-
-| Direction | Frame |
-| --- | --- |
-| server → client | `almasix:connection_established` with the `socket_id` |
-| client → server | `subscribe` with `channel`, plus `auth` when private |
-| server → client | `almasix:subscription_succeeded`, with `members` on presence |
-| client → server | `unsubscribe`, `ping` |
-| server → client | `almasix:member_added`, `almasix:member_removed`, `almasix:pong` |
-| server → client | the broadcast itself: `{event, channel, data}` |
-
-```js
-const socket = new WebSocket("ws://localhost:8000/broadcasting/socket");
-
-socket.onmessage = (message) => {
-    const frame = JSON.parse(message.data);
-
-    if (frame.event === "almasix:connection_established") {
-        socketId = frame.data.socket_id;
-        socket.send(JSON.stringify({
-            event: "subscribe",
-            data: { channel: "announcements" },
-        }));
-    }
-};
-```
-
-A client may also send `client-*` events, which are forwarded to the rest of
-a private channel it has joined. They are off unless the connection's
-`client_events` is true — one browser sending data to every other one is
-worth opting into.
-
-One process serves its own connections. More than one worker means each
-worker only reaches the browsers attached to it; put Redis in front, or point
-`BROADCAST_CONNECTION` at `pusher`, when you scale past one.
 
 ## Model broadcasting
 
@@ -295,13 +354,41 @@ Dispatch hands a broadcast to the event loop and returns, so a test that is
 about to assert should `await flush_broadcasts()` first. `Event.fake()` still
 swallows the whole event, broadcast included.
 
+## Alternatives (not the default)
+
+Sonar is the default path. These clients and backends remain supported when
+you already use them or need a hosted bus.
+
+### Pusher.js
+
+Use the `pusher` broadcaster (`PUSHER_*` env) so the server posts to Pusher
+Channels. In the browser, use [`pusher-js`](https://github.com/pusher/pusher-js)
+(or Laravel Echo's Pusher connector) against your Pusher app credentials.
+Channel auth still hits Almasix at `POST /broadcasting/auth`.
+
+### Ably
+
+Point a custom / Redis-fed socket layer or an Ably-compatible bridge at your
+channels, and use the [Ably JavaScript client](https://ably.com/docs/getting-started/javascript)
+in the browser. Authorization can still reuse `/broadcasting/auth` if your
+bridge expects Pusher-shaped signatures; otherwise authorize with Ably's own
+token flow and keep Almasix as the event publisher only.
+
+### Socket.IO
+
+Run a Socket.IO server (or a Redis subscriber that emits into Socket.IO) and
+subscribe with the [Socket.IO client](https://socket.io/docs/v4/client-api/).
+Almasix's native Sonar protocol is not Socket.IO; treat this as a separate
+realtime plane fed by the `redis` or `log` broadcaster, not as a drop-in for
+`/broadcasting/socket`.
+
 ## Differences from Laravel
 
 - **Marker, not interface.** `ShouldBroadcast` is a base class you inherit;
   Python has no interfaces to implement.
-- **Its own socket server.** Laravel points you at Reverb, Pusher, or Ably.
-  Almasix ships a websocket driver that runs inside the application, and
-  speaks a Pusher-shaped protocol so the alternatives stay available.
+- **Sonar by default.** Laravel points you at Reverb, Pusher, or Ably.
+  Almasix ships Sonar in-process and `@almasix/sonar` for the browser; Pusher,
+  Ably, and Socket.IO stay documented alternatives.
 - **Names default to the class name**, not the fully qualified path.
 - **Payloads are captured at dispatch**, not rebuilt when the job runs,
   because queue payloads here are JSON rather than serialized objects.

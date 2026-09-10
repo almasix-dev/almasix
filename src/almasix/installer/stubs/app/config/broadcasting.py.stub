@@ -5,7 +5,8 @@ from almasix.config import env
 config = {
     # "log" writes broadcasts to the log and sends nothing, which is the
     # right default until you have decided how they reach a browser.
-    # "websocket" runs Almasix's own socket server at the path below.
+    # "websocket" / "sonar" run Almasix Sonar (first-party realtime) at the path
+    # below — pair with the `@almasix/sonar` browser client.
     "default": env("BROADCAST_CONNECTION", "log"),
     "connections": {
         "websocket": {
@@ -15,6 +16,13 @@ config = {
             "secret": env("BROADCAST_SECRET"),
             "path": env("BROADCAST_PATH", "/broadcasting/socket"),
             # Let browsers send `client-*` events to each other.
+            "client_events": bool(env("BROADCAST_CLIENT_EVENTS", False)),
+        },
+        "sonar": {
+            "driver": "sonar",
+            "key": env("BROADCAST_KEY", "almasix"),
+            "secret": env("BROADCAST_SECRET"),
+            "path": env("BROADCAST_PATH", "/broadcasting/socket"),
             "client_events": bool(env("BROADCAST_CLIENT_EVENTS", False)),
         },
         "pusher": {

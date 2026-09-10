@@ -206,3 +206,18 @@ jobs:
         with:
           name: almasix-jetbrains-zip
           path: editors/jetbrains/build/distributions/*.zip
+
+  sonar-client:
+    name: Build @almasix/sonar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build and test
+        working-directory: packages/sonar
+        run: |
+          npm ci
+          npm run build
+          npm test

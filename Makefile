@@ -1,4 +1,4 @@
-.PHONY: help smoke regression test test-cov test-cov-prism test-cov-lsp test-cov-ide test-orm-engines lint docs docs-build editors-vscode editors-jetbrains
+.PHONY: help smoke regression test test-cov test-cov-prism test-cov-lsp test-cov-ide test-orm-engines lint docs docs-build editors-vscode editors-jetbrains sonar
 
 PYTHON ?= .venv/bin/python
 PYTEST ?= $(PYTHON) -m pytest
@@ -17,6 +17,7 @@ help:
 	@echo "make docs-build         - build Starlight docs site"
 	@echo "make editors-vscode     - package editors/vscode/*.vsix (npx @vscode/vsce)"
 	@echo "make editors-jetbrains  - package JetBrains plugin zip (./gradlew buildPlugin)"
+	@echo "make sonar              - build + test packages/sonar (@almasix/sonar)"
 
 smoke:
 	$(PYTEST) -q tests/smoke -m smoke
@@ -58,3 +59,6 @@ editors-vscode:
 
 editors-jetbrains:
 	cd editors/jetbrains && ./gradlew buildPlugin --no-daemon
+
+sonar:
+	cd packages/sonar && npm install && npm run build && npm test

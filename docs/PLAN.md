@@ -6,7 +6,7 @@
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
 > closed; package line **0.5.0** published; **M39** docs journey + Prologue closed;
-> **M37** Signet-class tokens closed; stability track continues with M52).
+> **M37** Signet-class tokens closed; autopilot **M53 → M45 → M46 → M47 → M52** closed).
 
 ## Working identity
 
@@ -1178,7 +1178,7 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 - Broadcaster drivers (log/null + one real driver — Redis pub/sub or websocket bridge); `ShouldBroadcast` events
 - Channel auth; client contract documented
-- **Echo / browser subscribe path is not closed here** — owed as **M52** (see below). M26 ships the server; M52 makes the native socket Pusher-compatible so `@laravel/echo` works (no first-party JS client)
+- **Browser subscribe path** — closed as **M52** (Sonar + `@almasix/sonar`; Pusher/Ably/Socket.IO alternatives). M26 ships the server; M52 brands it Sonar and ships the first-party client
 - Docs: Starlight **Broadcasting**
 
 **Depends on:** M18 Events; M16 Redis nice-to-have for Redis broadcaster.
@@ -1187,7 +1187,7 @@ Laravel [Broadcasting](https://laravel.com/docs/broadcasting) — Echo-class / w
 
 **Status (M26):** `almasix.broadcasting` — `ShouldBroadcast` (plus `ShouldBroadcastNow` and `ShouldBroadcastAfterCommit`) with `broadcast_on` / `broadcast_as` / `broadcast_with` / `broadcast_when`, payloads reflected off the event's public attributes when it says nothing, and the `InteractsWithSockets` / `InteractsWithBroadcasting` mixins behind `to_others()` and `via()`; the `broadcast()` helper returning a `PendingBroadcast` that dispatches through the event bus on `send()`, on `await`, or when it falls out of scope; a `BroadcastManager` with five drivers — `log` and `null`, Almasix's own in-process `websocket` server, `redis` pub/sub, and `pusher` over its REST API — plus `Broadcast.extend()` for a sixth; `Channel` / `PrivateChannel` / `PresenceChannel` / `EncryptedPrivateChannel`, model channels, and payloads sealed with the application key on encrypted channels; `routes/channels.py` loaded by the provider (so console sees it too) with wildcard patterns, route-model binding from type hints, channel classes resolved from the container, per-channel guards, and presence rosters; `POST /broadcasting/auth` and `/broadcasting/user-auth` answering in Pusher's signed format; a websocket at `/broadcasting/socket` speaking a Pusher-shaped protocol (`subscribe`, `unsubscribe`, `ping`, `client-*`, member added/removed), reached through a new `Route.websocket()` and kernel support; queued broadcasts as a `BroadcastEvent` job whose payload is plain JSON; `BroadcastsEvents` / `BroadcastsEventsAfterCommit` for model writes, on the back of a new `Connection.after_commit()`; a `broadcast` notification channel; `Broadcast.fake()` with the assertion set; `smith make:channel` and `channel:list`; Starlight **Broadcasting**; the progress app's `PostPublished`, broadcasting `Comment`, `GET /api/broadcast`, and `progress:broadcast`.
 
-**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver where Laravel points at Reverb, Pusher, or Ably, and speaks Pusher's protocol so those stay available; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes. **Still owed:** Echo compatibility — native socket speaks real Pusher protocol so `@laravel/echo` works (**M52**).
+**Deliberate deviations (M26):** `ShouldBroadcast` is a base class rather than an interface, and the default event name is the bare class name instead of a fully qualified path, because a JavaScript file has to type it; Almasix ships its own websocket driver (Sonar) where Laravel points at Reverb, Pusher, or Ably; a queued broadcast captures its channels and payload at dispatch, since queue payloads here are JSON rather than serialized objects; `flush_broadcasts()` exists because dispatch is synchronous while the send is not, and a test or a script needs to know the send finished; channel authorization binds models from type hints rather than PHP's reflection on parameter classes. **Follow-up (M52):** first-party `@almasix/sonar` client + Sonar branding; Pusher / Ably / Socket.IO remain documented alternatives.
 
 ### M27 — Search
 
@@ -1772,6 +1772,8 @@ Ship:
 
 **Gate:** default docs and demo use Sonar server + `@almasix/sonar`; private channel works; Pusher / Ably / Socket.IO alternatives documented; smoke + progress proof.
 
+**Status: complete (2026-09-10).** Driver alias `sonar` → websocket broadcaster; npm package `@almasix/sonar` under `packages/sonar/`; Starlight Broadcasting leads with Sonar; `smith progress:sonar`; board M52 complete.
+
 ## Dates and time (M53)
 
 ### M53 — Chrono (`almasix.chrono`) + date/time helpers
@@ -1802,7 +1804,7 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 | 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | done 2026-09-10 |
 | 3 | ~~**M46** `almasix-lsp`~~ | Full LSP surface + wire-protocol conformance CI | done 2026-09-10 |
 | 4 | ~~**M47** VS Code + JetBrains~~ | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | done 2026-09-10 (marketplace publish is post-gate) |
-| 5 | **M52** Sonar | Sonar server + `@almasix/sonar`; Pusher / Ably / Socket.IO alternatives | — |
+| 5 | ~~**M52** Sonar~~ | Sonar server + `@almasix/sonar`; Pusher / Ably / Socket.IO alternatives | done 2026-09-10 |
 | — | **Later** | M36, M48, Socialite, Passport, client API keys, … | Not in this batch |
 
 ### Per-milestone checklist (non-negotiable)
@@ -1875,20 +1877,20 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**Suggested next:** Autopilot batch continues **M52** (no pauses; see **Autopilot batch**). **M53 → M45 → M46 → M47** closed.
+**Suggested next:** Autopilot batch **M53 → M45 → M46 → M47 → M52** is complete. **Later:** M36 starter kits, M48 MCP / agents (and Socialite / Passport outside Signet).
 
-**Recently closed:** M46 Almasix language server (`almasix-lsp`); M45 Prism language support; M53 Chrono; M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
+**Recently closed:** M52 Sonar (`@almasix/sonar` + driver alias); M46 Almasix language server (`almasix-lsp`); M45 Prism language support; M53 Chrono; M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
 
 **M39** — Prologue published; Basics teaching order; no milestone IDs in Starlight; header version switcher is **latest major** + `main` (never defaulting to `main`) with an older-docs banner when not on latest.
 
 **M25 Articulate documents** — ladder + L13 audit **closed**; integrations Laravel lists (cache, queue, GridFS, Scout Mongo, vectorSearch) remain named missing, not pretended.
 
-**M26 Broadcasting** — server met; **first-party client + alternative connectors owed as M52**.
+**M26 Broadcasting** — server met; **M52** closed the first-party Sonar client + alternative connectors docs.
 
 **M39** — site is published; journey rewrite + Prologue **closed**.
 
 **M40–M44, M49–M50** — exhaust gates met (Articulate SQL / collections / helpers / multi-engine CI).
 
-**M36 / M48** — out of this autopilot batch; kits after realtime client preferred, MCP after LSP.
+**M36 / M48** — out of this autopilot batch; kits and MCP remain later.
 
-**M45–M47** — closed in the current autopilot batch (thorough VS Code + JetBrains); **M48** later. Next: **M52**.
+**M45–M47** — closed in the current autopilot batch (thorough VS Code + JetBrains); **M52** Sonar closed; **M48** later.

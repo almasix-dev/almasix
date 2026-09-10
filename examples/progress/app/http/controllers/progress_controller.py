@@ -283,7 +283,7 @@ def _milestones() -> list[dict]:
                 "make:channel; channel:list",
                 "GET /api/broadcast",
                 "progress:broadcast",
-                "Sonar realtime → M52 (@almasix/sonar; Pusher/Ably/Socket.IO optional)",
+                "Sonar realtime → progress:sonar / @almasix/sonar",
             ],
         },
         {
@@ -579,11 +579,12 @@ def _milestones() -> list[dict]:
         {
             "id": "M52",
             "name": "Sonar realtime (server + @almasix/sonar)",
-            "status": "planned",
+            "status": "complete",
             "proof": [
-                "Sonar websocket server (default)",
-                "@almasix/sonar client",
-                "Pusher / Ably / Socket.IO alternatives",
+                "smith progress:sonar",
+                "packages/sonar (@almasix/sonar)",
+                "driver alias sonar → websocket",
+                "Pusher / Ably / Socket.IO alternatives documented",
             ],
         },
         {

@@ -634,7 +634,7 @@ pytest -q tests/test_m26_*.py tests/smoke/test_m26_smoke.py
 - [x] `smith make:channel`, `channel:list`, and `config/broadcasting.py` + `routes/channels.py` in the scaffold
 - [x] Living example: `PostPublished`, a broadcasting `Comment`, `smith progress:broadcast`, `GET /api/broadcast`; the board marks M26 complete
 - [x] Docs + smoke; 100% line and branch coverage on `almasix.broadcasting`
-- [ ] **Still owed:** first-party browser client for the native Almasix socket (**M52**); Pusher.js / Ably are alternatives — server alone is not the full product
+- [x] **Follow-up closed by M52:** first-party `@almasix/sonar` client; Pusher.js / Ably / Socket.IO documented as alternatives
 
 ---
 
@@ -984,22 +984,23 @@ holds the VS Code ↔ PyCharm parity matrix.
 - [x] Parity matrix documented (no silent gaps)
 - [ ] Marketplace / Open VSX / JetBrains listings (publish follow-up)
 
-## M52 — Sonar realtime (planned)
+## M52 — Sonar realtime
 
 ```bash
-# when implemented:
-# pytest -q tests/smoke/test_m52_smoke.py
-# cd examples/progress && python smith progress:broadcast
+pytest -q tests/test_m52_sonar.py tests/smoke/test_m52_smoke.py
+cd examples/progress && python smith progress:sonar
+# optional client package gate:
+# cd packages/sonar && npm ci && npm run build && npm test
 ```
 
 Default = **Sonar** server + `@almasix/sonar`. Pusher.js / Ably / Socket.IO documented as alternatives.
 
 ### M52 exit criteria
 
-- [ ] `@almasix/sonar` speaks to native Sonar `/broadcasting/socket` (public + private)
-- [ ] Default docs/demo do **not** require `pusher-js`
-- [ ] Pusher / Ably / Socket.IO alternative paths documented
-- [ ] Living example + smoke; board marks M52 complete
+- [x] `@almasix/sonar` speaks to native Sonar `/broadcasting/socket` (public + private); package under `packages/sonar/`
+- [x] Default docs/demo do **not** require `pusher-js` (`progress:sonar` + Broadcasting docs)
+- [x] Pusher / Ably / Socket.IO alternative paths documented (Starlight Broadcasting)
+- [x] Living example + smoke; board marks M52 complete; `sonar` driver alias for `websocket`
 
 
 ---
@@ -1184,8 +1185,8 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 - Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52)
-- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47** complete; next **M52** (no pauses); M36 / M48 later
+- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47 → M52** complete; M36 / M48 later
 - Parity reference: **Laravel 13.x** docs
-- IDE and editor tooling: **M45–M47** closed (thorough VS Code-family + JetBrains sideload); **M48** MCP later; next autopilot **M52**
+- IDE and editor tooling: **M45–M47** closed (thorough VS Code-family + JetBrains sideload); **M48** MCP later; **M52** Sonar closed
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
 - Additional NoSQL engines beyond Mongo, and other Later extras — see [`PLAN.md`](PLAN.md)
