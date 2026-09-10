@@ -7,6 +7,7 @@
         "id": "Prism",
         "aliases": ["Prism", "prism-html"],
         "extensions": [".prism.html"],
+        "filenamePatterns": ["*.prism.html"],
         "configuration": "./language-configuration.json"
       }
     ],

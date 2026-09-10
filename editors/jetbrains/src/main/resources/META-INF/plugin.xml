@@ -27,6 +27,14 @@
 
     <fileType.fileTypeOverrider implementation="com.almasix.ide.PrismFileTypeOverrider"/>
 
+    <!-- TextMate highlighter for language/filetype Prism (bundle via textMate.bundleProvider). -->
+    <editorHighlighterProvider
+        filetype="Prism"
+        implementationClass="org.jetbrains.plugins.textmate.language.syntax.highlighting.TextMateEditorHighlighterProvider"/>
+    <lang.syntaxHighlighterFactory
+        language="Prism"
+        implementationClass="org.jetbrains.plugins.textmate.language.syntax.highlighting.TextMateSyntaxHighlighterFactory"/>
+
     <configurationType implementation="com.almasix.ide.SmithConfigurationType"/>
     <textMate.bundleProvider implementation="com.almasix.ide.PrismTextMateBundleProvider"/>
   </extensions>
@@ -40,7 +48,8 @@
         Boots almasix-lsp from the project virtualenv for Prism and Python.
       ]]></description>
     </server>
-    <languageMapping language="Prism" serverId="almasixLsp"/>
+    <languageMapping language="Prism" serverId="almasixLsp" languageId="prism-html"/>
     <languageMapping language="Python" serverId="almasixLsp"/>
+    <fileNamePatternMapping patterns="*.prism.html" serverId="almasixLsp" languageId="prism-html"/>
   </extensions>
 </idea-plugin>
