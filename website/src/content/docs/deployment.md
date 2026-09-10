@@ -177,16 +177,16 @@ traffic — do not rely on web processes to migrate.
 ## Releasing Almasix (the framework)
 
 Almasix **0.3.0** is live on [PyPI](https://pypi.org/project/almasix/) and TestPyPI.
-This tree is prepared as **0.5.0**. Releases use GitHub Actions Trusted Publishing
+This tree is prepared as **0.5.1**. Releases use GitHub Actions Trusted Publishing
 (OIDC) — see `.github/workflows/publish.yml`. No API tokens are stored in the repo.
 
-To cut **0.5.0** (or any later version):
+To cut **0.5.1** (or any later version):
 
 1. Confirm `project.version` in `pyproject.toml` and `almasix.__version__` match
    (CI refuses a tag that disagrees with the packaged version).
 2. Merge to `main`.
 3. Optional rehearsal: Actions → **Publish** → Run workflow → target `testpypi`.
-4. Create an annotated tag `v0.5.0` and a GitHub Release on that tag.
+4. Create an annotated tag `v0.5.1` and a GitHub Release on that tag.
    Publishing the Release triggers the PyPI job.
 
 Install with:
@@ -194,7 +194,7 @@ Install with:
 ```bash
 pip install almasix
 # or pin
-pip install almasix==0.5.0
+pip install almasix==0.5.1
 ```
 
 ## Related

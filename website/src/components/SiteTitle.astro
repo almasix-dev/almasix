@@ -1,0 +1,76 @@
+---
+/**
+ * Serve header logos from `public/` so “Open image in new tab” works.
+ *
+ * Starlight’s default imports SVGs through Vite (`/@fs/...`). Those URLs
+ * return the image for `<img>` requests, but Astro’s router 404s them when
+ * the browser navigates with `Accept: text/html`.
+ *
+ * Keep `public/almasix-banner-{light,dark}.svg` in sync with `src/assets/`.
+ */
+import config from 'virtual:starlight/user-config';
+
+const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+const base = import.meta.env.BASE_URL.endsWith('/')
+	? import.meta.env.BASE_URL
+	: `${import.meta.env.BASE_URL}/`;
+const alt = config.logo?.alt || siteTitle;
+const darkSrc = `${base}almasix-banner-dark.svg`;
+const lightSrc = `${base}almasix-banner-light.svg`;
+const dual = Boolean(config.logo && !('src' in config.logo));
+---
+
+<a href={siteTitleHref} class="site-title sl-flex">
+	{
+		config.logo && (
+			<>
+				<img
+					class:list={{ 'light:sl-hidden print:hidden': dual }}
+					alt={alt}
+					src={darkSrc}
+					width="157"
+					height="38"
+				/>
+				{
+					dual && (
+						<img
+							class="dark:sl-hidden print:block"
+							alt={alt}
+							src={lightSrc}
+							width="157"
+							height="38"
+						/>
+					)
+				}
+			</>
+		)
+	}
+	<span class:list={{ 'sr-only': config.logo?.replacesTitle }} translate="no">
+		{siteTitle}
+	</span>
+</a>
+
+<style>
+	@layer starlight.core {
+		.site-title {
+			align-items: center;
+			gap: var(--sl-nav-gap);
+			font-size: var(--sl-text-h4);
+			font-weight: 600;
+			color: var(--sl-color-text-accent);
+			text-decoration: none;
+			white-space: nowrap;
+			min-width: 0;
+		}
+		span {
+			overflow: hidden;
+		}
+		img {
+			height: calc(var(--sl-nav-height) - 2 * var(--sl-nav-pad-y));
+			width: auto;
+			max-width: 100%;
+			object-fit: contain;
+			object-position: 0 50%;
+		}
+	}
+</style>

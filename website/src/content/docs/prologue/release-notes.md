@@ -11,6 +11,17 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.5.1
+
+- **Brand refresh** — glassy blue diamond accents on the Almasix mark and wordmark;
+  light/dark logo variants for the docs header and landing hero
+- **Docs UX** — two landing CTAs (Get started / Read the docs); GitHub star count
+  in the header; single-button theme cycle (dark → light → auto) instead of a
+  dropdown
+
+Published on [PyPI](https://pypi.org/project/almasix/0.5.1/) after the `v0.5.1`
+GitHub Release.
+
 ## 0.5.0
 
 - **Breaking: `Artisan` → `Smith`** — console façade is `Smith.call` /
@@ -27,7 +38,8 @@ For how these docs relate to package versions, see
 - **Prism** — view data is not overwritten by URL helpers named the same
   (`action` / `form_action` fix for auth forms)
 
-Tag `v0.5.0` after merge to publish to PyPI.
+Published on [PyPI](https://pypi.org/project/almasix/0.5.0/) after the `v0.5.0`
+GitHub Release.
 
 ## 0.4.0
 

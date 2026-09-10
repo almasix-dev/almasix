@@ -9,18 +9,18 @@
       <stop offset="1" stop-color="#B83208"/>
     </linearGradient>
     <linearGradient id="bar" x1="256" y1="232" x2="256" y2="348" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#3D7EB0" stop-opacity="0.95"/>
-      <stop offset="0.4" stop-color="#286291" stop-opacity="0.92"/>
-      <stop offset="1" stop-color="#1A4A6E" stop-opacity="0.96"/>
+      <stop offset="0" stop-color="#E3F3FB" stop-opacity="0.95"/>
+      <stop offset="0.4" stop-color="#6BB0D9" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#4A9BC9" stop-opacity="0.92"/>
     </linearGradient>
     <linearGradient id="bar-glass" x1="256" y1="232" x2="256" y2="300" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.38"/>
-      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.12"/>
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.72"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.32"/>
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
     <filter id="diamond-glow" x="-120%" y="-120%" width="340%" height="340%" color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="blur"/>
-      <feFlood flood-color="#286291" flood-opacity="0.75" result="flood"/>
+      <feFlood flood-color="#6BB0D9" flood-opacity="0.8" result="flood"/>
       <feComposite in="flood" in2="blur" operator="in" result="glow"/>
       <feMerge>
         <feMergeNode in="glow"/>

@@ -1,0 +1,89 @@
+---
+/**
+ * Header social icons — GitHub with live star count.
+ */
+import config from 'virtual:starlight/user-config';
+import { Icon } from '@astrojs/starlight/components';
+
+const links = config.social || [];
+const github = links.find((link) => link.icon === 'github');
+const others = links.filter((link) => link.icon !== 'github');
+
+function formatStars(count: number): string {
+	if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`;
+	if (count >= 1_000) return `${(count / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
+	return String(count);
+}
+
+let starsLabel: string | null = null;
+if (github) {
+	try {
+		const match = github.href.match(/github\.com\/([^/]+)\/([^/#?]+)/);
+		if (match) {
+			const res = await fetch(`https://api.github.com/repos/${match[1]}/${match[2]}`, {
+				headers: {
+					Accept: 'application/vnd.github+json',
+					'User-Agent': 'almasix-docs',
+				},
+			});
+			if (res.ok) {
+				const data = (await res.json()) as { stargazers_count?: number };
+				if (typeof data.stargazers_count === 'number') {
+					starsLabel = formatStars(data.stargazers_count);
+				}
+			}
+		}
+	} catch {
+		// Offline / rate-limited builds still show the icon alone.
+	}
+}
+---
+
+{
+	(github || others.length > 0) && (
+		<>
+			{github && (
+				<a href={github.href} rel="me" class="sl-flex github-link" title={github.label}>
+					<span class="sr-only">{github.label}</span>
+					<Icon name="github" />
+					{
+						starsLabel && (
+							<span class="github-stars" aria-label={`${starsLabel} stars on GitHub`}>
+								{starsLabel}
+							</span>
+						)
+					}
+				</a>
+			)}
+			{others.map(({ label, href, icon }) => (
+				<a {href} rel="me" class="sl-flex">
+					<span class="sr-only">{label}</span>
+					<Icon name={icon} />
+				</a>
+			))}
+		</>
+	)
+}
+
+<style>
+	@layer starlight.core {
+		a {
+			color: var(--sl-color-text-accent);
+			padding: 0.5em;
+			margin: -0.5em;
+			align-items: center;
+			gap: 0.35rem;
+			text-decoration: none;
+		}
+		a:hover {
+			color: var(--sl-color-white);
+		}
+		.github-stars {
+			font-size: var(--sl-text-sm);
+			font-weight: 600;
+			font-variant-numeric: tabular-nums;
+			letter-spacing: 0.01em;
+			line-height: 1;
+		}
+	}
+</style>
