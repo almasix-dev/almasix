@@ -37,10 +37,9 @@ Marketplace publish is **not** required — install the zip from Disk.
 5. Confirm Prism highlighting:
 
    - Status bar / file type should say **Prism**, not HTML
-   - `@if`, `{{ }}`, `{{-- --}}` should be colored (TextMate grammar)
-   - Settings → Editor → TextMate Bundles → **prism** enabled
-   - If colors still missing after upgrading the zip: delete
-     `$IDE_SYSTEM/almasix-textmate/prism` (stale bundle copy) and restart
+   - `@if`, `{{ }}`, `{{-- --}}`, and HTML tags should be colored
+     (native highlighter — TextMate Bundles checkbox is optional)
+   - Settings → Editor → File Types → `*.prism.html` under **Prism**
 
 6. Optional: `smith ide:install` writes `.idea/almasix-editor.md` with these
    steps.

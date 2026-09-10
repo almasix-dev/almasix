@@ -59,11 +59,8 @@ def test_m47_artifacts_exist() -> None:
     plugin_xml = (jb / "src" / "main" / "resources" / "META-INF" / "plugin.xml").read_text(
         encoding="utf-8"
     )
+    assert "PrismSyntaxHighlighterFactory" in plugin_xml
     assert "PrismFileTypeOverrider" in plugin_xml
-    assert 'fileNamePatterns="*.prism.html"' in plugin_xml
-    assert "TextMateSyntaxHighlighterFactory" in plugin_xml
-    assert "TextMateEditorHighlighterProvider" in plugin_xml
-    assert "fileNamePatternMapping" in plugin_xml
     tm_pkg = (jb / "src" / "main" / "resources" / "textMate" / "prism" / "package.json").read_text(
         encoding="utf-8"
     )

@@ -51,7 +51,8 @@ intellijPlatform {
         changeNotes.set(
             """
             <ul>
-              <li>0.1.1 — Prism TextMate highlighting (TextMateBackedFileType + highlighter factories); controller-action LSP nav</li>
+              <li>0.1.2 — Native Prism syntax highlighter (no TextMate filename dependency)</li>
+              <li>0.1.1 — Prism TextMateBackedFileType + highlighter factories; controller-action LSP nav</li>
               <li>0.1.0 — M47: Prism file type, TextMate bundle, LSP4IJ → almasix-lsp, Smith run configs</li>
             </ul>
             """.trimIndent(),

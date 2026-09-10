@@ -27,13 +27,12 @@
 
     <fileType.fileTypeOverrider implementation="com.almasix.ide.PrismFileTypeOverrider"/>
 
-    <!-- TextMate highlighter for language/filetype Prism (bundle via textMate.bundleProvider). -->
-    <editorHighlighterProvider
-        filetype="Prism"
-        implementationClass="org.jetbrains.plugins.textmate.language.syntax.highlighting.TextMateEditorHighlighterProvider"/>
+    <!-- Native Prism highlighter (reliable). TextMate bundle still ships for prefs. -->
     <lang.syntaxHighlighterFactory
         language="Prism"
-        implementationClass="org.jetbrains.plugins.textmate.language.syntax.highlighting.TextMateSyntaxHighlighterFactory"/>
+        implementationClass="com.almasix.ide.PrismSyntaxHighlighterFactory"/>
+    <additionalTextAttributes scheme="Default" file="colorSchemes/PrismDefault.xml"/>
+    <additionalTextAttributes scheme="Darcula" file="colorSchemes/PrismDarcula.xml"/>
 
     <configurationType implementation="com.almasix.ide.SmithConfigurationType"/>
     <textMate.bundleProvider implementation="com.almasix.ide.PrismTextMateBundleProvider"/>
