@@ -66,8 +66,10 @@ class ProgressFactoriesCommand(Command):
 
         trashed = await Post.factory().trashed().for_(author, "author").create()
         made.append(trashed)
-        self.info(f"trashed -> {trashed.trashed()}, hidden from Post.query(): "
-                  f"{await Post.query().where('id', '=', trashed.id).count() == 0}")
+        self.info(
+            f"trashed -> {trashed.trashed()}, hidden from Post.query(): "
+            f"{await Post.query().where('id', '=', trashed.id).count() == 0}"
+        )
 
         recycled = await (
             Post.factory().count(3).recycle(author).for_(User.factory(), "author").create()

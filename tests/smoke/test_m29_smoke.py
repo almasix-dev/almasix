@@ -87,7 +87,7 @@ def test_m29_make_package(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
     kernel.discover_framework_commands()
     assert kernel.run_command("make:package", {"name": "billing"}, {}) == 0
     assert (tmp_path / "packages" / "billing" / "pyproject.toml").is_file()
-    provider = (
-        tmp_path / "packages" / "billing" / "src" / "billing" / "provider.py"
-    ).read_text(encoding="utf-8")
+    provider = (tmp_path / "packages" / "billing" / "src" / "billing" / "provider.py").read_text(
+        encoding="utf-8"
+    )
     assert "BillingServiceProvider" in provider

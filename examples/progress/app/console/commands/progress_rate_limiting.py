@@ -69,9 +69,7 @@ class ProgressRateLimitingCommand(Command):
                 last_headers = {
                     "Retry-After": response.headers.get("retry-after", ""),
                     "X-RateLimit-Limit": response.headers.get("x-ratelimit-limit", ""),
-                    "X-RateLimit-Remaining": response.headers.get(
-                        "x-ratelimit-remaining", ""
-                    ),
+                    "X-RateLimit-Remaining": response.headers.get("x-ratelimit-remaining", ""),
                 }
 
         self.info("throttle middleware (/api/throttle-demo → throttle:progress)")

@@ -21,9 +21,7 @@ class ProgressHttpCommand(Command):
             }
         )
 
-        response = (
-            Http.with_token("secret").accept_json().get("https://api.example.test/ping")
-        )
+        response = Http.with_token("secret").accept_json().get("https://api.example.test/ping")
         assert response.ok()
         assert response.json("ok") is True
         Http.assert_sent(

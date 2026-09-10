@@ -52,13 +52,7 @@ def test_format_prism_check_style_stable() -> None:
 def test_format_indents_directives_and_html() -> None:
     source = "@if(True)\n<div>\n<span>hi</span>\n</div>\n@endif\n"
     out = format_prism(source)
-    assert out == (
-        "@if(True)\n"
-        "    <div>\n"
-        "        <span>hi</span>\n"
-        "    </div>\n"
-        "@endif\n"
-    )
+    assert out == ("@if(True)\n    <div>\n        <span>hi</span>\n    </div>\n@endif\n")
 
 
 def test_format_preserves_python_block_inner() -> None:

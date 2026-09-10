@@ -45,10 +45,14 @@ class ProgressConsoleCommand(PromptsForMissingInput, Command):
         from almasix.console import stub
         from almasix.providers import ServiceProvider
 
-        commands = sorted({cls.name() for cls in (self.kernel.commands if self.kernel else {}).values()})
+        commands = sorted(
+            {cls.name() for cls in (self.kernel.commands if self.kernel else {}).values()}
+        )
         self.line(f"  commands -> {len(commands)}, every one a Command class")
         self.line(f"  stubs    -> {len(stub.names())} (smith stub:publish to customise)")
-        self.line(f"  publish  -> {', '.join(ServiceProvider.publishable_tags()) or 'nothing declared'}")
+        self.line(
+            f"  publish  -> {', '.join(ServiceProvider.publishable_tags()) or 'nothing declared'}"
+        )
 
 
 class ProgressImportCommand(Isolatable, Command):

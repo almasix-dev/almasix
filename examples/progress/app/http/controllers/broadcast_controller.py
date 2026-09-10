@@ -56,8 +56,7 @@ class BroadcastController(Controller):
                 "hub": hub.channels(),
             },
             "channels": [
-                {"pattern": route.pattern, "guards": route.guards}
-                for route in Broadcast.channels()
+                {"pattern": route.pattern, "guards": route.guards} for route in Broadcast.channels()
             ],
             "authorization": {
                 "allowed": bool(await Broadcast.authorize(ada, author)),

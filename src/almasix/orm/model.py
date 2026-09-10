@@ -674,7 +674,12 @@ class Model(metaclass=ModelMeta):
     def _fresh_timestamp(self) -> datetime:
         from almasix.support.helpers import now
 
-        return now(UTC).replace(tzinfo=None, microsecond=0)
+        moment = now(UTC)
+        # Prefer a plain naive datetime — aiosqlite rejects subclasses, and the
+        # ORM historically stores timestamps without tzinfo.
+        to_datetime = getattr(moment, "to_datetime", None)
+        base = to_datetime() if callable(to_datetime) else moment
+        return base.replace(tzinfo=None, microsecond=0)
 
     def _timestamps_enabled(self) -> bool:
         if not type(self).timestamps:

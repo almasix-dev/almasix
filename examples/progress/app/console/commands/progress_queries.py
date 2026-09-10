@@ -45,20 +45,23 @@ class ProgressQueriesCommand(Command):
         recent = await DB.table("posts").where_past("created_at").count()
         self.info(f"where_past -> {recent} posts already created")
 
-        authors = await DB.table("users").where_exists(
-            DB.table("posts").select_raw("1").where_column("posts.user_id", "users.id")
-        ).count()
+        authors = (
+            await DB.table("users")
+            .where_exists(
+                DB.table("posts").select_raw("1").where_column("posts.user_id", "users.id")
+            )
+            .count()
+        )
         self.info(f"where_exists -> {authors} users have written something")
 
-        quiet = await DB.table("posts").where_not(lambda query: query.where("views", ">", 0)).count()
+        quiet = (
+            await DB.table("posts").where_not(lambda query: query.where("views", ">", 0)).count()
+        )
         self.info(f"where_not -> {quiet} posts have no views at all")
 
     async def joins_and_unions(self) -> None:
         busiest = (
-            DB.table("posts")
-            .select("user_id")
-            .select_raw("count(*) as posts")
-            .group_by("user_id")
+            DB.table("posts").select("user_id").select_raw("count(*) as posts").group_by("user_id")
         )
         rows = await (
             DB.table("users")
@@ -110,13 +113,21 @@ class ProgressQueriesCommand(Command):
             ]
         )
 
-        multilingual = await DB.table("query_demo").where_json_length("options->languages", ">", 1).pluck("name")
+        multilingual = (
+            await DB.table("query_demo")
+            .where_json_length("options->languages", ">", 1)
+            .pluck("name")
+        )
         self.info(f"where_json_length -> {list(multilingual)}")
 
         emailed = await DB.table("query_demo").where("options->alerts->email", True).pluck("name")
         self.info(f"json path where -> {list(emailed)}")
 
-        contains = await DB.table("query_demo").where_json_contains("options->languages", "fr").pluck("name")
+        contains = (
+            await DB.table("query_demo")
+            .where_json_contains("options->languages", "fr")
+            .pluck("name")
+        )
         self.info(f"where_json_contains -> {list(contains)}")
 
         await DB.table("query_demo").where("name", "Grace").update({"options->alerts->email": True})
@@ -124,7 +135,9 @@ class ProgressQueriesCommand(Command):
         self.info(f"JSON update -> Grace's document is still {updated}")
 
     async def writes(self) -> None:
-        ignored = await DB.table("query_demo").insert_or_ignore({"id": 1, "name": "Ada", "options": "{}"})
+        ignored = await DB.table("query_demo").insert_or_ignore(
+            {"id": 1, "name": "Ada", "options": "{}"}
+        )
         self.info(f"insert_or_ignore -> {ignored} rows written for a colliding id")
 
         seeded = DB.table("query_demo").with_attributes({"options": "{}"})
@@ -132,7 +145,9 @@ class ProgressQueriesCommand(Command):
 
         only = await DB.table("query_demo").where("name", "Ada").sole()
         self.info(f"sole -> exactly one {only['name']}")
-        self.info(f"implode -> {await DB.table('query_demo').order_by('name').implode('name', ', ')}")
+        self.info(
+            f"implode -> {await DB.table('query_demo').order_by('name').implode('name', ', ')}"
+        )
 
         await Schema.drop_if_exists("query_demo")
 
@@ -146,7 +161,9 @@ class ProgressQueriesCommand(Command):
         self.info(f"after_commit -> {committed}")
 
         planned = await DB.pretend(lambda: User.query().where("id", 0).delete())
-        self.info(f"DB.pretend -> would have run: {planned[0].sql.split()[0].lower()} (nothing did)")
+        self.info(
+            f"DB.pretend -> would have run: {planned[0].sql.split()[0].lower()} (nothing did)"
+        )
 
     def debugging(self) -> None:
         query = DB.table("users").where("name", "Ada").where("id", ">", 1)

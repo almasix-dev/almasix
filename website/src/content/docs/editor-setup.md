@@ -99,7 +99,7 @@ Generic LSP recipes (Neovim, Helix, Zed, …) stay on the
 
 | Channel | Status |
 | --- | --- |
-| Visual Studio Marketplace | Not required for M47 — sideload VSIX |
+| Visual Studio Marketplace | Not required yet — sideload VSIX |
 | Open VSX | Same |
 | JetBrains Marketplace | Same — Install from Disk |
 
@@ -122,7 +122,7 @@ until then the in-repo artifacts are the supported install path.
 
 No silent gap: both editors get Prism association + the same language server.
 Native-only New… wizards and debugger templates on JetBrains are named
-follow-ups in PLAN (not blockers for the M47 gate).
+follow-ups in PLAN (not blockers for the editor-integration gate).
 
 ## Demo
 

@@ -1,8 +1,9 @@
 """``Chrono`` — immutable-friendly fluent datetime (Carbon-class).
 
-``Chrono`` subclasses :class:`datetime.datetime` so it drops into APIs that
-expect a stdlib datetime (ORM bindings, comparisons, ``isoformat``). Every
-mutating-looking method returns a **new** ``Chrono``.
+``Chrono`` subclasses :class:`datetime.datetime` so comparisons and
+``isoformat`` work. Drivers that reject datetime subclasses (notably
+aiosqlite on untyped binds) need :meth:`to_datetime` / the ORM's writable
+coercion. Every mutating-looking method returns a **new** ``Chrono``.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from typing import Any, Self
 from zoneinfo import ZoneInfo
 
 _TEST_NOW: Chrono | None = None
+_TZ_OMITTED = object()
 
 _UNITS = {
     "year": "years",
@@ -43,17 +45,24 @@ class Chrono(datetime):
 
     def __new__(
         cls,
-        year: int,
-        month: int,
-        day: int,
+        year: int | bytes | str,
+        month: int | tzinfo | None = None,
+        day: int | None = None,
         hour: int = 0,
         minute: int = 0,
         second: int = 0,
         microsecond: int = 0,
-        tzinfo: tzinfo | None = UTC,
+        tzinfo: Any = _TZ_OMITTED,
         *,
         fold: int = 0,
     ) -> Self:
+        # datetime's pickle/deepcopy protocol: __new__(cls, state_bytes, tzinfo).
+        if isinstance(year, (bytes, str)):
+            return datetime.__new__(cls, year, month)  # type: ignore[arg-type, call-overload]
+        if month is None or day is None:
+            raise TypeError(f"{cls.__name__}() missing required arguments 'month' and 'day'")
+        # Default to UTC when omitted; honour explicit None so replace(tzinfo=None) stays naive.
+        resolved = UTC if tzinfo is _TZ_OMITTED else tzinfo
         return datetime.__new__(
             cls,
             year,
@@ -63,8 +72,30 @@ class Chrono(datetime):
             minute,
             second,
             microsecond,
-            tzinfo or UTC,
+            resolved,
             fold=fold,
+        )
+
+    def __copy__(self) -> Self:
+        return type(self).instance(self)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
+        copied = type(self).instance(self)
+        memo[id(self)] = copied
+        return copied
+
+    def to_datetime(self) -> datetime:
+        """Plain :class:`~datetime.datetime` for drivers that reject subclasses."""
+        return datetime(
+            self.year,
+            self.month,
+            self.day,
+            self.hour,
+            self.minute,
+            self.second,
+            self.microsecond,
+            self.tzinfo,
+            fold=self.fold,
         )
 
     @classmethod
@@ -147,7 +178,9 @@ class Chrono(datetime):
         return cls.instance(parsed)
 
     @classmethod
-    def parse(cls, value: str | datetime | date | int | float | Self, tz: tzinfo | str | None = None) -> Self:
+    def parse(
+        cls, value: str | datetime | date | int | float | Self, tz: tzinfo | str | None = None
+    ) -> Self:
         """Parse many common inputs into a Chrono."""
         if isinstance(value, cls):
             return value if tz is None else value.set_timezone(tz)
@@ -512,14 +545,20 @@ class Chrono(datetime):
         other_c = _as_chrono(other) if other is not None else type(self).now(self.tzinfo)
         return self - other_c
 
-    def diff_in_seconds(self, other: datetime | date | None = None, *, absolute: bool = True) -> float:
+    def diff_in_seconds(
+        self, other: datetime | date | None = None, *, absolute: bool = True
+    ) -> float:
         delta = self.diff(other).total_seconds()
         return abs(delta) if absolute else delta
 
-    def diff_in_minutes(self, other: datetime | date | None = None, *, absolute: bool = True) -> float:
+    def diff_in_minutes(
+        self, other: datetime | date | None = None, *, absolute: bool = True
+    ) -> float:
         return self.diff_in_seconds(other, absolute=absolute) / 60
 
-    def diff_in_hours(self, other: datetime | date | None = None, *, absolute: bool = True) -> float:
+    def diff_in_hours(
+        self, other: datetime | date | None = None, *, absolute: bool = True
+    ) -> float:
         return self.diff_in_seconds(other, absolute=absolute) / 3600
 
     def diff_in_days(self, other: datetime | date | None = None, *, absolute: bool = True) -> float:

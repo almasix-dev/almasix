@@ -10,7 +10,7 @@ from almasix.console.command import Command
 from almasix.orm import DB, Migrator, Schema
 from app.support.demo_db import ensure_demo_database
 
-MIGRATION = '''
+MIGRATION = """
 from almasix.orm import Migration, Schema
 
 
@@ -20,7 +20,7 @@ class AddNicknameToSchemaDemoTable(Migration):
 
     async def down(self) -> None:
         await Schema.table("schema_demo", lambda table: table.drop_column("nickname"))
-'''
+"""
 
 
 class ProgressSchemaCommand(Command):
@@ -64,7 +64,9 @@ class ProgressSchemaCommand(Command):
                 table.index(["kind", "votes"]),
             ),
         )
-        self.info(f"Schema.create -> {len(await Schema.columns('schema_demo'))} columns from one blueprint")
+        self.info(
+            f"Schema.create -> {len(await Schema.columns('schema_demo'))} columns from one blueprint"
+        )
 
     async def alter_it(self) -> None:
         """change() restates a column; the drops undo what the helpers added."""
@@ -84,13 +86,17 @@ class ProgressSchemaCommand(Command):
         self.info(f"Schema.rename -> round trip, table is {await Schema.has_table('schema_demo')}")
 
         pretended = await DB.pretend(
-            lambda: Schema.table("schema_demo", lambda table: table.string("subtitle", 80).nullable())
+            lambda: Schema.table(
+                "schema_demo", lambda table: table.string("subtitle", 80).nullable()
+            )
         )
         self.info(f"DB.pretend -> would have run: {pretended[0].sql.split('ADD')[0].strip()} ADD …")
 
     async def inspect_it(self) -> None:
         """Everything the builder can create, the inspector can read back."""
-        self.info(f"has_columns -> {await Schema.has_columns('schema_demo', ['display_name', 'votes'])}")
+        self.info(
+            f"has_columns -> {await Schema.has_columns('schema_demo', ['display_name', 'votes'])}"
+        )
         self.info(f"column_type -> votes is {await Schema.column_type('schema_demo', 'votes')}")
         indexes = await Schema.get_indexes("schema_demo")
         self.info(f"get_indexes -> {[index['name'] for index in indexes]}")
@@ -112,11 +118,15 @@ class ProgressSchemaCommand(Command):
 
         ran = await migrator.run(step=True)
         self.info(f"migrate --step -> {ran[0]} in {ran[0].elapsed:.0f}ms, batch of its own")
-        self.info(f"status -> {[(row['migration'], row['batch']) for row in await migrator.status()]}")
+        self.info(
+            f"status -> {[(row['migration'], row['batch']) for row in await migrator.status()]}"
+        )
 
         back = await migrator.rollback(step=1)
-        self.info(f"migrate:rollback --step=1 -> undid {len(back)}, nickname gone: "
-                  f"{not await Schema.has_column('schema_demo', 'nickname')}")
+        self.info(
+            f"migrate:rollback --step=1 -> undid {len(back)}, nickname gone: "
+            f"{not await Schema.has_column('schema_demo', 'nickname')}"
+        )
         await DB.statement(f'DROP TABLE IF EXISTS "{migrator.table}"')
 
     async def paginate(self) -> None:
@@ -129,7 +139,9 @@ class ProgressSchemaCommand(Command):
             return DB.table("schema_demo").order_by("id")
 
         page = await readers().paginate(3)
-        self.info(f"paginate -> page {page.current_page} of {page.last_page}, {page.total} rows in all")
+        self.info(
+            f"paginate -> page {page.current_page} of {page.last_page}, {page.total} rows in all"
+        )
         self.info(f"           next is {page.next_page_url()}")
 
         simple = await readers().simple_paginate(3)

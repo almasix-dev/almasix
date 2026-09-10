@@ -61,9 +61,5 @@ def configure_middleware(middleware: Middleware) -> None:
     # The named `api` and `progress` limiters are registered in AppServiceProvider.
 
 
-application = (
-    Application.configure(BASE_PATH)
-    .with_middleware(configure_middleware)
-    .create()
-)
+application = Application.configure(BASE_PATH).with_middleware(configure_middleware).create()
 asgi = application.asgi

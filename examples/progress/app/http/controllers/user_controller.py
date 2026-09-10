@@ -14,13 +14,7 @@ class UserController(Controller):
     async def index(self) -> dict:
         """Users with post counts and pivot roles."""
         await ensure_demo_database()
-        users = await (
-            User.query()
-            .with_count("posts")
-            .with_("roles")
-            .order_by("id")
-            .get()
-        )
+        users = await User.query().with_count("posts").with_("roles").order_by("id").get()
         return {
             "users": [
                 {

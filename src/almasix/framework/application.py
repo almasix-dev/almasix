@@ -114,9 +114,13 @@ class Application:
         return instance
 
     def register_configured_providers(self) -> None:
+        from almasix.orm.migration import forget_migration_paths
         from almasix.providers.foundation import FoundationServiceProvider
         from almasix.providers.package_manifest import PackageManifest
 
+        # Package migration dirs are process-global; clear so a prior app boot
+        # (e.g. progress example) cannot leak into the next empty cwd.
+        forget_migration_paths()
         self.register(FoundationServiceProvider)
         registered: set[str] = {
             FoundationServiceProvider.provider_name(),

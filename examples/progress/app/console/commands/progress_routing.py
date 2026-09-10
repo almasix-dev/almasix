@@ -231,9 +231,7 @@ class ProgressRoutingCommand(Command):
         bound = self._fresh()
         Route.get("/articles/{article}", lambda article: None).name("articles.show")
         field = Route.get("/posts/{post:slug}", lambda post: None)
-        missing = Route.get("/gone/{article}", lambda article: None).missing(
-            lambda request: None
-        )
+        missing = Route.get("/gone/{article}", lambda article: None).missing(lambda request: None)
         trashed = Route.get("/trashed/{article}", lambda article: None).with_trashed()
 
         Route.model("article", Article)
@@ -287,8 +285,7 @@ class ProgressRoutingCommand(Command):
         # The signature is still the right one; only the deadline passed, and
         # the two answers are what let a handler tell the user which it was.
         self.line(
-            f"    expired, ignored -> "
-            f"valid={has_valid_signature(expired, ignore_expiry=True)}"
+            f"    expired, ignored -> valid={has_valid_signature(expired, ignore_expiry=True)}"
         )
         self.line("    middleware       -> Route.get(...).middleware('signed') answers 403")
 

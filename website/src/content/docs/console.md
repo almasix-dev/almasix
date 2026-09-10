@@ -338,7 +338,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 103 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 112 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -416,6 +416,13 @@ What the framework ships, 103 commands, as `smith list` groups them. An applicat
 | --- | --- |
 | `event:list` | List registered event listeners |
 
+### `ide`
+
+| Command | Description |
+| --- | --- |
+| `ide:install` | Write local editor config for Prism + Almasix LSP sideload |
+| `ide:stubs` | Generate .pyi stubs for models and named routes |
+
 ### `key`
 
 | Command | Description |
@@ -428,6 +435,12 @@ What the framework ships, 103 commands, as `smith list` groups them. An applicat
 | --- | --- |
 | `lang:missing` | List keys present in the fallback locale but missing in the target |
 | `lang:publish` | Publish framework language files into lang/ |
+
+### `lsp`
+
+| Command | Description |
+| --- | --- |
+| `lsp:serve` | Run the Almasix language server over stdio |
 
 ### `make`
 
@@ -454,6 +467,7 @@ What the framework ships, 103 commands, as `smith list` groups them. An applicat
 | `make:model` | Create a model in app/models |
 | `make:notification` | Create a notification in app/notifications |
 | `make:observer` | Create a model observer in app/observers |
+| `make:package` | Scaffold a discoverable Almasix package under packages/ |
 | `make:policy` | Create a new policy class |
 | `make:provider` | Create a service provider in app/providers |
 | `make:request` | Create a FormRequest in app/http/requests |

@@ -13,9 +13,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 if TYPE_CHECKING:
     from almasix.framework.application import Application
 
-_MIGRATION_SLUG_RE = re.compile(
-    r"^(?:\d{4}_\d{2}_\d{2}_\d{6}_)?(.+?)(?:\.py(?:\.stub)?)?$"
-)
+_MIGRATION_SLUG_RE = re.compile(r"^(?:\d{4}_\d{2}_\d{2}_\d{6}_)?(.+?)(?:\.py(?:\.stub)?)?$")
 
 
 class ServiceProvider:
@@ -96,9 +94,7 @@ class ServiceProvider:
         except Exception:  # pragma: no cover - soft boot before translator
             pass
 
-    def publishes_migrations(
-        self, paths: dict[str | Path, str | Path], *tags: str
-    ) -> None:
+    def publishes_migrations(self, paths: dict[str | Path, str | Path], *tags: str) -> None:
         """Offer migration files for publish; destinations get a fresh timestamp.
 
         Like ``publishes``, but ``vendor:publish`` rewrites each destination

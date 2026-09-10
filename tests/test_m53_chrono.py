@@ -28,6 +28,11 @@ def test_parse_and_create() -> None:
     assert Chrono.parse(1_700_000_000).year >= 2023
     created = Chrono.create(2020, 5, 4, 3, 2, 1, tz=UTC)
     assert created.to_datetime_string() == "2020-05-04 03:02:01"
+    native = created.to_datetime()
+    assert type(native) is datetime and native == created
+    import copy
+
+    assert copy.deepcopy(created) == created
     formatted = Chrono.create_from_format("%Y/%m/%d", "2022/03/04", tz=UTC)
     assert formatted.day == 4
     assert Chrono.parse("now").year == Chrono.now().year
@@ -185,7 +190,10 @@ def test_coverage_edges() -> None:
     assert Chrono.parse(datetime(2024, 1, 1, tzinfo=UTC), tz="UTC").year == 2024
     assert Chrono.create_from_format("%Y-%m-%d %H:%M:%S", "2024-01-02 03:04:05", tz="UTC").hour == 3
     stamped = Chrono.create_from_format("%Y-%m-%d %H:%M:%S%z", "2024-01-02 03:04:05+0000")
-    assert Chrono.create_from_format("%Y-%m-%d %H:%M:%S%z", "2024-01-02 03:04:05+0000", tz="UTC").year == 2024
+    assert (
+        Chrono.create_from_format("%Y-%m-%d %H:%M:%S%z", "2024-01-02 03:04:05+0000", tz="UTC").year
+        == 2024
+    )
     assert stamped.year == 2024
 
     base = Chrono(2024, 1, 15, tzinfo=UTC)

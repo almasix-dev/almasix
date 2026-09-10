@@ -83,9 +83,7 @@ def test_load_routes_from_executes_the_file(app: Any, tmp_path: Path) -> None:
     assert any(route.uri == "/pkg" for route in app.router.routes)
 
 
-def test_load_views_from_registers_namespace_and_publish_tag(
-    app: Any, tmp_path: Path
-) -> None:
+def test_load_views_from_registers_namespace_and_publish_tag(app: Any, tmp_path: Path) -> None:
     views = tmp_path / "views"
     views.mkdir()
     (views / "welcome.prism.html").write_text("<p>hi</p>", encoding="utf-8")
@@ -153,9 +151,7 @@ def test_load_translations_from_adds_namespace(app: Any, tmp_path: Path) -> None
     assert Lang.get("courier::messages.greeting") == "Hello"
 
 
-def test_publishes_migrations_marks_sources_for_timestamp_rewrite(
-    app: Any, tmp_path: Path
-) -> None:
+def test_publishes_migrations_marks_sources_for_timestamp_rewrite(app: Any, tmp_path: Path) -> None:
     source = tmp_path / "0001_01_01_000000_create_courier_table.py"
     source.write_text("# mig\n", encoding="utf-8")
 
@@ -356,6 +352,7 @@ def test_vendor_publish_rewrites_migration_timestamp(
 def test_merge_config_from_non_dict_defaults_and_existing(app: Any, tmp_path: Path) -> None:
     cfg = tmp_path / "odd.py"
     cfg.write_text("VALUE = 1\n", encoding="utf-8")  # no config= → dict of names
+
     class Pkg(ServiceProvider):
         def register(self) -> None:
             self.merge_config_from(cfg, "odd")
@@ -376,7 +373,9 @@ def test_merge_config_from_non_dict_defaults_and_existing(app: Any, tmp_path: Pa
     assert app.config.get("scalar") == "keep"
 
 
-def test_merge_config_from_non_dict_module_result(app: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_merge_config_from_non_dict_module_result(
+    app: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     cfg = tmp_path / "x.py"
     cfg.write_text("config = 'not-a-dict'\n", encoding="utf-8")
 
