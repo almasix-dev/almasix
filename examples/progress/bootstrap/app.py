@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from app.http.middleware.demo_tag_middleware import DemoTagMiddleware
@@ -21,6 +22,11 @@ from almasix.session import EncryptCookies, StartSession, VerifyCsrfToken
 from almasix.translation import SetLocaleMiddleware
 
 BASE_PATH = Path(__file__).resolve().parent.parent
+
+# In-repo Courier package (M29) — importable without a separate editable install.
+_COURIER_SRC = BASE_PATH.parent.parent / "packages" / "courier" / "src"
+if _COURIER_SRC.is_dir() and str(_COURIER_SRC) not in sys.path:
+    sys.path.insert(0, str(_COURIER_SRC))
 
 
 def configure_middleware(middleware: Middleware) -> None:

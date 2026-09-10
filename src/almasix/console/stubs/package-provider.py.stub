@@ -1,0 +1,37 @@
+"""{{ class }} package service provider."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from almasix.providers import ServiceProvider
+
+_HERE = Path(__file__).resolve().parent
+
+
+class {{ class }}ServiceProvider(ServiceProvider):
+    """Registers {{ name }} config, routes, views, and publishable assets."""
+
+    def register(self) -> None:
+        self.merge_config_from(_HERE / "config" / "{{ module }}.py", "{{ module }}")
+
+    def boot(self) -> None:
+        self.publishes(
+            {_HERE / "config" / "{{ module }}.py": self.app.path("config", "{{ module }}.py")},
+            "{{ module }}-config",
+        )
+        self.load_routes_from(_HERE / "routes" / "web.py")
+        self.load_views_from(_HERE / "resources" / "views", "{{ module }}")
+        self.load_translations_from(_HERE / "lang", "{{ module }}")
+        self.load_migrations_from(_HERE / "database" / "migrations")
+        self.publishes_migrations(
+            {
+                _HERE
+                / "database"
+                / "migrations"
+                / "0001_01_01_000000_create_{{ module }}_table.py": (
+                    "database/migrations/create_{{ module }}_table.py"
+                ),
+            },
+            "{{ module }}-migrations",
+        )

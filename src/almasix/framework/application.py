@@ -115,8 +115,13 @@ class Application:
 
     def register_configured_providers(self) -> None:
         from almasix.providers.foundation import FoundationServiceProvider
+        from almasix.providers.package_manifest import PackageManifest
 
         self.register(FoundationServiceProvider)
+        registered: set[str] = {
+            FoundationServiceProvider.provider_name(),
+            "almasix.providers.foundation.FoundationServiceProvider",
+        }
         providers = self.config.get("app.providers", []) or []
         for provider in providers:
             if provider in (
@@ -124,7 +129,25 @@ class Application:
                 "almasix.providers.foundation.FoundationServiceProvider",
             ):
                 continue
-            self.register(provider)
+            instance = self.register(provider)
+            registered.add(instance.provider_name())
+            if isinstance(provider, str):
+                registered.add(provider)
+
+        if self.config.get("app.skip_provider_discovery"):
+            return
+        dont = self.config.get("app.dont_discover", []) or []
+        for path in PackageManifest().providers(dont_discover=list(dont)):
+            if path in registered:
+                continue
+            try:
+                instance = self.register(path)
+            except Exception:
+                # A broken optional package must not take down boot — same
+                # soft posture Signet uses for its optional surfaces.
+                continue
+            registered.add(instance.provider_name())
+            registered.add(path)
 
     def boot(self) -> None:
         if self._booted:

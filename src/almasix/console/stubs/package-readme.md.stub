@@ -1,0 +1,23 @@
+# {{ name }}
+
+An Almasix package. Discoverable via the ``almasix.providers`` entry point.
+
+## Install
+
+```bash
+pip install -e .
+```
+
+Then either rely on auto-discovery, or list the provider in ``config/app.py``:
+
+```python
+"providers": [
+    "{{ module }}.provider.{{ class }}ServiceProvider",
+],
+```
+
+## Publish
+
+```bash
+smith vendor:publish --tag={{ module }}-config
+```

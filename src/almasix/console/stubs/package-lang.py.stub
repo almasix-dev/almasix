@@ -1,0 +1,5 @@
+"""{{ name }} package messages."""
+
+translations = {
+    "greeting": "Hello from {{ name }}",
+}

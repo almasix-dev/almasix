@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import calendar
 import re
-from datetime import UTC, date, datetime, timedelta, timezone, tzinfo
+from datetime import UTC, date, datetime, timedelta, tzinfo
 from email.utils import parsedate_to_datetime
 from typing import Any, Self
 from zoneinfo import ZoneInfo
@@ -208,7 +208,7 @@ class Chrono(datetime):
         return cls.instance(parsed)
 
     @classmethod
-    def fromtimestamp(cls, timestamp: float, tz: tzinfo | str | None = None) -> Self:  # noqa: N802
+    def fromtimestamp(cls, timestamp: float, tz: tzinfo | str | None = None) -> Self:
         return cls.instance(datetime.fromtimestamp(timestamp, tz=_resolve_tz(tz)))
 
     # --- test clock ----------------------------------------------------------

@@ -15,4 +15,8 @@ config = {
     "providers": [
         "app.providers.app_service_provider.AppServiceProvider",
     ],
+    # Set True to skip ``almasix.providers`` entry-point discovery.
+    "skip_provider_discovery": False,
+    # Distribution names to exclude from discovery (Laravel ``dont-discover``).
+    "dont_discover": [],
 }

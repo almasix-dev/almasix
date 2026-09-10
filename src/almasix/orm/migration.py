@@ -21,6 +21,29 @@ from almasix.orm.schema import Schema
 
 _FILE_RE = re.compile(r"^(\d{4}_\d{2}_\d{2}_\d{6})_(.+)\.py$")
 
+#: Migration directories packages registered via ``ServiceProvider.load_migrations_from``.
+_package_migration_paths: list[Path] = []
+
+
+def register_migration_paths(paths: str | Path | Sequence[str | Path]) -> None:
+    """Append package migration directories so ``smith migrate`` finds them."""
+    given = [paths] if isinstance(paths, (str, Path)) else list(paths)
+    for one in given:
+        resolved = Path(one).resolve()
+        if resolved not in _package_migration_paths:
+            _package_migration_paths.append(resolved)
+
+
+def package_migration_paths() -> list[Path]:
+    """Every path a package has registered for migrations."""
+    return list(_package_migration_paths)
+
+
+def forget_migration_paths() -> None:
+    """Clear package migration paths (tests)."""
+    _package_migration_paths.clear()
+
+
 # Laravel ``TableGuesser`` — derive table + create/update from the migration slug.
 _CREATE_PATTERNS = (
     re.compile(r"^create_(\w+)_table$"),

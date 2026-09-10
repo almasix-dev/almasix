@@ -319,8 +319,14 @@ def _milestones() -> list[dict]:
         {
             "id": "M29",
             "name": "Package development",
-            "status": "planned",
-            "proof": ["provider discovery", "publish tags", "package guidelines"],
+            "status": "complete",
+            "proof": [
+                "ServiceProvider.merge_config_from / load_routes_from / load_views_from",
+                "load_migrations_from / load_translations_from / publishes_migrations / commands",
+                "PackageManifest + almasix.providers entry points; app.dont_discover",
+                "smith make:package; packages/courier demo",
+                "smith progress:packages",
+            ],
         },
         {
             "id": "M30",

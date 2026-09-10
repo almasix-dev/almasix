@@ -153,6 +153,7 @@ export default defineConfig({
 						{ label: 'Processes', slug: 'processes' },
 						{ label: 'Concurrency', slug: 'concurrency' },
 						{ label: 'Search', slug: 'search' },
+						{ label: 'Package Development', slug: 'package-development' },
 					],
 				},
 				{

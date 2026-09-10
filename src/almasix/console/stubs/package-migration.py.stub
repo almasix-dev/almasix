@@ -1,0 +1,19 @@
+"""Create the {{ module }} table."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Migration, Schema
+
+
+class Create{{ class }}Table(Migration):
+    async def up(self) -> None:
+        await Schema.create("{{ module }}", self.define)
+
+    async def down(self) -> None:
+        await Schema.drop_if_exists("{{ module }}")
+
+    def define(self, table: Any) -> None:
+        table.id()
+        table.timestamps()

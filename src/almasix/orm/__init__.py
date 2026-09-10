@@ -32,7 +32,15 @@ from almasix.orm.factories import (
     fake,
 )
 from almasix.orm.ids import HasUlids, HasUniqueStringIds, HasUuids, ordered_uuid, ulid
-from almasix.orm.migration import Migration, Migrator, guess_migration, make_migration
+from almasix.orm.migration import (
+    Migration,
+    Migrator,
+    forget_migration_paths,
+    guess_migration,
+    make_migration,
+    package_migration_paths,
+    register_migration_paths,
+)
 from almasix.orm.model import (
     DiscardedAttributeError,
     MassAssignmentError,
@@ -149,6 +157,7 @@ __all__ = [
     "clear_morph_map",
     "enforce_morph_map",
     "fake",
+    "forget_migration_paths",
     "get_manager",
     "guess_migration",
     "invoke_seeder",
@@ -158,7 +167,9 @@ __all__ = [
     "morph_alias",
     "morph_map",
     "ordered_uuid",
+    "package_migration_paths",
     "raw",
+    "register_migration_paths",
     "relation",
     "reset_called",
     "resolve_seeder_class",

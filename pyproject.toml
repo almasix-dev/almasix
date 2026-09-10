@@ -123,7 +123,7 @@ exclude = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-pythonpath = ["src", "."]
+pythonpath = ["src", ".", "packages/courier/src"]
 # Coverage is opt-in so `pytest tests/smoke` stays a clean gate.
 # Full suite with coverage: `pytest -q --cov=almasix --cov-report=term-missing --cov-report=xml`
 # (fail_under=98 comes from [tool.coverage.report]; aim for 100% on active packages)

@@ -177,6 +177,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M26** | `smith progress:broadcast` + `GET /api/broadcast` — `ShouldBroadcast`, channel auth, Sonar at `/broadcasting/socket`, `channel:list` |
 | **M27** | `smith progress:search` + `GET /api/search` — `Searchable` posts, the `database` and `collection` engines, `Scout.fake()`, `scout:status` |
 | **M28** | `smith progress:testing` + `smith test` — `tests/` drives the app in-process: HTTP and console assertions, database helpers, `fake()`, time travel |
+| **M29** | `smith progress:packages` — Courier provider, publish tags, `courier::welcome`, discovery |
 | **M30** | `smith progress:console` / `progress:import` — signatures, `Smith.call`, `--isolated`; `smith list` shows all 126 commands |
 | **M31** | `smith progress:schedule` — frequencies, constraints, hooks, a tick; `smith schedule:list` / `test` / `interrupt` |
 | **M32** | `smith progress:install` — `almasix new` across four stacks (rich layouts/auth) and SQL + MongoDB databases, default migrations, `--stubs` |
@@ -199,16 +200,17 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M51** | `smith progress:lint` — pinned `ruff==0.16.6`, `make lint`, CI lint job |
 | **M38** | `smith progress:deploy` — `serve --workers`, `/up`, Deployment docs, `examples/deploy`, Trusted Publishing |
 | **M39** | `smith progress:docs` — Prologue, Basics teaching order, latest-major+main switcher, older-docs banner |
-| **M29, M36, M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M36, M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M28, M30–M35, M37–M47, M49–M53 are closed on the ladder. M32–M35
+M0–M35, M37–M47, M49–M53 are closed on the ladder. M32–M35
 closed the installer, routing, security headers/CORS, and rate limiting; M25’s
 Laravel 13 Mongo audit, M51’s lint gate, M38’s deployment ops, and M39’s docs
 journey are closed with them. **Stability track:** API tokens (**M37**, Signet),
 Chrono (**M53**), Prism (**M45**), language server (**M46**), editor integrations
-(**M47**), and **Sonar** (**M52**, `@almasix/sonar`) are closed. No pauses;
+(**M47**), **Sonar** (**M52**, `@almasix/sonar`), and **package development**
+(**M29**, Courier + discovery) are closed. No pauses;
 **M36** / **M48** later. The board on
 `/progress` lists the full roadmap with a status and proof for each milestone.
 
@@ -252,6 +254,7 @@ smith progress:docs
 smith progress:broadcast
 smith progress:search
 smith progress:testing
+smith progress:packages
 smith test
 smith channel:list
 smith key:generate

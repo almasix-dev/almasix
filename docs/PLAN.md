@@ -369,7 +369,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Mail | `mail` | **M12** | Write when mail ships |
 | Notifications | `notifications` | **M13** | Write when notifications ship |
 | Testing | `testing` (+ HTTP / Console / Database / Mocking subpages) | **Done (M28)** | Pages published |
-| Packages | `packages` | **M29** | Write package-dev guidelines when that milestone lands |
+| Packages | `package-development` | **M29** | Package development guidelines — **shipped** |
 
 Starlight **Digging Deeper** / **Security** / **Database** / **Packages** sidebars grow with those pages.
 
@@ -1235,6 +1235,10 @@ Laravel [Package Development](https://laravel.com/docs/packages) guidelines for 
 **Depends on:** providers + lang namespaces (done); Prism/view publish patterns useful.
 
 **Gate:** guidelines published and followed by at least one in-repo optional package or documented example.
+
+**Status (M29):** `ServiceProvider` gained Laravel-shaped helpers — `merge_config_from`, `load_routes_from`, `load_views_from` (Prism `namespace::view` + vendor overrides), `load_migrations_from` (picked up by `smith migrate`), `load_translations_from`, `publishes_migrations` (timestamp rewrite on publish), and `commands([...])`; `PackageManifest` discovers providers from the `almasix.providers` entry-point group after `config/app.providers`, honouring `app.skip_provider_discovery` and `app.dont_discover`; `smith make:package` scaffolds under `packages/{name}/`; in-repo `packages/courier` exercises the surface; Starlight **Package Development**; `smith progress:packages`.
+
+**Gate met.**
 
 ### M30 — Smith Console exhaust (Artisan parity)
 

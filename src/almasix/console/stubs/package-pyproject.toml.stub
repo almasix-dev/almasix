@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ dist }}"
+version = "0.1.0"
+description = "{{ name }} — Almasix package"
+requires-python = ">=3.11"
+dependencies = [
+    "almasix",
+]
+
+[project.entry-points."almasix.providers"]
+{{ module }} = "{{ module }}.provider:{{ class }}ServiceProvider"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/{{ module }}"]

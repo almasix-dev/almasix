@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "almasix-courier"
+version = "0.1.0"
+description = "Courier — in-repo Almasix package development demo (M29)"
+requires-python = ">=3.11"
+dependencies = [
+    "almasix",
+]
+
+[project.entry-points."almasix.providers"]
+courier = "courier.provider:CourierServiceProvider"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/courier"]

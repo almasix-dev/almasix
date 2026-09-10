@@ -1181,11 +1181,29 @@ pytest -q tests/test_m31_*.py tests/smoke/test_m31_smoke.py
 
 ---
 
+## M29 — Package development
+
+```bash
+pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
+```
+
+### M29 exit criteria
+
+- [x] `ServiceProvider` helpers: `merge_config_from`, `load_routes_from`, `load_views_from`, `load_migrations_from`, `load_translations_from`, `publishes_migrations`, `commands`
+- [x] Prism namespaced views (`courier::welcome`) with vendor overrides under `resources/views/vendor/{ns}/`
+- [x] `PackageManifest` discovers `almasix.providers` entry points; `app.skip_provider_discovery` / `app.dont_discover`
+- [x] `smith make:package` scaffolds under `packages/{name}/`
+- [x] In-repo `packages/courier` + `smith progress:packages`; board marks M29 complete
+- [x] Starlight **Package Development**; sidebar link under Digging Deeper
+- [x] Unit + smoke coverage on new modules (aim ~100%)
+
+---
+
 ## Out of scope until later milestones
 
-- Digging Deeper: package guidelines (M29) — processes, concurrency, API resources, factories, Articulate NoSQL, broadcasting, search, and the testing toolkit have shipped (M21–M28)
+- Digging Deeper leftovers: starter kits (M36), MCP (M48) — package guidelines (M29) shipped
 - Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52)
-- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47 → M52** complete; M36 / M48 later
+- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47 → M52** complete; **M29** complete; M36 / M48 later
 - Parity reference: **Laravel 13.x** docs
 - IDE and editor tooling: **M45–M47** closed (thorough VS Code-family + JetBrains sideload); **M48** MCP later; **M52** Sonar closed
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)

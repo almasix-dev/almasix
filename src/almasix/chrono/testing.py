@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from almasix.chrono.chrono import Chrono
@@ -64,5 +64,5 @@ def _as_aware(moment: Any) -> datetime:
     if isinstance(moment, Chrono):
         return moment
     if isinstance(moment, datetime):
-        return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+        return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
     return Chrono.parse(moment)

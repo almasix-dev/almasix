@@ -87,6 +87,8 @@ class VendorPublishCommand(Command):
         return self._publish_file(source, destination)
 
     def _publish_file(self, source: Path, destination: Path) -> int:
+        if ServiceProvider.is_migration_publish(source):
+            destination = ServiceProvider.migration_publish_destination(source, destination)
         exists = destination.exists()
         if exists and not self.option("force"):
             self.comment(f"Exists, skipped: {self._relative(destination)} (use --force)")
