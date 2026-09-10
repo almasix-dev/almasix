@@ -8,6 +8,10 @@ from pathlib import Path
 
 from almasix.lsp.index import find_app_root
 
+_IDE_SUPPORT_REPO = "https://github.com/almasix-dev/ide-support"
+_IDE_SUPPORT_RELEASES = f"{_IDE_SUPPORT_REPO}/releases"
+_VS_MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=almasix.almasix"
+
 _VSCODE_EXTENSIONS = {
     "recommendations": [
         "almasix.almasix",
@@ -53,8 +57,9 @@ def install_editor_config(
 ) -> IdeInstallResult:
     """Create ``.vscode`` recommendations/settings and a JetBrains note.
 
-    Does not download Marketplace packages — documents sideload paths for the
-    in-repo VSIX / JetBrains zip built under ``editors/``.
+    Points at Marketplace / GitHub Releases for
+    `almasix-dev/ide-support <https://github.com/almasix-dev/ide-support>`_; does not
+    download packages itself.
     """
     root = Path(base_path) if base_path else find_app_root()
     if root is None or not (Path(root) / "bootstrap" / "app.py").is_file():
@@ -70,21 +75,12 @@ def install_editor_config(
     if jetbrains:
         _write_jetbrains_note(root, result, force=force)
 
-    grammar = _locate_grammar(root)
-    if grammar is not None:
-        result.notes.append(f"Prism TextMate grammar: {grammar}")
-    else:
-        result.notes.append(
-            "Prism grammar lives in the Almasix repo at editors/prism/syntaxes/ "
-            "(bundled in the VS Code / JetBrains packages)."
-        )
+    result.notes.append(f"Editor packages: {_IDE_SUPPORT_REPO}")
     result.notes.append(
-        "Sideload VS Code: Extensions → Install from VSIX… → "
-        "editors/vscode/*.vsix (after npm run package)."
+        f"VS Code: Marketplace {_VS_MARKETPLACE} or VSIX from {_IDE_SUPPORT_RELEASES}"
     )
     result.notes.append(
-        "Sideload JetBrains: Settings → Plugins → ⚙ → Install Plugin from Disk… → "
-        "editors/jetbrains/build/distributions/*.zip."
+        f"JetBrains: Marketplace plugin com.almasix.ide or zip from {_IDE_SUPPORT_RELEASES}"
     )
     return result
 
@@ -154,37 +150,19 @@ def _write_jetbrains_note(root: Path, result: IdeInstallResult, *, force: bool) 
             [
                 "# Almasix — JetBrains / PyCharm",
                 "",
-                "1. Build the plugin: `cd editors/jetbrains && ./gradlew buildPlugin`",
-                "2. **Settings → Plugins → ⚙ → Install Plugin from Disk…**",
-                "3. Choose `editors/jetbrains/build/distributions/almasix-*.zip`",
-                "4. Enable **LSP4IJ** if prompted (bundled dependency) so Prism",
+                "1. Install **Almasix** from the JetBrains Marketplace "
+                "(plugin id `com.almasix.ide`), **or** download a zip from",
+                f"   {_IDE_SUPPORT_RELEASES} and use",
+                "   **Settings → Plugins → ⚙ → Install Plugin from Disk…**",
+                "2. Restart when prompted. Enable **LSP4IJ** if asked so Prism",
                 "   completions come from `almasix-lsp` in the project venv.",
-                "5. Run configurations for `smith serve` / `smith queue:work` ship",
+                "3. Run configurations for `smith serve` / `smith queue:work` ship",
                 "   with the plugin; or add them manually pointing at `.venv/bin/smith`.",
                 "",
-                "Marketplace publish is not required — sideload is the supported path.",
+                f"Source and releases: {_IDE_SUPPORT_REPO}",
                 "",
             ]
         ),
         encoding="utf-8",
     )
     result.written.append(note)
-
-
-def _locate_grammar(root: Path) -> Path | None:
-    """Best-effort path to the TextMate grammar (monorepo or package data)."""
-    candidates = [
-        root / "editors" / "prism" / "syntaxes" / "prism.tmLanguage.json",
-        root.parent.parent / "editors" / "prism" / "syntaxes" / "prism.tmLanguage.json",
-    ]
-    # Walk up a few levels for apps living under examples/.
-    current = root
-    for _ in range(5):
-        candidates.append(current / "editors" / "prism" / "syntaxes" / "prism.tmLanguage.json")
-        if current.parent == current:
-            break
-        current = current.parent
-    for path in candidates:
-        if path.is_file():
-            return path.resolve()
-    return None

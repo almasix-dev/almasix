@@ -1,4 +1,4 @@
-"""Static hover documentation for Prism directives."""
+"""Directive names, hover docs, and insert snippets for Prism templates."""
 
 from __future__ import annotations
 
@@ -16,14 +16,14 @@ PRISM_DIRECTIVES: dict[str, str] = {
     "endisset": "`@endisset` — closes an `@isset` block.",
     "empty": "`@empty(name)` — true when the value is empty; `@endempty`.",
     "endempty": "`@endempty` — closes an `@empty` block.",
-    "for": "`@for(…)` — C-style for loop; close with `@endfor`.",
+    "for": "`@for(i = 0; i < n; i++)` or `@for(i in range(n))` — loop; `@endfor`.",
     "endfor": "`@endfor` — closes an `@for` block.",
     "foreach": "`@foreach(items as item)` — iterate a collection; `@endforeach`.",
-    "endforeach": "`@endforeach` — closes an `@foreach` block.",
+    "endforeach": "`@endforeach` — closes a `@foreach` block.",
     "forelse": "`@forelse(items as item)` — foreach with `@empty` / `@endforelse`.",
-    "endforelse": "`@endforelse` — closes an `@forelse` block.",
+    "endforelse": "`@endforelse` — closes a `@forelse` block.",
     "while": "`@while(condition)` — while loop; `@endwhile`.",
-    "endwhile": "`@endwhile` — closes an `@while` block.",
+    "endwhile": "`@endwhile` — closes a `@while` block.",
     "extends": "`@extends('layout')` — inherit a layout view.",
     "section": "`@section('name')` — define a layout section; `@endsection` / `@show`.",
     "endsection": "`@endsection` — closes a `@section` block.",
@@ -77,6 +77,98 @@ PRISM_DIRECTIVES: dict[str, str] = {
     "dump": "`@dump(value)` — dump a value into the response.",
     "dd": "`@dd(value)` — dump and stop rendering.",
 }
+
+#: Openers that take ``(…)`` and close with ``@end*``.
+_BLOCK_PARENS: dict[str, str] = {
+    "if": "endif",
+    "unless": "endunless",
+    "isset": "endisset",
+    "empty": "endempty",
+    "for": "endfor",
+    "foreach": "endforeach",
+    "forelse": "endforelse",
+    "while": "endwhile",
+    "section": "endsection",
+    "component": "endcomponent",
+    "slot": "endslot",
+    "push": "endpush",
+    "prepend": "endprepend",
+    "error": "enderror",
+    "can": "endcan",
+    "cannot": "endcannot",
+    "canany": "endcanany",
+    "cannotany": "endcannotany",
+    "cache": "endcache",
+}
+
+#: Openers that take no required args and close with ``@end*``.
+_BLOCK_BARE: dict[str, str] = {
+    "auth": "endauth",
+    "guest": "endguest",
+    "once": "endonce",
+    "python": "endpython",
+}
+
+#: Single-shot directives with a quoted first argument (caret lands inside).
+_STRING_ARG = frozenset(
+    {
+        "extends",
+        "include",
+        "yield",
+        "lang",
+        "route",
+        "signedRoute",
+        "asset",
+        "stack",
+    }
+)
+
+#: Single-shot with a free-form ``(…)`` placeholder.
+_PARENS_ARG = frozenset(
+    {
+        "elseif",
+        "includeIf",
+        "includeWhen",
+        "includeUnless",
+        "each",
+        "props",
+        "aware",
+        "choice",
+        "vite",
+        "dump",
+        "dd",
+    }
+)
+
+
+def directive_snippet(name: str, *, indent: str = "") -> str:
+    """LSP snippet inserted when the user accepts a directive completion.
+
+    Always starts with ``@`` so accepting the item never strips the sigil when
+    the editor treats ``@if`` as a single token (JetBrains does).
+
+    ``indent`` is the whitespace already on the line *before* ``@``. Continuation
+    lines include it so ``@endif`` lines up with ``@if`` even when the client
+    inserts the snippet as-is (without re-indenting). The body is one level deeper.
+    """
+    body = f"{indent}    "
+    close = indent
+    if name in _BLOCK_PARENS:
+        closer = _BLOCK_PARENS[name]
+        if name == "section":
+            return f"@{name}('$1')\n{body}$0\n{close}@{closer}"
+        if name == "for":
+            return f"@{name}(i = 0; i < $1; i++)\n{body}$0\n{close}@{closer}"
+        if name in {"push", "prepend", "slot", "error", "can", "cannot"}:
+            return f"@{name}('$1')\n{body}$0\n{close}@{closer}"
+        return f"@{name}($1)\n{body}$0\n{close}@{closer}"
+    if name in _BLOCK_BARE:
+        return f"@{name}\n{body}$0\n{close}@{_BLOCK_BARE[name]}"
+    if name in _STRING_ARG:
+        return f"@{name}('$1')"
+    if name in _PARENS_ARG:
+        return f"@{name}($1)"
+    return f"@{name}"
 
 
 def directive_hover(name: str) -> str | None:

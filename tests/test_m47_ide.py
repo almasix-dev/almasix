@@ -10,7 +10,6 @@ import pytest
 from almasix.ide import generate_stubs, install_editor_config
 from almasix.ide.install import (
     IdeInstallResult,
-    _locate_grammar,
     _merge_settings,
     _write_jetbrains_note,
     _write_vscode,
@@ -138,11 +137,6 @@ def test_install_no_app(tmp_path: Path) -> None:
 def test_install_writes_vscode_and_jetbrains(tmp_path: Path) -> None:
     (tmp_path / "bootstrap").mkdir()
     (tmp_path / "bootstrap" / "app.py").write_text("# app\n", encoding="utf-8")
-    # Put a fake grammar on the walk-up path.
-    grammar_dir = tmp_path / "editors" / "prism" / "syntaxes"
-    grammar_dir.mkdir(parents=True)
-    grammar = grammar_dir / "prism.tmLanguage.json"
-    grammar.write_text("{}", encoding="utf-8")
 
     result = install_editor_config(tmp_path, force=True)
     assert result.ok
@@ -151,7 +145,8 @@ def test_install_writes_vscode_and_jetbrains(tmp_path: Path) -> None:
     assert any(p.name == "almasix-editor.md" for p in result.written)
     settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text(encoding="utf-8"))
     assert settings["files.associations"]["*.prism.html"] == "prism-html"
-    assert any("Prism TextMate grammar" in n for n in result.notes)
+    assert any("almasix-dev/ide-support" in n for n in result.notes)
+    assert any("Marketplace" in n for n in result.notes)
 
     # Second run without force keeps files.
     again = install_editor_config(tmp_path, force=False)
@@ -217,10 +212,6 @@ def test_write_jetbrains_keep(tmp_path: Path) -> None:
     _write_jetbrains_note(tmp_path, result, force=False)
     assert note.read_text(encoding="utf-8") == "keep\n"
     assert any("Kept existing" in n for n in result.notes)
-
-
-def test_locate_grammar_none(tmp_path: Path) -> None:
-    assert _locate_grammar(tmp_path) is None
 
 
 def test_stub_result_ok() -> None:

@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from almasix.console.command import Command
 from almasix.ide.install import install_editor_config
 from almasix.ide.stubs import generate_stubs
+
+_IDE_SUPPORT_REPO = "https://github.com/almasix-dev/ide-support"
+_VS_MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=almasix.almasix"
 
 
 class ProgressIdeCommand(Command):
@@ -37,26 +38,9 @@ class ProgressIdeCommand(Command):
         if stubs.routes_file is not None:
             self.line(f"  routes  -> {stubs.routes_file.relative_to(root)}")
 
-        repo = self._repo_root(root)
-        vsix = sorted((repo / "editors" / "vscode").glob("*.vsix")) if repo else []
-        jb_dist = repo / "editors" / "jetbrains" / "build" / "distributions" if repo else None
-        zips = sorted(jb_dist.glob("*.zip")) if jb_dist and jb_dist.is_dir() else []
-        self.line(
-            f"  vsix    -> {vsix[-1].name if vsix else '(run: cd editors/vscode && npm run package)'}"
-        )
-        self.line(
-            f"  jb zip  -> {zips[-1].name if zips else '(run: cd editors/jetbrains && ./gradlew buildPlugin)'}"
-        )
+        self.line(f"  ide-support -> {_IDE_SUPPORT_REPO}")
+        self.line(f"  vscode  -> {_VS_MARKETPLACE}")
+        self.line("  jetbrains -> Marketplace com.almasix.ide")
         self.line("  docs    -> Editor setup (Starlight) + VS Code ↔ PyCharm parity matrix")
         self.info("ide ok")
         return self.SUCCESS
-
-    def _repo_root(self, app_root: Path) -> Path | None:
-        """Monorepo root when running from examples/progress."""
-        current = app_root.resolve()
-        for candidate in (current, *current.parents):
-            if (candidate / "editors" / "vscode").is_dir() and (
-                candidate / "editors" / "jetbrains"
-            ).is_dir():
-                return candidate
-        return None

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from pathlib import Path
 
 from almasix.broadcasting import Broadcast, PrivateChannel, get_hub
 from almasix.broadcasting.endpoints import BroadcastingSocket
@@ -13,8 +12,8 @@ from almasix.console.command import Command
 from app.models.user import User
 from app.support.demo_db import ensure_demo_database
 
-REPO = Path(__file__).resolve().parents[5]  # …/almasix (repo root)
-SONAR_PKG = REPO / "packages" / "sonar"
+_SONAR_NPM = "https://www.npmjs.com/package/@almasix/sonar"
+_SONAR_REPO = "https://github.com/almasix-dev/sonar"
 
 
 class FakeSocket:
@@ -48,14 +47,9 @@ class ProgressSonarCommand(Command):
         # sonar is a product alias for the websocket driver / connection.
         broadcaster = Broadcast.connection("sonar")
         self.info(f"sonar   -> driver={broadcaster.driver} connection={broadcaster.name}")
-
-        package_json = SONAR_PKG / "package.json"
-        client_entry = SONAR_PKG / "src" / "index.ts"
-        if not package_json.is_file() or not client_entry.is_file():
-            self.error(f"missing @almasix/sonar package under {SONAR_PKG}")
-            return 1
-        name = json.loads(package_json.read_text(encoding="utf-8")).get("name")
-        self.info(f"package -> {name} at packages/sonar/")
+        self.info("package -> @almasix/sonar")
+        self.line(f"  npm    -> {_SONAR_NPM}")
+        self.line(f"  source -> {_SONAR_REPO}")
 
         ada = await User.query().where("email", "=", "ada@almasix.dev").first()
         socket = FakeSocket()

@@ -1,8 +1,7 @@
-"""M45 — Prism language support: formatter + TextMate grammar."""
+"""M45 — Prism language support: formatter (TextMate assets live in almasix-dev/ide-support)."""
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from pathlib import Path
@@ -12,7 +11,6 @@ import pytest
 from almasix.prism.formatter import format_prism
 
 ROOT = Path(__file__).resolve().parents[1]
-GRAMMAR = ROOT / "editors" / "prism" / "syntaxes" / "prism.tmLanguage.json"
 
 _FIXTURE = """
 <div class="board">
@@ -122,32 +120,6 @@ def test_format_comments_and_echoes_as_text() -> None:
     assert "{{-- note --}}" in out
     assert "{{ name }}" in out
     assert "{!! html !!}" in out
-
-
-def test_grammar_json_loads_and_has_key_patterns() -> None:
-    data = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    assert data["scopeName"] == "text.html.prism"
-    blob = json.dumps(data)
-    assert "if|elseif" in blob or "@(if" in blob
-    assert "\\{\\{" in data["repository"]["echo"]["begin"]
-    assert "python" in data["repository"]["python-block"]["begin"]
-    assert "repository" in data
-    assert "comment" in data["repository"]
-    assert "python-block" in data["repository"]
-    assert "echo" in data["repository"]
-
-
-def test_language_configuration_and_snippets_exist() -> None:
-    base = ROOT / "editors" / "prism"
-    assert (base / "language-configuration.json").is_file()
-    assert (base / "snippets" / "prism.code-snippets").is_file()
-    assert (base / "tree-sitter-prism" / "grammar.js").is_file()
-    assert (base / "README.md").is_file()
-    lang = json.loads((base / "language-configuration.json").read_text(encoding="utf-8"))
-    assert lang["comments"]["blockComment"] == ["{{--", "--}}"]
-    snippets = json.loads((base / "snippets" / "prism.code-snippets").read_text(encoding="utf-8"))
-    assert "Prism if" in snippets
-    assert "x-component" in snippets
 
 
 def test_prism_format_command_check(tmp_path: Path) -> None:

@@ -52,6 +52,8 @@ On initialize (and again on save / `almasix.rebuildIndex`), the server:
      and best-effort PHP arrays when `lang/` exists
    - **Middleware aliases** — framework defaults plus
      `http.middleware_aliases` from bootstrap
+   - **View context** — keys from `view("name", {…})` call sites, built-in
+     Prism helpers (`url`, `route`, `csrf_token`, …), and shared composers
 
 If boot fails, the client gets a clear error message instead of a silent empty
 index.
@@ -60,15 +62,36 @@ index.
 
 | Feature | Surfaces |
 | --- | --- |
-| **Completion** | `view("…")`, `@include` / `@extends`, `route("…")`, `config("…")`, `__()` / `trans()` / `@lang`, `.middleware("…")` |
-| **Diagnostics** | Unknown `view("…")`; unknown translation keys when `lang/` is present |
-| **Hover** | Prism directives (static docs table); route / view / config / translation / middleware strings |
-| **Go to definition** | `view("foo.bar")` → template; `route("name")` → routes file; `config("app.x")` → `config/app.py` |
+| **Completion** | `view("…")`, `@include` / `@extends`, `route("…")`, `config("…")`, `__()` / `trans()` / `@lang`, `.middleware("…")`, `[Controller, "…"]` action methods, **Prism `{{ name }}` globals / view data**, `@directive` names, **`route`/`route_is`/`vite`/`url`/`asset` strings anywhere in a template**, **`env("…")` keys and dotenv `${…}`**, **table / column names from migrations + models**, **model instance attributes (`user.email`)**, and — when invoked explicitly in plain markup — the whole directive + globals list |
+| **Go to definition** | `view("foo.bar")` → template; `route("name")` → routes file; `config("app.x")` → `config/app.py`; `[Controller, "method"]` → controller method; **`{{ app_name }}` → controller data key**; **`url`/`route`/`vite` helpers → source / entry**; **`env("APP_NAME")` → `.env` line**; **`DB.table("posts")` / `.where("slug")` → migration / model** |
 | **Find references** | View names — `view("…")` / `@include` / `@extends` across the app |
-| **Document links** | View, route, and config string arguments |
+| **Document links** | View, route, config, and controller-action string arguments |
 | **Code actions** | Create missing view (empty `.prism.html`) for unknown-view diagnostics |
+| **Formatting** | `.prism.html` via `format_prism` (same as `smith prism:format`) — full document and range requests |
 
-Trigger characters: `"`, `'`, `.`, `@`.
+Trigger characters: `"`, `'`, `.`, `@`, `$`. `{` is deliberately not one: editors
+auto-close `{{` into `{{  }}`, and a popup mid-brace fights that. Inside an
+echo, completion comes from the first typed letter or from Ctrl+Space, which in
+a Prism file always has something to offer. `$` opens env-key completion inside
+a dotenv `${…}` reference.
+
+### Environment keys
+
+The index reads `.env`, every `.env.*` beside it (`.env.example` is the
+convention), and every `env("KEY", …)` call under `config/` / `bootstrap/`. Keys
+that only appear in config still complete — that is the key someone forgot to
+document. Hover shows the value for non-secret keys and redacts anything whose
+name looks like a password / token / key (same policy as `smith config:show`).
+
+### Database schema
+
+Tables and columns come from `database/migrations` (applied in filename order, so
+a later `Schema.table` alteration wins) plus each model's `fillable` / `casts`.
+`DB.table("…")`, `Schema.create` / `drop` / `has_column`, and query-builder
+methods (`.where`, `.order_by`, `.select`, …) complete against that map; a
+`Post.where("…")` resolves the model class to its table. Live inspection is
+**opt-in** via `ALMASIX_LSP_DB_SCHEMA=1` so a language server never dials a
+remote database on every save.
 
 Rebuild the index from the client with the `almasix.rebuildIndex` command, or
 by saving a document. Creating a view via the code action refreshes the index.
@@ -77,12 +100,9 @@ by saving a document. Creating a view via the code action refreshes the index.
 
 ### VS Code / Cursor / VSCodium
 
-Install the official extension from a local VSIX (see [Editor setup](/editor-setup/)):
-
-```bash
-cd editors/vscode && npm install && npm run package
-# Extensions → Install from VSIX… → almasix-*.vsix
-```
+Install the official extension from the Visual Studio Marketplace or a Release
+VSIX (see [Editor setup](/editor-setup/)). Source:
+[`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).
 
 Or, until the extension is installed, a minimal `settings.json`:
 

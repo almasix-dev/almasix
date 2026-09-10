@@ -3,17 +3,17 @@ title: Prism language support
 description: TextMate and tree-sitter grammars, snippets, and smith prism:format for .prism.html templates.
 ---
 
-Prism templates use the `.prism.html` extension. Almasix ships editor assets and
-a first-party formatter so every tool — editors, pre-commit, CI — shares one
-implementation.
+Prism templates use the `.prism.html` extension. Almasix ships a first-party
+formatter in the framework, and editor grammar assets in
+[`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support) (`prism/`), so
+every tool — editors, pre-commit, CI — shares one language surface.
 
-Assets live under [`editors/prism/`](https://github.com/almasix-dev/almasix/tree/main/editors/prism)
-in the repository. Full VS Code / JetBrains packaging is covered separately; the
-files here are the shared source.
+Full VS Code / JetBrains packaging is covered in [Editor setup](/editor-setup/).
 
 ## Grammar (TextMate)
 
-`editors/prism/syntaxes/prism.tmLanguage.json` highlights:
+[`prism/syntaxes/prism.tmLanguage.json`](https://github.com/almasix-dev/ide-support/blob/main/prism/syntaxes/prism.tmLanguage.json)
+highlights:
 
 - HTML host markup
 - Escaped echoes `{{ … }}` and raw echoes `{!! … !!}`
@@ -29,7 +29,8 @@ Scope name: `text.html.prism`.
 
 ## Language configuration
 
-`editors/prism/language-configuration.json` sets:
+[`prism/language-configuration.json`](https://github.com/almasix-dev/ide-support/blob/main/prism/language-configuration.json)
+sets:
 
 - Block comments `{{--` / `--}}`
 - Auto-closing pairs for echoes and brackets
@@ -38,20 +39,21 @@ Scope name: `text.html.prism`.
 
 ## Snippets
 
-`editors/prism/snippets/prism.code-snippets` covers common directives
-(`@if`, `@foreach`, `@section`, `@auth`, `@python`, …) plus `<x-…>` components
-and slots.
+[`prism/snippets/prism.code-snippets`](https://github.com/almasix-dev/ide-support/blob/main/prism/snippets/prism.code-snippets)
+covers common directives (`@if`, `@foreach`, `@section`, `@auth`, `@python`, …)
+plus `<x-…>` components and slots.
 
 ## Tree-sitter
 
-`editors/prism/tree-sitter-prism/` is a minimal grammar that recognizes
-`comment`, `echo`, `raw_echo`, `directive`, and `html_text`, with
-`queries/highlights.scm` for Neovim / Helix / Zed. Build steps are documented
-in `editors/prism/README.md`.
+[`prism/tree-sitter-prism/`](https://github.com/almasix-dev/ide-support/tree/main/prism/tree-sitter-prism)
+is a minimal grammar that recognizes `comment`, `echo`, `raw_echo`,
+`directive`, and `html_text`, with `queries/highlights.scm` for Neovim /
+Helix / Zed. Build steps are documented in the
+[ide-support `prism/README.md`](https://github.com/almasix-dev/ide-support/blob/main/prism/README.md).
 
 ## Formatter
 
-Library entry point:
+Library entry point (framework package):
 
 ```python
 from almasix.prism.formatter import format_prism
@@ -75,6 +77,6 @@ smith prism:format --check              # CI: fail if would change
 
 ## Loading in VS Code / Cursor
 
-Until the official extension ships, associate files and point a small local
-extension at the grammar — see `editors/prism/README.md` for
-`files.associations` and a sample `package.json` contribution.
+Prefer the official extension from the Marketplace or
+[`almasix-dev/ide-support` Releases](https://github.com/almasix-dev/ide-support/releases)
+— see [Editor setup](/editor-setup/).

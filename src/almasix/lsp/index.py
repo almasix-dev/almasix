@@ -16,6 +16,24 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from almasix.lsp.env_context import EnvVarInfo, discover_env_keys
+from almasix.lsp.schema_context import (
+    TableInfo,
+    discover_live_schema,
+    discover_migration_schema,
+    discover_model_tables,
+    live_schema_enabled,
+    merge_tables,
+)
+from almasix.lsp.view_context import (
+    ViewVarInfo,
+    auth_shared_vars,
+    builtin_helpers,
+    discover_composer_keys,
+    discover_view_data_keys,
+    discover_vite_entries,
+)
+
 
 @dataclass(frozen=True)
 class RouteInfo:
@@ -38,10 +56,20 @@ class AppIndex:
     config_keys: tuple[str, ...] = ()
     config_files: dict[str, Path] = field(default_factory=dict)  # stem → path
     models: dict[str, Path] = field(default_factory=dict)
+    controllers: dict[str, Path] = field(default_factory=dict)  # class name → path
     translation_keys: tuple[str, ...] = ()
     has_lang: bool = False
     middleware_aliases: tuple[str, ...] = ()
     error: str | None = None
+    # Prism template variables: view() data keys + helpers + composers.
+    view_data: dict[str, dict[str, ViewVarInfo]] = field(default_factory=dict)
+    view_helpers: tuple[ViewVarInfo, ...] = ()
+    view_shared: dict[str, ViewVarInfo] = field(default_factory=dict)
+    vite_entries: dict[str, Path] = field(default_factory=dict)
+    #: ``.env`` / ``.env.*`` declarations plus keys only read via ``env()``.
+    env_keys: dict[str, EnvVarInfo] = field(default_factory=dict)
+    #: Tables and columns from migrations + models (+ a live connection when enabled).
+    tables: dict[str, TableInfo] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -136,6 +164,97 @@ def discover_models(models_root: Path) -> dict[str, Path]:
             continue
         found[path.stem] = path.resolve()
     return found
+
+
+_CLASS_RE = re.compile(r"^class\s+([A-Za-z_][\w]*)\s*[:(]", re.MULTILINE)
+_METHOD_RE = re.compile(r"^(\s*)(?:async\s+)?def\s+([A-Za-z_][\w]*)\s*\(")
+_IMPORT_FROM_RE = re.compile(
+    r"^from\s+([\w.]+)\s+import\s+(.+)$",
+)
+
+
+def discover_controllers(controllers_root: Path) -> dict[str, Path]:
+    """Map controller class names to files under ``app/http/controllers``."""
+    found: dict[str, Path] = {}
+    if not controllers_root.is_dir():
+        return found
+    for path in sorted(controllers_root.rglob("*.py")):
+        if path.name.startswith("_") or not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:  # pragma: no cover
+            continue
+        for match in _CLASS_RE.finditer(text):
+            found[match.group(1)] = path.resolve()
+    return found
+
+
+def controller_methods(path: Path) -> dict[str, int]:
+    """Public method name → 0-based line for a controller module."""
+    methods: dict[str, int] = {}
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:  # pragma: no cover
+        return methods
+    for index, line in enumerate(text.splitlines()):
+        match = _METHOD_RE.match(line)
+        if match is None:
+            continue
+        name = match.group(2)
+        if name.startswith("_"):
+            continue
+        methods[name] = index
+    return methods
+
+
+def resolve_controller_path(
+    index: AppIndex,
+    class_name: str,
+    *,
+    source: str | None = None,
+) -> Path | None:
+    """Resolve a controller class via imports in ``source``, then the index."""
+    if source:
+        for line in source.splitlines():
+            stripped = line.strip()
+            match = _IMPORT_FROM_RE.match(stripped)
+            if match is None:
+                continue
+            names = match.group(2)
+            for part in names.split(","):
+                token = part.strip().split(" as ")[-1].strip()
+                if token != class_name:
+                    continue
+                module = match.group(1)
+                # ``from app.http.controllers.foo import Bar`` → app/http/controllers/foo.py
+                relative = Path(*module.split("."))
+                for base in (index.base_path, Path.cwd()):
+                    candidate = (base / relative).with_suffix(".py")
+                    if candidate.is_file():
+                        return candidate.resolve()
+    path = index.controllers.get(class_name)
+    if path is not None and path.is_file():
+        return path
+    return None
+
+
+def resolve_controller_action(
+    index: AppIndex,
+    class_name: str,
+    method: str,
+    *,
+    source: str | None = None,
+) -> tuple[Path, int] | None:
+    """Return ``(path, line)`` for ``[Class, "method"]``, or ``None``."""
+    path = resolve_controller_path(index, class_name, source=source)
+    if path is None:
+        return None
+    methods = controller_methods(path)
+    if method not in methods:
+        # Still jump to the class file when the method is missing.
+        return path, 0
+    return path, methods[method]
 
 
 def discover_config_files(config_root: Path) -> dict[str, Path]:
@@ -340,12 +459,22 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
 
     views = discover_views(root / "resources" / "views")
     models = discover_models(root / "app" / "models")
+    controllers = discover_controllers(root / "app" / "http" / "controllers")
     config_files = discover_config_files(root / "config")
     lang_root = root / "lang"
     has_lang = lang_root.is_dir()
     translation_keys = discover_translation_keys(lang_root) if has_lang else ()
     route_locations = discover_route_locations(root / "routes")
     routes_dir = root / "routes"
+    view_data = discover_view_data_keys(root)
+    helpers = tuple(builtin_helpers())
+    shared = {info.name: info for info in auth_shared_vars()}
+    shared.update(discover_composer_keys(root))
+    vite_entries = discover_vite_entries(root)
+    env_keys = discover_env_keys(root)
+    # Migrations describe a table more precisely than a model's `fillable`, so
+    # they are merged last of the two static sources.
+    static_tables = merge_tables(discover_model_tables(root), discover_migration_schema(root))
 
     try:
         app = _boot_application(root)
@@ -354,9 +483,16 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
             base_path=root,
             views=views,
             models=models,
+            controllers=controllers,
             config_files=config_files,
             translation_keys=translation_keys,
             has_lang=has_lang,
+            view_data=view_data,
+            view_helpers=helpers,
+            view_shared=shared,
+            vite_entries=vite_entries,
+            env_keys=env_keys,
+            tables=static_tables,
             error=f"Application failed to boot: {type(exc).__name__}: {exc}",
         )
 
@@ -384,6 +520,13 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
         )
 
     config_keys = tuple(sorted(flatten_config(app.config.all())))
+    # The app is booted, so a connection exists — but only reach for it when
+    # asked; see `live_schema_enabled`.
+    tables = (
+        merge_tables(static_tables, discover_live_schema())
+        if live_schema_enabled()
+        else static_tables
+    )
     return AppIndex(
         base_path=root,
         views=views,
@@ -391,7 +534,14 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
         config_keys=config_keys,
         config_files=config_files,
         models=models,
+        controllers=controllers,
         translation_keys=translation_keys,
         has_lang=has_lang,
         middleware_aliases=tuple(sorted(aliases)),
+        view_data=view_data,
+        view_helpers=helpers,
+        view_shared=shared,
+        vite_entries=vite_entries,
+        env_keys=env_keys,
+        tables=tables,
     )

@@ -40,6 +40,18 @@ def test_m46_demo_command_runs() -> None:
     for line in (
         "views  ->",
         "routes ->",
+        "view-vars ->",
+        "{{ app_name }} ->",
+        "{{ url }} ->",
+        "route('') ->",
+        "ctrl+space ->",
+        "@if ->",
+        "env('APP_') ->",
+        "DB.table('') ->",
+        "user. ->",
+        "quote-safe",
+        "aligns under indent",
+        "textDocument/formatting",
         "lsp ok",
     ):
         assert line in out, line
@@ -50,3 +62,13 @@ def test_m46_board_marks_lsp_complete(progress_client: TestClient) -> None:
     by_id = {m["id"]: m for m in board["milestones"]}
     assert by_id["M46"]["status"] == "complete"
     assert "smith progress:lsp" in by_id["M46"]["proof"]
+    assert any("Controller" in item for item in by_id["M46"]["proof"])
+    assert any("app_name" in item for item in by_id["M46"]["proof"])
+    assert any("route('')" in item for item in by_id["M46"]["proof"])
+    assert any("env(" in item for item in by_id["M46"]["proof"])
+    assert any("DB.table" in item for item in by_id["M46"]["proof"])
+    assert any("user." in item or "attribute" in item.lower() for item in by_id["M46"]["proof"])
+    assert any("@if" in item or "directive" in item.lower() for item in by_id["M46"]["proof"])
+    assert any(
+        "formatting" in item.lower() or "format_prism" in item for item in by_id["M46"]["proof"]
+    )
