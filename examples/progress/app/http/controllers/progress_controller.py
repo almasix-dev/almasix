@@ -406,10 +406,35 @@ def _milestones() -> list[dict]:
             ],
         },
         {
+            "id": "M54",
+            "name": "almasix.conduit (Livewire 4 parity)",
+            "status": "complete",
+            "proof": [
+                "smith progress:conduit",
+                "almasix.conduit · POST /conduit/update · Alpine $wire",
+                "GET /conduit demo · wire:click / wire:model / wire:text",
+                "Livewire 4 parity matrix (docs/conduit)",
+            ],
+        },
+        {
+            "id": "M55",
+            "name": "almasix-inertia (Inertia adapter)",
+            "status": "complete",
+            "proof": [
+                "smith progress:inertia",
+                "packages/inertia · X-Inertia · Inertia.render",
+                "lazy / defer / merge props · partial reloads · asset version · SSR",
+                "GET /inertia demo",
+            ],
+        },
+        {
             "id": "M36",
             "name": "Starter kits",
             "status": "planned",
-            "proof": ["web / API / SPA kits"],
+            "proof": [
+                "web / API / SPA kits",
+                "depends on M54 Conduit (web islands) + M55 Inertia (SPA)",
+            ],
         },
         {
             "id": "M37",
@@ -653,3 +678,32 @@ class ProgressController(Controller):
 
     async def data(self) -> dict:
         return _board()
+
+    async def conduit_demo(self) -> Response:
+        from almasix.conduit import Conduit, conduit
+        from almasix.session.csrf import csrf_token
+        from app.conduit.counter import Counter, NestedShell
+
+        Conduit.register("counter", Counter)
+        Conduit.register("nested-shell", NestedShell)
+        return view(
+            "conduit.demo",
+            {
+                "counter_html": conduit("counter"),
+                "csrf_token": csrf_token(),
+            },
+        )
+
+    async def inertia_demo(self) -> Response:
+        from inertia import Inertia
+
+        return Inertia.render(
+            "Welcome",
+            {
+                "framework": "almasix",
+                "package": "almasix-inertia",
+                "stats": Inertia.lazy(lambda: {"visits": 42}),
+                "feed": Inertia.defer(lambda: [{"id": 1}]),
+            },
+            root_view="inertia.demo",
+        )

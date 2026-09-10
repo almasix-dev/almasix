@@ -200,17 +200,22 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M51** | `smith progress:lint` — pinned `ruff==0.16.6`, `make lint`, CI lint job |
 | **M38** | `smith progress:deploy` — `serve --workers`, `/up`, Deployment docs, `examples/deploy`, Trusted Publishing |
 | **M39** | `smith progress:docs` — Prologue, Basics teaching order, latest-major+main switcher, older-docs banner |
-| **M36, M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
+| **M36** | Roadmap on `/progress` — kits depend on M54 Conduit + M55 Inertia |
+| **M54** | `smith progress:conduit` — `almasix.conduit`, `/conduit`, wire update, Alpine `$wire`, LW4 parity matrix |
+| **M55** | `smith progress:inertia` — lazy/defer/merge props, `/inertia`, `X-Inertia` JSON, SSR stub |
+| **M48** | Roadmap on `/progress`; see `docs/PLAN.md` |
 
 ## Growing with Almasix
 
-M0–M35, M37–M47, M49–M53 are closed on the ladder. M32–M35
+M0–M35, M37–M47, M49–M55 are closed on the ladder. M32–M35
 closed the installer, routing, security headers/CORS, and rate limiting; M25’s
 Laravel 13 Mongo audit, M51’s lint gate, M38’s deployment ops, and M39’s docs
 journey are closed with them. **Stability track:** API tokens (**M37**, Signet),
 Chrono (**M53**), Prism (**M45**), language server (**M46**), editor integrations
-(**M47**), **Sonar** (**M52**, `@almasix/sonar`), and **package development**
-(**M29**, Courier + discovery) are closed. No pauses;
+(**M47**), **Sonar** (**M52**, `@almasix/sonar`), **package development**
+(**M29**, Courier + discovery), **Conduit** (**M54**, `almasix.conduit`), and
+**Inertia** (**M55**, `almasix-inertia`) are closed. No pauses;
+**M36** starter kits are next (consumes Conduit + Inertia).
 **M36** / **M48** later. The board on
 `/progress` lists the full roadmap with a status and proof for each milestone.
 
@@ -255,6 +260,8 @@ smith progress:broadcast
 smith progress:search
 smith progress:testing
 smith progress:packages
+smith progress:conduit
+smith progress:inertia
 smith test
 smith channel:list
 smith key:generate

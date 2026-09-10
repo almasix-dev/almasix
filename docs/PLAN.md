@@ -6,7 +6,8 @@
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
 > closed; package line **0.5.1** prepared; **M39** docs journey + Prologue closed;
-> **M37** Signet-class tokens closed; autopilot **M53 → M45 → M46 → M47 → M52** closed).
+> **M37** Signet-class tokens closed; autopilot **M53 → M45 → M46 → M47 → M52** closed;
+> **M54** Conduit + **M55** Inertia closed pre-M36).
 
 ## Working identity
 
@@ -1414,15 +1415,49 @@ Laravel [Rate Limiting](https://laravel.com/docs/rate-limiting) — the cache-ba
 
 Laravel [Starter Kits](https://laravel.com/docs/starter-kits) — opt-in application kits on top of the M32 scaffolder.
 
-- **Web kit:** Prism auth UI (register / login / password reset / verify / profile) honoring the chosen M32 CSS stack
+- **Web kit:** Prism auth UI (register / login / password reset / verify / profile) honoring the chosen M32 CSS stack; interactive islands via **M54 Conduit** (`almasix.conduit`)
 - **API kit:** JSON-polarity routes, token auth (pairs with M37), no session/CSRF middleware
-- **SPA kit:** Vue / React front end over an Inertia-class bridge (server-side adapter + client package), the one stack M32 deliberately defers
+- **SPA kit:** Vue / React front end over **M55 almasix-inertia** (official `@inertiajs/*` clients), the one stack M32 deliberately defers
 - Selected by `almasix new` prompt / flag; each kit is a stub overlay, not a fork of the scaffold
 - Docs: Starlight **Starter Kits** per kit
 
-**Depends on:** M32 (scaffold stacks), M7 auth (done), M37 for API tokens, M6 Prism for the web kit.
+**Depends on:** M32 (scaffold stacks), M7 auth (done), M37 for API tokens, M6 Prism for the web kit, **M54 Conduit** for web islands, **M55 Inertia (I1+)** for SPA.
 
 **Gate:** each kit boots, authenticates, and is covered by smoke; kits share the scaffold stub tree.
+
+**Do not start kit overlays until M54 Conduit and M55 I1 are green.**
+
+### M54 — almasix.conduit (Livewire 4 parity)
+
+Livewire 4–class stack in async Python: Prism components, Alpine `$wire`, morph updates, CSRF-safe wire protocol, islands, client `wire:bind` / `wire:text` for JS-feel UX.
+
+**Status: complete (in-tree as `src/almasix/conduit/`).** Formerly sketched as “Flux”; renamed **Conduit** to avoid collision with Livewire’s Flux UI kit and to nest under `almasix.conduit`.
+
+- Import: `from almasix.conduit import Component, Conduit, conduit`
+- Extra `almasix[conduit]`; `POST /conduit/update`; client `/conduit/conduit.js`
+- Livewire vocabulary (`wire:*`) retained; LW4 parity matrix in Starlight **Conduit**
+- Progress: `smith progress:conduit`; board M54; smoke `tests/smoke/test_m54_smoke.py`
+
+**Depends on:** M6 Prism, M5 session/CSRF, foundation providers.
+
+**Gate:** protocol + LW4 matrix documented; smoke green; performance path (coalesce, morph, client bindings, islands) shipped.
+
+### M55 — almasix-inertia (Inertia server adapter)
+
+Server-only Inertia.js adapter compatible with official clients. **No forked client.** SSR via Inertia’s Node SSR protocol.
+
+**Status: complete (in-monorepo).** Extract to `almasix-dev/inertia` when maintainers cut the publish repo.
+
+- Package `packages/inertia/` → PyPI `almasix-inertia` / extra `almasix[inertia]`
+- `Inertia.render` Responsable; `X-Inertia` JSON; asset version 409; shared + partial props
+- Lazy / optional / defer / once / merge props; flash errors; subpath-aware page `url`
+- Root Prism `@inertia` / `@inertiaHead`; `smith inertia:start-ssr`; SSR graceful fallback
+- Progress: `smith progress:inertia`; board M55; smoke `tests/smoke/test_m55_smoke.py`
+- Extract checklist: `packages/inertia/EXTRACT.md` → `almasix-dev/inertia`
+
+**Depends on:** M6 Prism, M5 HTTP/session, Vite asset helpers.
+
+**Gate:** I0–I2 green; HTML shell + JSON visits + SSR contract covered.
 
 ### M37 — API tokens, OAuth, and social auth
 
@@ -1893,9 +1928,9 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**Suggested next:** Autopilot batch **M53 → M45 → M46 → M47 → M52** is complete. **Later:** M36 starter kits, M48 MCP / agents (and Socialite / Passport outside Signet).
+**Suggested next:** **M36** starter kits (unblocked: M54 Conduit + M55 Inertia). **Later:** M48 MCP / agents (and Socialite / Passport outside Signet).
 
-**Recently closed:** M52 Sonar (`@almasix/sonar` + driver alias); M46 Almasix language server (`almasix-lsp`); M45 Prism language support; M53 Chrono; M37 Signet-class API tokens (PATs + SPA cookie auth; Socialite / Passport / client API keys deferred); M39 docs journey + Prologue; M38 deployment; M51 lint gate; M25 L13 Mongo audit; M44 multi-engine CI; M32–M35.
+**Recently closed:** **M54** almasix.conduit (Livewire 4 target; renamed from Flux); **M55** almasix-inertia; M52 Sonar; M46 Almasix language server; M45 Prism language support; M53 Chrono; M37 Signet; M39 docs; M38 deployment; M51 lint; M25 L13 Mongo; M44 multi-engine CI; M32–M35.
 
 **M39** — Prologue published; Basics teaching order; no milestone IDs in Starlight; header version switcher is **latest major** + `main` (never defaulting to `main`) with an older-docs banner when not on latest.
 

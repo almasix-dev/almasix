@@ -1203,11 +1203,36 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 
 ---
 
+## M54 — almasix.conduit (Livewire 4 parity)
+
+### M54 exit criteria
+
+- [x] `src/almasix/conduit/` provider, `Component`, `POST /conduit/update`, Alpine `$wire` client
+- [x] `from almasix.conduit import …` namespace (not top-level `flux`)
+- [x] Livewire 4 surface: coalescing, idiomorph-lite, wire:bind/text/show, islands, intersect, ref, data-loading
+- [x] **Subpath-safe:** `@conduitScripts` + client honor `APP_BASE_PATH` (no hardcoded `/conduit/update`)
+- [x] **Signed updates:** `POST /conduit/update` requires `signed:relative` HMAC; client uses rotated endpoint
+- [x] Parity matrix in Starlight **Conduit** — all rows `complete` (`almasix.conduit.parity.PARITY`)
+- [x] `Route.conduit()`, `WithPagination`, `Computed`/`Locked`, `make:conduit`, islands, navigate, entangle
+- [x] `smith progress:conduit`; board marks M54 complete; `tests/smoke/test_m54_smoke.py`
+
+## M55 — almasix-inertia (Inertia adapter)
+
+### M55 exit criteria
+
+- [x] `packages/inertia/` provider, `Inertia.render`, `X-Inertia` JSON, version 409, shared/partial props
+- [x] Lazy / optional / defer / once / merge props; flash errors; subpath-aware page `url`
+- [x] Root `@inertia` / `@inertiaHead`; SSR Node contract + `inertia:start-ssr`; graceful fallback
+- [x] Starlight **Inertia**; extract-ready for `almasix-dev/inertia` (`EXTRACT.md`)
+- [x] `smith progress:inertia`; board marks M55 complete; `tests/smoke/test_m55_smoke.py`
+
+---
+
 ## Out of scope until later milestones
 
-- Digging Deeper leftovers: starter kits (M36), MCP (M48) — package guidelines (M29) shipped
-- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52)
-- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47 → M52** complete; **M29** complete; M36 / M48 later
+- Digging Deeper leftovers: starter kits (M36), MCP (M48) — package guidelines (M29) shipped; **M54 Conduit** + **M55 Inertia** closed (pre-M36)
+- Promoted out of "Later" and now scheduled: console exhaust (M30), scheduler exhaust (M31), interactive installer + stacks (M32), router DX / named routes (M33), security headers + CORS (M34), rate limiting (M35), starter kits (M36), tokens / OAuth / social auth (M37), deployment (M38), docs journey rewrite + versioning + Prologue (M39), Carbon-class dates (M53), IDE track (M45–M47), first-party realtime client (M52), Conduit (M54), Inertia (M55)
+- **Autopilot batch (2026-09-10):** M44 + M25 + M51 + M38 + M39 + **M37** complete; **M53 → M45 → M46 → M47 → M52** complete; **M29** complete; **M54** + **M55** complete; M36 / M48 later
 - Parity reference: **Laravel 13.x** docs
 - IDE and editor tooling: **M45–M47** closed (thorough VS Code-family + JetBrains sideload); **M48** MCP later; **M52** Sonar closed
 - Localization + Mutators/Casts **docs** (code already shipped M4/M5)
