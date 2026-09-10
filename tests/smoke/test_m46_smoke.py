@@ -69,4 +69,6 @@ def test_m46_board_marks_lsp_complete(progress_client: TestClient) -> None:
     assert any("DB.table" in item for item in by_id["M46"]["proof"])
     assert any("user." in item or "attribute" in item.lower() for item in by_id["M46"]["proof"])
     assert any("@if" in item or "directive" in item.lower() for item in by_id["M46"]["proof"])
-    assert any("formatting" in item.lower() or "format_prism" in item for item in by_id["M46"]["proof"])
+    assert any(
+        "formatting" in item.lower() or "format_prism" in item for item in by_id["M46"]["proof"]
+    )

@@ -540,9 +540,7 @@ def template_var_context_at(source: str, line: int, character: int) -> CursorCon
     )
 
 
-_ATTR_ACCESS_RE = re.compile(
-    r"(?P<recv>[A-Za-z_][\w]*)\.(?P<prefix>[A-Za-z_][\w]*)?$"
-)
+_ATTR_ACCESS_RE = re.compile(r"(?P<recv>[A-Za-z_][\w]*)\.(?P<prefix>[A-Za-z_][\w]*)?$")
 
 
 def attribute_context_at(

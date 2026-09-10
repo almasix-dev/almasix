@@ -38,9 +38,7 @@ def test_directive_snippet_keeps_at_and_closes_blocks() -> None:
 
 def test_directive_snippet_bakes_line_indent() -> None:
     """Continuation lines include the opener's indent so @endif aligns in JetBrains."""
-    assert directive_snippet("if", indent="    ") == (
-        "@if($1)\n        $0\n    @endif"
-    )
+    assert directive_snippet("if", indent="    ") == ("@if($1)\n        $0\n    @endif")
     assert directive_snippet("auth", indent="  ") == "@auth\n      $0\n  @endauth"
 
 
@@ -134,10 +132,8 @@ def test_route_names_inside_echo_and_after_bare_paren(progress_index) -> None:
     assert chosen.end_character == bare.index(")") + 1
     # Applying the edit must keep the surrounding echo braces.
     start, end = chosen.start_character, chosen.end_character
-    assert (
-        bare[:start] + chosen.insert_text + bare[end:]
-        == f"{{{{ route('{route_name}') }}}}"
-    )
+    assert bare[:start] + chosen.insert_text + bare[end:] == f"{{{{ route('{route_name}') }}}}"
+
 
 def test_at_route_directive_then_route_names(progress_index) -> None:
     """Accepting ``@route`` inserts a quoted arg; names complete inside it."""

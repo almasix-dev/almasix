@@ -594,9 +594,7 @@ def _compile_fragment(
             "if isinstance(k, str) and not k.startswith('_') "
             "and k not in ('context', 'engine')})"
         )
-        emit(
-            "context.update({k: __ns[k] for k in list(__ns) if not str(k).startswith('__')})"
-        )
+        emit("context.update({k: __ns[k] for k in list(__ns) if not str(k).startswith('__')})")
 
     while i < len(matches):
         match = matches[i]

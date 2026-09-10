@@ -380,9 +380,7 @@ def _completions_for_var(
         shared=index.view_shared,
     )
     names = _filter_prefix(sorted(merged), ctx.prefix)
-    return [
-        _string_completion(name, "var", ctx, detail=merged[name].detail) for name in names
-    ]
+    return [_string_completion(name, "var", ctx, detail=merged[name].detail) for name in names]
 
 
 def _completions_for_env(index: AppIndex, ctx: CursorContext) -> list[CompletionItem]:
@@ -423,8 +421,7 @@ def _completions_for_attr(index: AppIndex, ctx: CursorContext) -> list[Completio
     info = index.tables[table]
     names = _filter_prefix(sorted(info.columns), ctx.prefix)
     return [
-        _string_completion(name, "attr", ctx, detail=info.columns[name].detail)
-        for name in names
+        _string_completion(name, "attr", ctx, detail=info.columns[name].detail) for name in names
     ]
 
 

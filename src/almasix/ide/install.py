@@ -76,10 +76,11 @@ def install_editor_config(
         _write_jetbrains_note(root, result, force=force)
 
     result.notes.append(f"Editor packages: {_IDE_SUPPORT_REPO}")
-    result.notes.append(f"VS Code: Marketplace {_VS_MARKETPLACE} or VSIX from {_IDE_SUPPORT_RELEASES}")
     result.notes.append(
-        "JetBrains: Marketplace plugin com.almasix.ide or zip from "
-        f"{_IDE_SUPPORT_RELEASES}"
+        f"VS Code: Marketplace {_VS_MARKETPLACE} or VSIX from {_IDE_SUPPORT_RELEASES}"
+    )
+    result.notes.append(
+        f"JetBrains: Marketplace plugin com.almasix.ide or zip from {_IDE_SUPPORT_RELEASES}"
     )
     return result
 
