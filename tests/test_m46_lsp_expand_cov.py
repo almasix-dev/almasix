@@ -244,9 +244,20 @@ def test_more_coverage_edges(
     )
     assert sum(1 for r in refs if r.path == py) == 1
 
-    # walk real app for references (hits rglob branch)
+    # walk real app for references (hits pruned source walk)
     many = find_view_references(index, view_name)
     assert many
+
+    # Monorepo-shaped root with a decoy node_modules must not hang or explode.
+    decoy = tmp_path / "monorepo"
+    (decoy / "app").mkdir(parents=True)
+    (decoy / "node_modules" / "left-pad").mkdir(parents=True)
+    (decoy / "node_modules" / "left-pad" / "index.js").write_text("x", encoding="utf-8")
+    (decoy / "website" / "node_modules" / "x").mkdir(parents=True)
+    (decoy / "app" / "hit.py").write_text(f'view("{view_name}")\n', encoding="utf-8")
+    decoy_index = AppIndex(base_path=decoy, views=dict(index.views))
+    decoy_refs = find_view_references(decoy_index, view_name)
+    assert any(r.path.name == "hit.py" for r in decoy_refs)
 
     # references without document_path
     src = f'view("{view_name}")'

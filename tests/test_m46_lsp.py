@@ -49,6 +49,14 @@ def test_find_app_root_and_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     assert "bootstrap/app.py" in empty.error
 
 
+def test_find_app_root_discovers_nested_progress() -> None:
+    repo = Path(__file__).resolve().parents[1]
+    found = find_app_root(repo)
+    assert found is not None
+    assert (found / "bootstrap" / "app.py").is_file()
+    assert found.name == "progress"
+
+
 def test_flatten_config_and_discover_helpers(tmp_path: Path) -> None:
     keys = flatten_config({"app": {"name": "X", "nested": {"a": 1}}, "_skip": 1})
     assert "app" in keys

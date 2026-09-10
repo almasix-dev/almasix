@@ -1,10 +1,25 @@
 {
   "name": "prism",
-  "scopeName": "text.html.prism",
-  "fileTypes": [
-    {
-      "name": "Prism",
-      "extensions": ["prism.html"]
-    }
-  ]
+  "displayName": "Almasix Prism",
+  "contributes": {
+    "languages": [
+      {
+        "id": "Prism",
+        "aliases": ["Prism", "prism-html"],
+        "extensions": [".prism.html"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "Prism",
+        "scopeName": "text.html.prism",
+        "path": "./syntaxes/prism.tmLanguage.json",
+        "embeddedLanguages": {
+          "source.python": "python",
+          "text.html.basic": "html"
+        }
+      }
+    ]
+  }
 }

@@ -56,6 +56,16 @@ def test_m47_artifacts_exist() -> None:
     jb = REPO / "editors" / "jetbrains"
     assert (jb / "build.gradle.kts").is_file()
     assert (jb / "README.md").is_file()
+    plugin_xml = (jb / "src" / "main" / "resources" / "META-INF" / "plugin.xml").read_text(
+        encoding="utf-8"
+    )
+    assert "PrismFileTypeOverrider" in plugin_xml
+    assert 'fileNamePatterns="*.prism.html"' in plugin_xml
+    tm_pkg = (jb / "src" / "main" / "resources" / "textMate" / "prism" / "package.json").read_text(
+        encoding="utf-8"
+    )
+    assert '"contributes"' in tm_pkg
+    assert '"language": "Prism"' in tm_pkg
     # Zip is produced by ./gradlew buildPlugin; tolerate missing in bare checkouts
     # but prefer it when present (CI / local M47 gate).
     zips = list((jb / "build" / "distributions").glob("*.zip")) if (jb / "build").is_dir() else []
