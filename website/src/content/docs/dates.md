@@ -12,7 +12,7 @@ reach for raw `datetime` only when an external API demands it.
 
 ## Creating instances
 
-```python
+```python title="examples/dates.py"
 from almasix.chrono import Chrono
 
 Chrono.now()
@@ -35,7 +35,7 @@ timestamps.
 
 Chrono instances are timezone-aware (default UTC).
 
-```python
+```python title="examples/dates.py"
 from datetime import UTC
 
 paris = Chrono.now("Europe/Paris")
@@ -46,7 +46,7 @@ converted = paris.set_timezone("America/New_York")  # convert the instant
 
 ## Adding and subtracting
 
-```python
+```python title="examples/dates.py"
 moment = Chrono.parse("2024-01-31")
 
 moment.add_days(1)
@@ -59,7 +59,7 @@ Month arithmetic clamps the day (Jan 31 + 1 month → Feb 29/28).
 
 ## Boundaries
 
-```python
+```python title="examples/dates.py"
 moment.start_of_day()
 moment.end_of_month()
 moment.start_of_week()      # Monday by default
@@ -72,7 +72,7 @@ Also: `start_of_hour` / `end_of_hour`, `start_of_minute` / `end_of_minute`,
 
 ## Comparisons
 
-```python
+```python title="examples/dates.py"
 a = Chrono.parse("2024-06-01")
 b = Chrono.parse("2024-06-02")
 
@@ -87,7 +87,7 @@ Aliases mirror Carbon where useful: `equal_to`, `greater_than_or_equal_to`, etc.
 
 ## Diffs
 
-```python
+```python title="examples/dates.py"
 a.diff_in_days(b)                 # 1.0
 a.diff_for_humans(b)              # "1 day ago"
 b.diff_for_humans(a)              # "in 1 day"
@@ -96,7 +96,7 @@ a.diff_for_humans(b, absolute=True)  # "1 day"
 
 ## Formatting
 
-```python
+```python title="examples/dates.py"
 moment.to_date_string()       # 2024-06-15
 moment.to_time_string()       # 14:30:00
 moment.to_datetime_string()   # 2024-06-15 14:30:00
@@ -106,7 +106,7 @@ moment.format("%A, %d %B %Y")
 
 ## Helpers
 
-```python
+```python title="examples/dates.py"
 from almasix.support.helpers import now, today, set_test_now
 
 now()      # Chrono
@@ -115,7 +115,7 @@ today()    # Chrono at 00:00:00
 
 ## Testing: freeze and travel
 
-```python
+```python title="examples/dates.py"
 from almasix.chrono import Chrono, freeze, travel_to, travel, return_time
 
 travel_to("2020-01-01")
@@ -131,9 +131,18 @@ with freeze("2021-05-05"):
 `set_test_now` on both `Chrono` and the support helpers talks to the same clock,
 so ORM code that calls `now()` freezes with your tests.
 
-## Living example
+## Try it in your app
 
-```bash
-cd examples/progress
-python smith progress:dates
+Use Chrono in a Smith command, a controller, or a test:
+
+```python title="examples/dates.py"
+from almasix.chrono import Chrono, freeze
+
+print(Chrono.now().add_days(3).to_date_string())
+
+with freeze("2021-05-05"):
+    assert Chrono.today().year == 2021
 ```
+
+Run the command from your app root (`python smith …`) or assert the freeze
+inside your test suite.

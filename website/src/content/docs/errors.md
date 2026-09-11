@@ -7,8 +7,7 @@ description: Exception Handler, polarity-aware pages, APP_DEBUG, and publishable
 
 Unhandled exceptions pass through `almasix.exceptions.Handler` — `report(exc)` for logging via [`almasix.log`](/logging/) (`Log.info` / …), `render(request, exc)` for the HTTP response. Apps override at `app/exceptions/handler.py` (resolved from the container).
 
-```python
-# app/exceptions/handler.py
+```python title="app/exceptions/handler.py"
 from almasix.exceptions import Handler as ExceptionHandler
 
 class Handler(ExceptionHandler):
@@ -50,7 +49,7 @@ The security gate is **`APP_DEBUG` only** (not `APP_ENV`):
 
 ## Publishable views
 
-```bash
+```bash title="terminal"
 python smith errors:publish
 python smith errors:publish --bundle=tailwind
 python smith errors:publish --bundle=bootstrap --force

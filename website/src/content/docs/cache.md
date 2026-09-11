@@ -9,7 +9,7 @@ Almasix’s cache layer stores temporary data behind a single façade. Use it to
 memoize expensive work, share short-lived state between requests, and take
 cross-process locks for scheduled tasks or jobs.
 
-```python
+```python title="examples/cache.py"
 from almasix.cache import Cache, cache
 
 Cache.put("users:1", {"name": "Ada"}, 60)
@@ -29,13 +29,12 @@ from the environment:
 | `CACHE_STORE` | `file` | Name of the default store (`array`, `file`, `database`, `null`, …) |
 | `CACHE_PREFIX` | `almasix_cache_` | Prefix applied to every cache key |
 
-```ini
+```ini title="examples/cache.json"
 CACHE_STORE=file
 CACHE_PREFIX=almasix_cache_
 ```
 
-```python
-# config/cache.py
+```python title="config/cache.py"
 from almasix.config import env
 
 config = {
@@ -72,7 +71,7 @@ config = {
 | **redis** | Shared cache via Redis (`almasix[redis]`) — tags and locks supported |
 | **null** | Disable caching without removing call sites (writes accepted, reads miss) |
 
-```python
+```python title="examples/cache.py"
 Cache.store("redis").put("logo", svg, 3600)
 Cache.store("redis").tags("assets").put("logo", svg, 3600)
 ```
@@ -81,14 +80,14 @@ See [Redis](/redis/) for connection configuration.
 
 Switch stores per call:
 
-```python
+```python title="examples/cache.py"
 Cache.store("file").put("logo", svg, 3600)
 Cache.store("database").get("logo")
 ```
 
 ## Retrieving items
 
-```python
+```python title="examples/cache.py"
 Cache.get("users:1")
 Cache.get("missing", "default")
 Cache.get("missing", lambda: expensive_default())
@@ -102,7 +101,7 @@ Cache.pull("users:1")   # get + forget
 
 ### Storing items
 
-```python
+```python title="examples/cache.py"
 Cache.put("users:1", {"name": "Ada"}, 60)
 Cache.put_many({"a": 1, "b": 2}, 60)
 Cache.forever("config", payload)
@@ -115,7 +114,7 @@ TTL may be seconds, a `timedelta`, or an aware/naive `datetime`.
 
 ### Remembering values
 
-```python
+```python title="examples/cache.py"
 value = Cache.remember("answer", 60, lambda: expensive())
 value = Cache.remember_forever("config", lambda: load_config())
 ```
@@ -124,7 +123,7 @@ value = Cache.remember_forever("config", lambda: load_config())
 
 ### The `cache()` helper
 
-```python
+```python title="examples/cache.py"
 from almasix.cache import cache
 
 cache("users:1")          # get
@@ -134,7 +133,7 @@ repo = cache()            # default store repository
 
 ### Incrementing / decrementing
 
-```python
+```python title="examples/cache.py"
 Cache.increment("hits")
 Cache.increment("hits", 5)
 Cache.decrement("hits")
@@ -145,7 +144,7 @@ every store (process lock / `flock` / `INSERT OR IGNORE`).
 
 ### Removing items
 
-```python
+```python title="examples/cache.py"
 Cache.forget("users:1")
 Cache.flush()
 ```
@@ -154,7 +153,7 @@ Cache.flush()
 
 The database driver ensures two tables on first use:
 
-```sql
+```sql title="examples/cache.sql"
 -- cache
 key VARCHAR(255) PRIMARY KEY, value BLOB, expiration INTEGER NULL
 
@@ -169,7 +168,7 @@ You can also call `ensure_cache_table()` / `ensure_cache_table_sync()` from
 
 Locks coordinate work across processes:
 
-```python
+```python title="examples/cache.py"
 lock = Cache.lock("invoices:settle", seconds=10)
 if lock.get():
     try:
@@ -209,7 +208,7 @@ Tags let you invalidate related keys as a group. They work on the **array** and
 **redis** stores. File and database stores raise `RuntimeError` if you call
 `tags()` — Almasix is honest about driver support.
 
-```python
+```python title="examples/cache.py"
 Cache.tags("users", "authors").put("ada", user, 60)
 Cache.tags("users", "authors").get("ada")
 Cache.tags("users", "authors").remember("ada", 60, lambda: load())
@@ -220,7 +219,7 @@ Cache.tags("users", "authors").flush()
 
 ## Custom drivers
 
-```python
+```python title="examples/cache.py"
 from almasix.cache import Cache
 from almasix.cache.store import Repository
 

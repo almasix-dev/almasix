@@ -3,14 +3,16 @@ title: Requests
 description: Inspect the incoming HTTP request with Almasix's Request bag.
 ---
 
-Almasix's `Request` is the application façade over the ASGI request. Application code should type-hint `almasix.http.Request`, not Starlette/FastAPI request types.
+**`Request`** is Almasix’s façade over the incoming ASGI request. Type-hint
+`almasix.http.Request` in controllers — not the underlying Starlette request
+type.
 
 ## Accessing the request
 
-Inject `Request` into a controller action (or use a [`FormRequest`](/validation/), which proxies to the same bag):
+Inject `Request` into a controller action (or use a [`FormRequest`](/validation/),
+which proxies to the same bag):
 
-```python
-# app/http/controllers/demo_controller.py
+```python title="app/http/controllers/demo_controller.py"
 from almasix.http import Controller, Request
 
 
@@ -37,18 +39,19 @@ class DemoController(Controller):
 | `has` / `has_any` / `filled` / `missing` | Presence helpers |
 | `boolean` / `integer` / `float` / `string` | Coercion helpers |
 
-```python
-# app/http/controllers/demo_controller.py
+```python title="app/http/controllers/demo_controller.py"
 request.input("email")
 request.query("page", 1)
 request.route("post")
 request.merge({"source": "demo"})
 ```
 
+Path parameters stay out of `all()` / `input()` on purpose: a query string
+cannot impersonate a path segment.
+
 ## Headers, cookies, and client metadata
 
-```python
-# app/http/controllers/demo_controller.py
+```python title="app/http/controllers/demo_controller.py"
 request.header("Accept")
 request.cookie("theme")
 request.bearer_token()
@@ -58,21 +61,25 @@ request.is_json()
 request.is_method("POST")
 ```
 
+When form method spoofing is on, `request.method` is the intended verb,
+`request.real_method` is what actually arrived, and `request.spoofed_method`
+is the `_method` value (or `None`). See [Routing](/routing/#form-method-spoofing).
+
 ## Files
 
-```python
-# app/http/controllers/demo_controller.py
+```python title="app/http/controllers/demo_controller.py"
 if request.has_file("avatar"):
     upload = request.file("avatar")
     data = await upload.read()
 ```
 
-`UploadedFile` exposes `filename`, `content_type`, `size`, and async `read` / `seek`.
-File storage disks are covered under [File Storage](/filesystem/); until you wire a
-disk, handle bytes in the action or write to disk yourself.
+`UploadedFile` exposes `filename`, `content_type`, `size`, and async `read` /
+`seek`. File storage disks are covered under [File Storage](/filesystem/);
+until you wire a disk, handle bytes in the action or write to disk yourself.
 
 ## Related
 
 - [Validation](/validation/) — FormRequest on top of this bag
 - [Controllers](/controllers/)
 - [Responses](/responses/)
+- [Routing](/routing/) — path parameters and the current route

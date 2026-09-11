@@ -9,7 +9,7 @@ surface for operations a collection can answer, and raises
 
 ## Reading
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Article.query().where("views", ">", 100).count()
 await Article.query().where_in("status", ["draft", "review"]).get()
 await Article.query().where_null("deleted_at").order_by("created_at").limit(10).get()
@@ -42,7 +42,7 @@ Four filters exist because documents do, and SQL has no use for them:
 | `where_all("tags", ["a", "b"])` | an array field containing every value |
 | `where_size("tags", 3)` | an array field of exactly that length |
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Article.query().where_all("tags", ["math"]).where_size("tags", 2).get()
 await Article.query().where_regex("title", r"^Note", flags="i").get()
 await Article.query().where_exists_field("subtitle").get()
@@ -54,7 +54,7 @@ await Article.query().where_exists_field("subtitle").get()
 goes to the engine untouched; hand it a callable and the memory store evaluates
 it in Python (so tests stay offline):
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Article.query().where_raw({"$text": {"$search": "engines"}}).get()
 await Article.query().where_raw(lambda row: row["views"] > 100).get()
 ```
@@ -64,7 +64,7 @@ until Almasix grows first-class helpers for them.
 
 ## Writing
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Article.query().insert({"title": "One", "views": 0})
 await Article.query().where("views", 0).update({"published": False})
 await Article.query().where("id", key).upsert(
@@ -85,7 +85,7 @@ on SQL models.
 
 Offset pagination and simple pagination work on collections:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 page = await Article.query().order_by("created_at").paginate(15, page=2)
 simple = await Article.query().order_by("created_at").simple_paginate(15)
 await Article.query().chunk(100, handle)
@@ -102,7 +102,7 @@ A document store has no joins, no `GROUP BY`, and no SQL expressions. Rather
 than quietly returning something else, those calls raise
 `UnsupportedQueryError` and name the alternative:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 Article.query().join("authors", ...)    # UnsupportedQueryError
 Article.query().group_by("author_id")   # → use raw_aggregate()
 Article.query().having("views", ">", 1) # → use raw_aggregate()

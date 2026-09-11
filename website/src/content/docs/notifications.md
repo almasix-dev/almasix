@@ -5,7 +5,7 @@ description: Notifiable models, channels, database notifications, and email veri
 
 ## Notifiable
 
-```python
+```python title="examples/notifications.py"
 from almasix.notifications import Notifiable, Notification, notify
 
 class InvoicePaid(Notification):
@@ -29,7 +29,7 @@ Channels: **mail**, **database** (`notifications` table via `ensure_tables()`),
 The broadcast channel sends the notification to the notifiable's own private
 channel, so it arrives in an open browser as it is stored:
 
-```python
+```python title="examples/notifications.py"
 class InvoicePaid(Notification):
     def via(self, notifiable):
         return ["database", "broadcast"]
@@ -45,7 +45,7 @@ client authorizes itself.
 
 `NotificationServiceProvider` wires the password broker to `ResetPasswordNotification` (mail) by default.
 
-```python
+```python title="app/models/example.py"
 from almasix.notifications import MustVerifyEmail, Notifiable
 
 class User(AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):
@@ -55,7 +55,8 @@ url = user.verification_url()  # signed HMAC link
 await user.send_email_verification_notification()
 ```
 
-Progress ships `/email/verify`, `/email/verify/{id}/{hash}`, and the `verified` middleware on protected routes.
+Starter kits and the auth scaffold ship `/email/verify`,
+`/email/verify/{id}/{hash}`, and the `verified` middleware on protected routes.
 
 ## Related
 

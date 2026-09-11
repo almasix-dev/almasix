@@ -5,7 +5,7 @@ description: Jobs, sync and database drivers, workers, and failed jobs.
 
 ## Dispatching jobs
 
-```python
+```python title="examples/queues.py"
 from almasix.queue import Job, ShouldQueue, dispatch
 
 class SendDigest(ShouldQueue, Job):
@@ -32,8 +32,7 @@ Jobs without `ShouldQueue` (and without `queue = True`) run synchronously. Use `
 | `database` | `jobs` / `failed_jobs` tables | Call `ensure_tables()` or migrate |
 | `redis` | Redis lists + delayed ZSET | Requires `almasix[redis]`; see [Redis](/redis/) |
 
-```python
-# config/queue.py
+```python title="config/queue.py"
 "redis": {
     "driver": "redis",
     "connection": "default",
@@ -41,13 +40,13 @@ Jobs without `ShouldQueue` (and without `queue = True`) run synchronously. Use `
 },
 ```
 
-```ini
+```ini title="examples/queues.json"
 QUEUE_CONNECTION=redis
 ```
 
 ## Workers
 
-```bash
+```bash title="terminal"
 python smith queue:work
 python smith queue:listen
 python smith queue:failed

@@ -1,19 +1,19 @@
 ---
 title: Query Builder
-description: A fluent interface for reading and writing rows — wheres, joins, unions, locking, and everything Laravel's query builder spells, awaited.
+description: A fluent interface for reading and writing rows — wheres, joins, unions, locking, and aggregates — always awaited.
 ---
 
 ## Introduction
 
 The query builder is a fluent interface for most of the database work an
-application does. It runs on every supported driver, and it never puts your
+application does. It runs on every supported SQL driver, and it never puts your
 values into the SQL string: bindings go to the driver, so a query is safe to
 build from user input.
 
 Start from a table for rows, or from an [Articulate model](/articulate/) for
 models:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 from almasix.orm import DB
 
 rows = await DB.table("users").where("votes", ">", 100).get()
@@ -30,7 +30,7 @@ their kind are the coroutines; everything else builds.
 `get` returns a [collection](/collections/) — of dictionaries from a table, of
 models from a model:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 users = await DB.table("users").get()
 
 for user in users:
@@ -39,7 +39,7 @@ for user in users:
 
 ### Retrieving a single row or column
 
-```python
+```python title="app/http/controllers/user_controller.py"
 user = await DB.table("users").where("name", "Ada").first()
 user = await DB.table("users").where("name", "Ada").first_or_fail()
 user = await DB.table("users").where("name", "Ada").sole()
@@ -53,7 +53,7 @@ more than one raises `MultipleRecordsFoundError`.
 
 ### Retrieving a list of column values
 
-```python
+```python title="app/http/controllers/role_controller.py"
 titles = await DB.table("roles").pluck("title")
 titles = await DB.table("roles").pluck("title", "name")   # keyed by name
 names = await DB.table("users").implode("name", ", ")     # one joined string
@@ -64,7 +64,7 @@ names = await DB.table("users").implode("name", ", ")     # one joined string
 Thousands of rows do not have to be in memory at once. `chunk` reads a page at
 a time and hands each page to a callback; returning `False` stops it:
 
-```python
+```python title="app/console/commands/process_users.py"
 await DB.table("users").order_by("id").chunk(100, handle_page)
 
 async def handle_page(users):
@@ -76,7 +76,7 @@ When the callback updates the rows it is reading, order by the primary key and
 use `chunk_by_id`, which pages by the last id seen rather than by offset — an
 updated row can otherwise slide out from under the paging:
 
-```python
+```python title="app/console/commands/activate_users.py"
 await DB.table("users").where("active", False).chunk_by_id(100, activate)
 await DB.table("users").each(send_reminder, size=200)
 ```
@@ -86,7 +86,7 @@ await DB.table("users").each(send_reminder, size=200)
 `lazy` gives back a lazy collection that reads a chunk at a time as it is
 iterated, so the whole set is never in memory:
 
-```python
+```python title="app/console/commands/export_users.py"
 async for user in DB.table("users").order_by("id").lazy():
     ...
 
@@ -98,18 +98,18 @@ async for user in DB.table("users").lazy_by_id(500):
 
 ### Aggregates
 
-```python
+```python title="app/http/controllers/stats_controller.py"
 count = await DB.table("users").count()
 price = await DB.table("orders").max("price")
 average = await DB.table("orders").where("finalized", True).avg("price")
 total = await DB.table("orders").sum("price")
 ```
 
-`average` is spelled both ways, as it is in Laravel.
+`average` is an alias of `avg`.
 
 ### Determining if records exist
 
-```python
+```python title="app/http/controllers/order_controller.py"
 if await DB.table("orders").where("finalized", True).exists():
     ...
 
@@ -119,7 +119,7 @@ if await DB.table("orders").where("finalized", True).doesnt_exist():
 
 ## Select statements
 
-```python
+```python title="app/http/controllers/user_controller.py"
 users = await DB.table("users").select("name", "email as user_email").get()
 users = await DB.table("users").distinct().get()
 
@@ -133,7 +133,7 @@ users = await query.add_select("age").get()
 never escaped, so keep user input out of them and pass it as a binding
 instead:
 
-```python
+```python title="app/http/controllers/stats_controller.py"
 await DB.table("users").select_raw("count(*) as user_count, status").group_by("status").get()
 
 await DB.table("orders").where_raw("price > IF(state = 'TX', :low, :high)", {"low": 200, "high": 100}).get()
@@ -149,7 +149,7 @@ await DB.table("orders").select("department").group_by_raw("department, status")
 
 ### Inner and outer joins
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await (
     DB.table("users")
     .join("contacts", "users.id", "=", "contacts.user_id")
@@ -171,7 +171,7 @@ works on every engine — including SQLite builds older than 3.39.
 Pass a callable instead of a column and it receives a join clause, which takes
 `on`, `or_on`, and the whole `where` family:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 DB.table("users").join(
     "contacts",
     lambda join: join.on("users.id", "=", "contacts.user_id").where("contacts.user_id", ">", 5),
@@ -190,7 +190,7 @@ DB.table("users").join(
 `join_sub`, `left_join_sub`, `right_join_sub`, and `cross_join_sub` join a
 query under a name:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 latest = (
     DB.table("posts")
     .select("user_id")
@@ -211,7 +211,7 @@ A lateral join lets the subquery read the row it is joined to, so "the three
 newest posts for each user" is one query. PostgreSQL, MySQL 8.0.14+, and SQL
 Server support it:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 latest = (
     DB.table("posts")
     .select("body")
@@ -225,20 +225,20 @@ await DB.table("users").left_join_lateral(latest, "latest_posts").get()
 
 ## Unions
 
-```python
+```python title="app/http/controllers/user_controller.py"
 first = DB.table("users").where_null("first_name")
 users = await DB.table("users").where_null("last_name").union(first).get()
 ```
 
 `union_all` keeps the duplicates a union drops. Ordering and paging asked for
-after a union apply to the combined result, as they do in Laravel.
+after a union apply to the combined result.
 
 ## Basic where clauses
 
 The canonical form is `where(column, operator, value)`. The two-argument form
 means `=`, and it never guesses: `where("op", ">")` is `op = '>'`.
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").where("votes", "=", 100).get()
 await DB.table("users").where("votes", 100).get()
 await DB.table("users").where("votes", ">=", 100).where("name", "like", "T%").get()
@@ -253,7 +253,7 @@ passed through.
 Every `where` has an `or_where` twin. Group what should be grouped by passing a
 callable — `or_where` with a group keeps the parentheses where you meant them:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await (
     DB.table("users")
     .where("votes", ">", 100)
@@ -266,7 +266,7 @@ await (
 
 `where_not` negates a whole group:
 
-```python
+```python title="app/http/controllers/product_controller.py"
 await (
     DB.table("products")
     .where_not(lambda query: query.where("clearance", True).or_where("price", "<", 10))
@@ -278,7 +278,7 @@ await (
 
 The same condition against several columns:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").where_any(["name", "email", "phone"], "like", "Example%").get()
 await DB.table("users").where_all(["name", "email"], "like", "Example%").get()
 await DB.table("users").where_none(["name", "email"], "like", "Example%").get()
@@ -286,10 +286,10 @@ await DB.table("users").where_none(["name", "email"], "like", "Example%").get()
 
 ### JSON where clauses
 
-Reach inside a JSON column with Laravel's arrow syntax. MySQL 8+, PostgreSQL,
+Reach inside a JSON column with `->` path syntax. MySQL 8+, PostgreSQL,
 SQLite 3.39+, and SQL Server 2016+ can all read it:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").where("preferences->dining->meal", "salad").get()
 
 await DB.table("users").where_json_contains("options->languages", "en").get()
@@ -316,7 +316,7 @@ await DB.table("users").where_json_length("options->languages", ">", 1).get()
 | `where_like` / `where_not_like` | A pattern, optionally `case_sensitive=True` |
 | `where_belongs_to` | Rows belonging to a model instance |
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").where_between("votes", [1, 100]).get()
 await DB.table("users").where_in("id", [1, 2, 3]).get()
 await DB.table("users").where_in("id", DB.table("comments").select("user_id")).get()
@@ -334,7 +334,7 @@ Case sensitivity is the one thing engines disagree about: MySQL gets
 
 A callable is a parenthesised group:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await (
     DB.table("users")
     .where("name", "=", "John")
@@ -347,7 +347,7 @@ await (
 
 ### Where exists clauses
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await (
     DB.table("users")
     .where_exists(
@@ -363,7 +363,7 @@ await (
 
 A subquery may stand on either side of a comparison:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await (
     DB.table("users")
     .where(
@@ -386,7 +386,7 @@ await DB.table("incomes").where("amount", "<", DB.table("incomes").select_raw("A
 MySQL/MariaDB, `to_tsvector`/`to_tsquery` on PostgreSQL. An engine without one
 says so rather than quietly matching something else:
 
-```python
+```python title="app/http/controllers/post_controller.py"
 await DB.table("posts").where_full_text(["title", "body"], "rain shadow").get()
 await DB.table("posts").where_full_text("body", "+rain -snow", mode="boolean").get()
 await DB.table("posts").where_full_text("body", "rain", mode="websearch", language="english").get()
@@ -396,7 +396,7 @@ await DB.table("posts").where_full_text("body", "rain", mode="websearch", langua
 
 For pgvector and MariaDB's vector columns:
 
-```python
+```python title="app/http/controllers/document_controller.py"
 await DB.table("documents").where_vector_similar_to("embedding", query_vector, min_similarity=0.75).get()
 await DB.table("documents").select_vector_distance("embedding", query_vector, alias="distance").get()
 await DB.table("documents").order_by_vector_distance("embedding", query_vector).limit(10).get()
@@ -404,7 +404,7 @@ await DB.table("documents").order_by_vector_distance("embedding", query_vector).
 
 ## Ordering, grouping, limit and offset
 
-```python
+```python title="app/http/controllers/user_controller.py"
 DB.table("users").order_by("name", "desc")
 DB.table("users").order_by_desc("created_at")
 DB.table("users").latest()          # newest by created_at
@@ -427,7 +427,7 @@ into the clause — PostgreSQL will not read an alias there.
 
 ## Conditional clauses
 
-```python
+```python title="app/http/controllers/user_controller.py"
 DB.table("users").when(role, lambda query: query.where("role_id", role))
 DB.table("users").when(sort, lambda query: query.order_by("votes", sort), lambda query: query.order_by("name"))
 DB.table("users").unless(admin, lambda query: query.where("public", True))
@@ -435,7 +435,7 @@ DB.table("users").unless(admin, lambda query: query.where("public", True))
 
 ## Insert statements
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").insert({"email": "ada@example.com", "votes": 0})
 await DB.table("users").insert([
     {"email": "ada@example.com", "votes": 0},
@@ -453,7 +453,7 @@ engine that knows about conflicts (SQLite, MySQL, PostgreSQL).
 
 ### Upserts
 
-```python
+```python title="app/http/controllers/flight_controller.py"
 await DB.table("flights").upsert(
     [
         {"departure": "Oakland", "destination": "San Diego", "price": 99},
@@ -474,23 +474,23 @@ The columns in `unique_by` need a unique index or constraint.
 
 ## Update statements
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").where("id", 1).update({"votes": 1})
 await DB.table("users").update_or_insert({"email": "ada@example.com"}, {"votes": 2})
 ```
 
 ### Updating JSON columns
 
-The arrow syntax works for writes too, and the surrounding document is left
+The `->` path syntax works for writes too, and the surrounding document is left
 alone:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").where("id", 1).update({"options->enabled": True})
 ```
 
 ### Increment and decrement
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").increment("votes")
 await DB.table("users").increment("votes", 5)
 await DB.table("users").decrement("votes", 5, name="Ada")
@@ -499,7 +499,7 @@ await DB.table("users").increment_each({"votes": 5, "balance": 100})
 
 ## Delete statements
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.table("users").delete()
 await DB.table("users").where("votes", ">", 100).delete()
 await DB.table("users").delete(1)     # by primary key
@@ -511,7 +511,7 @@ await DB.table("users").truncate()    # every row, and the counter back to one
 Locks hold the selected rows for the rest of the transaction, so they belong
 inside one:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 async with DB.transaction():
     await DB.table("users").where("votes", ">", 100).shared_lock().get()
 
@@ -527,7 +527,7 @@ An engine without row locks — SQLite — ignores the clause.
 `tap` runs a callable against the builder and hands the builder back, so a
 piece of a query can live in a function and be used from anywhere:
 
-```python
+```python title="app/support/queries.py"
 def popular(query):
     query.where("votes", ">", 100).order_by_desc("votes")
 
@@ -537,21 +537,21 @@ await DB.table("flights").tap(popular).where("destination", "Paris").get()
 `pipe` hands the builder to a callable and gives back whatever the callable
 returns, which is how a component can end a chain:
 
-```python
+```python title="app/http/controllers/flight_controller.py"
 paginator = await DB.table("flights").pipe(lambda query: query.paginate(15))
 ```
 
 `with_attributes` narrows a query and seeds the same values on anything it
 creates, so a scoped query cannot make a row it would not find:
 
-```python
+```python title="app/http/controllers/post_controller.py"
 posts = Post.query().with_attributes({"hidden": True})
 await posts.first_or_create({"title": "Draft"})   # hidden=True, without saying so twice
 ```
 
 ## Debugging
 
-```python
+```python title="app/http/controllers/user_controller.py"
 DB.table("users").where("votes", ">", 100).dump()          # SQL and bindings, keep going
 DB.table("users").where("votes", ">", 100).dump_raw_sql()  # values written in
 DB.table("users").where("votes", ">", 100).dd()            # print and stop

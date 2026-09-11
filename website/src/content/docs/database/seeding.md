@@ -3,17 +3,17 @@ title: Seeding
 description: Seed your database with test data using Almasix seeders.
 ---
 
-Almasix includes a simple method of seeding your database with test data using seed classes. All seeders live in `database/seeders`.
+Seeders fill the database with known rows for demos, local development, and
+tests. All seeders live in `database/seeders`.
 
 :::tip
 [Model factories](/database/factories/) are the usual source of seed rows:
 `await User.factory().count(10).create()`.
 :::
 
-
 ## Writing seeders
 
-```
+```text title="database/seeders"
 database/
   seeders/
     __init__.py
@@ -21,10 +21,10 @@ database/
     user_seeder.py
 ```
 
-`almasix new` ships an empty `DatabaseSeeder`. Override `run` and call child seeders:
+`almasix new` ships an empty `DatabaseSeeder`. Override `run` and call child
+seeders:
 
-```python
-# database/seeders/database_seeder.py
+```python title="database/seeders/database_seeder.py"
 from almasix.orm import Seeder
 from database.seeders.user_seeder import UserSeeder
 
@@ -36,8 +36,10 @@ class DatabaseSeeder(Seeder):
         # await self.call_silent([UserSeeder])
 ```
 
-```python
-# database/seeders/user_seeder.py
+```python title="database/seeders/user_seeder.py"
+from almasix.orm import Seeder
+
+
 class UserSeeder(Seeder):
     async def run(self, count: int = 1) -> None:
         from app.models.user import User
@@ -46,14 +48,17 @@ class UserSeeder(Seeder):
             await User.create(email=f"u{i}@example.com", name=f"User {i}")
 ```
 
+`call` runs each seeder; `call_once` skips a class that already ran in this
+process; `call_with` passes keyword arguments into `run`; `call_silent`
+suppresses the console output for nested calls.
+
 ## Seeding with factories
 
 Writing rows out by hand gets old at the third one. A
 [factory](/database/factories/) describes the row once and a seeder asks for
 as many as it wants, pinning only the columns that matter:
 
-```python
-# database/seeders/demo_seeder.py
+```python title="database/seeders/demo_seeder.py"
 from almasix.orm import Seeder
 
 from app.models.post import Post
@@ -69,9 +74,11 @@ class DemoSeeder(Seeder):
 
 ## Suppressing model events
 
-```python
-# database/seeders/quiet_seeder.py
+```python title="database/seeders/quiet_seeder.py"
 from almasix.orm import Seeder, WithoutModelEvents
+
+from app.models.user import User
+
 
 class QuietSeeder(WithoutModelEvents, Seeder):
     async def run(self) -> None:
@@ -82,13 +89,14 @@ You may also wrap a block with `without_model_events()`.
 
 ## Running seeders
 
-```bash
-python smith make:seeder UserSeeder
-python smith db:seed
-python smith db:seed --class UserSeeder
-python smith migrate --seed
-python smith migrate --seed --seeder UserSeeder
-python smith migrate:fresh --seed
+```bash title="terminal"
+smith make:seeder UserSeeder
+smith db:seed
+smith db:seed --class UserSeeder
+smith migrate --seed
+smith migrate --seed --seeder UserSeeder
+smith migrate:fresh --seed
 ```
 
-`--seeder` implies seeding (you may omit `--seed` when `--seeder` is set). The default class is `DatabaseSeeder`.
+`--seeder` implies seeding (you may omit `--seed` when `--seeder` is set). The
+default class is `DatabaseSeeder`.

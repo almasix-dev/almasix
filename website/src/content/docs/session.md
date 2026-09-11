@@ -10,8 +10,7 @@ the payload in Redis. The `api` group stays stateless (no session cookie).
 
 ## Web stack
 
-```python
-# bootstrap/app.py
+```python title="bootstrap/app.py"
 from almasix.session import EncryptCookies, StartSession, VerifyCsrfToken
 from almasix.auth.middleware import StartAuth
 
@@ -30,8 +29,7 @@ Order matters: decrypt cookies → start session → CSRF → hydrate auth.
 
 ## Request API
 
-```python
-# app/http/controllers/welcome_controller.py
+```python title="app/http/controllers/welcome_controller.py"
 request.session.put("locale", "fr")
 request.session.get("locale")
 request.session.flash("status", "Saved.")

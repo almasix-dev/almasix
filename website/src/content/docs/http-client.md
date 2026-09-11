@@ -5,11 +5,10 @@ description: Outbound Http.get/post façade with fakes, retry, pool, and async.
 
 ## Introduction
 
-Almasix’s HTTP client lives in `almasix.client`. It is the Laravel-shaped
-wrapper around **httpx** for *outbound* requests (calling other APIs). Inbound
-HTTP stays in `almasix.http`.
+Almasix’s HTTP client lives in `almasix.client`. It wraps **httpx** for
+*outbound* requests (calling other APIs). Inbound HTTP stays in `almasix.http`.
 
-```python
+```python title="examples/http-client.py"
 from almasix.client import Http
 
 response = Http.get("https://api.example.test/users")
@@ -38,7 +37,7 @@ The `ClientServiceProvider` (registered with the foundation) binds a process-wid
 
 ## Making requests
 
-```python
+```python title="examples/http-client.py"
 Http.get(url, query={"page": 1})
 Http.head(url)
 Http.post(url, {"name": "Ada"})
@@ -54,13 +53,13 @@ need form encoding, `with_body(content, content_type)` to send a raw payload, or
 `body_format()` to pick one of `json` / `form` / `multipart` / `body` directly —
 anything else raises `PendingRequestException`.
 
-```python
+```python title="examples/http-client.py"
 Http.with_body(base64.b64encode(photo), "image/jpeg").post(url)
 ```
 
 ### Fluent options
 
-```python
+```python title="examples/http-client.py"
 Http.with_headers({"X-Trace": "1"}).get(url)
 Http.with_token("secret").get(url)                 # Bearer
 Http.with_basic_auth("user", "pass").get(url)
@@ -72,7 +71,7 @@ Http.accept_json().as_json().post(url, {"ok": True})
 
 `when` / `unless` wrap optional configuration:
 
-```python
+```python title="examples/http-client.py"
 Http.when(use_token, lambda http: http.with_token(token)).get(url)
 ```
 
@@ -82,14 +81,14 @@ Http.when(use_token, lambda http: http.with_token(token)).get(url)
 URI template. Simple expansion percent-encodes reserved characters, so use the
 `+` operator when a value is itself a URL:
 
-```python
+```python title="examples/http-client.py"
 Http.with_url_parameters({
-    "endpoint": "https://laravel.com",
+    "endpoint": "https://docs.example.com",
     "page": "docs",
     "version": "12.x",
     "topic": "validation",
 }).get("{+endpoint}/{page}/{version}/{topic}")
-# -> https://laravel.com/docs/12.x/validation
+# -> https://docs.example.com/docs/validation
 ```
 
 The `+`, `#`, `.`, `/`, `;`, `?`, and `&` operators are supported, along with
@@ -98,14 +97,14 @@ URL parameters are set.
 
 ### Attachments and sink
 
-```python
+```python title="examples/http-client.py"
 Http.attach("photo", open("me.jpg", "rb"), "me.jpg").post(url)
 Http.sink("/tmp/body.bin").get(url)
 ```
 
 ## Inspecting responses
 
-```python
+```python title="examples/collections.py"
 r = Http.get(url)
 r.body()            # str
 r.content()         # bytes
@@ -123,7 +122,7 @@ r["name"]           # json key
 
 ### Throwing on error
 
-```python
+```python title="examples/http-client.py"
 Http.throw().get(url)                 # raises RequestException on 4xx/5xx
 Http.throw(lambda r: log(r.status())).get(url)   # callback runs once, then raises
 Http.get(url).throw()
@@ -140,7 +139,7 @@ attribute access to it, so `exc.status()` and `exc.json()` work directly.
 
 The exception message includes the response body, truncated to 120 characters:
 
-```python
+```python title="examples/http-client.py"
 from almasix.client import RequestException
 
 RequestException.truncate_at(240)          # globally, e.g. from a provider
@@ -163,7 +162,7 @@ All of them subclass `HttpClientException`.
 
 ## Retry
 
-```python
+```python title="examples/http-client.py"
 # up to 3 attempts in total; sleep is milliseconds between attempts
 Http.retry(3, 100).get(url)
 
@@ -190,7 +189,7 @@ for a failed response, `ConnectionException` for a transport failure — and, if
 it accepts a second argument, the live `PendingRequest`. Reconfiguring that
 request applies to the next attempt:
 
-```python
+```python title="examples/http-client.py"
 def refresh_token(error, request):
     if error.response.status() != 401:
         return False
@@ -202,7 +201,7 @@ Http.with_token(token).retry(2, 0, refresh_token).post(url)
 
 ## Concurrent pool
 
-```python
+```python title="examples/http-client.py"
 responses = Http.pool(lambda pool: (
     pool.get("https://api.example.test/a"),
     pool.as_("users").get("https://api.example.test/users"),
@@ -216,7 +215,7 @@ Pool jobs run on a thread pool, capped by `concurrency` (default 8). Fakes still
 apply. `pool` itself cannot be configured, so set headers and other options on
 each request:
 
-```python
+```python title="examples/http-client.py"
 responses = Http.pool(lambda pool: [
     pool.with_headers({"X-Example": "example"}).get(url),
     pool.as_("token").with_token("secret").get(other),
@@ -231,7 +230,7 @@ the whole pool, so a value may be a `Response`, a `ConnectionException`, or a
 
 `Http.batch()` is a pool with completion callbacks:
 
-```python
+```python title="examples/http-client.py"
 from almasix.client import Batch
 
 results = Http.batch(lambda batch: [
@@ -251,7 +250,7 @@ reserves `finally`, hence the trailing underscore.
 
 Inspect a batch from inside those callbacks or after `send()`:
 
-```python
+```python title="examples/http-client.py"
 batch.total_requests
 batch.pending_requests
 batch.failed_requests
@@ -265,7 +264,7 @@ Adding requests to a batch that has been sent raises `BatchInProgressException`.
 `defer()` sends the batch on a background thread and returns immediately;
 `wait()` blocks for the results.
 
-```python
+```python title="examples/http-client.py"
 batch = Http.batch(...).then(handle).defer()
 batch.wait(timeout=5)
 ```
@@ -274,7 +273,7 @@ batch.wait(timeout=5)
 
 Register reusable request configurations, then call them off the façade:
 
-```python
+```python title="examples/http-client.py"
 Http.macro("github", lambda: Http.with_headers({"X-Example": "example"}).base_url("https://github.com"))
 
 Http.github().get("/repos")
@@ -287,7 +286,7 @@ cleared with `Http.flush_macros()`.
 
 Every request dispatches through the application event dispatcher:
 
-```python
+```python title="examples/http-client.py"
 from almasix.client import ConnectionFailed, RequestSending, ResponseReceived
 from almasix.events import Event
 
@@ -302,7 +301,7 @@ response could be obtained.
 
 ## Async (ASGI-friendly)
 
-```python
+```python title="examples/http-client.py"
 await Http.aget(url)
 await Http.apost(url, {"ok": True})
 await Http.with_token("x").apatch(url, {"n": 1})
@@ -315,7 +314,7 @@ Under the hood this is `httpx.AsyncClient`.
 
 Never hit the network in tests:
 
-```python
+```python title="examples/http-client.py"
 from almasix.client import Http
 
 Http.fake()
@@ -336,11 +335,11 @@ A stub may be a `Response`, a callable taking the `RecordedRequest`, a bare
 status code, a JSON-able body, or an exception instance to raise.
 `Http.failed_connection()` and `Http.failed_request()` build those exceptions.
 
-**Requests that match no stub are executed for real**, exactly as in Laravel —
+**Requests that match no stub are executed for real** —
 `Http.fake()` with no arguments (or a `"*"` key) is what fakes everything. To
 make un-faked requests fail instead of escaping to the network:
 
-```python
+```python title="examples/http-client.py"
 Http.prevent_stray_requests()
 Http.get("https://not-faked.test")            # StrayRequestException
 
@@ -350,7 +349,7 @@ Http.allow_stray_requests()                   # allow all again
 
 ### Sequences
 
-```python
+```python title="examples/http-client.py"
 Http.fake_sequence().push({"id": 1}).push_status(500).when_empty(Http.response({"done": True}))
 Http.get(url)  # first
 Http.get(url)  # 500
@@ -359,7 +358,7 @@ Http.get(url)  # when_empty handler
 
 Use `Http.sequence()` to attach a sequence to one URL inside a `fake()` map:
 
-```python
+```python title="examples/http-client.py"
 Http.fake({
     "github.com/*": Http.sequence().push("Hello World").push({"foo": "bar"}).push_status(404),
 })
@@ -371,7 +370,7 @@ that every queued response was consumed with `Http.assert_sequences_are_empty()`
 
 ### Assertions
 
-```python
+```python title="examples/http-client.py"
 Http.assert_sent("https://api.example.test/*")
 Http.assert_sent(lambda req: req.method == "POST" and req["name"] == "Ada")
 Http.assert_sent(lambda req, resp: req.has_header("X-First", "foo") and resp.ok())
@@ -385,7 +384,7 @@ Http.assert_sequences_are_empty()
 `Http.recorded()` returns `(RecordedRequest, Response)` pairs, and its filter
 callback takes the same one or two arguments as the assertions:
 
-```python
+```python title="examples/http-client.py"
 for request, response in Http.recorded():
     ...
 
@@ -398,12 +397,12 @@ leaves nothing behind (its `ConnectionFailed` event still fires).
 `RecordedRequest` exposes `method`, `url`, `headers`, `data`, `body`, `files`,
 `query()`, `header()`, `has_header(key, value=None)`, `is_json()`, `is_form()`,
 `is_multipart()`, `has_file(name=None)`, and dict-style access into JSON/form
-`data`. Unlike Laravel these are attributes rather than accessor methods where
+`data`. These are attributes rather than accessor methods where
 Python makes that natural (`request.url`, not `request.url()`).
 
 Reset fakes between tests:
 
-```python
+```python title="resources/views/examples/http-client.prism.html"
 from almasix.client import set_factory
 
 @pytest.fixture(autouse=True)
@@ -418,7 +417,7 @@ def _reset_http():
 When you are **not** faking, requests go through httpx. Inject a transport in
 tests without DNS:
 
-```python
+```python title="examples/http-client.py"
 import httpx
 
 def handler(request: httpx.Request) -> httpx.Response:
@@ -429,7 +428,7 @@ Http.with_options({"transport": httpx.MockTransport(handler)}).get("https://exam
 
 ## Customizing every request
 
-```python
+```python title="examples/http-client.py"
 Http.global_request_middleware(lambda req: req)
 Http.global_response_middleware(lambda resp: resp)
 Http.with_headers({"X-App": "almasix"}).get(url)   # per request
@@ -445,7 +444,7 @@ get_factory().base_url("https://api.example.test")
 
 ## Dump / dd
 
-```python
+```python title="examples/http-client.py"
 Http.dump().get(url)    # prints pending options, still sends
 Http.dd().get(url)      # dump and die (raises DumpAndDie)
 ```

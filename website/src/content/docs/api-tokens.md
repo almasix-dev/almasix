@@ -22,7 +22,7 @@ are **not** part of this package (see [Out of scope](#out-of-scope)).
 The package is in the framework today. Publish the config and migration when
 you want them in your app tree:
 
-```bash
+```bash title="terminal"
 pip install 'almasix[tokens]'   # or almasix[signet] — empty extras that mark the feature
 smith vendor:publish --tag=signet-config
 smith vendor:publish --tag=signet-migrations
@@ -31,7 +31,7 @@ smith migrate
 
 Add the mixin to your authenticatable model:
 
-```python
+```python title="app/models/example.py"
 from almasix.auth import AuthenticatableMixin
 from almasix.orm import Model
 from almasix.signet import HasApiTokens
@@ -42,7 +42,7 @@ class User(HasApiTokens, AuthenticatableMixin, Model):
 
 Register a Signet guard in `config/auth.py`:
 
-```python
+```python title="examples/api-tokens.py"
 "guards": {
     "web": {"driver": "session", "provider": "users"},
     "signet": {"driver": "signet", "provider": "users"},
@@ -54,7 +54,7 @@ first-party SPA requests, then falls back to a Bearer PAT.
 
 ## Issuing tokens
 
-```python
+```python title="examples/api-tokens.py"
 issued = await user.create_token("Nuno's iPhone", ["server:update"])
 print(issued.plain_text_token)  # "12|a3f2…" — show once, store hashed
 ```
@@ -64,8 +64,7 @@ Abilities default to `["*"]` (full access for that user).
 
 Mobile apps typically `POST` credentials to an endpoint that returns a token:
 
-```python
-# routes/api.py
+```python title="routes/api.py"
 Route.post("/signet/token", [TokenController, "issue"])
 ```
 
@@ -73,7 +72,7 @@ Store the returned token in the platform keychain and send it on every request.
 
 ## Abilities
 
-```python
+```python title="examples/api-tokens.py"
 issued = await user.create_token("deploy", ["server:update", "server:read"])
 
 # On an authenticated request:
@@ -86,7 +85,7 @@ if user.token_cant("server:delete"):
 Middleware aliases (register in `bootstrap/app.py`, or call
 `middleware.stateful_api()` which also registers them):
 
-```python
+```python title="routes/web.py"
 middleware.alias({
     "abilities": CheckAbilities,      # all listed abilities required
     "ability": CheckForAnyAbility,    # at least one
@@ -100,7 +99,7 @@ policies can stay uniform — authorization still belongs in Gates / Policies.
 
 ## Protecting routes
 
-```python
+```python title="routes/web.py"
 Route.get("/user", [UserController, "show"], middleware=["auth:signet"])
 ```
 
@@ -111,7 +110,7 @@ Route.get("/user", [UserController, "show"], middleware=["auth:signet"])
 
 ## Revoking and expiration
 
-```python
+```python title="examples/api-tokens.py"
 await user.tokens_delete()                          # all tokens
 await user.current_access_token().delete()          # this request's token
 await user.tokens().where("id", "=", token_id).first()  # then .delete()
@@ -120,7 +119,7 @@ await user.tokens().where("id", "=", token_id).first()  # then .delete()
 Configure minutes until expiry in `config/signet.py` (`expiration`), or pass
 `expires_at=` to `create_token`. Prune with:
 
-```bash
+```bash title="terminal"
 smith signet:prune-expired --hours=24
 ```
 
@@ -138,7 +137,7 @@ subdomain.
 
 ## Testing
 
-```python
+```python title="examples/api-tokens.py"
 from almasix.signet import Signet
 
 Signet.acting_as(user, ["profile:read"])

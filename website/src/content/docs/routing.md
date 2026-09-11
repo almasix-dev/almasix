@@ -5,13 +5,13 @@ description: Define web and API routes with Almasix's Route DSL.
 
 Routes map an HTTP verb and a URI to the code that answers it. Almasix splits
 the **browser** and **API** surfaces into two files: `routes/web.py` returns
-HTML and carries sessions, `routes/api.py` returns JSON and stays stateless.
+HTML and carries sessions; `routes/api.py` returns JSON and stays stateless by
+default.
 
 Register routes with the `Route` façade from `almasix.routing`. Controllers are
-resolved from the container, so application code never imports FastAPI.
+resolved from the container.
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 from app.http.controllers.welcome_controller import WelcomeController
 
 from almasix.routing import Route
@@ -40,12 +40,12 @@ is enough — see [Route groups](#route-groups).
 | `routes/web.py` | Browsers | HTML | `web` |
 | `routes/api.py` | Clients / SPAs | JSON | `api` |
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 with Route.group(middleware=["web"]):
     Route.get("/", [WelcomeController, "index"])
+```
 
-# routes/api.py
+```python title="routes/api.py"
 with Route.group(prefix="/api", middleware=["api"]):
     Route.get("/health", [HealthController, "index"])
 ```
@@ -59,8 +59,7 @@ only.
 Every HTTP verb has a helper, and each returns the `RouteDefinition` it
 registered so the fluent methods on the rest of this page can configure it.
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts", [PostController, "index"])
 Route.head("/posts", [PostController, "head"])
 Route.post("/posts", [PostController, "store"])
@@ -78,8 +77,7 @@ to answer a header probe differently from the page itself.
 To answer several verbs with one handler, use `match`; to answer all of them,
 use `any`:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.match(["put", "patch"], "/posts/{post}", [PostController, "update"])
 Route.match("delete", "/posts/{post}", [PostController, "destroy"])
 Route.any("/webhook", [WebhookController, "receive"])
@@ -92,8 +90,7 @@ string as well as a list. `any` registers `GET`, `HEAD`, `POST`, `PUT`,
 Every verb helper also takes the common route options as keyword arguments,
 which is often shorter than the fluent equivalent:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get(
     "/posts/{post}",
     [PostController, "show"],
@@ -109,8 +106,7 @@ Route.get(
 
 A URI that only exists to point somewhere else does not need a controller:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.redirect("/here", "/there")
 Route.redirect("/legacy", "/new", 307)
 Route.permanent_redirect("/old", "/new")
@@ -125,8 +121,7 @@ search engine will remember.
 A page that renders a template and needs nothing from the database does not
 need a controller either:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.view("/about", "pages.about", {"title": "About us"})
 Route.view("/terms", "pages.terms", status=200, headers={"cache-control": "public"})
 ```
@@ -138,11 +133,11 @@ the template; see [Views](/views/).
 
 `route:list` prints what the application answers, sorted by URI:
 
-```bash
+```bash title="terminal"
 python smith route:list
 ```
 
-```
+```text title="terminal"
 Method     URI             Name         Action
 ---------  --------------  -----------  ----------------------------------------------------
 GET|HEAD   /posts          posts.index  app.http.controllers.post_controller.PostController@index
@@ -176,13 +171,14 @@ and printing it pushes the URI off an eighty-column terminal.
 
 A segment in braces is captured and passed to the handler under its own name:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts/{post}/comments/{comment}", [CommentController, "show"])
 ```
 
-```python
-# app/http/controllers/comment_controller.py
+```python title="app/http/controllers/comment_controller.py"
+from almasix.http import Controller
+
+
 class CommentController(Controller):
     async def show(self, post, comment):
         return {"post": post, "comment": comment}
@@ -190,18 +186,16 @@ class CommentController(Controller):
 
 Parameters arrive as strings unless the handler's type hint asks for a model —
 see [Route model binding](#route-model-binding). They are also available on the
-request through `request.route("post")`, and they are deliberately **not**
-merged into `request.all()` or `request.input()`, so a query parameter can
-never impersonate a path segment.
+request through `request.route("post")`, and they are **not** merged into
+`request.all()` or `request.input()`, so a query parameter can never impersonate
+a path segment.
 
 ### Optional parameters
 
-A trailing `?` makes a parameter optional. Starlette has no optional segment,
-so Almasix registers one path for each shorter form and lets the handler's own
-default fill in the gap:
+A trailing `?` makes a parameter optional. Almasix registers one path for each
+shorter form and lets the handler's own default fill in the gap:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/greet/{name?}", lambda name=None: {"name": name or "stranger"})
 ```
 
@@ -215,8 +209,7 @@ right to left, so `/a/{b?}/{c?}` answers `/a/{b}/{c}`, `/a/{b}`, and `/a`.
 handler: a value that fails the pattern means the route **does not match at
 all**, so a later route — or the fallback — gets its chance.
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/users/{name}", [UserController, "show"]).where("name", r"[A-Za-z]+")
 Route.get("/posts/{post}", [PostController, "show"]).where({"post": r"[0-9]+"})
 ```
@@ -224,8 +217,7 @@ Route.get("/posts/{post}", [PostController, "show"]).where({"post": r"[0-9]+"})
 The named shorthands cover the patterns most routes want, and each takes
 several parameter names at once:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts/{post}", [PostController, "show"]).where_number("post")
 Route.get("/users/{name}", [UserController, "show"]).where_alpha("name")
 Route.get("/tags/{tag}", [TagController, "show"]).where_alpha_numeric("tag")
@@ -244,8 +236,7 @@ To constrain a parameter everywhere it appears, register a global pattern once.
 `Route.pattern` is normally called from a service provider's `boot`, before the
 route files load:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from almasix.providers.provider import ServiceProvider
 from almasix.routing import Route
 
@@ -258,11 +249,11 @@ class AppServiceProvider(ServiceProvider):
 
 A route's own `where` wins over the global pattern for that parameter.
 
-Almasix compiles each distinct pattern into one Starlette path convertor named
-after a hash of the pattern itself, so the same constraint on a thousand routes
-costs one convertor and two different patterns never collide. Starlette's own
-convertors survive untouched: `{file:path}` still means a path convertor, not a
-binding field.
+Almasix compiles each distinct pattern into one path convertor named after a
+hash of the pattern itself, so the same constraint on a thousand routes costs
+one convertor and two different patterns never collide. Built-in convertors
+survive untouched: `{file:path}` still means a path convertor, not a binding
+field.
 
 ## Named routes
 
@@ -270,13 +261,12 @@ A name lets you generate a route's URL without repeating its URI, so moving
 `/posts/{post}` to `/blog/{post}` is one edit. Name a route fluently or with
 the keyword argument — they are the same thing:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts/{post}", [PostController, "show"]).name("posts.show")
 Route.get("/posts", [PostController, "index"], name="posts.index")
 ```
 
-```python
+```python title="app/http/controllers/post_controller.py"
 from almasix.routing import route
 
 route("posts.show", 7)  # 'https://example.com/posts/7'
@@ -288,7 +278,7 @@ A name has to identify exactly one route, or `route()` could not know which URL
 to build, so a second route claiming a name already taken raises
 `DuplicateRouteName` at registration:
 
-```python
+```python title="routes/web.py"
 Route.get("/a", handler).name("home")
 Route.get("/b", handler).name("home")
 # DuplicateRouteName: Two routes are named 'home': /a and /b. …
@@ -296,7 +286,7 @@ Route.get("/b", handler).name("home")
 
 Read a name back with `get_name()`, and test one against a glob with `named()`:
 
-```python
+```python title="routes/web.py"
 route_definition = Route.get("/posts/{post}", handler).name("posts.show")
 
 route_definition.get_name()             # 'posts.show'
@@ -307,19 +297,17 @@ Route.has("posts.show", "posts.edit")   # False — every name must exist
 ```
 
 :::note
-`name` and `middleware` are methods, so the values they store live on
-`route_name` and `middleware_names`. `route.name` and `route.name("x")` cannot
-both work, and Laravel's spelling won.
+`name` and `middleware` are methods on the definition. The values they store
+live on `route_name` and `middleware_names`, so reading the attribute and
+calling the method cannot collide.
 :::
 
 ## Route groups
 
-A group shares attributes with every route defined inside it. Almasix's groups
-are **context managers** rather than Laravel's closures, because Python has one
-and a nested `def` for two routes reads worse than a `with`:
+A group shares attributes with every route defined inside it. Groups are
+**context managers** (`with Route.group(...)`):
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 with Route.group(prefix="/admin", middleware=["auth"], name="admin."):
     Route.get("/users", [UserController, "index"]).name("users")
     # → /admin/users, middleware ['auth'], named 'admin.users'
@@ -342,8 +330,7 @@ Nested groups compose, outermost first. Prefixes and names concatenate,
 middleware accumulates in order, and `where` constraints merge; `domain`,
 `controller`, and `scope_bindings` take the innermost value that set them.
 
-```python
-# routes/api.py
+```python title="routes/api.py"
 with Route.group(prefix="/api", middleware=["throttle"], name="api."):
     with Route.group(prefix="/v1", middleware=["auth"], name="v1."):
         Route.get("/users", handler).name("users")
@@ -357,8 +344,7 @@ with Route.group(prefix="/api", middleware=["throttle"], name="api."):
 Middleware may be attached to a group, passed as a keyword, or added fluently.
 All three append to the same list:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/dashboard", handler).middleware("auth")
 Route.get("/settings", handler).middleware(["auth", "verified"])
 Route.get("/billing", handler, middleware=["auth"]).middleware("verified")
@@ -367,8 +353,7 @@ Route.get("/billing", handler, middleware=["auth"]).middleware("verified")
 `without_middleware` exempts a route from middleware a group or the global
 stack applied — the webhook that must not run CSRF, most often:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 with Route.group(middleware=["web", "csrf"]):
     Route.post("/webhook", handler).without_middleware("csrf")
 ```
@@ -379,21 +364,20 @@ also removes `auth:api`. Read what will actually run with
 
 `can` appends an authorization check as middleware:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.put("/posts/{post}", [PostController, "update"]).can("update", Post)
 ```
 
 Group middleware may name a middleware group (`web` / `api`) or an alias
-registered in `bootstrap/app.py` — see [Middleware](/middleware/).
+registered in `bootstrap/app.py` — see [Middleware](/middleware/). For rate
+limits, attach `throttle:…` — see [Rate Limiting](/rate-limiting/).
 
 ### Controllers
 
 When every route in a group points at the same controller, name it once and
 give each route only its method:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 with Route.group(controller=PostController, prefix="/posts", name="posts."):
     Route.get("", "index").name("index")
     Route.get("/{post}", "show").name("show")
@@ -409,8 +393,7 @@ one-off `[OtherController, "index"]` inside the group still works.
 captured like any other — which is how a multi-tenant application reads the
 tenant off the URL:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 with Route.group(domain="{account}.example.com"):
     Route.get("/who", lambda account: {"account": account}).name("tenant.who")
 
@@ -422,10 +405,10 @@ The host is matched without its port and case-insensitively, and a
 controller takes it exactly like a path segment.
 
 :::note
-Starlette matches on the path alone, so Almasix checks the host inside the
-endpoint. A request that reaches a host-scoped route's path on the wrong host
-is handed to the [fallback route](#fallback-routes) rather than being told the
-path does not exist — which is where anything unmatched belongs.
+Path matching happens first; Almasix then checks the host on the matched route.
+A request that reaches a host-scoped path on the wrong host is handed to the
+[fallback route](#fallback-routes) rather than being told the path does not
+exist.
 :::
 
 ### Scoped bindings for a group
@@ -436,11 +419,10 @@ its parent, which is described under
 
 ## Resource routing
 
-A CRUD resource is seven routes with predictable URIs, verbs, and names, so
+A **CRUD resource** is seven routes with predictable URIs, verbs, and names.
 `Route.resource` writes all seven from one line:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource("photos", PhotoController)
 ```
 
@@ -459,42 +441,33 @@ The member parameter is the singular of the last segment, snake-cased, so
 
 Register several resources at once with `resources`:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resources({"photos": PhotoController, "posts": PostController})
 ```
 
-:::note
-Laravel registers a resource's routes from a destructor, which is why
-`Route::resource(...)` works as a bare statement. Almasix registers them
-immediately and has each fluent method **rewrite** them in place, so a bare
-`Route.resource("photos", PhotoController)` needs nothing after it and a
-`.only("index")` on the next line is still honoured — it replaces the seven
-routes rather than adding to them.
-:::
+Resources register immediately. Fluent methods such as `.only("index")`
+**rewrite** the registered routes in place, so a bare
+`Route.resource("photos", PhotoController)` needs nothing after it, and chaining
+still works.
 
 ### Partial resource routes
 
 `only` and `except_` choose which of the seven to register. Either accepts
 separate arguments or a list:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource("photos", PhotoController).only("index", "show")
 Route.resource("posts", PostController).except_(["create", "edit", "destroy"])
 ```
 
-`except` is a Python keyword, so the method is `except_`. Laravel's spelling is
-still reachable as an attribute — `getattr(pending, "except")("create")` — for
-porting code line by line.
+`except` is a Python keyword, so the method is `except_`.
 
 ### API resource routes
 
 `create` and `edit` exist only to serve HTML forms, so an API has no use for
 them. `api_resource` leaves them out:
 
-```python
-# routes/api.py
+```python title="routes/api.py"
 Route.api_resource("photos", PhotoController)
 Route.api_resources({"photos": PhotoController, "tags": TagController})
 ```
@@ -506,8 +479,7 @@ That registers `index`, `store`, `show`, `update`, and `destroy`.
 A dot nests one resource inside another, and the parent's member parameter
 becomes part of the URI:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource("photos.comments", CommentController)
 # GET|HEAD  /photos/{photo}/comments                  photos.comments.index
 # POST      /photos/{photo}/comments                  photos.comments.store
@@ -526,8 +498,7 @@ Once a child's own id is in the URL, repeating the parent only invites the two
 to disagree. `shallow()` drops the parent segment from the routes that already
 identify a member, and names those routes without the parent too:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource("photos.comments", CommentController).shallow()
 # GET|HEAD  /photos/{photo}/comments            photos.comments.index
 # GET|HEAD  /photos/{photo}/comments/create     photos.comments.create
@@ -545,8 +516,7 @@ Route.resource("photos.comments", CommentController).shallow()
 Pass a mapping to rename individual routes, or a single string to replace the
 whole name prefix:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource("photos", PhotoController).names({"index": "photos.all"})
 Route.resource("photos", PhotoController).only("show").names("pics")
 # → 'pics.show'
@@ -557,8 +527,7 @@ Route.resource("photos", PhotoController).only("show").names("pics")
 `parameters` renames the URI parameter. A mapping keys the new name by segment;
 a bare string sets the member parameter for the whole resource:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource("users", UserController).only("show").parameters({"users": "admin_user"})
 # → /users/{admin_user}
 
@@ -573,8 +542,7 @@ Route.resource("posts", PostController).only("show").parameters("slug")
 another photo. Passing a mapping also chooses the column the child is looked up
 by:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource("photos.comments", CommentController).scoped({"comment": "slug"})
 # → /photos/{photo}/comments/{comment:slug}, resolved through photo.comments
 ```
@@ -587,8 +555,7 @@ model's route key.
 `middleware` takes one name, a list, or a mapping of action to middleware.
 `without_middleware` takes the same shapes:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource("photos", PhotoController).middleware("auth")
 Route.resource("posts", PostController).middleware({"store": ["csrf"], "destroy": "admin"})
 Route.resource("hooks", HookController).middleware(["web", "csrf"]).without_middleware(
@@ -601,8 +568,7 @@ Route.resource("hooks", HookController).middleware(["web", "csrf"]).without_midd
 `where`, `missing`, and `with_trashed` carry onto every route the resource
 registered, or onto the actions you name:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 from almasix.http import json
 
 Route.resource("photos", PhotoController).where({"photo": r"[0-9]+"}).missing(
@@ -618,10 +584,9 @@ route.
 ### Resource options up front
 
 Every option that does not need a callable can be passed as a keyword instead
-of chained, which some applications prefer:
+of chained:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.resource(
     "photos",
     PhotoController,
@@ -641,8 +606,7 @@ Route.resource(
 Some resources have exactly one member: a user's profile, an application's
 settings. A singleton has no id in its URI, and nothing to list:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.singleton("profile", ProfileController)
 # GET|HEAD   /profile        profile.show
 # GET|HEAD   /profile/edit   profile.edit
@@ -652,8 +616,7 @@ Route.singleton("profile", ProfileController)
 `creatable()` adds `create`, `store`, and `destroy`, for a singleton that may
 not exist yet. `destroyable()` adds only `destroy`:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.singleton("profile", ProfileController).creatable()
 # create, store, show, edit, update, destroy
 
@@ -664,8 +627,7 @@ Route.singleton("settings", SettingsController).destroyable()
 `api_singleton` drops the form actions, leaving `show` and `update`.
 `singletons` and `api_singletons` register several at once:
 
-```python
-# routes/api.py
+```python title="routes/api.py"
 Route.api_singleton("profile", ProfileController)
 Route.api_singletons({"profile": ProfileController, "settings": SettingsController})
 ```
@@ -678,8 +640,7 @@ Every fluent method a resource has works on a singleton too.
 so a non-English application will want them translated. Set them once, before
 the route files register anything:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from almasix.providers.provider import ServiceProvider
 from almasix.routing import resource_verbs, set_resource_verbs
 
@@ -704,13 +665,11 @@ A controller that declares `post: Post` should be handed a `Post`, not the
 string `"7"`. Type-hint the parameter with a model whose name matches the URI
 parameter and Almasix looks it up for you:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts/{post}", [PostController, "show"])
 ```
 
-```python
-# app/http/controllers/post_controller.py
+```python title="app/http/controllers/post_controller.py"
 from app.models.post import Post
 
 from almasix.http import Controller
@@ -730,8 +689,7 @@ back.
 The lookup column is the model's route key, which is its primary key unless the
 model says otherwise:
 
-```python
-# app/models/post.py
+```python title="app/models/post.py"
 from almasix.orm import Model
 
 
@@ -752,8 +710,7 @@ raising at routing time.
 
 To bind by a column for one route only, name it in the URI after a colon:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts/{post:slug}", [PostController, "show"])
 Route.get("/users/{user:slug}/posts/{post}", [PostController, "show"])
 ```
@@ -768,8 +725,7 @@ When one parameter nests inside another, `scope_bindings()` resolves the child
 through the parent's relationship, so a URL cannot mix a comment with a photo
 that does not own it:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts/{post}/comments/{comment}", handler).scope_bindings()
 
 with Route.group(scope_bindings=True):
@@ -787,8 +743,7 @@ route inside a group that enabled it.
 A `404` is the right answer when a row is gone, but not always the most useful
 one. `missing` says what to answer instead:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 from almasix.http import json
 
 Route.get("/posts/{post}", [PostController, "show"]).missing(
@@ -804,8 +759,7 @@ nothing when it does not.
 Binding ignores soft-deleted rows by default. `with_trashed()` lets it find
 them, which is what a "restore this post" screen needs:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts/{post}/restore", [PostController, "restore"]).with_trashed()
 ```
 
@@ -815,8 +769,7 @@ An enum parameter is resolved to its member, by value or by name, so an
 invalid value is a `404` before the handler runs rather than a `500` inside it.
 Int-backed enums work too — the path segment is compared as a string:
 
-```python
-# app/enums/category.py
+```python title="app/enums/category.py"
 import enum
 
 
@@ -830,8 +783,7 @@ class Rank(enum.IntEnum):
     SECOND = 2
 ```
 
-```python
-# app/http/controllers/category_controller.py
+```python title="app/http/controllers/category_controller.py"
 from app.enums.category import Category, Rank
 
 from almasix.http import Controller
@@ -842,8 +794,7 @@ class CategoryController(Controller):
         return {"category": category.value, "rank": rank.name}
 ```
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/categories/{category}/ranks/{rank}", [CategoryController, "show"])
 ```
 
@@ -861,8 +812,7 @@ appears, and **win over the type hint**. Register them in a service provider's
 `Route.model` binds a parameter to a model, with an optional handler for the
 miss:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from app.models.post import Post
 
 from almasix.http import json
@@ -880,8 +830,13 @@ class AppServiceProvider(ServiceProvider):
 lookup at all. It receives the raw path value, and its result is awaited when
 the callable returns something awaitable:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
+from app.models.post import Post
+
+from almasix.providers.provider import ServiceProvider
+from almasix.routing import Route
+
+
 class AppServiceProvider(ServiceProvider):
     def boot(self) -> None:
         Route.bind("code", lambda value: value.upper())
@@ -893,8 +848,7 @@ class AppServiceProvider(ServiceProvider):
 A fallback answers anything no other route claimed, which is how an
 application renders its own "not found" page instead of the framework's:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 from almasix.http import json
 
 Route.fallback(lambda: json({"fell": "through"}, status=404))
@@ -902,16 +856,14 @@ Route.fallback(lambda: json({"fell": "through"}, status=404))
 
 The fallback is registered last however early you declare it, so it only
 catches what nothing else did. A second call replaces the first — an
-application has one catch-all or none, and two would mean the second is dead
-code that `route:list` still advertises. It accepts `name=` and `middleware=`.
+application has one catch-all or none. It accepts `name=` and `middleware=`.
 
 ## Form method spoofing
 
 An HTML form can send `GET` and `POST` and nothing else, so a form that means
 `PUT` says so in a hidden field. `method_field()` writes it:
 
-```html
-<!-- resources/views/posts/edit.prism.html -->
+```html title="resources/views/posts/edit.prism.html"
 <form action="{{ route('posts.update', post) }}" method="POST">
   @csrf
   {!! method_field('PUT') !!}
@@ -922,7 +874,7 @@ An HTML form can send `GET` and `POST` and nothing else, so a form that means
 Clients that cannot send a body may use the `X-HTTP-Method-Override` header
 instead:
 
-```python
+```python title="tests/feature/posts_test.py"
 response = client.post("/posts/1", headers={"X-HTTP-Method-Override": "PUT"})
 ```
 
@@ -941,20 +893,18 @@ actually arrived on `request.real_method`; `request.spoofed_method` is the verb
 `config/http.py` to switch the whole mechanism off.
 
 :::note
-Spoofing runs as ASGI middleware, before routing, because Starlette matches on
+Spoofing runs as ASGI middleware, before routing, because the router matches on
 the verb in the scope: a form posting to a `PUT`-only route would be told `405`
-before any handler ran. That means the body is buffered and replayed, which
-Almasix does only for a POST that could be carrying the field, and only up to
-one mebibyte — a form larger than that is not carrying a `_method` field it put
-first.
+before any handler ran. The body is buffered and replayed only for a POST that
+could be carrying the field, and only up to one mebibyte.
 :::
 
 ## Accessing the current route
 
 The `Route` façade reads the route answering the request in flight:
 
-```python
-# app/http/controllers/nav_controller.py
+```python title="app/http/controllers/nav_controller.py"
+from almasix.http import Controller
 from almasix.routing import Route
 
 
@@ -972,12 +922,11 @@ raising, so console and queue code can ask freely.
 
 The request carries the same information:
 
-```python
-# app/http/controllers/nav_controller.py
+```python title="app/http/controllers/nav_controller.py"
 async def index(self, request: Request):
     request.route_name          # 'posts.show'
     request.route_is("posts.*") # True
-    request.route_named("posts.show")  # the same test, Laravel's other spelling
+    request.route_named("posts.show")  # same test
     request.matched_route       # the RouteDefinition
     request.route("post")       # a path parameter
 ```
@@ -985,8 +934,7 @@ async def index(self, request: Request):
 In a Prism template `route_is` and `current_route_name` are injected already,
 which is how a navigation link marks itself active:
 
-```html
-<!-- resources/views/partials/nav.prism.html -->
+```html title="resources/views/partials/nav.prism.html"
 <a href="{{ route('posts.index') }}" class="@if(route_is('posts.*'))active@endif">
   Posts
 </a>
@@ -998,8 +946,7 @@ The `signed` middleware rejects a link whose signature no longer matches, or
 whose deadline has passed, with a `403` — the resource is there, this link is
 just not allowed to reach it:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/unsubscribe/{user}", [UnsubscribeController, "show"]).name(
     "unsubscribe"
 ).middleware("signed")
@@ -1015,11 +962,9 @@ half: `signed_route` and `temporary_signed_route`.
 
 ## Websocket routes
 
-ASGI gives Almasix something Laravel's router has no equivalent for: a route
-that stays open.
+ASGI supports long-lived connections. Register one with `Route.websocket`:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.websocket("/live", LiveHandler())
 ```
 
@@ -1031,34 +976,22 @@ neither. A handler authorizes each frame itself.
 [Broadcasting](/broadcasting/) does exactly that, and its socket endpoint is
 worth reading as the worked example.
 
-## Deliberate deviations from Laravel
+## Python-friendly details
 
-- **Groups are context managers**, not closures: `with Route.group(prefix="/admin"):`
-  needs no lambda, and Python has no multi-statement expression to put one in.
-- **A resource registers immediately** and its fluent methods rewrite the
-  routes in place, rather than waiting on a destructor.
-- **`except_`, `is_`** carry trailing underscores because `except` and `is` are
-  Python keywords. Laravel's `except` is still reachable through `getattr`, and
-  every fluent method also answers to its camelCase name — `whereNumber` is
-  `where_number`, `scopeBindings` is `scope_bindings` — so a Laravel example
-  transcribes without renaming. The Python name is the documented one.
-- **Route options may be keyword arguments** (`Route.get(uri, action, name="x")`)
-  as well as fluent calls, because that is what a Python reader expects.
-- **A host mismatch falls through to the fallback** rather than 404ing
-  directly, because Starlette routes on the path and the host check happens
-  after the match.
-- **Websocket routes exist**, and have no Laravel counterpart.
+A few naming and registration rules come from Python itself:
 
-## Not yet built
-
-Three sections of Laravel's routing page have no Almasix equivalent, and are
-absent rather than stubbed:
-
-| Laravel | Status in Almasix |
-| --- | --- |
-| Rate limiting (`RateLimiter`, the `throttle` middleware) | Not built. Rate limit at the proxy, or write a middleware. |
-| CORS (`config/cors.php`, `HandleCors`) | Not built as a framework middleware. Add Starlette's `CORSMiddleware` in `bootstrap/app.py`. |
-| Route caching (`route:cache`) | Not built. Route files are plain Python and are imported once at boot. |
+- **Groups** use `with Route.group(...)` context managers.
+- **Resources** register immediately; fluent methods rewrite them in place.
+- **`except_` and `is_`** use a trailing underscore because `except` and `is`
+  are Python keywords.
+- **Route options** may be keyword arguments
+  (`Route.get(uri, action, name="x")`) as well as fluent calls.
+- Fluent methods also answer to camelCase aliases (`whereNumber` →
+  `where_number`); the snake_case name is the documented one.
+- **Route files are plain Python** and load once at boot — there is no separate
+  route-cache command.
+- For CORS and rate limits, see [Security](/security/) and
+  [Rate Limiting](/rate-limiting/).
 
 ## Related
 
@@ -1067,3 +1000,4 @@ absent rather than stubbed:
 - [URL Generation](/urls/) — `route()`, `signed_route()`, `url()`, `asset()`
 - [Requests](/requests/) — `request.route()`, `real_method`, input bags
 - [Articulate](/articulate/) — models, route keys, soft deletes
+- [Rate Limiting](/rate-limiting/) — `throttle` middleware

@@ -10,8 +10,7 @@ full Prism tutorial lives under [Prism](/prism/).
 
 ## Creating and returning views
 
-```python
-# app/http/controllers/welcome_controller.py
+```python title="app/http/controllers/welcome_controller.py"
 from almasix.prism import view
 
 
@@ -19,10 +18,10 @@ async def index(self):
     return view("welcome", {"title": "Almasix"})
 ```
 
-Templates live under `resources/views`. Dots map to directories: `view("posts.show")` → `resources/views/posts/show.prism.html`.
+Templates live under `resources/views`. Dots map to directories:
+`view("posts.show")` → `resources/views/posts/show.prism.html`.
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 @extends("layouts.app")
 
 @section("content")
@@ -32,20 +31,22 @@ Templates live under `resources/views`. Dots map to directories: `view("posts.sh
 
 ## Passing data
 
-The second argument to `view()` is a dict of template data. Helpers such as `url`, `asset`, `e`, and `__` are injected automatically for Prism templates.
+The second argument to `view()` is a dict of template data. Helpers such as
+`url`, `asset`, `e`, and `__` are injected automatically for Prism templates.
 
 ## Escaping
 
-- `{{ value }}` — HTML-escaped (safe default)
-- `{!! value !!}` — raw HTML (only when you trust the content)
+| Syntax | Meaning |
+| --- | --- |
+| `{{ value }}` | HTML-escaped (safe default) |
+| `{!! value !!}` | Raw HTML — only when you trust the content |
 
 ## When to use `html()`
 
-[`html()`](/responses/) is for small hand-built fragments or low-level responses. Prefer `view()` for pages, layouts, and components.
+[`html()`](/responses/) is for small hand-built fragments or low-level
+responses. Prefer `view()` for pages, layouts, and components.
 
 ## Deep dive
-
-This Basics page is the entry point. Full Prism documentation lives in its own section:
 
 - [Prism](/prism/) — overview
 - [Rendering Views](/prism/rendering/)

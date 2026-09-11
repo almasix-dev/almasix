@@ -13,8 +13,7 @@ Almasix's scheduler lets you define the whole schedule inside the application,
 in code, and needs a single cron entry on the server. Tasks are usually
 defined in `routes/console.py`.
 
-```python
-# routes/console.py
+```python title="routes/console.py"
 from almasix.console import schedule
 from almasix.orm import DB
 
@@ -26,14 +25,13 @@ async def clear_recent_users() -> None:
 schedule.call(clear_recent_users).daily()
 ```
 
-**Deviation, in Almasix's favour:** a scheduled callback may be `async`, and the
-scheduler awaits it. Laravel has nothing to do here, but Almasix's ORM, queue,
-and HTTP client are awaitable, so a callback that could not await them would be
-useless for most of what people schedule.
+A scheduled callback may be `async`, and the scheduler awaits it. Almasix's ORM,
+queue, and HTTP client are awaitable, so a callback that could not await them
+would be useless for most of what people schedule.
 
 Then one cron entry runs the whole schedule:
 
-```
+```text title="terminal"
 * * * * * cd /path/to/app && smith schedule:run >> /dev/null 2>&1
 ```
 
@@ -42,7 +40,7 @@ Then one cron entry runs the whole schedule:
 `schedule.call()` takes any callable, and names the task after the function
 unless you say otherwise:
 
-```python
+```python title="examples/scheduling.py"
 schedule.call(clear_recent_users).daily()
 schedule.call(warm_cache, description="warm the cache").hourly()
 ```
@@ -51,8 +49,7 @@ If you would rather keep `routes/console.py` for command definitions only,
 define the schedule in `bootstrap/app.py` instead — the callback is handed the
 schedule as it is registered:
 
-```python
-# bootstrap/app.py
+```python title="bootstrap/app.py"
 application = (
     Application.configure(BASE_PATH)
     .with_middleware(configure_middleware)
@@ -65,7 +62,7 @@ A task is listed under what it runs — the command line, the shell line, or the
 callback's name. `name()` changes the identity its locks are keyed on, and
 `purpose()` changes the description that appears beside it:
 
-```python
+```python title="examples/scheduling.py"
 schedule.call(clear_recent_users).name("clear-recent-users").purpose(
     "Clear the recent users table"
 ).daily()
@@ -73,11 +70,11 @@ schedule.call(clear_recent_users).name("clear-recent-users").purpose(
 
 To see what is scheduled and when each task next runs, use `schedule:list`:
 
-```bash
+```bash title="terminal"
 smith schedule:list
 ```
 
-```
+```text title="terminal"
   * * * * *  heartbeat            next: 2026-09-08 07:38:00
   0 2 * * *  mail:digest          next: 2026-09-09 02:00:00
   every 10 seconds  metrics:push  next: 2026-09-08 07:37:20
@@ -88,22 +85,20 @@ smith schedule:list
 `schedule.command()` schedules a [Smith command](/console/) by name. Arguments
 and options can be part of the string, or a list:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send taylor --force").daily()
 schedule.command("emails:send", ["taylor", "--force"]).daily()
 ```
 
-**Named deviation:** Laravel also accepts a command *class* here. Almasix
-schedules by name, because that is the identity Smith resolves and the string
-is what appears in `schedule:list`.
+Schedule by command *name*, not by class: that is the identity Smith resolves
+and the string that appears in `schedule:list`.
 
 #### Scheduling closure commands
 
 A command defined as a closure schedules itself. Chain `schedule()` onto the
 definition, passing any arguments the closure needs:
 
-```python
-# routes/console.py
+```python title="routes/console.py"
 from almasix.console import Smith
 
 Smith.command("delete:recent-users", clear_recent_users).purpose(
@@ -120,7 +115,7 @@ Smith.command("emails:send {user} {--force}", send_emails).purpose(
 `schedule.job()` schedules a [queued job](/queues/) without wrapping it in a
 callback:
 
-```python
+```python title="examples/scheduling.py"
 from app.jobs.heartbeat import Heartbeat
 
 schedule.job(Heartbeat()).every_five_minutes()
@@ -128,7 +123,7 @@ schedule.job(Heartbeat()).every_five_minutes()
 
 The second and third arguments choose the queue and the connection:
 
-```python
+```python title="examples/scheduling.py"
 # Dispatch to the "heartbeats" queue on the "redis" connection...
 schedule.job(Heartbeat(), "heartbeats", "redis").every_five_minutes()
 ```
@@ -137,7 +132,7 @@ schedule.job(Heartbeat(), "heartbeats", "redis").every_five_minutes()
 
 `schedule.exec()` hands a command to the operating system:
 
-```python
+```python title="examples/scheduling.py"
 schedule.exec("node /home/forge/script.js").daily()
 ```
 
@@ -191,7 +186,7 @@ Every task starts out running every minute. These methods change that:
 | `.at("13:00")` | Another spelling of `.daily_at()`, for reading order. |
 | `.timezone("America/New_York")` | Read this task's times in a timezone. |
 
-Laravel's camelCase spelling works for every one of them, so
+Every frequency also answers to a camelCase alias, so
 `.everyFiveMinutes()` and `.dailyAt("13:00")` are the same calls as
 `.every_five_minutes()` and `.daily_at("13:00")`. Pick one per project and
 stay with it; the snake_case names are the documented ones.
@@ -199,7 +194,7 @@ stay with it; the snake_case names are the documented ones.
 Frequencies **write cron fields** rather than replacing the whole expression,
 which is what lets them combine:
 
-```python
+```python title="examples/scheduling.py"
 # Once a week, on Monday at 13:00...
 schedule.call(clear_recent_users).weekly().mondays().at("13:00")
 
@@ -212,7 +207,7 @@ schedule.command("foo").weekdays().hourly().timezone("America/Chicago").between(
 The same rule has a sharp edge: `.cron()` writes all five fields, so it
 discards a day constraint set before it. Put `.cron()` first.
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("foo").cron("*/5 * * * *").weekdays()  # every five minutes, Mon–Fri
 schedule.command("foo").weekdays().cron("*/5 * * * *")  # the weekday limit is gone
 ```
@@ -236,13 +231,13 @@ These are the additional constraints:
 `days()` limits a task to days of the week, given as numbers where Sunday is
 `0`:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").hourly().days([0, 3])
 ```
 
 The constants on `Schedule` say the same thing with names:
 
-```python
+```python title="examples/scheduling.py"
 from almasix.console import Schedule
 
 schedule.command("emails:send").hourly().days([Schedule.SUNDAY, Schedule.WEDNESDAY])
@@ -258,7 +253,7 @@ So `cron("0 0 1 * mon")` means "the first of the month, and every Monday".
 excludes one. Both ends are inclusive, and a window that ends before it starts
 is read as crossing midnight:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").hourly().between("7:00", "22:00")
 schedule.command("emails:send").hourly().unless_between("23:00", "4:00")
 ```
@@ -268,7 +263,7 @@ schedule.command("emails:send").hourly().unless_between("23:00", "4:00")
 `when()` runs the task only if the callback returns true, and `skip()` is its
 inverse. Chained `when()` calls must all pass:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().when(lambda: Cache.get("digest:enabled"))
 schedule.command("emails:send").daily().skip(lambda: date.today().day == 1)
 ```
@@ -276,7 +271,7 @@ schedule.command("emails:send").daily().skip(lambda: date.today().day == 1)
 A plain boolean is accepted where a callback is expected, for the cases where
 the answer is known when the schedule is defined:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().when(config("mail.digest_enabled"))
 ```
 
@@ -284,7 +279,7 @@ schedule.command("emails:send").daily().when(config("mail.digest_enabled"))
 
 `environments()` limits a task to the environments named in `APP_ENV`:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().environments(["staging", "production"])
 ```
 
@@ -292,7 +287,7 @@ schedule.command("emails:send").daily().environments(["staging", "production"])
 
 `timezone()` says which timezone a task's times are written in:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("report:generate").timezone("America/New_York").at("2:00")
 ```
 
@@ -310,14 +305,14 @@ that matters.
 Scheduled tasks run even if the previous run has not finished. `without_overlapping()`
 stops that:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").without_overlapping()
 ```
 
 The lock is held for a day unless you say otherwise. Pass minutes to shorten
 it, which bounds how long a crashed run can keep other runs out:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").without_overlapping(10)
 ```
 
@@ -327,7 +322,7 @@ app — the scheduler falls back to a file lock under
 `storage/framework/schedule/`. If a task gets stuck and leaves its lock
 behind, release it:
 
-```bash
+```bash title="terminal"
 smith schedule:clear-cache
 ```
 
@@ -342,13 +337,13 @@ every server would claim the task.
 When the scheduler runs on several servers, `on_one_server()` gives the task to
 whichever server claims it first:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("report:generate").fridays().at("17:00").on_one_server()
 ```
 
 `use_cache()` chooses the store those claims are taken from:
 
-```python
+```python title="examples/scheduling.py"
 schedule.use_cache("redis")
 ```
 
@@ -358,7 +353,7 @@ A command names itself, but a closure or a job does not — and two servers woul
 take two different locks. Name them, and Almasix raises a `RuntimeError` if you
 forget:
 
-```python
+```python title="examples/scheduling.py"
 schedule.job(CheckUptime("https://almasix.dev")).name(
     "check_uptime:almasix.dev"
 ).every_five_minutes().on_one_server()
@@ -372,29 +367,28 @@ Tasks due at the same minute run one after another, in the order they were
 defined. `run_in_background()` runs a task alongside the others instead of
 making them wait:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("analytics:report").daily().run_in_background()
 ```
 
-**Named deviation:** Laravel detaches an OS process and reports back through
-`schedule:finish`. Almasix runs the task in a worker thread, so the tasks still
-run simultaneously, but `schedule:run` waits for them before it exits — a
-thread cannot outlive the interpreter that started it. A task that must
-survive the tick belongs on a [queue](/queues/).
+`run_in_background()` runs the task in a worker thread, so siblings still run
+simultaneously, but `schedule:run` waits for them before it exits — a thread
+cannot outlive the interpreter that started it. A task that must survive the
+tick belongs on a [queue](/queues/).
 
 ### Maintenance mode
 
 Scheduled tasks do not run while the application is down for maintenance, so
 they cannot interfere with whatever you are doing to the server:
 
-```bash
+```bash title="terminal"
 smith down    # tasks stop
 smith up      # tasks resume
 ```
 
 `even_in_maintenance_mode()` exempts a task:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").even_in_maintenance_mode()
 ```
 
@@ -409,7 +403,7 @@ and related options.
 Tasks that share settings can be defined together. Call the shared methods on
 the schedule itself, then `group()` with a callback that defines the tasks:
 
-```python
+```python title="examples/scheduling.py"
 def digest_tasks() -> None:
     schedule.command("emails:send --force")
     schedule.command("emails:prune")
@@ -426,13 +420,13 @@ the outer one rather than replacing it.
 
 `schedule:run` evaluates the schedule and runs whatever is due:
 
-```bash
+```bash title="terminal"
 smith schedule:run
 ```
 
 That is the only cron entry you need:
 
-```
+```text title="terminal"
 * * * * * cd /path/to/app && smith schedule:run >> /dev/null 2>&1
 ```
 
@@ -442,7 +436,7 @@ away are reported as skipped, and do not count as failures.
 To run one task immediately, whatever its frequency says, use `schedule:test`.
 With no `--name` it asks which task you meant:
 
-```bash
+```bash title="terminal"
 smith schedule:test
 smith schedule:test --name mail:digest
 ```
@@ -451,7 +445,7 @@ smith schedule:test --name mail:digest
 
 Cron cannot go below a minute, but the scheduler can — down to every second:
 
-```python
+```python title="examples/scheduling.py"
 schedule.call(clear_recent_users).every_second()
 ```
 
@@ -462,7 +456,7 @@ those tasks asked for.
 A sub-minute task that takes longer than its interval delays the ones behind
 it, so it is best to make the task hand the work off:
 
-```python
+```python title="examples/scheduling.py"
 schedule.job(DeleteRecentUsers()).every_ten_seconds()
 schedule.command("users:delete").every_ten_seconds().run_in_background()
 ```
@@ -473,7 +467,7 @@ Because `schedule:run` now runs for the whole minute, a deployment can leave an
 instance running the previous release's code until the minute is out. Add this
 to the end of your deployment script:
 
-```bash
+```bash title="terminal"
 smith schedule:interrupt
 ```
 
@@ -486,7 +480,7 @@ run.
 You would not normally add a cron entry on your development machine. Run the
 scheduler in the foreground instead:
 
-```bash
+```bash title="terminal"
 smith schedule:work
 ```
 
@@ -497,13 +491,13 @@ sub-minute tasks are defined. `--sleep` changes the gap between ticks.
 
 `send_output_to()` writes what a task printed to a file:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().send_output_to(storage_path("logs/emails.log"))
 ```
 
 `append_output_to()` adds to the file instead of replacing it:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().append_output_to(
     storage_path("logs/emails.log")
 )
@@ -511,7 +505,7 @@ schedule.command("emails:send").daily().append_output_to(
 
 `email_output_to()` sends it on. Configure [mail](/mail/) first:
 
-```python
+```python title="resources/views/examples/scheduling.prism.html"
 schedule.command("report:generate").daily().send_output_to(path).email_output_to(
     "taylor@example.com"
 )
@@ -519,22 +513,21 @@ schedule.command("report:generate").daily().send_output_to(path).email_output_to
 
 `email_output_on_failure()` sends it only when the task exits non-zero:
 
-```python
+```python title="resources/views/examples/scheduling.prism.html"
 schedule.command("report:generate").daily().email_output_on_failure(
     "taylor@example.com"
 )
 ```
 
-**Deviation, in Almasix's favour:** Laravel restricts the output methods to
-`command` and `exec` tasks. Almasix captures `stdout` and `stderr` around every
-task, so `call` and `job` tasks can send their output to a file or an inbox
-too.
+Almasix captures `stdout` and `stderr` around every task, so `call` and `job`
+tasks can send their output to a file or an inbox the same way `command` and
+`exec` tasks can.
 
 ## Task hooks
 
 `before()` and `after()` run code around the task:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().before(
     lambda: print("The task is about to run...")
 ).after(lambda: print("The task has run..."))
@@ -544,19 +537,19 @@ schedule.command("emails:send").daily().before(
 depending on the exit code, where a failure means the task exited non-zero or
 raised:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().on_success(
     lambda: print("It worked")
 ).on_failure(lambda: print("It did not"))
 ```
 
-Hooks run in Laravel's order: `before`, the task, `after` / `then`, then
+Hooks run in this order: `before`, the task, `after` / `then`, then
 `on_success` or `on_failure`.
 
 A hook that takes a parameter is handed the task's output as a
 [`Stringable`](/strings/):
 
-```python
+```python title="examples/scheduling.py"
 from almasix.log import Log
 
 
@@ -572,13 +565,13 @@ schedule.command("emails:send").daily().on_failure(notify)
 `ping_before()` and `then_ping()` GET a URL around the task, which is how
 external monitors are told a task started or finished:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().ping_before(url).then_ping(url)
 ```
 
 `ping_on_success()` and `ping_on_failure()` ping only on that outcome:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().ping_on_success(success_url).ping_on_failure(
     failure_url
 )
@@ -588,7 +581,7 @@ Each has a conditional form that only registers the ping when the condition
 holds — `ping_before_if()`, `then_ping_if()`, `ping_on_success_if()`, and
 `ping_on_failure_if()`:
 
-```python
+```python title="examples/scheduling.py"
 schedule.command("emails:send").daily().ping_before_if(
     config("app.env") == "production", url
 )
@@ -612,7 +605,7 @@ The scheduler dispatches these on the [event bus](/events/):
 Each carries the task it is about, and the finished ones carry the exit code
 and the captured output:
 
-```python
+```python title="examples/scheduling.py"
 from almasix.console.scheduling import ScheduledTaskFailed
 from almasix.events import Event
 from almasix.log import Log
@@ -645,11 +638,26 @@ day of week — and reads `*`, `?`, lists (`1,15`), ranges (`8-17`), steps
 (`*/5`, `1-23/2`, `10/5`), month names (`jan`), and day names (`mon`). Sunday
 is `0`, and `7` is accepted for it too.
 
-**Named deviation:** the `L`, `W`, and `#` extensions are not implemented.
+The `L`, `W`, and `#` cron extensions are not implemented.
 `last_day_of_month()` covers the common use of `L`, and it asks the calendar
 at run time rather than writing a fixed day into the expression when the task
 is defined — so it is right in February, and right for a process that runs
 across a month boundary.
+
+## Design notes
+
+A few choices differ from “cron expression in, process out” schedulers — they
+are intentional, not unfinished:
+
+- **Sub-minute tasks keep `schedule:run` alive for the whole minute.** Cron
+  cannot tick below sixty seconds; when any every-second / every-N-seconds task
+  is registered, the runner stays up until the minute ends so those ticks fire.
+- **`run_in_background()` uses a worker thread, not a subprocess.** Sibling
+  events still run in the same process; use a queue job when you need isolation
+  or a separate worker pool.
+- **`L` / `W` / `#` cron extensions are not parsed.** Use
+  `last_day_of_month()` (and friends) instead of embedding those letters in a
+  raw expression.
 
 ## Related
 

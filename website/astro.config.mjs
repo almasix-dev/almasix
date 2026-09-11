@@ -207,7 +207,7 @@ export default defineConfig({
 								{ label: 'Relationships & Embeds', slug: 'articulate/documents/relationships' },
 								{ label: 'Indexes', slug: 'articulate/documents/indexes' },
 								{ label: 'Aggregations', slug: 'articulate/documents/aggregations' },
-								{ label: 'Compared with Laravel', slug: 'articulate/documents/compared' },
+								{ label: 'Document store feature map', slug: 'articulate/documents/compared' },
 							],
 						},
 					],

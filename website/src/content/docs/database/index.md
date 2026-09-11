@@ -13,7 +13,7 @@ store). [Articulate](/articulate/) models sit on either — `Model` on a table,
 [`Document`](/articulate/documents/) on a collection.
 
 Every call is a coroutine — the database is I/O, and Almasix never blocks the
-loop on it.
+event loop on it.
 
 ## Configuration
 
@@ -21,8 +21,7 @@ Connections live in `config/database.py`. A new application is ready to use
 SQLite; PostgreSQL, MySQL/MariaDB, SQL Server, Oracle, and document stores
 (MongoDB / memory) are a config block away.
 
-```python
-# config/database.py
+```python title="config/database.py"
 from almasix.config import env
 
 config = {
@@ -52,22 +51,21 @@ config = {
 }
 ```
 
-```bash
+```bash title="terminal"
 DB_CONNECTION=sqlite
 DB_DATABASE=database/database.sqlite
 ```
 
-SQLite `:memory:` databases work as you would hope: Almasix uses a static pool,
-so every acquire sees the same in-memory database. Document connections use
-`store()` instead of `connection()` — see
-[Document stores](/database/documents/).
+SQLite `:memory:` databases share a static pool, so every acquire sees the same
+in-memory database. Document connections use `store()` instead of
+`connection()` — see [Document stores](/database/documents/).
 
 ### Installing a driver
 
 SQLite ships with Almasix. The others are extras. For what each engine can
 actually do — and which ones CI executes — see [Engine support](/database/engines/).
 
-```bash
+```bash title="terminal"
 pip install almasix[pgsql]    # PostgreSQL (asyncpg)
 pip install almasix[mysql]    # MySQL / MariaDB (aiomysql)
 pip install almasix[sqlsrv]   # SQL Server (aioodbc + ODBC driver)
@@ -95,7 +93,7 @@ SQL Server takes `odbc_driver` (default `ODBC Driver 18 for SQL Server`) and
 A `read` and a `write` block point one connection at two hosts. Both inherit
 everything the connection already says, so a block only names what differs:
 
-```python
+```python title="config/database.py"
 "mysql": {
     "driver": "mysql",
     "host": "primary.example.com",
@@ -108,10 +106,10 @@ everything the connection already says, so a block only names what differs:
 },
 ```
 
-Selects go to the read host and everything else to the write host. `sticky`
-matters when a request writes and then reads: with it on, a context that has
-written reads from the write host for the rest of its life, so it sees its own
-rows rather than whatever the replica has caught up to.
+Selects go to the read host and everything else to the write host. With
+`sticky` on, a context that has written keeps reading from the write host for
+the rest of its life, so it sees its own rows rather than whatever the replica
+has caught up to.
 
 ### Pooled connections
 
@@ -119,7 +117,7 @@ A connection through a transaction pooler cannot hold the session state that
 migrations and schema inspection need. Give it a `direct` block and Almasix
 routes that work around the pooler:
 
-```python
+```python title="config/database.py"
 "pgsql": {
     "driver": "pgsql",
     "host": "pooler.example.com",
@@ -135,7 +133,7 @@ without being asked; ordinary queries keep going through the pooler.
 
 ## Running SQL queries
 
-```python
+```python title="app/http/controllers/user_controller.py"
 from almasix.orm import DB
 
 users = await DB.select("SELECT * FROM users WHERE active = :active", {"active": True})
@@ -149,14 +147,13 @@ await DB.statement("DROP TABLE users")
 await DB.unprepared("ALTER TABLE users AUTO_INCREMENT = 1")
 ```
 
-`select` and `select_one` give back dictionaries, `scalar` the one value a
-query returns, `update` and `delete` the number of rows they touched.
-`unprepared` sends SQL exactly as written, for the statements drivers refuse to
-prepare.
+`select` and `select_one` return dictionaries, `scalar` the one value a query
+returns, `update` and `delete` the number of rows they touched. `unprepared`
+sends SQL exactly as written, for statements drivers refuse to prepare.
 
 ### Using multiple connections
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.connection("pgsql").select("SELECT 1")
 await DB.table("users", connection="pgsql").get()
 ```
@@ -167,10 +164,10 @@ and closed with `DB.disconnect()` or `DB.disconnect(name)`.
 
 ### Listening for query events
 
-`DB.listen` hears every statement the application runs, which is how a query
-log or a profiler is built:
+`DB.listen` hears every statement the application runs — useful for a query log
+or profiler:
 
-```python
+```python title="app/providers/app_service_provider.py"
 def log_query(query):
     logger.debug(query.sql, extra={"bindings": query.bindings, "ms": query.time})
 
@@ -186,7 +183,7 @@ the query rather than run it.
 A page is rarely ruined by one slow query — it is ruined by two hundred quick
 ones. `when_querying_for_longer_than` watches the total instead:
 
-```python
+```python title="app/providers/app_service_provider.py"
 DB.when_querying_for_longer_than(
     500,
     lambda connection, query: report_slow_request(connection.name, query.sql),
@@ -194,7 +191,7 @@ DB.when_querying_for_longer_than(
 ```
 
 The budget is per context — a request, a job, a command. Read it with
-`DB.total_query_duration()` and start it over with
+`DB.total_query_duration()` and reset it with
 `DB.reset_total_query_duration()`.
 
 ### Pretending
@@ -202,7 +199,7 @@ The budget is per context — a request, a job, a command. Read it with
 `DB.pretend` runs a callable and collects the statements it would have run,
 without running any of them:
 
-```python
+```python title="app/console/commands/audit_posts.py"
 queries = await DB.pretend(lambda: Post.query().where("draft", True).delete())
 
 for query in queries:
@@ -214,7 +211,7 @@ for query in queries:
 As a block, the transaction commits when the block ends and rolls back if
 anything is raised:
 
-```python
+```python title="app/http/controllers/user_controller.py"
 async with DB.transaction():
     await User.create(email="ada@example.com", name="Ada")
     await DB.table("audits").insert({"event": "user.created"})
@@ -227,7 +224,7 @@ Nested blocks are SAVEPOINTs, so an inner failure undoes only the inner work.
 Pass a callable and the transaction can be retried when the engine reports a
 deadlock:
 
-```python
+```python title="app/http/controllers/order_controller.py"
 await DB.transaction(create_the_order, attempts=5)
 ```
 
@@ -237,7 +234,7 @@ raised the first time.
 
 ### Manually using transactions
 
-```python
+```python title="app/http/controllers/user_controller.py"
 await DB.begin_transaction()
 try:
     await DB.table("users").update({"votes": 1})
@@ -256,7 +253,7 @@ hand-opened transaction inside a block is a SAVEPOINT within it.
 Work that must not happen for a row that never existed goes through
 `after_commit`:
 
-```python
+```python title="app/http/controllers/order_controller.py"
 async with DB.transaction():
     order = await Order.create(...)
     DB.after_commit(lambda: dispatch(SendReceipt(order.id)))
@@ -269,7 +266,7 @@ rollback throws it away with everything else.
 
 `db` opens the client the engine ships, with the connection filled in:
 
-```bash
+```bash title="terminal"
 smith db                # the default connection
 smith db pgsql          # a named one
 smith db mysql --read   # the read half of a split connection
@@ -281,7 +278,7 @@ Almasix does not reimplement a SQL shell; it looks for `sqlite3`, `mysql`,
 
 ## Inspecting your databases
 
-```bash
+```bash title="terminal"
 smith db:show                 # the connection, its tables, and their sizes
 smith db:show --counts        # with a row count per table (a full scan each)
 smith db:show --views --types
@@ -294,7 +291,7 @@ can read.
 
 ## Monitoring your databases
 
-```bash
+```bash title="terminal"
 smith db:monitor
 smith db:monitor --databases=pgsql,mysql --max=100
 ```

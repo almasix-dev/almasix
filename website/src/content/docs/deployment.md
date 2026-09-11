@@ -3,13 +3,13 @@ title: Deployment
 description: Run an Almasix app in production — servers, workers, env, Docker, and releasing.
 ---
 
-Almasix is an ASGI application. In production you run Uvicorn (or another ASGI
-server) behind a reverse proxy, keep `APP_DEBUG` off, migrate before traffic
-hits new code, and run queue workers as separate processes.
+Almasix is an **ASGI** application. In production you run Uvicorn (or another
+ASGI server) behind a reverse proxy, keep `APP_DEBUG` off, migrate before
+traffic hits new code, and run queue workers as separate processes.
 
-The framework itself is already on [PyPI](https://pypi.org/project/almasix/)
-(`pip install almasix`). This page is about **deploying your app**, plus how
-maintainers cut a framework release.
+This page is about **deploying your app**. A short section at the end covers
+how the Almasix framework itself is published to PyPI, for open-source
+consumers who want that picture.
 
 ## Server requirements
 
@@ -38,7 +38,7 @@ baking them into images.
 
 From the application root:
 
-```bash
+```bash title="terminal"
 smith serve --host 0.0.0.0 --port 8000 --workers 4 --no-reload --proxy-headers
 ```
 
@@ -52,7 +52,7 @@ smith serve --host 0.0.0.0 --port 8000 --workers 4 --no-reload --proxy-headers
 Point the ASGI import at `bootstrap.app:asgi` (the scaffold default). Equivalent
 bare Uvicorn:
 
-```bash
+```bash title="terminal"
 uvicorn bootstrap.app:asgi --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers
 ```
 
@@ -62,7 +62,7 @@ uvicorn bootstrap.app:asgi --host 0.0.0.0 --port 8000 --workers 4 --proxy-header
 request IP / scheme helpers inside Almasix middleware, also trust proxies in
 `bootstrap/app.py`:
 
-```python
+```python title="bootstrap/app.py"
 from almasix.http import HEADER_X_FORWARDED_ALL
 
 def configure_middleware(middleware: Middleware) -> None:
@@ -77,7 +77,7 @@ See [Middleware](/middleware/).
 Vite writes into `public/build/`. The HTTP kernel mounts `public/{css,js,images,fonts,build}`
 when those folders exist. Build assets in CI or in the image:
 
-```bash
+```bash title="terminal"
 npm ci && npm run build
 ```
 
@@ -89,7 +89,7 @@ Every application created with `Application.configure(...).create()` registers
 **`GET /up`** by default — an empty `200` outside the Almasix middleware stacks,
 so `smith down` does not take the probe offline. Point your load balancer at it.
 
-```python
+```python title="bootstrap/app.py"
 application = (
     Application.configure(BASE_PATH)
     .with_middleware(configure_middleware)
@@ -100,20 +100,20 @@ application = (
 
 ## Optimize before traffic
 
-```bash
+```bash title="terminal"
 smith optimize
 ```
 
-That compile-checks every Prism template (`view:cache`) and prints which Laravel
-caches Almasix deliberately skips (config, routes, events) — an ASGI process
-boots once and serves for its lifetime, so those caches would save almost
-nothing and risk serving stale config. See [Smith Console](/console/).
+That compile-checks every Prism template (`view:cache`). Config, routes, and
+event listeners are **not** written to disk caches: an ASGI process boots once
+and serves for its lifetime, so those caches would save almost nothing and risk
+serving stale values. See [Smith Console](/console/).
 
 ## Migrations and queue workers
 
 On each deploy, before or as the new workers start:
 
-```bash
+```bash title="terminal"
 smith migrate --force
 smith optimize
 ```
@@ -121,7 +121,7 @@ smith optimize
 Run queue consumers as **separate** long-lived processes (not inside the web
 workers):
 
-```bash
+```bash title="terminal"
 smith queue:work --tries=3
 ```
 
@@ -150,7 +150,7 @@ reports through the logger — see [Logging](/logging/) and [Error Handling](/er
 Build from the **application** root (the directory with `bootstrap/` and
 `smith`), not from the framework repo:
 
-```dockerfile
+```dockerfile title="Dockerfile"
 FROM python:3.13-slim
 
 WORKDIR /app
@@ -174,24 +174,24 @@ adds a compose sketch (web + `queue:work` + Postgres) with an `/up` healthcheck.
 Run migrations as a release job or an entrypoint step before workers accept
 traffic — do not rely on web processes to migrate.
 
-## Releasing Almasix (the framework)
+## How Almasix is published (framework)
 
-Almasix **0.6.1** is live on [PyPI](https://pypi.org/project/almasix/) and TestPyPI.
-This tree is prepared as **0.6.2**. Releases use GitHub Actions Trusted Publishing
-(OIDC) — see `.github/workflows/publish.yml`. No API tokens are stored in the repo.
+The framework is on [PyPI](https://pypi.org/project/almasix/)
+(`pip install almasix`). Releases use GitHub Actions Trusted Publishing (OIDC)
+— see `.github/workflows/publish.yml`. No API tokens are stored in the repo.
 
-To cut **0.6.2** (or any later version):
+To cut a release (maintainers):
 
 1. Confirm `project.version` in `pyproject.toml` and `almasix.__version__` match
    (CI refuses a tag that disagrees with the packaged version).
 2. Merge to `main`.
 3. Optional rehearsal: Actions → **Publish** → Run workflow → target `testpypi`.
-4. Create an annotated tag `v0.6.2` and a GitHub Release on that tag.
-   Publishing the Release triggers the PyPI job.
+4. Create an annotated tag (for example `v0.6.2`) and a GitHub Release on that
+   tag. Publishing the Release triggers the PyPI job.
 
 Install with:
 
-```bash
+```bash title="terminal"
 pip install almasix
 # or pin
 pip install almasix==0.6.2

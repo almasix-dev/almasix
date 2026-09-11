@@ -9,8 +9,7 @@ Casts, accessors, scopes, soft deletes, events, observers, serialization, and
 factories work the same way they do over SQL. What changes is that there is no
 migration, no schema builder, and no joins.
 
-```python
-# app/models/article.py
+```python title="app/models/article.py"
 from almasix.orm import Document, HasFactory, SoftDeletes, relation
 
 
@@ -24,17 +23,16 @@ class Article(HasFactory, SoftDeletes, Document):
     indexes = ({"keys": [("title", 1)], "unique": True},)
 ```
 
-```python
+```python title="app/http/controllers/example_controller.py"
 article = await Article.create(title="Notes", tags=["math"])
 await Article.query().where_all("tags", ["math"]).order_by_desc("created_at").get()
 ```
 
-Laravel 13 documents MongoDB through the official
-[`mongodb/laravel-mongodb`](https://laravel.com/docs/13.x/mongodb) package.
-Almasix chases that Eloquent-on-collections surface inside Articulate — one ORM,
-two store kinds — and names where it deliberately stops. Configure stores under
-[Database → Document stores](/database/documents/); see
-[Compared with Laravel](/articulate/documents/compared/) for the full map.
+One ORM, two store kinds: SQL tables and document collections share the same
+Active Record habits. Configure stores under
+[Database → Document stores](/database/documents/); see the
+[document store feature map](/articulate/documents/compared/) for what ships,
+what is partial, and what is deliberately missing.
 
 ## In this section
 
@@ -45,7 +43,7 @@ two store kinds — and names where it deliberately stops. Configure stores unde
 | [Relationships & embeds](/articulate/documents/relationships/) | References across stores, `embeds_one` / `embeds_many` |
 | [Indexes](/articulate/documents/indexes/) | Declared indexes, `documents:index` / `documents:show` |
 | [Aggregations](/articulate/documents/aggregations/) | Builder aggregates and `raw_aggregate` pipelines |
-| [Compared with Laravel](/articulate/documents/compared/) | Honest parity vs Laravel 13 MongoDB features |
+| [Document store feature map](/articulate/documents/compared/) | Shipped, partial, and missing features — honest gaps included |
 
 Also see the Database section:
 [Document stores (NoSQL)](/database/documents/) (config and `store()` vs
@@ -59,13 +57,9 @@ you need joins, foreign keys, transactional DDL, or the rest of the SQL
 Articulate ladder. Mixing both in one app is normal: a document can
 `belongs_to` a SQL user, and a SQL model can reference a document key.
 
-## Living example
+## Try it in your app
 
-The progress app keeps an `Activity` document on the in-process `memory` store
-(point `DOCUMENTS_CONNECTION` at `mongodb` to use a real server):
-
-```bash
-cd examples/progress
-python smith progress:documents
-# GET /api/documents
-```
+Add a `memory` (or `mongodb`) connection in `config/database.py`, define a
+`Document` subclass, and create a few rows from a Smith command or a test.
+Point `DOCUMENTS_CONNECTION` at `mongodb` and set `MONGODB_DSN` when you want
+a real server — the same model code works on both stores.

@@ -5,8 +5,7 @@ description: Render Prism templates with view() and escaped echo.
 
 # Rendering Views
 
-```python
-# app/http/controllers/welcome_controller.py
+```python title="app/http/controllers/welcome_controller.py"
 from almasix.prism import view
 
 return view("greeting", {"name": user.name})

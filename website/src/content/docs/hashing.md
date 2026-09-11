@@ -5,8 +5,7 @@ description: Hash.make / check / needs_rehash — bcrypt default, optional argon
 
 Almasix’s `Hash` façade hashes and verifies passwords (bcrypt by default).
 
-```python
-# examples/hashing.py
+```python title="app/http/controllers/auth_controller.py"
 from almasix.hashing import Hash
 
 hashed = Hash.make("secret")
@@ -22,8 +21,7 @@ Hash.is_hashed(hashed)
 | `bcrypt` (default) | `hashing.bcrypt.rounds` | Bundled (`bcrypt` package) |
 | `argon2` / `argon2id` | `hashing.argon2.{memory,threads,time}` | Optional: `pip install 'almasix[argon2]'` |
 
-```python
-# config/hashing.py
+```python title="config/hashing.py"
 config = {
     "driver": "bcrypt",
     "bcrypt": {"rounds": 12},
@@ -31,8 +29,7 @@ config = {
 }
 ```
 
-```python
-# examples/hashing.py
+```python title="app/http/controllers/auth_controller.py"
 Hash.driver("argon2id").make("secret")
 ```
 

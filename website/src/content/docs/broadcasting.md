@@ -10,7 +10,7 @@ published, an order ships, someone joins a room. Broadcasting takes an event
 you already dispatch and puts it on a channel that connected clients are
 listening to.
 
-```python
+```python title="examples/broadcasting.py"
 from almasix.broadcasting import PrivateChannel, ShouldBroadcast
 
 
@@ -22,7 +22,7 @@ class OrderShipped(ShouldBroadcast):
         return [PrivateChannel(f"orders.{self.order.id}")]
 ```
 
-```python
+```python title="examples/broadcasting.py"
 from almasix.broadcasting import broadcast
 
 broadcast(OrderShipped(order)).to_others()
@@ -86,7 +86,7 @@ server plus the `@almasix/sonar` browser client. It does **not** require
 With `BROADCAST_CONNECTION=websocket` or `sonar`, the application serves Sonar
 at `/broadcasting/socket` — no third party, no separate process.
 
-```python
+```python title="routes/web.py"
 Route.websocket("/live", MyHandler())     # your own sockets, same router
 ```
 
@@ -111,11 +111,11 @@ hosted alternative below, when you scale past one.
 
 ### `@almasix/sonar` client
 
-```bash
+```bash title="terminal"
 npm install @almasix/sonar
 ```
 
-```js
+```js title="resources/views/examples/broadcasting.prism.html"
 import Sonar from "@almasix/sonar";
 
 const sonar = new Sonar({
@@ -159,7 +159,7 @@ See the [`@almasix/sonar` README](https://github.com/almasix-dev/sonar#readme) f
 
 ### Raw WebSocket (no package)
 
-```js
+```js title="resources/js/examples/broadcasting.js"
 const socket = new WebSocket("ws://localhost:8000/broadcasting/socket");
 
 socket.onmessage = (message) => {
@@ -180,7 +180,7 @@ socket.onmessage = (message) => {
 Inherit `ShouldBroadcast` and name the channels. Everything else has a
 default:
 
-```python
+```python title="examples/broadcasting.py"
 class PostPublished(ShouldBroadcast):
     def __init__(self, post):
         self.post = post
@@ -221,7 +221,7 @@ what sits on the queue is plain JSON that any driver can carry.
 
 Mix in `InteractsWithBroadcasting` and the event can pick:
 
-```python
+```python title="examples/broadcasting.py"
 broadcast(OrderShipped(order)).via("pusher")
 ```
 
@@ -230,7 +230,7 @@ broadcast(OrderShipped(order)).via("pusher")
 Mix in `InteractsWithSockets`. Sonar sends an `X-Socket-ID` header once it has
 connected, and `to_others()` reads it:
 
-```python
+```python title="examples/broadcasting.py"
 broadcast(OrderShipped(order)).to_others()   # everyone on the channel but me
 ```
 
@@ -252,7 +252,7 @@ model may override `broadcast_channel()` to shorten that.
 `routes/channels.py` says who may listen to what. The broadcasting provider
 loads it, so channels exist in console runs too:
 
-```python
+```python title="resources/views/examples/broadcasting.prism.html"
 from almasix.broadcasting import Broadcast
 
 
@@ -267,7 +267,7 @@ subscription rather than raising.
 
 A channel class is the other spelling, resolved from the container:
 
-```python
+```python title="examples/broadcasting.py"
 Broadcast.channel("orders.{order}", OrderChannel)   # smith make:channel OrderChannel
 ```
 
@@ -302,7 +302,7 @@ connection's `secret`, falling back to `APP_KEY`.
 Mix `BroadcastsEvents` into a model, before `Model`, and its writes broadcast
 themselves:
 
-```python
+```python title="app/models/example.py"
 class Post(BroadcastsEvents, Model):
     def broadcast_on(self, event: str):
         return [] if event == "deleted" else [self, self.author]
@@ -321,7 +321,7 @@ inherit `BroadcastsEventsAfterCommit` to wait for the transaction.
 
 `broadcast` is a notification channel like any other:
 
-```python
+```python title="examples/broadcasting.py"
 class InvoicePaid(Notification):
     def via(self, notifiable):
         return ["database", "broadcast"]
@@ -338,7 +338,7 @@ It goes to the notifiable's own private channel — or wherever
 
 `Broadcast.fake()` points every connection at a recorder:
 
-```python
+```python title="examples/broadcasting.py"
 fake = Broadcast.fake()
 
 broadcast(OrderShipped(order)).send()
@@ -363,7 +363,7 @@ you already use them or need a hosted bus.
 
 Use the `pusher` broadcaster (`PUSHER_*` env) so the server posts to Pusher
 Channels. In the browser, use [`pusher-js`](https://github.com/pusher/pusher-js)
-(or Laravel Echo's Pusher connector) against your Pusher app credentials.
+(or any Pusher-compatible client) against your Pusher app credentials.
 Channel auth still hits Almasix at `POST /broadcasting/auth`.
 
 ### Ably
@@ -382,15 +382,14 @@ Almasix's native Sonar protocol is not Socket.IO; treat this as a separate
 realtime plane fed by the `redis` or `log` broadcaster, not as a drop-in for
 `/broadcasting/socket`.
 
-## Differences from Laravel
+## Design notes
 
 - **Marker, not interface.** `ShouldBroadcast` is a base class you inherit;
   Python has no interfaces to implement.
-- **Sonar by default.** Laravel points you at Reverb, Pusher, or Ably.
-  Almasix ships Sonar in-process and `@almasix/sonar` for the browser; Pusher,
-  Ably, and Socket.IO stay documented alternatives.
+- **Sonar by default.** Almasix ships Sonar in-process and `@almasix/sonar` for
+  the browser; Pusher, Ably, and Socket.IO stay documented alternatives.
 - **Names default to the class name**, not the fully qualified path.
 - **Payloads are captured at dispatch**, not rebuilt when the job runs,
   because queue payloads here are JSON rather than serialized objects.
-- **`flush_broadcasts()`** exists because dispatch is synchronous and the
-  send is not; Laravel has no equivalent because PHP has no event loop.
+- **`flush_broadcasts()`** exists because dispatch is synchronous and the send
+  is not — the event loop needs a place to drain pending broadcasts.

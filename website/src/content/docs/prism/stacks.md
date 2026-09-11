@@ -10,12 +10,12 @@ description: "@push, @prepend, @stack, @once, and Engine.directive()."
 Push fragments from a child view; flush them in the layout (usually **after**
 `@yield` so pushes from sections are visible):
 
-```html
-<!-- resources/views/layouts/app.prism.html -->
+```html title="resources/views/layouts/app.prism.html"
 @yield("content")
 @stack("scripts")
+```
 
-<!-- resources/views/home.prism.html -->
+```html title="resources/views/home.prism.html"
 @push("scripts")
   <script src="{{ asset('app.js') }}"></script>
 @endpush
@@ -30,8 +30,7 @@ Push fragments from a child view; flush them in the layout (usually **after**
 
 ## Framework stubs
 
-```html
-<!-- resources/views/auth/login.prism.html -->
+```html title="resources/views/auth/login.prism.html"
 @csrf
 @asset("css/app.css")
 
@@ -40,16 +39,16 @@ Push fragments from a child view; flush them in the layout (usually **after**
 @enderror
 ```
 
-- `@csrf` emits a hidden `_token` input from `context["csrf_token"]` (empty until sessions land).
-- `@error("field")` shows the block when `errors` is a field→messages mapping; `message` is the first error string.
-- `@asset(...)` calls the injected `asset()` helper (subpath-aware).
+- `@csrf` emits a hidden `_token` input from `context["csrf_token"]`
+- `@error("field")` shows the block when `errors` is a field→messages mapping;
+  `message` is the first error string
+- `@asset(...)` calls the injected `asset()` helper (subpath-aware)
 
 ## Debugging
 
 Dump helpers for views:
 
-```html
-<!-- resources/views/debug.prism.html -->
+```html title="resources/views/debug.prism.html"
 @dump(user)
 @dump(user, request)
 @dd(board)
@@ -68,28 +67,24 @@ Register handlers on the engine (or `ViewFactory.directive`). The handler
 receives the expression inside the parentheses (or `""`) and returns Python
 source lines to emit into the compiled render function:
 
-```python
-# app/providers/view_service_provider.py
+```python title="app/providers/view_service_provider.py"
 engine.directive(
     "datetime",
     lambda expr: f"__w(__e(str(__eval({expr!r}))))",
 )
 ```
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 @datetime(now.isoformat())
 ```
 
 ## Composers, creators, and fragment cache
 
-```python
-# app/providers/view_service_provider.py
+```python title="app/providers/view_service_provider.py"
 engine.composer("profile.*", lambda ctx: ctx.setdefault("title", "Profile"))
 engine.creator(["dashboard", "dashboard.*"], seed_once)
 
-# In a template:
-# @cache("sidebar") ... @endcache
+# In a template: @cache("sidebar") ... @endcache
 engine.cache_views()  # warm compile cache
 engine.clear_cache()  # compiled views + fragments + creators
 ```

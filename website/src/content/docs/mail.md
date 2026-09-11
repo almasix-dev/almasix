@@ -5,7 +5,7 @@ description: Mailable classes, Mail façade, log/array/SMTP transports, Markdown
 
 ## Sending mail
 
-```python
+```python title="resources/views/examples/mail.prism.html"
 from almasix.mail import Mail, Mailable, Envelope, Content, Attachment
 
 class WelcomeMail(Mailable):
@@ -32,7 +32,7 @@ Configure `config/mail.py`:
 | `array` | In-memory — test assertions |
 | `smtp` | Production baseline via smtplib |
 
-```python
+```python title="examples/mail.py"
 from almasix.mail import MailAssertions
 
 MailAssertions(Mail.manager()).assert_sent(WelcomeMail)

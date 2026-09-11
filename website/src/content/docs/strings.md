@@ -7,8 +7,7 @@ Almasix has two ways to work a string. `Str` is a namespace of static methods
 that take the subject as their first argument, and `str_()` wraps a string in a
 `Stringable` so the same operations chain:
 
-```python
-# app/http/controllers/post_controller.py
+```python title="app/http/controllers/post_controller.py"
 from almasix.support import Str, str_
 
 Str.slug(Str.title("the hitchhiker's guide"))
@@ -20,16 +19,15 @@ str_("the hitchhiker's guide").title().slug().value()
 
 Every `Str` method is available fluently: `Stringable` delegates the whole
 static surface rather than hand-picking a subset, so anything on this page's
-first half can be called on the second half's receiver. Methods also answer to
-their Laravel camelCase names — `Str.doesntStartWith` is
-`Str.doesnt_start_with`, `str_(value).beforeLast('/')` is `before_last('/')` —
-so a Laravel snippet transcribes directly. The Python name is the documented
-one.
+first half can be called on the second half's receiver. Methods also accept
+camelCase aliases — `Str.doesntStartWith` for `Str.doesnt_start_with`,
+`beforeLast('/')` for `before_last('/')`. The snake_case name is the
+documented one.
 
 `Stringable` is immutable. Each fluent call returns a new instance, and the
 receiver is unchanged:
 
-```python
+```python title="examples/strings.py"
 name = str_("ada lovelace")
 upper = name.upper()
 
@@ -41,14 +39,14 @@ Reach for the string itself with `value()`, `to_string()`, or `str(...)`; a
 `Stringable` also compares equal to the string it holds, so most code can pass
 it straight to something expecting `str`.
 
-## Not ported
+## Not included
 
-Three of Laravel's fluent methods have no Python counterpart, and are absent
-rather than faked:
+A few fluent methods have no counterpart here, and are absent rather than
+faked:
 
-| Laravel | Why it is absent |
+| Method | Why it is absent |
 | --- | --- |
-| `scan` | PHP's `sscanf` format strings; Python's parsing story is different enough that a port would be a new API rather than a port |
+| `scan` | PHP-style `sscanf` format strings; Python's parsing story is different enough that adding it would be a new API |
 | `toHtmlString` | Prism's escaper honours `__html__`, so `HtmlString` from `almasix.prism` is the equivalent — see [Views](/views/) |
 | `toUri` | Prefer `url()` / named routes — see [URL Generation](/urls/) |
 
@@ -63,7 +61,7 @@ Returns everything after the first occurrence of `search`. If `search` is not
 in the subject, or is the empty string, the whole subject comes back unchanged
 rather than an empty string.
 
-```python
+```python title="resources/views/examples/strings.prism.html"
 from almasix.support import Str
 
 result = Str.after("ada@example.com", "@")
@@ -81,7 +79,7 @@ Returns everything after the last occurrence of `search`, which is what you
 want for the final segment of a path or a namespace. A `search` that is absent
 or empty returns the subject unchanged.
 
-```python
+```python title="app/models/example.py"
 result = Str.after_last("app/Models/User.py", "/")
 
 # 'User.py'
@@ -94,7 +92,7 @@ a fixed set of short joining words (`a`, `an`, `and`, `as`, `at`, `but`, `by`,
 `for`, `in`, `nor`, `of`, `on`, `or`, `so`, `the`, `to`, `up`, `yet`), and the
 first and last words are always capitalised whatever they are.
 
-```python
+```python title="examples/strings.py"
 result = Str.apa("a nice title for the almasix docs")
 
 # 'A Nice Title for the Almasix Docs'
@@ -114,7 +112,7 @@ Transliterates a string to ASCII by decomposing it (Unicode NFKD) and dropping
 every character that has no ASCII form. Accented Latin letters survive as their
 base letter.
 
-```python
+```python title="examples/strings.py"
 result = Str.ascii("Crème brûlée")
 
 # 'Creme brulee'
@@ -122,15 +120,15 @@ result = Str.ascii("Crème brûlée")
 
 Characters that do not decompose to an ASCII letter are removed, not mapped:
 `Str.ascii("Kjøbenhavn")` is `'Kjbenhavn'` and a Cyrillic string comes back
-empty. Laravel keeps a transliteration table and would render `ø` as `o`.
-`Str.transliterate` is the same function under Laravel's other name.
+empty — there is no separate transliteration table that would map `ø` to `o`.
+`Str.transliterate` is an alias for the same function.
 
 ### before
 
 Returns everything before the first occurrence of `search`. An absent or empty
 `search` returns the subject unchanged.
 
-```python
+```python title="resources/views/examples/strings.prism.html"
 result = Str.before("ada@example.com", "@")
 
 # 'ada'
@@ -141,7 +139,7 @@ result = Str.before("ada@example.com", "@")
 Returns everything before the last occurrence of `search` — the directory part
 of a path, for instance.
 
-```python
+```python title="app/models/example.py"
 result = Str.before_last("app/Models/User.py", "/")
 
 # 'app/Models'
@@ -154,7 +152,7 @@ Returns the portion between `from_` and `to`: everything after the first
 trailing underscore because `from` is a Python keyword. If either delimiter is
 empty the subject comes back unchanged.
 
-```python
+```python title="examples/strings.py"
 result = Str.between("The [quick] brown [fox]", "[", "]")
 
 # 'quick'
@@ -164,9 +162,8 @@ smallest = Str.between("[a] bc [d]", "[", "]")
 # 'a'
 ```
 
-Laravel's `between` runs to the *last* occurrence of `to` (giving `'a] bc [d'`
-for the second example); Almasix's stops at the first, so it behaves like
-Laravel's `betweenFirst`.
+Almasix stops at the *first* occurrence of `to` after `from_` (so the
+second example yields `'a'`), which matches `between_first`.
 
 ### between_first
 
@@ -174,7 +171,7 @@ Returns the smallest portion between `from_` and `to`. In Almasix this is an
 alias — it calls `between`, which already stops at the first `to`, so the two
 methods always return the same string.
 
-```python
+```python title="examples/strings.py"
 result = Str.between_first("[a] bc [d]", "[", "]")
 
 # 'a'
@@ -186,7 +183,7 @@ Converts a string to camelCase. The value is split on every run of
 non-alphanumeric characters, each part is capitalised, and the first letter is
 lower-cased.
 
-```python
+```python title="examples/strings.py"
 result = Str.camel("foo_bar")
 
 # 'fooBar'
@@ -205,7 +202,7 @@ Returns the single character at `index`, or `False` when the index is outside
 the string. It returns a `bool` rather than raising `IndexError`, so test the
 result before using it.
 
-```python
+```python title="examples/strings.py"
 result = Str.char_at("Ada", 1)
 
 # 'd'
@@ -215,10 +212,10 @@ out_of_range = Str.char_at("Ada", 9)
 # False
 ```
 
-A negative index counts back from the end, as Python slicing and Laravel both
-do, and still returns `False` when it reaches past the start.
+A negative index counts back from the end, as with Python slicing,
+and still returns `False` when it reaches past the start.
 
-```python
+```python title="examples/strings.py"
 last = Str.char_at("Ada", -1)
 
 # 'a'
@@ -231,7 +228,7 @@ subject untouched otherwise. Pass an iterable to try several suffixes; the
 first one in the iterable that matches is the one removed, and only one is
 removed per call.
 
-```python
+```python title="app/models/example.py"
 result = Str.chop_end("app/Models/User.py", ".py")
 
 # 'app/Models/User'
@@ -247,7 +244,7 @@ Removes `needle` from the start of the subject if it is there. As with
 `chop_end`, an iterable is tried in order and only the first match is removed,
 so put the longer prefix first when one is a prefix of the other.
 
-```python
+```python title="examples/strings.py"
 result = Str.chop_start("https://example.com", ["https://", "http://"])
 
 # 'example.com'
@@ -263,7 +260,7 @@ Whether the haystack contains any of the needles. `needles` is a single string
 or an iterable of them, and `ignore_case` compares both sides in lower case. An
 empty needle never matches.
 
-```python
+```python title="examples/strings.py"
 result = Str.contains("Ada Lovelace", "Love")
 
 # True
@@ -283,7 +280,7 @@ Whether the haystack contains every one of the needles, in any order. `needles`
 must be an iterable here rather than a bare string, and `ignore_case` applies
 to all of them.
 
-```python
+```python title="examples/strings.py"
 result = Str.contains_all("Ada Lovelace", ["Ada", "Lovelace"])
 
 # True
@@ -299,7 +296,7 @@ Collapses consecutive runs of `character` down to a single occurrence.
 `character` defaults to a space, and is escaped before use, so a regular
 expression metacharacter such as `.` is treated literally.
 
-```python
+```python title="examples/strings.py"
 result = Str.deduplicate("The  Almasix   framework")
 
 # 'The Almasix framework'
@@ -314,7 +311,7 @@ path = Str.deduplicate("users//1///posts", "/")
 The negation of `contains`: whether the haystack contains none of the needles.
 It takes the same `ignore_case` keyword.
 
-```python
+```python title="examples/strings.py"
 result = Str.doesnt_contain("Ada Lovelace", "Babbage")
 
 # True
@@ -331,7 +328,7 @@ or an iterable; the result is `True` only when every one of them fails to
 match. Empty needles are ignored, so `Str.doesnt_end_with("Ada", "")` is
 `True`.
 
-```python
+```python title="examples/strings.py"
 result = Str.doesnt_end_with("index.html", ".py")
 
 # True
@@ -347,7 +344,7 @@ Whether the string starts with none of the needles — the negation of
 `starts_with`, and useful for checking that a value has not already been
 prefixed.
 
-```python
+```python title="examples/strings.py"
 result = Str.doesnt_start_with("example.com", "https://")
 
 # True
@@ -358,7 +355,7 @@ result = Str.doesnt_start_with("example.com", "https://")
 Whether the string ends with the needle, or with any needle in an iterable.
 Empty needles are skipped rather than matching everything.
 
-```python
+```python title="examples/strings.py"
 result = Str.ends_with("index.html", ".html")
 
 # True
@@ -376,7 +373,7 @@ a keyword-only mapping: `radius` is how many characters to keep on either side
 of the phrase (default `100`) and `omission` is the marker (default `'...'`).
 Returns `None` when the phrase is not in the text.
 
-```python
+```python title="examples/strings.py"
 result = Str.excerpt("This is my beautiful framework", "my", options={"radius": 3})
 
 # '...is my be...'
@@ -398,7 +395,7 @@ omission appended only if anything was removed.
 Ensures the value ends with exactly one `cap`. Any existing run of `cap` at the
 end is stripped first, so calling it twice does not double the suffix.
 
-```python
+```python title="examples/strings.py"
 result = Str.finish("this/string", "/")
 
 # 'this/string/'
@@ -413,7 +410,7 @@ trimmed = Str.finish("this/string//", "/")
 Decodes a base64 string back to text, assuming UTF-8. The counterpart is
 `Str.to_base64`.
 
-```python
+```python title="examples/strings.py"
 result = Str.from_base64("QWxtYXNpeA==")
 
 # 'Almasix'
@@ -421,15 +418,14 @@ result = Str.from_base64("QWxtYXNpeA==")
 
 Decoding is not strict: characters outside the base64 alphabet are discarded
 rather than reported, so invalid input returns whatever is left (often `''`)
-instead of raising. Laravel's `fromBase64` takes a `$strict` flag; Almasix has
-no equivalent.
+instead of raising. There is no strict mode that raises on invalid input.
 
 ### headline
 
 Turns any casing into a space-separated, capitalised phrase, by way of `snake`
 — useful for making a label out of a field or class name.
 
-```python
+```python title="examples/strings.py"
 result = Str.headline("steve_jobs")
 
 # 'Steve Jobs'
@@ -448,7 +444,7 @@ Reduces a name to the first letter of each word, upper-cased and followed by a
 full stop. `separator` is what goes between the initials, and defaults to a
 space.
 
-```python
+```python title="examples/strings.py"
 result = Str.initials("Ada Lovelace")
 
 # 'A. L.'
@@ -467,7 +463,7 @@ Converts a small subset of Markdown to inline HTML, with no wrapping `<p>`.
 `&`, `<` and `>` in the input are escaped first, then `**bold**`, `*italic*`,
 `` `code` `` and `[text](url)` are converted — nothing else.
 
-```python
+```python title="examples/strings.py"
 result = Str.inline_markdown("Visit **Almasix** at [the site](https://example.com)")
 
 # 'Visit <strong>Almasix</strong> at <a href="https://example.com">the site</a>'
@@ -479,18 +475,18 @@ code = Str.inline_markdown("Use `Str.of()` for *fluent* strings")
 
 This is a handful of regular expressions rather than a CommonMark parser, and
 the keyword-only `options` mapping is accepted for signature compatibility but
-discarded — Laravel passes its options through to the converter.
+discarded.
 
 ### is_
 
 Whether `value` matches the shell-style pattern, where `*` stands for any run
 of characters and everything else is literal. An exact string equality also
 counts as a match. Pass an iterable of patterns to accept any of them. Note
-that the pattern comes first and the value second. Laravel spells this
-`Str::is`; the trailing underscore avoids the Python keyword, and the bare name
-is kept as an alias reachable with `getattr(Str, "is")`.
+that the pattern comes first and the value second. The trailing underscore
+avoids the Python keyword, and the bare name is kept as an alias reachable
+with `getattr(Str, "is")`.
 
-```python
+```python title="examples/strings.py"
 result = Str.is_("admin/*", "admin/users")
 
 # True
@@ -505,14 +501,13 @@ unmatched = Str.is_("admin/*", "public/index")
 ```
 
 The pattern must cover the whole value, `?` is not a wildcard, and matching is
-always case sensitive — Laravel's `Str::is` takes an `ignoreCase` argument that
-Almasix does not have.
+always case sensitive — there is no `ignore_case` flag.
 
 ### is_ascii
 
 Whether every character in the value can be encoded as ASCII.
 
-```python
+```python title="examples/strings.py"
 result = Str.is_ascii("Almasix")
 
 # True
@@ -527,7 +522,7 @@ accented = Str.is_ascii("Crème")
 Whether the value parses as JSON. Anything `json.loads` accepts counts, so a
 bare number or `null` is JSON too, not only objects and arrays.
 
-```python
+```python title="examples/strings.py"
 result = Str.is_json('{"name": "Ada"}')
 
 # True
@@ -543,7 +538,7 @@ Whether the value matches any of the given regular expressions. The patterns
 are searched, not anchored, so `r"\d+"` matches anywhere in the value; anchor
 with `^` and `$` if you need the whole string to match.
 
-```python
+```python title="examples/strings.py"
 result = Str.is_match(r"^\d{4}-\d{2}$", "2026-09")
 
 # True
@@ -563,7 +558,7 @@ Whether the value looks like a ULID: 26 characters of Crockford base32 whose
 first character is `0`–`7`. The check is a pattern match and is case
 insensitive, so a lower-case ULID passes too.
 
-```python
+```python title="examples/strings.py"
 result = Str.is_ulid("01ARZ3NDEKTSV4RRFFQ69G5FAV")
 
 # True
@@ -577,10 +572,10 @@ invalid = Str.is_ulid("not-a-ulid")
 
 Whether the value parses as a URL, meaning it has both a scheme and a host.
 Pass `protocols` to restrict which schemes count. Almasix tests this with
-`urllib.parse.urlparse` rather than Laravel's URL regular expression, so any
+`urllib.parse.urlparse`, so any
 scheme is accepted unless you name the ones you want.
 
-```python
+```python title="examples/strings.py"
 from almasix.support import Str
 
 result = Str.is_url("https://almasix.dev/docs")
@@ -595,10 +590,10 @@ result = Str.is_url("http://almasix.dev", ["https"])
 ### is_uuid
 
 Whether the value is a UUID. Almasix hands the string to Python's `uuid.UUID`,
-which accepts more shapes than Laravel's regular expression does — the
+which accepts several shapes — the
 32-character unhyphenated form and the `urn:uuid:` form are both true here.
 
-```python
+```python title="examples/strings.py"
 result = Str.is_uuid("7c9e6679-7425-40de-944b-e07fc1f90ae7")
 
 # True
@@ -618,7 +613,7 @@ Converts the string to kebab-case. It is `snake` with a `-` delimiter, so
 camel-case boundaries become hyphens and any run of non-alphanumeric characters
 collapses into a single hyphen.
 
-```python
+```python title="examples/strings.py"
 result = Str.kebab("fooBar")
 
 # 'foo-bar'
@@ -632,7 +627,7 @@ result = Str.kebab("Foo Bar Baz")
 
 Lower-cases the first character and leaves the rest of the string alone.
 
-```python
+```python title="examples/strings.py"
 result = Str.lcfirst("Foo Bar")
 
 # 'foo Bar'
@@ -640,11 +635,12 @@ result = Str.lcfirst("Foo Bar")
 
 ### length
 
-The number of characters in the string. `encoding` exists to match Laravel's
-signature and is ignored: Python strings are already sequences of code points,
+The number of characters in the string. An unused `encoding` argument is
+accepted for signature compatibility and ignored: Python strings are already
+sequences of code points,
 so an accented character counts as one either way.
 
-```python
+```python title="examples/strings.py"
 result = Str.length("Almasix")
 
 # 7
@@ -662,7 +658,7 @@ after a space does not leave one before the ellipsis. A string that is already
 short enough is returned untouched, without `end`. There is no `preserve_words`
 argument; the cut is by character count only.
 
-```python
+```python title="examples/strings.py"
 result = Str.limit("The quick brown fox jumps over the lazy dog", 20)
 
 # 'The quick brown fox...'
@@ -676,7 +672,7 @@ result = Str.limit("The quick brown fox", 9, " (…)")
 
 Lower-cases the whole string.
 
-```python
+```python title="examples/strings.py"
 result = Str.lower("Almasix FRAMEWORK")
 
 # 'almasix framework'
@@ -688,7 +684,7 @@ Strips characters from the start of the string. With no `characters` it strips
 whitespace; otherwise `characters` is a set of candidates rather than a prefix,
 as with `str.lstrip`.
 
-```python
+```python title="examples/strings.py"
 result = Str.ltrim("  Almasix  ")
 
 # 'Almasix  '
@@ -706,10 +702,10 @@ required: the work is done by Almasix's mail renderer
 headings, `**bold**`, links, and paragraphs, and turns a link alone on its line
 into a button. Anything it does not know — lists, `*italic*`, code fences — is
 left as literal text inside a paragraph, so this is a much smaller Markdown
-dialect than Laravel's CommonMark. The `options` argument is accepted and
+dialect than full CommonMark. The `options` argument is accepted and
 ignored.
 
-```python
+```python title="examples/strings.py"
 result = Str.markdown("# Release notes")
 
 # '<h1>Release notes</h1>'
@@ -730,7 +726,7 @@ are `(value, character, index, length=None)`: masking starts at `index`, which
 may be negative to count from the end, and runs for `length` characters, or to
 the end of the string when `length` is omitted.
 
-```python
+```python title="resources/views/examples/strings.prism.html"
 result = Str.mask("taylor@example.com", "*", 3)
 
 # 'tay***************'
@@ -752,7 +748,7 @@ nothing matches the result is the empty string, not `None`, so use `is_match`
 when you want the boolean question answered. Note the argument order: the
 pattern comes first, the subject second.
 
-```python
+```python title="examples/strings.py"
 result = Str.match(r"\d+", "order 42 shipped")
 
 # '42'
@@ -771,7 +767,7 @@ result = Str.match(r"\d+", "no digits here")
 Every match of the regular expression, as a list — or every first capture
 group, when the pattern has groups. An empty list when nothing matches.
 
-```python
+```python title="resources/views/examples/strings.prism.html"
 result = Str.match_all(r"\d+", "a1 b22 c333")
 
 # ['1', '22', '333']
@@ -791,7 +787,7 @@ Wraps a value in a `Stringable` so the same helpers can be chained fluently.
 The value is stringified, `None` becomes the empty string, and the default is
 the empty string. `str_()` is the shorter global helper for the same thing.
 
-```python
+```python title="examples/strings.py"
 result = Str.of("Almasix")
 
 # Stringable('Almasix')
@@ -810,10 +806,10 @@ result = str(Str.of("  Almasix  ").trim().upper())
 A UUID whose leading characters increase with time, so a column of them stays
 roughly in insertion order and indexes better than random UUIDs. Almasix
 produces this with `uuid.uuid1` — a version 1, time-and-node UUID, not the
-timestamp-first version 4 value Laravel generates, and it embeds the host's MAC
+timestamp-rearranged UUID some other stacks emit, and it embeds the host's MAC
 address.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = Str.ordered_uuid()
 
@@ -827,7 +823,7 @@ it. A `pad` longer than one character repeats and is cut short to fit, and the
 odd character out goes on the right. A string already at `length` is returned
 untouched.
 
-```python
+```python title="examples/strings.py"
 result = Str.pad_both("Almasix", 12, "_")
 
 # '__Almasix___'
@@ -842,7 +838,7 @@ repeated = Str.pad_both("x", 7, "-=")
 Pads the start of the string until it is `length` characters long, repeating
 `pad` and cutting it short to fit.
 
-```python
+```python title="examples/strings.py"
 result = Str.pad_left("7", 3, "0")
 
 # '007'
@@ -857,7 +853,7 @@ repeated = Str.pad_left("7", 5, "ab")
 Pads the end of the string until it is `length` characters long, again
 repeating `pad` to fit.
 
-```python
+```python title="examples/strings.py"
 result = Str.pad_right("Almasix", 10, "-")
 
 # 'Almasix---'
@@ -874,7 +870,7 @@ digits and the symbols `!@#$%^&*()-_=+[]{};:,.?/`. Turn off any of `letters`,
 `numbers`, `symbols` to narrow the alphabet, or turn on `spaces` to add the
 space character; if you disable everything, letters are used anyway.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = Str.password(12)
 
@@ -893,7 +889,7 @@ including 0, pluralises. Irregular words come from a small dictionary,
 uncountable words such as `sheep` and `information` are never changed, and
 everything else goes through a list of suffix rules.
 
-```python
+```python title="examples/strings.py"
 result = Str.plural("person")
 
 # 'people'
@@ -918,7 +914,7 @@ alone. It takes the same `count` argument as `plural`, so a count of 1 returns
 the string unchanged. It rebuilds the string from the words it finds, so any
 underscores or other separators in the input are dropped.
 
-```python
+```python title="examples/strings.py"
 result = Str.plural_studly("UserComment")
 
 # 'UserComments'
@@ -942,7 +938,7 @@ The index of the first occurrence of `needle` at or after `offset`, or `False`
 when it does not occur. Since a match at the start returns 0, compare with `is
 False` rather than testing truthiness.
 
-```python
+```python title="examples/strings.py"
 result = Str.position("Hello, World!", "World")
 
 # 7
@@ -961,7 +957,7 @@ result = Str.position("Hello, World!", "x")
 A cryptographically random alphanumeric string of `length` characters, 16 by
 default. Letters and digits only — for symbols use `password`.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = Str.random(8)
 
@@ -972,9 +968,9 @@ result = Str.random(8)
 
 Removes every occurrence of `search` from `subject`. `search` may be a single
 string or an iterable of them, applied in order. Pass `case_sensitive=False` —
-keyword-only, unlike Laravel's positional flag — to ignore case.
+keyword-only — to ignore case.
 
-```python
+```python title="examples/strings.py"
 result = Str.remove("e", "Peter Piper picked a peck")
 
 # 'Ptr Pipr pickd a pck'
@@ -993,7 +989,7 @@ result = Str.remove("A", "Almasix banana", case_sensitive=False)
 Repeats the string `times` times. A count of 0 or less gives the empty string
 rather than raising.
 
-```python
+```python title="examples/strings.py"
 result = Str.repeat("ab", 3)
 
 # 'ababab'
@@ -1009,9 +1005,9 @@ Replaces every occurrence of `search` with `replace` in `subject` — note that
 the subject is the third argument, not the first. Both `search` and `replace`
 may be iterables, in which case they are paired up positionally; a single
 `replace` string is used for every search term. `case_sensitive=False` is
-keyword-only here, where Laravel takes it positionally.
+keyword-only.
 
-```python
+```python title="examples/strings.py"
 result = Str.replace("world", "Almasix", "Hello world")
 
 # 'Hello Almasix'
@@ -1031,7 +1027,7 @@ Replaces each occurrence of `search` in turn with the next value from
 `replace`. Occurrences beyond the end of the replacement sequence keep the
 original search string.
 
-```python
+```python title="examples/strings.py"
 result = Str.replace_array("?", ["8:30", "9:00"], "The event runs from ? to ?")
 
 # 'The event runs from 8:30 to 9:00'
@@ -1046,7 +1042,7 @@ result = Str.replace_array("?", ["8:30"], "from ? to ?")
 Replaces `search` with `replace` only when the subject ends with it, and
 returns the subject untouched otherwise.
 
-```python
+```python title="examples/strings.py"
 result = Str.replace_end("World", "Almasix", "Hello World")
 
 # 'Hello Almasix'
@@ -1061,7 +1057,7 @@ result = Str.replace_end("World", "Almasix", "World Hello")
 Replaces the first occurrence of `search` in `subject`, leaving any later ones
 in place.
 
-```python
+```python title="examples/strings.py"
 result = Str.replace_first("the", "a", "the quick brown fox jumps over the lazy dog")
 
 # 'a quick brown fox jumps over the lazy dog'
@@ -1072,7 +1068,7 @@ result = Str.replace_first("the", "a", "the quick brown fox jumps over the lazy 
 Replaces the last occurrence of `search` in `subject`. A subject that does not
 contain the search is returned unchanged.
 
-```python
+```python title="examples/strings.py"
 result = Str.replace_last("the", "a", "the quick brown fox jumps over the lazy dog")
 
 # 'the quick brown fox jumps over a lazy dog'
@@ -1089,7 +1085,7 @@ pattern is written in Python syntax with no delimiters and back-references in
 the replacement are `\1`, not PHP's `$1`. `replace` may also be a callable,
 which receives the `re.Match` and returns the replacement text.
 
-```python
+```python title="resources/views/examples/strings.prism.html"
 result = Str.replace_matches(r"[^A-Za-z0-9]+", "", "(+1) 501-555-1000")
 
 # '15015551000'
@@ -1108,7 +1104,7 @@ result = Str.replace_matches(r"(\d+)", lambda match: "[" + match.group(1) + "]",
 Replaces `search` with `replace` only when the subject starts with it, and
 returns the subject untouched otherwise.
 
-```python
+```python title="examples/strings.py"
 result = Str.replace_start("Hello", "Goodbye", "Hello World")
 
 # 'Goodbye World'
@@ -1122,7 +1118,7 @@ result = Str.replace_start("World", "Almasix", "Hello World")
 
 Returns the string with its characters in the opposite order.
 
-```python
+```python title="examples/strings.py"
 from almasix.support import Str
 
 result = Str.reverse("Almasix")
@@ -1136,7 +1132,7 @@ Strips characters from the right-hand end of the string. With no `characters`
 it removes whitespace; otherwise `characters` is a *set* of characters to
 remove, not a suffix to match, so `".html"` and `"lmth."` behave identically.
 
-```python
+```python title="examples/strings.py"
 result = Str.rtrim("  Ada  ")
 
 # '  Ada'
@@ -1153,7 +1149,7 @@ uncountable words plus a list of suffix rules. Words that are already singular,
 and uncountable ones such as `equipment` or `series`, come back unchanged. The
 capitalisation of the original is preserved for irregular words.
 
-```python
+```python title="examples/strings.py"
 result = Str.singular("children")
 
 # 'child'
@@ -1172,10 +1168,10 @@ result = Str.singular("series")
 Builds a URL-friendly slug: transliterates to ASCII, lower-cases, and joins the
 remaining words with `separator`. `dictionary` replaces whole substrings before
 the non-alphanumeric characters are dropped, and defaults to `{"@": "at"}`. The
-`language` argument is accepted for Laravel compatibility but is ignored —
+`language` argument is accepted for signature compatibility but is ignored —
 there is no per-language transliteration table.
 
-```python
+```python title="resources/views/examples/strings.prism.html"
 result = Str.slug("Crème Brûlée & Café")
 
 # 'creme-brulee-cafe'
@@ -1196,7 +1192,7 @@ or digit character and a following capital, and collapsing any run of
 non-alphanumeric characters into a single delimiter. Pass a different
 `delimiter` to get other cases — `Str.kebab` is this method with `"-"`.
 
-```python
+```python title="examples/strings.py"
 result = Str.snake("fooBar")
 
 # 'foo_bar'
@@ -1211,7 +1207,7 @@ result = Str.snake("fooBar", "-")
 Collapses every run of whitespace inside the string into a single space and
 trims the ends.
 
-```python
+```python title="examples/strings.py"
 result = Str.squish("   almasix    is  here ")
 
 # 'almasix is here'
@@ -1223,7 +1219,7 @@ Prefixes the string with `prefix` unless it is already there. Repeated copies
 of the prefix at the front are collapsed into one, so calling it twice is the
 same as calling it once.
 
-```python
+```python title="examples/strings.py"
 result = Str.start("this/string", "/")
 
 # '/this/string'
@@ -1239,7 +1235,7 @@ Whether the string begins with the given needle, or with any needle when passed
 an iterable. Empty needles are skipped rather than matching everything, so an
 empty string yields `False`.
 
-```python
+```python title="examples/strings.py"
 result = Str.starts_with("This is my name", "This")
 
 # True
@@ -1259,7 +1255,7 @@ Converts the string to StudlyCase by splitting on every run of non-alphanumeric
 characters and upper-casing the first letter of each part. Only the first
 letter is touched, so the rest of each part keeps its original case.
 
-```python
+```python title="examples/strings.py"
 result = Str.studly("foo_bar-baz")
 
 # 'FooBarBaz'
@@ -1271,7 +1267,7 @@ Returns the portion of the string beginning at `start` and running for `length`
 characters. With no `length` it runs to the end of the string, and a negative
 `start` counts back from the end.
 
-```python
+```python title="examples/strings.py"
 result = Str.substr("The Almasix Framework", 4, 7)
 
 # 'Almasix'
@@ -1287,7 +1283,7 @@ Counts the non-overlapping occurrences of `needle`. `offset` skips that many
 characters from the front before counting, and `length` limits the count to
 that many characters after the offset.
 
-```python
+```python title="examples/strings.py"
 result = Str.substr_count("If you like ice cream, you will like snow", "like")
 
 # 2
@@ -1304,7 +1300,7 @@ argument order: the replacement comes second, before the position. With no
 `length` everything from `offset` onwards is replaced; a `length` of `0`
 inserts without removing anything.
 
-```python
+```python title="examples/strings.py"
 result = Str.substr_replace("1300", ":", 2)
 
 # '13:'
@@ -1320,7 +1316,7 @@ Replaces multiple substrings in one pass, applying the pairs of `map_` in
 order. The map is the first argument and the subject the second. The trailing
 underscore on `map_` avoids shadowing Python's `map` builtin.
 
-```python
+```python title="examples/strings.py"
 result = Str.swap({"Tacos": "Burritos", "great": "fantastic"}, "Tacos are great!")
 
 # 'Burritos are fantastic!'
@@ -1331,7 +1327,7 @@ result = Str.swap({"Tacos": "Burritos", "great": "fantastic"}, "Tacos are great!
 Returns the first `limit` characters of the string. A negative `limit` counts
 from the end and returns the last characters instead.
 
-```python
+```python title="examples/strings.py"
 result = Str.take("Build something great!", 5)
 
 # 'Build'
@@ -1348,7 +1344,7 @@ the first letter of each run of letters and lower-cases the rest. That means it
 capitalises after an apostrophe too — `they're` becomes `They'Re` — so use
 `Str.ucwords` or `Str.headline` when the rest of a word must be left alone.
 
-```python
+```python title="examples/strings.py"
 result = Str.title("a nice title uses the correct case")
 
 # 'A Nice Title Uses The Correct Case'
@@ -1363,7 +1359,7 @@ result = Str.title("they're MINE")
 Encodes the string as standard Base64, after encoding the text itself as UTF-8.
 `Str.from_base64` reverses it.
 
-```python
+```python title="examples/strings.py"
 result = Str.to_base64("Almasix")
 
 # 'QWxtYXNpeA=='
@@ -1381,7 +1377,7 @@ so accented Latin letters lose their accents but scripts with no ASCII
 decomposition — Japanese, Greek, Cyrillic — are removed entirely rather than
 replaced with a substitute character.
 
-```python
+```python title="examples/strings.py"
 result = Str.transliterate("Crème Brûlée")
 
 # 'Creme Brulee'
@@ -1397,7 +1393,7 @@ Strips characters from both ends of the string. With no `characters` it removes
 whitespace; otherwise `characters` is a set of characters to remove from either
 end, not a prefix or suffix to match.
 
-```python
+```python title="examples/strings.py"
 result = Str.trim("  Ada  ")
 
 # 'Ada'
@@ -1412,7 +1408,7 @@ result = Str.trim("-*-Ada-*-", "-*")
 Upper-cases the first character and leaves the rest of the string exactly as it
 was.
 
-```python
+```python title="examples/strings.py"
 result = Str.ucfirst("almasix framework")
 
 # 'Almasix framework'
@@ -1428,7 +1424,7 @@ Splits the string into a list at each capital letter. A leading run of
 lower-case characters becomes its own element, and a string with no capitals
 comes back as a single-element list.
 
-```python
+```python title="examples/strings.py"
 result = Str.ucsplit("FooBarBaz")
 
 # ['Foo', 'Bar', 'Baz']
@@ -1445,7 +1441,7 @@ untouched, so `mcDonald` keeps its inner capital where `Str.title` would
 flatten it to `Mcdonald`. `delimiters` is the set of characters that start a
 new word, and defaults to the whitespace characters.
 
-```python
+```python title="examples/strings.py"
 result = Str.ucwords("ronald mcDonald")
 
 # 'Ronald McDonald'
@@ -1462,7 +1458,7 @@ millisecond timestamp followed by sixteen random characters. Because the prefix
 is time-based, ULIDs generated in order sort in order. `Str.is_ulid` tests the
 format.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = Str.ulid()
 
@@ -1475,7 +1471,7 @@ Removes `before` from the start and `after` from the end of the string. `after`
 defaults to `before`. The string is returned unchanged unless *both* ends
 match, so it will not strip a half-open pair.
 
-```python
+```python title="examples/strings.py"
 result = Str.unwrap('"Almasix"', '"')
 
 # 'Almasix'
@@ -1493,7 +1489,7 @@ result = Str.unwrap('"Almasix', '"')
 
 Returns the string in upper case.
 
-```python
+```python title="examples/strings.py"
 result = Str.upper("almasix")
 
 # 'ALMASIX'
@@ -1504,7 +1500,7 @@ result = Str.upper("almasix")
 Returns a new random (version 4) UUID as a string. `Str.ordered_uuid` returns a
 version 1 UUID instead, and `Str.is_uuid` tests the format.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = Str.uuid()
 
@@ -1516,7 +1512,7 @@ result = Str.uuid()
 Counts the words in the string, where a word is any run of characters separated
 by whitespace. Punctuation attached to a word does not start a new one.
 
-```python
+```python title="examples/strings.py"
 result = Str.word_count("Hello, World!")
 
 # 2
@@ -1528,7 +1524,7 @@ Inserts `break_str` after every `characters` characters. It counts characters
 rather than looking for word boundaries, so a break can land inside a word, and
 the `cut` argument is accepted but has no effect.
 
-```python
+```python title="examples/strings.py"
 result = Str.word_wrap("The quick brown fox", 10, "<br>")
 
 # 'The quick <br>brown fox'
@@ -1545,7 +1541,7 @@ appends `end`. Runs of whitespace between the kept words are collapsed to
 single spaces. A string with no more than `words` words is returned untouched,
 without `end`.
 
-```python
+```python title="examples/strings.py"
 result = Str.words("Perfectly balanced, as all things should be.", 3)
 
 # 'Perfectly balanced, as...'
@@ -1561,7 +1557,7 @@ Surrounds the string with `before` and `after`. `after` defaults to `before`,
 so a single argument wraps both ends with the same text. `Str.unwrap` reverses
 it.
 
-```python
+```python title="examples/strings.py"
 result = Str.wrap("Almasix", '"')
 
 # '"Almasix"'
@@ -1581,7 +1577,7 @@ started from.
 
 Everything after the first occurrence of `search`, as a new `Stringable`.
 
-```python
+```python title="resources/views/examples/strings.prism.html"
 from almasix.support import str_
 
 result = str_("ada@example.com").after("@").value()
@@ -1593,7 +1589,7 @@ result = str_("ada@example.com").after("@").value()
 
 Everything after the last occurrence of `search`.
 
-```python
+```python title="app/http/controllers/example_controller.py"
 result = str_("app/Http/Controllers/UserController.py").after_last("/").value()
 
 # 'UserController.py'
@@ -1604,7 +1600,7 @@ result = str_("app/Http/Controllers/UserController.py").after_last("/").value()
 The value in approximate APA title case, with the short words left lower-case
 unless they open or close the title.
 
-```python
+```python title="examples/strings.py"
 result = str_("a nice title for the report").apa().value()
 
 # 'A Nice Title for the Report'
@@ -1616,7 +1612,7 @@ Concatenates every argument to the end of the value; there is no `Str.append`,
 this exists only on `Stringable`. `Stringable` is immutable, so the call
 returns a new instance and leaves the subject alone.
 
-```python
+```python title="examples/strings.py"
 name = str_("Ada")
 
 result = name.append(" Lovelace").value()
@@ -1632,7 +1628,7 @@ unchanged = name.value()
 
 Drops accents and every other non-ASCII character.
 
-```python
+```python title="examples/strings.py"
 result = str_("Crème brûlée").ascii().value()
 
 # 'Creme brulee'
@@ -1644,7 +1640,7 @@ The last component of the value read as a filesystem path, with `suffix`
 removed when the name ends with it. It goes through `pathlib`, so a trailing
 separator is ignored. `Stringable` only — there is no `Str.basename`.
 
-```python
+```python title="examples/strings.py"
 result = str_("/var/www/app/User.py").basename(".py").value()
 
 # 'User'
@@ -1654,7 +1650,7 @@ result = str_("/var/www/app/User.py").basename(".py").value()
 
 Everything before the first occurrence of `search`.
 
-```python
+```python title="resources/views/examples/strings.prism.html"
 result = str_("ada@example.com").before("@").value()
 
 # 'ada'
@@ -1664,7 +1660,7 @@ result = str_("ada@example.com").before("@").value()
 
 Everything before the last occurrence of `search`.
 
-```python
+```python title="app/http/controllers/example_controller.py"
 result = str_("app/Http/Controllers/UserController.py").before_last("/").value()
 
 # 'app/Http/Controllers'
@@ -1675,7 +1671,7 @@ result = str_("app/Http/Controllers/UserController.py").before_last("/").value()
 The portion between the first `from_` and the first `to` that follows it. The
 first closing delimiter ends the match, so nested delimiters are not balanced.
 
-```python
+```python title="examples/strings.py"
 result = str_("The [quick] brown [fox]").between("[", "]").value()
 
 # 'quick'
@@ -1690,7 +1686,7 @@ nested = str_("[a[b]]").between("[", "]").value()
 Identical to `between` — Almasix implements it by calling `between`, so both
 stop at the first `to`.
 
-```python
+```python title="examples/strings.py"
 result = str_("[a[b]]").between_first("[", "]").value()
 
 # 'a[b'
@@ -1700,7 +1696,7 @@ result = str_("[a[b]]").between_first("[", "]").value()
 
 The value in camelCase.
 
-```python
+```python title="examples/strings.py"
 result = str_("user_full_name").camel().value()
 
 # 'userFullName'
@@ -1712,7 +1708,7 @@ The character at `index`. Unlike `Str.char_at`, which hands back a plain
 string, the fluent form wraps the hit in a `Stringable`; an index outside the
 string still returns the bool `False`, so the chain ends there.
 
-```python
+```python title="examples/strings.py"
 result = str(str_("Almasix").char_at(0))
 
 # 'A'
@@ -1726,7 +1722,7 @@ missing = str_("Almasix").char_at(10)
 
 The value with the first matching suffix removed, if any of `needle` matches.
 
-```python
+```python title="examples/strings.py"
 result = str_("report.csv").chop_end(".csv").value()
 
 # 'report'
@@ -1736,7 +1732,7 @@ result = str_("report.csv").chop_end(".csv").value()
 
 The value with the first matching prefix removed.
 
-```python
+```python title="examples/strings.py"
 result = str_("https://almasix.dev").chop_start("https://").value()
 
 # 'almasix.dev'
@@ -1747,7 +1743,7 @@ result = str_("https://almasix.dev").chop_start("https://").value()
 The part of the value after the last `.` or `\`, so both Python dotted paths
 and PHP-style class names reduce to the class name. `Stringable` only.
 
-```python
+```python title="app/models/example.py"
 result = str_("app.models.user.User").class_basename().value()
 
 # 'User'
@@ -1762,7 +1758,7 @@ php = str_("App\\Models\\User").class_basename().value()
 Whether any of `needles` occurs in the value. Returns a `bool`, so it
 terminates the chain.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada Lovelace").contains("love", ignore_case=True)
 
 # True
@@ -1772,7 +1768,7 @@ result = str_("Ada Lovelace").contains("love", ignore_case=True)
 
 Whether every one of `needles` occurs in the value. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada Lovelace").contains_all(["Ada", "Lovelace"])
 
 # True
@@ -1786,7 +1782,7 @@ request. It returns `None` and has no `Str` twin. In application code you call
 it bare — `str_(value).dd()` — and nothing after it runs; the example catches
 the exception only so that it can be executed here.
 
-```python
+```python title="examples/strings.py"
 from almasix.debug import DumpAndDie
 
 halted = False
@@ -1805,7 +1801,7 @@ Decrypts a string produced by `encrypt`, using the application key, and returns
 the plain text as a new `Stringable`. Raises if the payload was not encrypted
 with the current key. `Stringable` only.
 
-```python
+```python title="examples/strings.py"
 # needs a booted application
 token = str_("secret").encrypt()
 
@@ -1818,7 +1814,7 @@ result = token.decrypt().value()
 
 Collapses runs of `character` — a space unless you say otherwise — down to one.
 
-```python
+```python title="examples/strings.py"
 result = str_("The   Almasix    framework").deduplicate().value()
 
 # 'The Almasix framework'
@@ -1833,7 +1829,7 @@ path = str_("stop//go///now").deduplicate("/").value()
 The parent of the value read as a filesystem path, climbing `levels` times.
 `Stringable` only.
 
-```python
+```python title="examples/strings.py"
 result = str_("/var/www/app/User.py").dirname().value()
 
 # '/var/www/app'
@@ -1848,7 +1844,7 @@ up = str_("/var/www/app/User.py").dirname(2).value()
 The negation of `contains`: `True` when none of `needles` occurs. Returns a
 `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada Lovelace").doesnt_contain("Babbage")
 
 # True
@@ -1858,7 +1854,7 @@ result = str_("Ada Lovelace").doesnt_contain("Babbage")
 
 Whether the value ends with none of `needles`. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("report.csv").doesnt_end_with(".json")
 
 # True
@@ -1868,7 +1864,7 @@ result = str_("report.csv").doesnt_end_with(".json")
 
 Whether the value starts with none of `needles`. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("report.csv").doesnt_start_with(["draft", "tmp"])
 
 # True
@@ -1880,7 +1876,7 @@ Prints the current value to stderr in a bordered panel and returns the same
 instance, so you can drop it into the middle of a chain to see what a step
 produced. It has no `Str` twin, and unlike `dd` it does not halt.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada").dump().upper().value()
 
 # 'ADA'
@@ -1891,7 +1887,7 @@ result = str_("Ada").dump().upper().value()
 Encrypts the value with the application key and returns the ciphertext as a new
 `Stringable`; `decrypt` reverses it. `Stringable` only.
 
-```python
+```python title="examples/strings.py"
 # needs a booted application
 result = str_("secret").encrypt().decrypt().value()
 
@@ -1902,7 +1898,7 @@ result = str_("secret").encrypt().decrypt().value()
 
 Whether the value ends with any of `needles`. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("report.csv").ends_with([".csv", ".tsv"])
 
 # True
@@ -1913,7 +1909,7 @@ result = str_("report.csv").ends_with([".csv", ".tsv"])
 Whether the value equals `str(value)` — the argument is stringified first, so a
 number compares equal to its digits. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada").exactly("Ada")
 
 # True
@@ -1930,7 +1926,7 @@ by `radius` characters on each side and marked with `omission`; both come from
 the `options` dict. Returns a `Stringable`, or `None` when the phrase is
 absent, so guard the chain.
 
-```python
+```python title="examples/strings.py"
 result = str_("A long sentence about the Almasix framework and its helpers").excerpt("Almasix", options={"radius": 10}).value()
 
 # '...about the Almasix framework...'
@@ -1945,7 +1941,7 @@ missing = str_("A long sentence about Almasix").excerpt("Django")
 Splits the value on a literal `delimiter` and returns a plain `list[str]`, not
 a `Stringable`. `Stringable` only; for a regular expression, use `split`.
 
-```python
+```python title="examples/strings.py"
 result = str_("a,b,c").explode(",")
 
 # ['a', 'b', 'c']
@@ -1956,7 +1952,7 @@ result = str_("a,b,c").explode(",")
 The value with a single trailing `cap`, adding it if it is missing and
 collapsing it if it is repeated.
 
-```python
+```python title="examples/strings.py"
 result = str_("path/to").finish("/").value()
 
 # 'path/to/'
@@ -1968,7 +1964,7 @@ Base64-decodes the value and returns the decoded text as a new `Stringable`. It
 exists only on `Stringable` and is a thin alias for `Str.from_base64`; the
 encoding direction is `to_base`.
 
-```python
+```python title="examples/strings.py"
 result = str_("QWxtYXNpeA==").from_base().value()
 
 # 'Almasix'
@@ -1978,7 +1974,7 @@ result = str_("QWxtYXNpeA==").from_base().value()
 
 The fluent form of `Str.from_base64`, with the same result as `from_base`.
 
-```python
+```python title="examples/strings.py"
 result = str_("QWxtYXNpeA==").from_base64().value()
 
 # 'Almasix'
@@ -1991,7 +1987,7 @@ returns the digest as a new `Stringable`. Pass `driver` to pick a configured
 hasher such as `argon2`. Each call salts afresh, so the digest differs every
 time. `Stringable` only.
 
-```python
+```python title="examples/strings.py"
 # needs a booted application
 result = str_("secret").hash().value()
 
@@ -2003,7 +1999,7 @@ result = str_("secret").hash().value()
 The value split into words and capitalised, whatever casing or separators it
 arrived in.
 
-```python
+```python title="examples/strings.py"
 result = str_("steve_jobs_and_bill").headline().value()
 
 # 'Steve Jobs And Bill'
@@ -2014,7 +2010,7 @@ result = str_("steve_jobs_and_bill").headline().value()
 The first letter of each word, each followed by a full stop and joined by
 `separator`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada Lovelace").initials().value()
 
 # 'A. L.'
@@ -2029,7 +2025,7 @@ tight = str_("Ada Lovelace").initials("").value()
 Renders the inline Markdown — emphasis, code spans and links — as HTML,
 escaping the rest.
 
-```python
+```python title="examples/strings.py"
 result = str_("**Almasix** is [fast](https://almasix.dev)").inline_markdown().value()
 
 # '<strong>Almasix</strong> is <a href="https://almasix.dev">fast</a>'
@@ -2038,10 +2034,10 @@ result = str_("**Almasix** is [fast](https://almasix.dev)").inline_markdown().va
 ### is_
 
 Whether the value matches any of the given patterns, where `*` stands for any
-run of characters. Returns a `bool`. Laravel calls this `is`; the trailing
-underscore avoids the Python keyword.
+run of characters. Returns a `bool`. The trailing underscore avoids the
+Python keyword.
 
-```python
+```python title="examples/strings.py"
 result = str_("foo/bar/baz").is_("foo/*")
 
 # True
@@ -2051,7 +2047,7 @@ result = str_("foo/bar/baz").is_("foo/*")
 
 Whether the value is entirely ASCII. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Almasix").is_ascii()
 
 # True
@@ -2066,7 +2062,7 @@ accented = str_("Crème").is_ascii()
 Whether the value is the empty string. Returns a `bool`. `Stringable` only —
 note that `str_(None)` holds `""`, so it reports empty rather than failing.
 
-```python
+```python title="examples/strings.py"
 result = str_("  ").trim().is_empty()
 
 # True
@@ -2080,7 +2076,7 @@ nothing = str_(None).is_empty()
 
 Whether the value parses as JSON. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_('{"name": "Ada"}').is_json()
 
 # True
@@ -2090,9 +2086,9 @@ result = str_('{"name": "Ada"}').is_json()
 
 Whether the value matches any of the given regular expressions, searched
 anywhere in the string rather than anchored. Returns a `bool`. `test` is the
-same check under Laravel's fluent name.
+same check under the `test` alias.
 
-```python
+```python title="examples/strings.py"
 result = str_("Almasix 1.4").is_match(r"\d+\.\d+")
 
 # True
@@ -2106,7 +2102,7 @@ several = str_("Report 2026").is_match([r"^\d+$", r"\s\d{4}$"])
 
 The negation of `is_empty`. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada").is_not_empty()
 
 # True
@@ -2116,7 +2112,7 @@ result = str_("Ada").is_not_empty()
 
 Whether the value is a 26-character Crockford Base32 ULID. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("01ARZ3NDEKTSV4RRFFQ69G5FAV").is_ulid()
 
 # True
@@ -2127,7 +2123,7 @@ result = str_("01ARZ3NDEKTSV4RRFFQ69G5FAV").is_ulid()
 Whether the value parses as a URL with both a scheme and a host. Pass
 `protocols` to restrict the accepted schemes. Returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("https://almasix.dev/docs").is_url()
 
 # True
@@ -2142,7 +2138,7 @@ wrong_scheme = str_("http://almasix.dev").is_url(["https"])
 Whether the current value parses as a UUID; returns a `bool`, so the chain ends
 here.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import str_
 
 result = str_("  550e8400-e29b-41d4-a716-446655440000  ").trim().is_uuid()
@@ -2154,7 +2150,7 @@ result = str_("  550e8400-e29b-41d4-a716-446655440000  ").trim().is_uuid()
 
 Converts the value to kebab-case.
 
-```python
+```python title="examples/strings.py"
 result = str_("fooBar baz").kebab().value()
 
 # foo-bar-baz
@@ -2164,7 +2160,7 @@ result = str_("fooBar baz").kebab().value()
 
 Lower-cases the first character and leaves the rest alone.
 
-```python
+```python title="examples/strings.py"
 result = str_("foo bar").studly().lcfirst().value()
 
 # fooBar
@@ -2174,7 +2170,7 @@ result = str_("foo bar").studly().lcfirst().value()
 
 The number of characters in the value, as an `int`; the chain ends here.
 
-```python
+```python title="examples/strings.py"
 result = str_("  almasix  ").trim().length()
 
 # 7
@@ -2185,7 +2181,7 @@ result = str_("  almasix  ").trim().length()
 Truncates to `limit` characters, appending `end` (`"..."` by default) when the
 value was actually cut.
 
-```python
+```python title="examples/strings.py"
 result = str_("The quick brown fox").limit(9).value()
 
 # The quick...
@@ -2199,10 +2195,10 @@ result = str_("The quick brown fox").limit(9, " (...)").value()
 
 Lower-cases the whole value.
 
-```python
-result = str_("LARAVEL Framework").lower().value()
+```python title="examples/strings.py"
+result = str_("ALMASIX Framework").lower().value()
 
-# laravel framework
+# almasix framework
 ```
 
 ### ltrim
@@ -2210,7 +2206,7 @@ result = str_("LARAVEL Framework").lower().value()
 Strips characters from the start of the value; whitespace when no argument is
 given.
 
-```python
+```python title="examples/strings.py"
 result = str_("000042").ltrim("0").value()
 
 # 42
@@ -2221,7 +2217,7 @@ result = str_("000042").ltrim("0").value()
 Renders the value as Markdown and wraps the resulting HTML in a new
 `Stringable`.
 
-```python
+```python title="examples/strings.py"
 result = str_("# Title").markdown().value()
 
 # <h1>Title</h1>
@@ -2232,7 +2228,7 @@ result = str_("# Title").markdown().value()
 Replaces a portion of the value with the given character, starting at `index`
 and running to the end unless a `length` is given.
 
-```python
+```python title="examples/strings.py"
 result = str_("4111111111111111").mask("*", 4).value()
 
 # 4111************
@@ -2248,7 +2244,7 @@ The first match for the pattern, or its first capture group when the pattern
 has one, as a `Stringable` you can keep chaining from. An unmatched pattern
 gives an empty string.
 
-```python
+```python title="examples/strings.py"
 result = str_("foo bar").match(r"f(o+)").upper().value()
 
 # OO
@@ -2259,7 +2255,7 @@ result = str_("foo bar").match(r"f(o+)").upper().value()
 Every match for the pattern — or every first capture group — as a plain
 `list[str]`, so the chain ends here.
 
-```python
+```python title="examples/strings.py"
 result = str_("foo bar foo").match_all(r"foo")
 
 # ['foo', 'foo']
@@ -2272,7 +2268,7 @@ Appends `count` newline characters (one by default) and returns a new
 exists only on the fluent wrapper, for building up multi-line text between
 `append` calls.
 
-```python
+```python title="examples/strings.py"
 result = str_("Dear Ada").new_line(2).append("Regards").value()
 
 # 'Dear Ada\n\nRegards'
@@ -2284,7 +2280,7 @@ Returns a new `Stringable` around the same value. The fluent form takes no
 useful argument: the delegate binds the current value to `Str.of`'s only
 parameter, so anything you pass is discarded.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix").upper().of().value()
 
 # ALMASIX
@@ -2296,7 +2292,7 @@ A time-ordered (version 1) UUID. Like the other generators on this wrapper it
 ignores the current value, so it is only worth calling on an empty
 `Stringable`.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = str_("").ordered_uuid().value()
 
@@ -2307,7 +2303,7 @@ result = str_("").ordered_uuid().value()
 
 Pads both sides of the value up to `length`, repeating `pad` to fit.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix").pad_both(12, "_").value()
 
 # __almasix___
@@ -2317,7 +2313,7 @@ result = str_("almasix").pad_both(12, "_").value()
 
 Pads the start of the value up to `length`.
 
-```python
+```python title="examples/strings.py"
 result = str_(7).pad_left(3, "0").value()
 
 # 007
@@ -2327,7 +2323,7 @@ result = str_(7).pad_left(3, "0").value()
 
 Pads the end of the value up to `length`.
 
-```python
+```python title="examples/strings.py"
 result = str_("7").pad_right(3, ".").value()
 
 # 7..
@@ -2338,7 +2334,7 @@ result = str_("7").pad_right(3, ".").value()
 Generates a random password of `length` characters. It discards the current
 value rather than deriving anything from it.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = str_("").password(12).value()
 
@@ -2353,7 +2349,7 @@ the chain; return anything else and the chain ends with that value's type.
 Because the argument is a `Stringable`, built-ins such as `len` fail on it;
 reach for `.value()` inside the callback. This method has no `Str` twin.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada Lovelace").pipe(lambda s: len(s.value()))
 
 # 12
@@ -2367,7 +2363,7 @@ result = str_("Ada Lovelace").pipe(lambda s: s.lower().slug()).value()
 
 Pluralises the value. Pass a count to keep the singular form when it is 1.
 
-```python
+```python title="examples/strings.py"
 result = str_("child").plural().value()
 
 # children
@@ -2381,7 +2377,7 @@ result = str_("child").plural(1).value()
 
 Pluralises only the last word of a StudlyCase value, leaving the casing intact.
 
-```python
+```python title="examples/strings.py"
 result = str_("UserProfile").plural_studly().value()
 
 # UserProfiles
@@ -2392,7 +2388,7 @@ result = str_("UserProfile").plural_studly().value()
 The index of the first occurrence of the needle as an `int`, or `False` when it
 is absent — either way the chain ends here.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix framework").position("framework")
 
 # 8
@@ -2407,7 +2403,7 @@ result = str_("almasix framework").position("zzz")
 Puts the given values in front of the current one. It returns a new
 `Stringable`; the receiver keeps its old value.
 
-```python
+```python title="examples/strings.py"
 result = str_("world").prepend("hello, ").ucfirst().value()
 
 # Hello, world
@@ -2418,7 +2414,7 @@ result = str_("world").prepend("hello, ").ucfirst().value()
 Generates a random alphanumeric string of the given length. It ignores the
 current value.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = str_("").random(8).value()
 
@@ -2430,7 +2426,7 @@ result = str_("").random(8).value()
 Deletes every occurrence of `search` (a string or an iterable of them). Pass
 `case_sensitive=False` to ignore case.
 
-```python
+```python title="examples/strings.py"
 result = str_("Peter Piper").remove("e").value()
 
 # Ptr Pipr
@@ -2444,7 +2440,7 @@ result = str_("Peter Piper").remove("p", case_sensitive=False).value()
 
 Repeats the value the given number of times.
 
-```python
+```python title="examples/strings.py"
 result = str_("-").repeat(5).value()
 
 # -----
@@ -2455,7 +2451,7 @@ result = str_("-").repeat(5).value()
 Replaces occurrences of `search` with `replace`; both may be lists, which are
 paired up positionally. `case_sensitive=False` matches without regard to case.
 
-```python
+```python title="examples/strings.py"
 result = str_("Almasix rocks").replace("rocks", "ships").value()
 
 # Almasix ships
@@ -2470,7 +2466,7 @@ result = str_("a b c").replace(["a", "b"], ["x", "y"]).value()
 Replaces successive occurrences of `search` with successive entries of
 `replace`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Between ? and ?").replace_array("?", ["8:30", "9:00"]).value()
 
 # Between 8:30 and 9:00
@@ -2480,7 +2476,7 @@ result = str_("Between ? and ?").replace_array("?", ["8:30", "9:00"]).value()
 
 Replaces `search` only when the value ends with it.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix.py.py").replace_end(".py", ".txt").value()
 
 # almasix.py.txt
@@ -2490,7 +2486,7 @@ result = str_("almasix.py.py").replace_end(".py", ".txt").value()
 
 Replaces the first occurrence of `search`.
 
-```python
+```python title="examples/strings.py"
 result = str_("a-a-a").replace_first("a", "b").value()
 
 # b-a-a
@@ -2500,7 +2496,7 @@ result = str_("a-a-a").replace_first("a", "b").value()
 
 Replaces the last occurrence of `search`.
 
-```python
+```python title="examples/strings.py"
 result = str_("a-a-a").replace_last("a", "b").value()
 
 # a-a-b
@@ -2511,7 +2507,7 @@ result = str_("a-a-a").replace_last("a", "b").value()
 Replaces everything matching the regular expression; `replace` may be a
 replacement string or a callback receiving the match object.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix 123 framework 456").replace_matches(r"[0-9]+", "#").value()
 
 # almasix # framework #
@@ -2525,7 +2521,7 @@ result = str_("almasix 12").replace_matches(r"[0-9]+", lambda m: "<" + m.group(0
 
 Replaces `search` only when the value starts with it.
 
-```python
+```python title="examples/strings.py"
 result = str_("http://example.com").replace_start("http://", "https://").value()
 
 # https://example.com
@@ -2535,7 +2531,7 @@ result = str_("http://example.com").replace_start("http://", "https://").value()
 
 Reverses the value.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix").reverse().upper().value()
 
 # XISAMLA
@@ -2546,7 +2542,7 @@ result = str_("almasix").reverse().upper().value()
 Strips characters from the end of the value; whitespace when no argument is
 given.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix...").rtrim(".").value()
 
 # almasix
@@ -2556,7 +2552,7 @@ result = str_("almasix...").rtrim(".").value()
 
 Singularises the value.
 
-```python
+```python title="examples/strings.py"
 result = str_("children").singular().value()
 
 # child
@@ -2567,7 +2563,7 @@ result = str_("children").singular().value()
 Turns the value into a URL-friendly slug, with `-` as the separator unless you
 pass another.
 
-```python
+```python title="examples/strings.py"
 result = str_("Almasix Framework!").slug().value()
 
 # almasix-framework
@@ -2581,7 +2577,7 @@ result = str_("Almasix Framework").slug("_").value()
 
 Converts the value to snake_case.
 
-```python
+```python title="examples/strings.py"
 result = str_("fooBar baz").snake().value()
 
 # foo_bar_baz
@@ -2594,7 +2590,7 @@ the chain ends here. `limit` is the maximum number of splits to perform, not
 the number of pieces to produce; `0`, the default, means no limit. This method
 exists only on `Stringable` — `Str` has no `split`.
 
-```python
+```python title="examples/strings.py"
 result = str_("a1b22c3d").split(r"[0-9]+")
 
 # ['a', 'b', 'c', 'd']
@@ -2608,7 +2604,7 @@ result = str_("a1b22c3d").split(r"[0-9]+", 1)
 
 Collapses runs of whitespace into single spaces and trims the ends.
 
-```python
+```python title="examples/strings.py"
 result = str_("   Almasix    Framework   ").squish().value()
 
 # Almasix Framework
@@ -2619,7 +2615,7 @@ result = str_("   Almasix    Framework   ").squish().value()
 Prefixes the value with the given string, collapsing any prefixes already there
 so it appears exactly once.
 
-```python
+```python title="examples/strings.py"
 result = str_("///almasix").start("/").value()
 
 # /almasix
@@ -2630,7 +2626,7 @@ result = str_("///almasix").start("/").value()
 Whether the value begins with the needle, or with any needle when given an
 iterable; returns a `bool`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Almasix Framework").lower().starts_with(["alm", "zzz"])
 
 # True
@@ -2642,7 +2638,7 @@ Removes HTML and XML tags, keeping the text between them. Pass a
 comma-separated list of tag names to `allowed` to keep those tags intact. There
 is no `Str` twin — this lives only on the fluent wrapper.
 
-```python
+```python title="examples/strings.py"
 result = str_("<p>Hello <b>you</b></p>").strip_tags().value()
 
 # Hello you
@@ -2656,7 +2652,7 @@ result = str_("<p>Hello <b>you</b></p>").strip_tags("b").value()
 
 Converts the value to StudlyCase.
 
-```python
+```python title="examples/strings.py"
 result = str_("foo_bar baz").studly().value()
 
 # FooBarBaz
@@ -2667,7 +2663,7 @@ result = str_("foo_bar baz").studly().value()
 The portion of the value beginning at `start`, running to the end unless a
 `length` is given. A negative `start` counts back from the end.
 
-```python
+```python title="examples/strings.py"
 result = str_("Almasix Framework").substr(8).value()
 
 # Framework
@@ -2683,7 +2679,7 @@ Counts the non-overlapping occurrences of the needle in the wrapped string and
 returns an `int`, which ends the chain; `offset` skips that many leading
 characters before counting.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import str_
 
 result = str_("If you like ice cream, you will like snow").substr_count("like")
@@ -2701,7 +2697,7 @@ Replaces the characters starting at `offset` with the given text; the
 replacement comes first and a `length` of `0` inserts without removing
 anything.
 
-```python
+```python title="examples/strings.py"
 result = str_("Hello, World").substr_replace("Python", 7, 5).value()
 
 # 'Hello, Python'
@@ -2716,7 +2712,7 @@ result = str_("1300").substr_replace(":", 2, 0).value()
 Replaces several substrings in one pass, applying the pairs of `map_` in order;
 the trailing underscore avoids shadowing Python's `map` builtin.
 
-```python
+```python title="examples/strings.py"
 result = str_("Tacos are great!").swap({"Tacos": "Burritos", "great": "fantastic"}).value()
 
 # 'Burritos are fantastic!'
@@ -2727,7 +2723,7 @@ result = str_("Tacos are great!").swap({"Tacos": "Burritos", "great": "fantastic
 Returns the first `limit` characters, or the last ones when `limit` is
 negative.
 
-```python
+```python title="examples/strings.py"
 result = str_("Build something").take(5).value()
 
 # 'Build'
@@ -2746,7 +2742,7 @@ logging it, appending it to a list — without breaking the chain apart into
 separate statements. There is no `Str` twin; this method exists only on the
 fluent surface.
 
-```python
+```python title="examples/strings.py"
 seen = []
 result = str_("ada").tap(lambda s: seen.append(s.value())).upper().value()
 
@@ -2762,7 +2758,7 @@ rather than anchored to it, so `[0-9]{4}` matches a string that merely contains
 four digits; anchor it yourself with `^` and `$` when you need a full match.
 There is no `Str.test` — the static equivalent is `Str.is_match`.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix-2026").test(r"[0-9]{4}")
 
 # True
@@ -2777,7 +2773,7 @@ result = str_("order-4417").test(r"^[a-z]+$")
 Title-cases the string with Python's `str.title`, which also lower-cases the
 rest of each word.
 
-```python
+```python title="examples/strings.py"
 result = str_("a nice title").title().value()
 
 # 'A Nice Title'
@@ -2790,7 +2786,7 @@ Base64-encodes the wrapped string and returns a new `Stringable`, with
 `Str.to_base` or `Str.from_base` — and they call the same code as `to_base64`
 and `from_base64`, so the two pairs of names are interchangeable.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix").to_base().value()
 
 # 'YWxtYXNpeA=='
@@ -2805,7 +2801,7 @@ result = str_("almasix").to_base().from_base().value()
 Encodes the string as standard Base64 after encoding the text as UTF-8;
 identical to `to_base`.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix").to_base64().value()
 
 # 'YWxtYXNpeA=='
@@ -2817,7 +2813,7 @@ Returns a `bool`, ending the chain: `True` when the string is one of `1`,
 `true`, `yes` or `on` compared case-insensitively, and `False` for anything
 else, including an empty string.
 
-```python
+```python title="examples/strings.py"
 result = str_("yes").to_boolean()
 
 # True
@@ -2832,7 +2828,7 @@ result = str_("off").to_boolean()
 Parses the string with `float` and returns a `float`, ending the chain. A
 string that is not a number raises `ValueError`.
 
-```python
+```python title="examples/strings.py"
 result = str_("1.75").to_float()
 
 # 1.75
@@ -2844,7 +2840,7 @@ Parses the string with `int` and returns an `int`, ending the chain.
 Surrounding whitespace is tolerated by `int` itself, but anything else — a
 decimal point included — raises `ValueError`.
 
-```python
+```python title="examples/strings.py"
 result = str_(" 42 ").trim().to_integer()
 
 # 42
@@ -2856,7 +2852,7 @@ Unwraps the chain and returns the underlying `str`. It is the same as `value`,
 and the same as calling `str()` on the `Stringable`; all three exist so the
 chain can be terminated in whichever style reads best. There is no `Str` twin.
 
-```python
+```python title="examples/strings.py"
 result = str_("Ada").upper().to_string()
 
 # 'ADA'
@@ -2867,7 +2863,7 @@ result = str_("Ada").upper().to_string()
 Reduces the string to ASCII by NFKD-normalising and dropping whatever will not
 encode, which is the same function as `ascii`.
 
-```python
+```python title="examples/strings.py"
 result = str_("Düsseldorf").transliterate().value()
 
 # 'Dusseldorf'
@@ -2880,7 +2876,7 @@ whitespace; otherwise the argument is a *set* of characters to strip from
 either end, not a prefix or suffix to match, so `"_"` and `"__"` behave
 identically. `ltrim` and `rtrim` are the one-sided forms.
 
-```python
+```python title="examples/strings.py"
 result = str_("  padded  ").trim().value()
 
 # 'padded'
@@ -2894,7 +2890,7 @@ result = str_("__name__").trim("_").value()
 
 Upper-cases the first character and leaves the rest of the string as it was.
 
-```python
+```python title="examples/strings.py"
 result = str_("ada lovelace").ucfirst().value()
 
 # 'Ada lovelace'
@@ -2905,7 +2901,7 @@ result = str_("ada lovelace").ucfirst().value()
 Splits the string at each capital letter and returns a plain `list[str]`, which
 ends the chain.
 
-```python
+```python title="examples/strings.py"
 result = str_("FooBarBaz").ucsplit()
 
 # ['Foo', 'Bar', 'Baz']
@@ -2916,7 +2912,7 @@ result = str_("FooBarBaz").ucsplit()
 Upper-cases the first letter of every word and leaves every other character
 untouched, so an inner capital survives where `title` would flatten it.
 
-```python
+```python title="examples/strings.py"
 result = str_("ronald mcDonald").ucwords().value()
 
 # 'Ronald McDonald'
@@ -2928,7 +2924,7 @@ Returns a new 26-character ULID, discarding the wrapped string entirely —
 `Str.ulid` takes no subject, so the fluent form is a constructor rather than a
 transformation.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = str_("ignored").ulid().value()
 
@@ -2942,7 +2938,7 @@ optional `default` when it is truthy. Both receive the `Stringable` and the
 chain continues from whatever they return, so it is a way to apply a
 transformation only in the absence of some condition. There is no `Str` twin.
 
-```python
+```python title="examples/strings.py"
 result = str_("ada").unless(False, lambda s: s.upper()).value()
 
 # 'ADA'
@@ -2958,7 +2954,7 @@ Removes `before` from the start and `after` from the end, with `after`
 defaulting to `before`; both ends must match or the string comes back
 unchanged.
 
-```python
+```python title="examples/strings.py"
 result = str_('"quoted"').unwrap('"').value()
 
 # 'quoted'
@@ -2972,7 +2968,7 @@ result = str_('"half').unwrap('"').value()
 
 Returns the string in upper case.
 
-```python
+```python title="examples/strings.py"
 result = str_("shout").upper().value()
 
 # 'SHOUT'
@@ -2983,7 +2979,7 @@ result = str_("shout").upper().value()
 Returns a new random version 4 UUID, discarding the wrapped string — like
 `ulid`, the fluent form is a constructor because `Str.uuid` takes no subject.
 
-```python
+```python title="examples/strings.py"
 # output varies
 result = str_("ignored").uuid().value()
 
@@ -2997,7 +2993,7 @@ finish a fluent expression, and is identical to `to_string` and to `str()` on
 the `Stringable`. It is fluent-only: a `Str` call already returns a plain
 string.
 
-```python
+```python title="examples/strings.py"
 result = str_("  hi  ").trim().value()
 
 # 'hi'
@@ -3013,7 +3009,7 @@ neither a callback nor a default the call is a no-op. The condition is
 evaluated for plain truthiness, so passing a function as the condition always
 counts as true. There is no `Str` twin.
 
-```python
+```python title="examples/strings.py"
 result = str_("ada").when(True, lambda s: s.upper()).value()
 
 # 'ADA'
@@ -3037,7 +3033,7 @@ the test fails. The callback receives the `Stringable` and the chain continues
 from what it returns, exactly as with `when` — these are shorthands for `when`
 with the matching predicate. None of them has a `Str` twin.
 
-```python
+```python title="examples/strings.py"
 result = str_("tony stark").when_contains("tony", lambda s: s.title()).value()
 
 # 'Tony Stark'
@@ -3051,7 +3047,7 @@ result = str_("bruce wayne").when_contains("tony", lambda s: s.title(), lambda s
 
 Runs the callback when the string contains every one of the given needles.
 
-```python
+```python title="examples/strings.py"
 result = str_("tony stark").when_contains_all(["tony", "stark"], lambda s: s.title()).value()
 
 # 'Tony Stark'
@@ -3061,7 +3057,7 @@ result = str_("tony stark").when_contains_all(["tony", "stark"], lambda s: s.tit
 
 Runs the callback when the string ends with none of the given needles.
 
-```python
+```python title="examples/strings.py"
 result = str_("framework").when_doesnt_end_with(".py", lambda s: s.append(".py")).value()
 
 # 'framework.py'
@@ -3071,7 +3067,7 @@ result = str_("framework").when_doesnt_end_with(".py", lambda s: s.append(".py")
 
 Runs the callback when the string starts with none of the given needles.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix").when_doesnt_start_with("the ", lambda s: s.prepend("the ")).value()
 
 # 'the almasix'
@@ -3082,7 +3078,7 @@ result = str_("almasix").when_doesnt_start_with("the ", lambda s: s.prepend("the
 Runs the callback when the string is empty. The test takes no arguments, so the
 callback is the first argument.
 
-```python
+```python title="examples/strings.py"
 result = str_("").when_empty(lambda s: s.append("anonymous")).value()
 
 # 'anonymous'
@@ -3093,7 +3089,7 @@ result = str_("").when_empty(lambda s: s.append("anonymous")).value()
 Runs the callback when the string ends with the needle, or with any of them
 when given an iterable.
 
-```python
+```python title="examples/strings.py"
 result = str_("main.py").when_ends_with(".py", lambda s: s.basename(".py")).value()
 
 # 'main'
@@ -3103,7 +3099,7 @@ result = str_("main.py").when_ends_with(".py", lambda s: s.basename(".py")).valu
 
 Runs the callback when the string equals the given value, compared as strings.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix").when_exactly("almasix", lambda s: s.upper()).value()
 
 # 'ALMASIX'
@@ -3114,7 +3110,7 @@ result = str_("almasix").when_exactly("almasix", lambda s: s.upper()).value()
 Runs the callback when the string matches the given shell-style pattern, in
 which `*` stands for any run of characters.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix.pyi").when_is("*.py*", lambda s: s.upper()).value()
 
 # 'ALMASIX.PYI'
@@ -3125,7 +3121,7 @@ result = str_("almasix.pyi").when_is("*.py*", lambda s: s.upper()).value()
 Runs the callback when the string encodes cleanly as ASCII. The test takes no
 arguments.
 
-```python
+```python title="examples/strings.py"
 result = str_("ascii only").when_is_ascii(lambda s: s.upper()).value()
 
 # 'ASCII ONLY'
@@ -3136,7 +3132,7 @@ result = str_("ascii only").when_is_ascii(lambda s: s.upper()).value()
 Runs the callback when the string has the shape of a ULID: 26 Crockford Base32
 characters. The test takes no arguments.
 
-```python
+```python title="examples/strings.py"
 result = str_("01ARZ3NDEKTSV4RRFFQ69G5FAV").when_is_ulid(lambda s: s.take(10)).value()
 
 # '01ARZ3NDEK'
@@ -3147,7 +3143,7 @@ result = str_("01ARZ3NDEKTSV4RRFFQ69G5FAV").when_is_ulid(lambda s: s.take(10)).v
 Runs the callback when the string parses as a UUID. The test takes no
 arguments.
 
-```python
+```python title="examples/strings.py"
 result = str_("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11").when_is_uuid(lambda s: s.before("-")).value()
 
 # 'a0eebc99'
@@ -3157,7 +3153,7 @@ result = str_("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11").when_is_uuid(lambda s: s.b
 
 Runs the callback when the string is not empty. The test takes no arguments.
 
-```python
+```python title="examples/strings.py"
 result = str_("ada").when_not_empty(lambda s: s.title()).value()
 
 # 'Ada'
@@ -3171,10 +3167,10 @@ result = str_("").when_not_empty(lambda s: s.title()).value()
 
 Runs the callback when the string differs from the given value.
 
-```python
-result = str_("almasix").when_not_exactly("laravel", lambda s: s.append(" (not laravel)")).value()
+```python title="examples/strings.py"
+result = str_("almasix").when_not_exactly("other", lambda s: s.append(" (kept)")).value()
 
-# 'almasix (not laravel)'
+# 'almasix (kept)'
 ```
 
 ### when_starts_with
@@ -3182,7 +3178,7 @@ result = str_("almasix").when_not_exactly("laravel", lambda s: s.append(" (not l
 Runs the callback when the string starts with the needle, or with any of them
 when given an iterable.
 
-```python
+```python title="examples/strings.py"
 result = str_("/docs/strings").when_starts_with("/", lambda s: s.ltrim("/")).value()
 
 # 'docs/strings'
@@ -3193,7 +3189,7 @@ result = str_("/docs/strings").when_starts_with("/", lambda s: s.ltrim("/")).val
 Runs the callback when the string matches the given regular expression, using
 the same search as `test`.
 
-```python
+```python title="examples/strings.py"
 result = str_("order-4417").when_test(r"[0-9]+$", lambda s: s.after_last("-")).value()
 
 # '4417'
@@ -3204,7 +3200,7 @@ result = str_("order-4417").when_test(r"[0-9]+$", lambda s: s.after_last("-")).v
 Counts the whitespace-separated words and returns an `int`, which ends the
 chain.
 
-```python
+```python title="examples/strings.py"
 result = str_("one two three").word_count()
 
 # 3
@@ -3216,7 +3212,7 @@ Inserts the break string after every `characters` characters, counting
 characters rather than finding word boundaries, so a break can land inside a
 word.
 
-```python
+```python title="examples/strings.py"
 result = str_("The quick brown fox").word_wrap(10, "<br>").value()
 
 # 'The quick <br>brown fox'
@@ -3227,7 +3223,7 @@ result = str_("The quick brown fox").word_wrap(10, "<br>").value()
 Truncates to the first `words` whitespace-separated words and appends `end`,
 which defaults to `...`; a shorter string is returned untouched.
 
-```python
+```python title="examples/strings.py"
 result = str_("one two three four").words(2).value()
 
 # 'one two...'
@@ -3243,7 +3239,7 @@ Surrounds the string with `before` and `after`, with `after` defaulting to
 `before` so that a single argument wraps both ends with the same text. `unwrap`
 reverses it.
 
-```python
+```python title="examples/strings.py"
 result = str_("almasix").wrap('"').value()
 
 # '"almasix"'

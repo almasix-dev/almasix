@@ -9,7 +9,7 @@ description: Drive the application in-process — requests through the real midd
 no socket, no server, and the full middleware stack. Every request is a
 coroutine, because every request Almasix serves is one.
 
-```python
+```python title="tests/feature/example_test.py"
 class HomeTest(TestCase):
     async def test_the_home_page_answers(self) -> None:
         response = await self.get("/")
@@ -23,7 +23,7 @@ same call.
 
 ## Making requests
 
-```python
+```python title="examples/http-tests.py"
 await self.get("/posts", params={"page": 2})
 await self.post("/posts", {"title": "Hello"})       # form fields
 await self.post_json("/api/posts", {"title": "Hi"})  # JSON in, JSON expected
@@ -45,7 +45,7 @@ carries, and `follow_redirects=` overrides the client's setting for one call.
 
 Whatever is set on the client travels with every request it makes:
 
-```python
+```python title="examples/http-tests.py"
 self.with_headers({"X-Request-Id": "abc"})
 self.with_header("Accept-Language", "sw")
 self.with_token("a-bearer-token")            # Authorization: Bearer ...
@@ -62,7 +62,7 @@ login in the next.
 
 ### Sessions and authentication
 
-```python
+```python title="examples/http-tests.py"
 self.with_session({"cart": ["cog", "sprocket"]})
 self.acting_as(user)             # signed in on the `web` guard
 self.acting_as(user, "admin")    # or another one
@@ -77,7 +77,7 @@ the request arrives authenticated without going through the login form.
 
 Redirects are not followed unless you ask:
 
-```python
+```python title="examples/http-tests.py"
 response = await self.get("/go-away")
 response.assert_redirect("/hello")
 
@@ -94,7 +94,7 @@ what the response actually was.
 
 ### Status
 
-```python
+```python title="examples/http-tests.py"
 response.assert_ok()             # 200
 response.assert_created()        # 201
 response.assert_accepted()       # 202
@@ -121,7 +121,7 @@ explains it.
 
 ### Headers and cookies
 
-```python
+```python title="examples/http-tests.py"
 response.assert_header("X-Pot")
 response.assert_header("X-Pot", "tea")
 response.assert_header_missing("X-Debug")
@@ -136,8 +136,8 @@ response.assert_download("report.csv")
 
 ### The body
 
-```python
-response.assert_see("Hello")              # HTML-escaped, like Laravel's
+```python title="examples/http-tests.py"
+response.assert_see("Hello")              # HTML-escaped match
 response.assert_see("<b>", escape=False)
 response.assert_dont_see("Goodbye")
 response.assert_see_text("Almasix & friends")   # tags stripped first
@@ -152,7 +152,7 @@ response.assert_streamed_content("exactly this")
 
 ### JSON
 
-```python
+```python title="examples/http-tests.py"
 response.assert_json({"ok": True})              # these pairs are in the body
 response.assert_json({"ok": True}, strict=True) # and nothing else is
 response.assert_exact_json({"ok": True})
@@ -174,7 +174,7 @@ Paths are dotted, and `*` in a structure means "every item looks like this".
 
 ### Validation errors
 
-```python
+```python title="examples/http-tests.py"
 response.assert_invalid()                       # some field failed
 response.assert_invalid("email")
 response.assert_invalid(["email", "name"])
@@ -189,7 +189,7 @@ errors, for a form that redirects back rather than answering with JSON.
 
 ### The session
 
-```python
+```python title="examples/http-tests.py"
 response.assert_session_has("cart")
 response.assert_session_has("cart", ["cog"])
 response.assert_session_has("total", lambda value: value > 0)
@@ -200,7 +200,7 @@ assert response.session("cart") == ["cog"]
 
 ### Views
 
-```python
+```python title="examples/http-tests.py"
 response.assert_view_is("posts.index")
 response.assert_view_has("posts")
 response.assert_view_has("title", "Posts")
@@ -219,7 +219,7 @@ equivalent of `dd()`.
 
 A test can stand middleware down for the rest of the test:
 
-```python
+```python title="examples/http-tests.py"
 from almasix.testing import with_middleware, without_middleware
 
 self.without_middleware()                     # all of it

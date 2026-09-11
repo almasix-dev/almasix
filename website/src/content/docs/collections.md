@@ -3,12 +3,12 @@ title: Collections
 description: Fluent Support collections via collect() — ordered maps with a rich method chain, documented method by method.
 ---
 
-A collection wraps a list or a dict so you can chain operations over it instead
+Almasix collections wrap a list or a dict so you can chain operations instead
 of writing loops. `collect()` is the way in, every transformer returns a new
-collection, and `all()` gets you back to plain Python.
+collection, and `all()` gets you back to plain Python. Methods also accept
+camelCase aliases (`sortBy` for `sort_by`); snake_case is the documented form.
 
-```python
-# app/http/controllers/welcome_controller.py
+```python title="app/http/controllers/welcome_controller.py"
 from almasix.support import collect
 
 collect(["", "Ada", None, "Grace"]).filter().values().all()
@@ -28,8 +28,7 @@ Collections are ordered maps, not lists. A list becomes contiguous integer
 keys; a dict keeps the keys it came with. This matters because filtering
 **preserves keys** rather than closing the gaps:
 
-```python
-# app/support_demo.py
+```python title="app/support_demo.py"
 collect([0, 1, 2]).filter().all()           # {1: 1, 2: 2}
 collect([0, 1, 2]).filter().values().all()  # [1, 2]
 ```
@@ -43,7 +42,7 @@ differently.
 `collect()` accepts a list, a dict, a tuple, a set, a generator, another
 collection, or nothing at all:
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Collection, collect
 
 collect([1, 2, 3])
@@ -62,8 +61,7 @@ Collection.from_json('[1, 2]')         # decode JSON into a collection
 `macro` registers a method on the collection class at runtime, for an operation
 your application performs often enough to deserve a name:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from almasix.support import Collection
 
 Collection.macro("to_upper", lambda collection: collection.map(str.upper))
@@ -81,7 +79,7 @@ service provider rather than in a request path.
 For the common case where the callback does one thing to each item, a higher
 order message says it in less:
 
-```python
+```python title="examples/collections.py"
 users.each.mark_as_vip()        # calls the method on every model
 users.sum.votes                 # reads the attribute from every model
 users.sort_by.created_at
@@ -97,7 +95,7 @@ Python cannot, so Almasix decides by looking at the items: a callable member is
 invoked, anything else is read. Reading works on model attributes and on
 mapping keys, so `collect([{"votes": 3}]).sum.votes` is `3`.
 
-Filtering methods use the member as a **predicate**, matching Laravel:
+Filtering methods use the member as a **predicate**:
 `users.first.vip` is the first VIP user, not the first user's `vip` value.
 
 ## Lazy collections
@@ -106,7 +104,7 @@ An eager collection holds every item in memory. A lazy one holds a source and
 applies your operations one item at a time, which is what you want for a
 database cursor or a file with a million lines in it.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import LazyCollection
 
 def lines():
@@ -126,7 +124,7 @@ Because a lazy collection is a source rather than data, iterating twice runs
 the source twice — and a spent generator yields nothing the second time.
 `remember()` caches what has been enumerated so far:
 
-```python
+```python title="examples/collections.py"
 rows = LazyCollection(lines).remember()
 rows.take(5).all()    # reads five lines
 rows.all()            # replays those five, then reads the rest
@@ -138,8 +136,7 @@ Reading a row is awaited, so the database returns the async twin,
 `AsyncLazyCollection`. The operations are identical and the terminals are
 awaited:
 
-```python
-# app/http/controllers/report_controller.py
+```python title="app/http/controllers/report_controller.py"
 totals = await Order.query().cursor().where("status", "shipped").sum("total")
 
 async for order in Order.query().lazy():
@@ -156,7 +153,7 @@ pipeline applies without buffering the result set.
 Four methods exist only on lazy collections, because they are about
 enumeration rather than data:
 
-```python
+```python title="examples/collections.py"
 rows.tap_each(log)                    # watch each item as it passes
 rows.throttle(0.5)                    # space items out for a rate-limited consumer
 rows.take_until_timeout(30)           # stop enumerating after 30 seconds
@@ -173,15 +170,14 @@ Sorting and grouping need every item at once, so they are not lazy operations
 and are deliberately absent rather than faked. Call `collect()` to materialise
 an eager collection and use its full surface:
 
-```python
+```python title="examples/collections.py"
 await Order.query().cursor().where("status", "shipped").collect()
 # an eager Collection — sort_by, group_by, and the rest of this page
 ```
 
 ## Available methods
 
-Every method below has its own section. They are listed alphabetically, as in
-Laravel's Collections documentation.
+Every method below has its own section. They are listed alphabetically.
 
 ### after
 
@@ -189,7 +185,7 @@ Returns the item that comes after the given value, or `None` if the value is not
 in the collection or is the last item. Values are located by equality against
 the collection's values.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).after(2)
 
 # 3
@@ -199,8 +195,8 @@ last = collect([1, 2, 3, 4]).after(4)
 # None
 ```
 
-Laravel's `after` also accepts a callback and a strict flag; Almasix's takes a
-plain value only and always compares with `==`.
+Almasix takes a plain value only and always compares with `==` — there is no
+callback or strict-comparison form.
 
 ### all
 
@@ -208,7 +204,7 @@ Returns the underlying items. You get a `list` when the keys are a contiguous
 `0..n-1` range, and a `dict` otherwise — so a collection built from a mapping,
 or one whose keys were preserved by `filter`, comes back as a `dict`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).all()
 
 # [1, 2, 3]
@@ -222,7 +218,7 @@ mapping = collect({"a": 1, "b": 2}).all()
 
 Alias for `avg`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).average()
 
 # 2.5
@@ -234,7 +230,7 @@ Returns the mean of the items. Pass a key (dot notation is supported) or a
 callable to average a value pulled out of each item. `None` values are skipped
 entirely, and an empty collection returns `None` rather than raising.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).avg()
 
 # 2.5
@@ -251,7 +247,7 @@ Also available as a higher order message (`collection.avg.pages`).
 Returns the item that comes before the given value, or `None` if the value is
 not in the collection or is the first item.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).before(3)
 
 # 2
@@ -267,7 +263,7 @@ Splits the collection into a collection of smaller collections of the given
 size; the final chunk holds whatever is left over. Keys are not preserved, and a
 size of zero or less raises `ValueError`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5]).chunk(2).all()
 
 # [Collection([1, 2]), Collection([3, 4]), Collection([5])]
@@ -284,7 +280,7 @@ so far. The callback receives three arguments: the current item, the previous
 item, and the chunk being accumulated as a plain list. Return a truthy value to
 keep the item in the current chunk, falsy to start a new one.
 
-```python
+```python title="examples/collections.py"
 result = (
     collect([1, 2, 3, 5, 6, 8])
     .chunk_while(lambda item, previous, chunk: item == previous + 1)
@@ -295,8 +291,8 @@ result = (
 # [[1, 2, 3], [5, 6], [8]]
 ```
 
-Laravel passes the value, the key, and the chunk; Almasix passes the previous
-item in the second position instead of the key.
+The callback receives the current item, the previous item, and the chunk —
+not the key.
 
 ### collapse
 
@@ -304,7 +300,7 @@ Flattens a collection of iterables into a single collection, one level deep.
 Mapping items contribute their values, and items that are not iterable are
 passed through unchanged instead of raising.
 
-```python
+```python title="examples/collections.py"
 result = collect([[1, 2], [3, 4], [5]]).collapse().all()
 
 # [1, 2, 3, 4, 5]
@@ -320,7 +316,7 @@ Merges the mapping (or collection) items into a single collection, keeping their
 keys; later keys win over earlier ones. Items that are neither mappings nor
 collections are dropped rather than appended.
 
-```python
+```python title="examples/collections.py"
 result = collect([{"a": 1}, {"b": 2}]).collapse_with_keys().all()
 
 # {'a': 1, 'b': 2}
@@ -337,7 +333,7 @@ you are about to call one of the mutating methods and want the original left
 alone. This is the method on an existing collection; the module-level `collect()`
 function is the constructor.
 
-```python
+```python title="examples/collections.py"
 original = collect([1, 2])
 copy = original.collect().push(9)
 
@@ -350,7 +346,7 @@ Uses the collection's values as keys and the given iterable as the matching
 values. The two are zipped non-strictly, so the result stops at the shorter of
 the two rather than raising.
 
-```python
+```python title="examples/collections.py"
 result = collect(["name", "age"]).combine(["Sara", 30]).all()
 
 # {'name': 'Sara', 'age': 30}
@@ -364,17 +360,17 @@ short = collect(["a", "b", "c"]).combine([1, 2]).all()
 
 Appends the given items to the end of the collection.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2]).concat([3, 4]).all()
 
 # [1, 2, 3, 4]
 ```
 
 In Almasix `concat` is `merge`, so it only appends when both sides are list-like.
-Given string keys it merges and colliding keys overwrite, where Laravel's
-`concat` always appends and reindexes:
+Given string keys it merges and colliding keys overwrite, rather than always
+appending and reindexing:
 
-```python
+```python title="examples/collections.py"
 result = collect({"a": 1}).concat({"a": 2}).all()
 
 # {'a': 2}
@@ -385,7 +381,7 @@ result = collect({"a": 1}).concat({"a": 2}).all()
 Reports whether the collection holds a matching item. Pass a value, a predicate,
 a key and a value, or a key, an operator and a value.
 
-```python
+```python title="examples/collections.py"
 books = [{"name": "Refactoring", "pages": 448}, {"name": "Clean Code", "pages": 464}]
 
 result = collect([1, 2, 3]).contains(2)
@@ -413,7 +409,7 @@ message.
 
 Reports whether the collection holds exactly one item.
 
-```python
+```python title="examples/collections.py"
 result = collect([1]).contains_one_item()
 
 # True
@@ -430,20 +426,19 @@ equality. Two equal but distinct lists or dicts do not match; interned strings
 and small integers often do, which makes this mostly useful for object
 membership.
 
-```python
+```python title="examples/collections.py"
 result = collect([[1], [2]]).contains_strict([1])
 
 # False
 ```
 
-Laravel's `containsStrict` is a type-strict `===` comparison; Almasix's compares
-object identity.
+Almasix compares object identity (`is`), not type-strict value equality.
 
 ### count
 
 Returns the number of items.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).count()
 
 # 4
@@ -455,7 +450,7 @@ Counts occurrences and returns a collection of value-to-count pairs. With no
 argument it counts the items themselves; pass a key or a callable to count by
 something derived from each item.
 
-```python
+```python title="resources/views/examples/collections.prism.html"
 result = collect([1, 1, 2, 2, 2, 3]).count_by().all()
 
 # {1: 2, 2: 3, 3: 1}
@@ -472,7 +467,7 @@ domains = collect(["a@gmail.com", "b@yahoo.com", "c@gmail.com"]).count_by(
 Returns the Cartesian product of the collection with the given iterables, as a
 collection of lists. Any number of iterables may be passed.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2]).cross_join(["a", "b"]).all()
 
 # [[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]
@@ -484,7 +479,7 @@ Prints the collection's contents to stderr and halts by raising
 `almasix.debug.DumpAndDie`, which the HTTP and console kernels catch and render
 as a dump page. It returns nothing — execution after the call does not run.
 
-```python
+```python title="examples/collections.py"
 collect([1, 2, 3]).dd()
 ```
 
@@ -496,16 +491,16 @@ The dump goes to stderr as a titled panel containing `[1, 2, 3]`, followed by a
 Returns the values that are not present in the given items. Comparison is done
 through a `set`, so every value on both sides must be hashable.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5]).diff([2, 4, 6]).all()
 
 # [1, 3, 5]
 ```
 
-Unlike Laravel, Almasix's `diff` does not preserve the original keys — the
-surviving values are reindexed from zero:
+`diff` does not preserve the original keys — the surviving values are
+reindexed from zero:
 
-```python
+```python title="examples/collections.py"
 result = collect({"a": 1, "b": 2}).diff([1]).all()
 
 # [2]
@@ -516,7 +511,7 @@ result = collect({"a": 1, "b": 2}).diff([1]).all()
 Compares keys *and* values, returning the pairs from this collection that are
 either missing from the given items or present with a different value.
 
-```python
+```python title="examples/collections.py"
 result = collect({"colour": "orange", "type": "fruit", "qty": 5}).diff_assoc(
     {"colour": "yellow", "type": "fruit", "qty": 3}
 ).all()
@@ -531,7 +526,7 @@ callback receives this collection's value first and the other side's value
 second, and returns `True` when they match; pairs whose keys are missing from
 the other side are always kept.
 
-```python
+```python title="examples/collections.py"
 result = collect({"colour": "orange", "type": "fruit"}).diff_assoc_using(
     {"colour": "ORANGE", "type": "veg"},
     lambda mine, theirs: str(mine).lower() == str(theirs).lower(),
@@ -540,15 +535,14 @@ result = collect({"colour": "orange", "type": "fruit"}).diff_assoc_using(
 # {'type': 'fruit'}
 ```
 
-Laravel's `diffAssocUsing` hands the callback the *keys* to compare; Almasix's
-compares the values.
+The callback compares the *values*, not the keys.
 
 ### diff_keys
 
 Returns the pairs whose keys are not present in the given items. Only the other
 side's keys are looked at — its values are ignored.
 
-```python
+```python title="examples/collections.py"
 result = collect({"one": 10, "two": 20, "three": 30}).diff_keys({"two": 2, "four": 4}).all()
 
 # {'one': 10, 'three': 30}
@@ -559,7 +553,7 @@ result = collect({"one": 10, "two": 20, "three": 30}).diff_keys({"two": 2, "four
 The negation of `contains`, and it accepts the same arguments: a value, a
 predicate, a key and a value, or a key, an operator and a value.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).doesnt_contain(5)
 
 # True
@@ -569,7 +563,7 @@ result = collect([1, 2, 3]).doesnt_contain(5)
 
 The negation of `contains_strict` — reports that no item *is* the given object.
 
-```python
+```python title="examples/collections.py"
 result = collect([[1], [2]]).doesnt_contain_strict([1])
 
 # True
@@ -581,7 +575,7 @@ Flattens a nested collection into a single-level collection whose keys are dot
 notation paths. List indices become path segments too, and empty containers are
 kept as-is under their own path.
 
-```python
+```python title="examples/collections.py"
 result = collect({"products": {"desk": {"price": 100}}}).dot().all()
 
 # {'products.desk.price': 100}
@@ -596,7 +590,7 @@ with_lists = collect({"tags": ["a", "b"], "empty": {}}).dot().all()
 Prints the collection's contents to stderr and returns the collection, so it can
 be dropped into the middle of a chain without breaking it.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).dump().map(lambda item: item * 2).all()
 
 # [2, 4, 6]
@@ -612,7 +606,7 @@ repeat rather than of the first occurrence. Pass a key or a callable to look for
 duplicates of a derived value, in which case the derived value is what you get
 back.
 
-```python
+```python title="examples/collections.py"
 result = collect(["a", "b", "a", "c", "b"]).duplicates().all()
 
 # {2: 'a', 4: 'b'}
@@ -627,7 +621,7 @@ by_key = collect([{"role": "admin"}, {"role": "user"}, {"role": "admin"}]).dupli
 Like `duplicates`, but items are compared by identity (`is`) instead of
 equality, so only the same object repeated counts as a duplicate.
 
-```python
+```python title="examples/collections.py"
 row = [1]
 result = collect([row, row, [1]]).duplicates_strict().all()
 
@@ -641,7 +635,7 @@ callback is offered `(item, key)` and falls back to `(item)` if it does not
 accept two arguments. Returning `False` from the callback stops the iteration
 early.
 
-```python
+```python title="examples/collections.py"
 log = []
 collect([1, 2, 3, 4]).each(lambda item: log.append(item) if item < 3 else False)
 
@@ -655,7 +649,7 @@ Also available as a higher order message.
 Like `each`, but each item that is a list or tuple is unpacked into the
 callback's arguments.
 
-```python
+```python title="examples/collections.py"
 pairs = []
 collect([[1, "a"], [2, "b"]]).each_spread(lambda number, letter: pairs.append(f"{number}{letter}"))
 
@@ -667,7 +661,7 @@ collect([[1, "a"], [2, "b"]]).each_spread(lambda number, letter: pairs.append(f"
 Asserts that every item is an instance of the given type and returns the
 collection. The first item that is not raises `TypeError`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).ensure(int).all()
 
 # [1, 2, 3]
@@ -681,7 +675,7 @@ result = collect([1, 2, 3]).ensure(int).all()
 Reports whether the callback returns truthy for every item. An empty collection
 returns `True`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).every(lambda item: item > 0)
 
 # True
@@ -698,7 +692,7 @@ Also available as a higher order message.
 Returns every pair except those with the given keys. Keys may be passed as
 separate arguments or as one list, tuple or set.
 
-```python
+```python title="examples/collections.py"
 result = collect({"id": 1, "name": "Sara", "age": 30}).except_("age").all()
 
 # {'id': 1, 'name': 'Sara'}
@@ -708,13 +702,13 @@ several = collect({"id": 1, "name": "Sara", "age": 30}).except_(["name", "age"])
 # {'id': 1}
 ```
 
-Laravel calls this `except`; the trailing underscore avoids the Python keyword.
+The trailing underscore avoids the Python keyword `except`.
 
 ### except_keys
 
 Alias for `except_`, for when the trailing underscore reads badly.
 
-```python
+```python title="examples/collections.py"
 result = collect({"id": 1, "name": "Sara"}).except_keys("name").all()
 
 # {'id': 1}
@@ -727,7 +721,7 @@ keys — which means filtering a list generally gives you a `dict` back, and you
 need `values()` to renumber it. Called with no callback, it keeps the items that
 are truthy in themselves.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).filter(lambda item: item > 2).all()
 
 # {2: 3, 3: 4}
@@ -750,7 +744,7 @@ Returns the first item, or the first item matching a predicate. A non-callable
 sole argument is read as the default instead of a predicate, so `first(0)`
 returns `0` for an empty collection rather than searching for `0`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).first(lambda item: item > 1)
 
 # 2
@@ -771,7 +765,7 @@ Also available as a higher order message.
 Returns the first item (optionally the first matching a predicate) and raises
 `almasix.support.collection.ItemNotFoundError` when there is none.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).first_or_fail(lambda item: item > 2)
 
 # 3
@@ -788,7 +782,7 @@ The check is `item is None`, so a collection whose first item is genuinely
 Returns the first item matching a key/value pair, or a key, operator and value.
 Returns `None` when nothing matches.
 
-```python
+```python title="examples/collections.py"
 books = [{"name": "Refactoring", "pages": 448}, {"name": "Clean Code", "pages": 464}]
 
 result = collect(books).first_where("pages", 464)
@@ -805,7 +799,7 @@ with_operator = collect(books).first_where("pages", ">", 450)
 Maps every item through the callback and then collapses the result one level, so
 a callback that returns a list contributes its elements rather than the list.
 
-```python
+```python title="examples/collections.py"
 result = collect([{"tags": ["a", "b"]}, {"tags": ["c"]}]).flat_map(lambda item: item["tags"]).all()
 
 # ['a', 'b', 'c']
@@ -819,7 +813,7 @@ Flattens a nested structure into a single-level collection. Pass a depth to
 limit how far it descends; the default is unlimited. Mapping values are
 flattened in, and strings and bytes are never treated as iterables.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, [2, [3, [4]]]]).flatten().all()
 
 # [1, 2, 3, 4]
@@ -838,7 +832,7 @@ from_mapping = collect({"name": "Sara", "languages": ["python", "php"]}).flatten
 Swaps keys and values. On a list-like collection the values become keys and the
 integer positions become the values.
 
-```python
+```python title="examples/collections.py"
 result = collect({"name": "Sara", "framework": "almasix"}).flip().all()
 
 # {'Sara': 'name', 'almasix': 'framework'}
@@ -854,7 +848,7 @@ Returns the slice of items belonging to the given one-based page. A page number
 below one is clamped to the first page, and the last page returns however many
 items remain.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5, 6, 7]).for_page(2, 3).all()
 
 # [4, 5, 6]
@@ -870,7 +864,7 @@ Removes the given keys **in place** and returns the same collection — unlike
 most methods, the original is modified. Keys that are not present are ignored,
 and remaining keys are left as they are rather than renumbered.
 
-```python
+```python title="examples/collections.py"
 items = collect({"name": "Sara", "age": 30, "city": "Cairo"})
 items.forget("age")
 
@@ -882,7 +876,7 @@ items.forget("age")
 Class method that decodes a JSON string into a new collection. Extra keyword
 arguments are forwarded to `json.loads`.
 
-```python
+```python title="examples/collections.py"
 result = Collection.from_json("[1, 2, 3]").all()
 
 # [1, 2, 3]
@@ -898,7 +892,7 @@ Returns the value at the given key, or the default (`None` if not given) when
 the key is absent. Lookup is by key only: on a list-like collection the integer
 positions are the keys, so `get(1)` works but `get(-1)` does not.
 
-```python
+```python title="examples/collections.py"
 result = collect({"name": "Sara"}).get("name")
 
 # 'Sara'
@@ -914,7 +908,7 @@ Groups the items by a key or a callable, returning a collection of collections
 keyed by the grouping value. Insertion order of the groups follows first
 appearance.
 
-```python
+```python title="examples/collections.py"
 result = collect([{"role": "admin"}, {"role": "user"}]).group_by("role").all()
 
 # {'admin': Collection([{'role': 'admin'}]), 'user': Collection([{'role': 'user'}])}
@@ -930,7 +924,7 @@ Also available as a higher order message.
 
 Reports whether **all** of the given keys are present.
 
-```python
+```python title="examples/collections.py"
 result = collect({"a": 1, "b": 2}).has("a")
 
 # True
@@ -945,7 +939,7 @@ both = collect({"a": 1, "b": 2}).has("a", "c")
 Reports whether **any** of the given keys are present. The keys may be passed as
 separate arguments or as a single list or tuple.
 
-```python
+```python title="examples/collections.py"
 result = collect({"a": 1, "b": 2}).has_any("c", "b")
 
 # True
@@ -961,7 +955,7 @@ Joins the items into a string. With one argument that argument is the glue and
 the items are stringified directly; with two, the first is the key to pull from
 each item and the second is the glue.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).implode("-")
 
 # '1-2-3'
@@ -978,7 +972,7 @@ Returns the values that are also present in the given items, in this
 collection's order. Comparison goes through a `set`, so all values must be
 hashable, and duplicates on this side are all kept.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).intersect([2, 4, 6]).all()
 
 # [2, 4]
@@ -987,7 +981,7 @@ result = collect([1, 2, 3, 4]).intersect([2, 4, 6]).all()
 As with `diff`, the original keys are not preserved — survivors are reindexed
 from zero:
 
-```python
+```python title="examples/collections.py"
 result = collect({"a": 1, "b": 2}).intersect([2]).all()
 
 # [2]
@@ -998,7 +992,7 @@ result = collect({"a": 1, "b": 2}).intersect([2]).all()
 Keeps the entries whose key *and* value both appear in the given items, compared
 with `==`. Entries that share a key but disagree on the value are dropped.
 
-```python
+```python title="examples/collections.py"
 result = collect({"name": "iPhone", "colour": "gold", "size": 6}).intersect_assoc(
     {"name": "iPhone", "colour": "silver", "size": 6}
 ).all()
@@ -1020,7 +1014,7 @@ Like `intersect_assoc`, but the two values for a shared key are compared by your
 callback instead of `==`. The callback receives this collection's value first
 and the other side's value second, and returns whether they match.
 
-```python
+```python title="examples/collections.py"
 result = collect({"name": "iPhone", "colour": "GOLD"}).intersect_assoc_using(
     {"name": "iphone", "colour": "silver"},
     lambda mine, theirs: str(mine).lower() == str(theirs).lower(),
@@ -1034,7 +1028,7 @@ result = collect({"name": "iPhone", "colour": "GOLD"}).intersect_assoc_using(
 Keeps the entries whose *key* appears in the given items, ignoring values
 entirely. The values kept are always this collection's.
 
-```python
+```python title="examples/collections.py"
 result = collect({"serial": "UX301", "type": "screen", "year": 2009}).intersect_by_keys(
     {"reference": "UX404", "type": "tab", "year": 2009}
 ).all()
@@ -1048,7 +1042,7 @@ Keeps the values that match at least one value in the given items, where
 "match" is decided by your callback rather than `==`. The callback is called
 with one of this collection's values and one candidate from the other side.
 
-```python
+```python title="examples/collections.py"
 result = collect(["Desk", "Sofa", "Chair"]).intersect_using(
     ["DESK", "chair", "bookcase"],
     lambda mine, theirs: mine.lower() == theirs.lower(),
@@ -1065,7 +1059,7 @@ renumbered from zero rather than keeping the original keys.
 Whether the collection has no items. Emptiness is about the number of items, not
 their truthiness — a collection holding a single `0` is not empty.
 
-```python
+```python title="examples/collections.py"
 result = (collect([]).is_empty(), collect([0]).is_empty(), collect({}).is_empty())
 
 # (True, False, True)
@@ -1075,7 +1069,7 @@ result = (collect([]).is_empty(), collect([0]).is_empty(), collect({}).is_empty(
 
 The inverse of `is_empty`.
 
-```python
+```python title="examples/collections.py"
 result = (collect([1]).is_not_empty(), collect([]).is_not_empty())
 
 # (True, False)
@@ -1087,7 +1081,7 @@ Joins the values into a string with `glue`, optionally using a different
 `final_glue` before the last one. Values are passed through `str()`, and only
 values are used, so a keyed collection joins its values.
 
-```python
+```python title="examples/collections.py"
 result = collect(["a", "b", "c"]).join(", ")
 
 # 'a, b, c'
@@ -1109,7 +1103,7 @@ Rekeys the collection by the given item key or callback, so each value ends up
 stored under a key derived from it. When two items produce the same key the last
 one wins.
 
-```python
+```python title="examples/collections.py"
 result = collect([
     {"product_id": "prod-100", "name": "Desk"},
     {"product_id": "prod-200", "name": "Chair"},
@@ -1133,7 +1127,7 @@ data.
 Returns a new collection of the keys. A collection built from a list has the
 contiguous integer keys `0, 1, 2, …`, so this is how you see them.
 
-```python
+```python title="examples/collections.py"
 result = collect({"prod-100": {"name": "Desk"}, "prod-200": {"name": "Chair"}}).keys().all()
 
 # ['prod-100', 'prod-200']
@@ -1149,7 +1143,7 @@ Returns the last item, or the last item passing the callback. A single
 non-callable argument is read as the default, so `last("empty")` means "the last
 item, or `'empty'` if there is none".
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).last()
 
 # 4
@@ -1176,7 +1170,7 @@ operations (`chunk`, `throttle`, `take_until_timeout`, `with_heartbeat`) that
 only exist there. The items are already in memory, so this buys the API rather
 than the memory saving; keys are dropped and only values carry over.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).lazy().filter(lambda v: v % 2 == 0).map(lambda v: v * 10).all()
 
 # [20, 40]
@@ -1190,7 +1184,7 @@ Registers a callback as a method name, callable on any collection. It is a
 classmethod taking the name and the callback, and the callback receives the
 collection as its first argument followed by whatever the caller passes.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Collection
 
 Collection.macro("to_upper", lambda collection: collection.map(lambda item: item.upper()))
@@ -1213,7 +1207,7 @@ Builds a collection from the given items — a classmethod equivalent to calling
 the class directly, and the form to use when you have a `Collection` subclass in
 hand. With no argument you get an empty collection.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Collection
 
 result = Collection.make([1, 2, 3]).all()
@@ -1234,7 +1228,7 @@ Runs the callback over every item and returns a new collection of the results.
 callback taking two parameters is given `(item, key)`; a one-parameter callback
 is given just the item.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).map(lambda value: value * 2).all()
 
 # [2, 4, 6, 8]
@@ -1252,7 +1246,7 @@ called a second time with a single argument before the error surfaces.
 
 Maps every item into a new instance of the given class, calling `cls(item)`.
 
-```python
+```python title="resources/views/examples/collections.prism.html"
 from dataclasses import dataclass
 
 @dataclass
@@ -1271,17 +1265,17 @@ The item is passed as a single positional argument, so the class must accept one
 Maps over the items, spreading each one into the callback's arguments. Use it
 after a method that produces pairs, such as `zip`.
 
-```python
+```python title="examples/collections.py"
 result = collect([[1, 2], [3, 4], [5, 6]]).map_spread(lambda a, b: a + b).all()
 
 # [3, 7, 11]
 ```
 
 Only lists and tuples are spread. Items that are collections — what `chunk` and
-`sliding` produce — are passed whole as a single argument, which differs from
-Laravel, where `mapSpread` after `chunk` spreads the chunk:
+`sliding` produce — are passed whole as a single argument (so after `chunk`,
+pass a one-argument callback that receives the chunk):
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).chunk(2).map_spread(lambda chunk: chunk.sum()).all()
 
 # [3, 7]
@@ -1293,7 +1287,7 @@ Maps each item to a single-pair `(key, value)` tuple or one-entry dict, and
 groups the values by that key. Unlike `map_with_keys`, repeated keys accumulate
 instead of overwriting.
 
-```python
+```python title="examples/collections.py"
 result = collect([
     {"name": "Ana", "department": "Sales"},
     {"name": "Bo", "department": "Sales"},
@@ -1312,7 +1306,7 @@ Maps each item to a `(key, value)` tuple or a dict, and builds a new collection
 from those pairs. Returning a dict lets one item contribute several entries;
 duplicate keys overwrite, so the last item wins.
 
-```python
+```python title="resources/views/examples/collections.prism.html"
 result = collect([
     {"name": "Ana", "email": "ana@example.com"},
     {"name": "Bo", "email": "bo@example.com"},
@@ -1332,7 +1326,7 @@ from_dict = collect([
 The largest value, optionally of an item key or a callback's result. `None`
 values are ignored, and an empty collection gives `None` rather than raising.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5]).max()
 
 # 5
@@ -1356,7 +1350,7 @@ The median of the values, optionally of an item key or a callback's result.
 values yields the mean of the middle two, so the result may be a float even when
 every input is an integer.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 1, 2, 4]).median()
 
 # 1.5
@@ -1376,7 +1370,7 @@ Merges the given items into a new collection. When both sides are list-like the
 items are appended; otherwise the given items are merged by key, and colliding
 keys take the *incoming* value.
 
-```python
+```python title="examples/collections.py"
 result = collect(["Desk", "Chair"]).merge(["Bookcase", "Door"]).all()
 
 # ['Desk', 'Chair', 'Bookcase', 'Door']
@@ -1389,7 +1383,7 @@ keyed = collect({"product_id": 1, "price": 100}).merge({"price": 200, "discount"
 Mixing the two shapes merges by key, which puts the list's integer keys and the
 dict's string keys side by side:
 
-```python
+```python title="examples/collections.py"
 mixed = collect(["Desk"]).merge({"price": 100}).all()
 
 # {0: 'Desk', 'price': 100}
@@ -1403,7 +1397,7 @@ Merges by key like `merge`, but descends into nested dicts instead of replacing
 them outright. Anything that is not a dict on both sides is replaced by the
 incoming value.
 
-```python
+```python title="examples/collections.py"
 result = collect({"db": {"host": "localhost", "port": 5432}, "debug": False}).merge_recursive(
     {"db": {"port": 6543}, "debug": True}
 ).all()
@@ -1411,9 +1405,8 @@ result = collect({"db": {"host": "localhost", "port": 5432}, "debug": False}).me
 # {'db': OrderedDict({'host': 'localhost', 'port': 6543}), 'debug': True}
 ```
 
-Two differences from Laravel are worth knowing. Laravel's `mergeRecursive` turns
-colliding scalars into an array of both values; here the incoming value simply
-wins. And the merged sub-dicts come back as `OrderedDict` instances, which
+Colliding scalars are replaced by the incoming value rather than turned into
+a list of both. Merged sub-dicts come back as `OrderedDict` instances, which
 compare equal to plain dicts but print differently.
 
 ### min
@@ -1421,7 +1414,7 @@ compare equal to plain dicts but print differently.
 The smallest value, optionally of an item key or a callback's result. `None`
 values are ignored, and an empty collection gives `None`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5]).min()
 
 # 1
@@ -1437,7 +1430,7 @@ The most frequently occurring value(s), optionally of an item key or a callback'
 result. It always returns a plain **list**, because ties are all reported, and
 `None` for an empty collection.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 1, 2, 4]).mode()
 
 # [1]
@@ -1459,7 +1452,7 @@ that returns a bare Python list.
 Repeats every item the given number of times, concatenated end to end. A
 non-positive count gives an empty collection.
 
-```python
+```python title="examples/collections.py"
 result = collect(["Desk", "Chair"]).multiply(3).all()
 
 # ['Desk', 'Chair', 'Desk', 'Chair', 'Desk', 'Chair']
@@ -1477,7 +1470,7 @@ collections too — it copies the values only.
 Every `step`-th value, optionally starting at `offset` rather than the first
 item.
 
-```python
+```python title="examples/collections.py"
 result = collect(["a", "b", "c", "d", "e", "f"]).nth(4).all()
 
 # ['a', 'e']
@@ -1495,7 +1488,7 @@ Keeps only the entries with the given keys. Keys are accepted as separate
 arguments or as one list, tuple, or set, and unknown keys are ignored rather
 than producing `None`.
 
-```python
+```python title="examples/collections.py"
 result = collect({"product_id": 1, "name": "Desk", "price": 100, "discount": False}).only(
     "product_id", "name"
 ).all()
@@ -1517,7 +1510,7 @@ Pads the collection to `size` with `value`. A positive size pads on the right, a
 negative size pads on the left, and a size the collection already reaches leaves
 it untouched.
 
-```python
+```python title="examples/collections.py"
 result = collect(["A", "B", "C"]).pad(5, 0).all()
 
 # ['A', 'B', 'C', 0, 0]
@@ -1537,7 +1530,7 @@ Splits the collection in two by a predicate: the items that pass, then the items
 that do not. It returns a collection of two collections, which unpacks directly
 into a pair of names.
 
-```python
+```python title="examples/collections.py"
 under, over = collect([1, 2, 3, 4, 5, 6]).partition(lambda value: value < 3)
 result = (under.all(), over.all())
 
@@ -1552,7 +1545,7 @@ The percentage of items matching the callback, rounded to `precision` decimal
 places (2 by default). An empty collection gives `0.0` instead of dividing by
 zero.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 1, 2, 2, 2, 3]).percentage(lambda value: value == 1)
 
 # 33.33
@@ -1569,7 +1562,7 @@ The return is always a float, so `precision=0` gives `33.0` rather than `33`.
 Passes the collection to the callback and returns whatever the callback returns.
 Use it to keep a chain going through an operation the collection does not have.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).pipe(lambda collection: collection.sum())
 
 # 6
@@ -1580,7 +1573,7 @@ result = collect([1, 2, 3]).pipe(lambda collection: collection.sum())
 Passes the collection to the given class's constructor and returns the new
 instance. The class receives the `Collection` itself, not a list.
 
-```python
+```python title="examples/collections.py"
 class ResourceCollection:
     def __init__(self, collection):
         self.collection = collection
@@ -1598,7 +1591,7 @@ result = collect([1, 2, 3]).pipe_into(ResourceCollection)
 Passes the collection through an iterable of callbacks in order, feeding each
 one the previous result. The final callback decides the return type.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).pipe_through([
     lambda collection: collection.map(lambda value: value * 2),
     lambda collection: collection.sum(),
@@ -1612,7 +1605,7 @@ result = collect([1, 2, 3]).pipe_through([
 Retrieves one key from every item. The `value` argument is the key to read and
 supports dot notation for nested data.
 
-```python
+```python title="examples/collections.py"
 result = collect([
     {"product_id": "prod-100", "name": "Desk"},
     {"product_id": "prod-200", "name": "Chair"},
@@ -1629,7 +1622,7 @@ A second argument names the key to index the result by — and in that form Alma
 returns a **plain dict**, not a collection, so there is nothing to chain onto and
 no `.all()` to call:
 
-```python
+```python title="examples/collections.py"
 keyed = collect([
     {"product_id": "prod-100", "name": "Desk"},
     {"product_id": "prod-200", "name": "Chair"},
@@ -1638,7 +1631,7 @@ keyed = collect([
 # {'prod-100': 'Desk', 'prod-200': 'Chair'}
 ```
 
-Laravel returns a collection from both forms.
+Both forms return a plain dict (or list), not a collection.
 
 ### pop
 
@@ -1646,7 +1639,7 @@ Removes and returns the last item, **mutating the collection in place**. With a
 count above one it removes that many and returns them as a collection, in their
 original order.
 
-```python
+```python title="examples/collections.py"
 items = collect([1, 2, 3, 4, 5])
 result = items.pop()
 
@@ -1673,7 +1666,7 @@ afterwards; other keys are left alone.
 Adds an item to the front, **mutating the collection in place** and returning it
 for chaining. A second argument gives the new item a key.
 
-```python
+```python title="examples/collections.py"
 items = collect([1, 2, 3])
 result = items.prepend(0).all()
 
@@ -1693,7 +1686,7 @@ dict. Pass a key when the collection has them.
 Removes the entry with the given key and returns its value, **mutating the
 collection in place**. A missing key returns the default instead of raising.
 
-```python
+```python title="examples/collections.py"
 items = collect({"product_id": "prod-100", "name": "Desk"})
 result = items.pull("name")
 
@@ -1716,7 +1709,7 @@ remaining items are *not* renumbered.
 Appends one or more items to the end, **mutating the collection in place** and
 returning it for chaining.
 
-```python
+```python title="examples/collections.py"
 items = collect([1, 2, 3])
 result = items.push(4).all()
 
@@ -1737,7 +1730,7 @@ mixes in an integer key: `collect({"a": 1}).push("b").all()` gives
 Sets a key to a value, **mutating the collection in place** and returning it for
 chaining.
 
-```python
+```python title="examples/collections.py"
 items = collect({"product_id": 1, "name": "Desk"})
 result = items.put("price", 100).all()
 
@@ -1754,7 +1747,7 @@ Returns one item chosen at random, or a collection of `count` items when a count
 is given. The results differ per call, so the example below checks membership
 rather than printing a value.
 
-```python
+```python title="examples/collections.py"
 value = collect([1, 2, 3, 4, 5]).random()
 result = value in [1, 2, 3, 4, 5]
 
@@ -1766,7 +1759,7 @@ sample = collect([1, 2, 3, 4, 5]).random(3).count()
 ```
 
 Asking for more items than there are quietly clamps to the collection size —
-`collect([1, 2]).random(5).count()` is `2`, where Laravel raises. An empty
+`collect([1, 2]).random(5).count()` is `2` rather than raising. An empty
 collection returns `None`, or an empty collection when a count was given.
 
 ### range
@@ -1775,7 +1768,7 @@ Builds a collection of integers from `start` to `end`, a classmethod rather than
 an instance method. Both ends are **inclusive**, and the range counts down when
 `end` is below `start`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Collection
 
 result = Collection.range(1, 5).all()
@@ -1796,7 +1789,7 @@ Reduces the collection to a single value, calling the callback with the carry
 and each item. Without an initial value the first item becomes the carry and the
 reduction starts from the second.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).reduce(lambda carry, item: carry + item)
 
 # 6
@@ -1806,32 +1799,30 @@ seeded = collect([1, 2, 3]).reduce(lambda carry, item: carry + item, 10)
 # 16
 ```
 
-That differs from Laravel, which seeds the carry with `null` and calls the
-callback for every item. Because `None` is the marker for "no initial value",
-you cannot deliberately start from `None` here. An empty collection returns
-`None`.
+With no initial value, the first item becomes the carry and the callback runs
+for the rest. Because `None` is the marker for "no initial value", you cannot
+deliberately start from `None` here. An empty collection returns `None`.
 
 ### reduce_spread
 
 Reduces where each item is a list or tuple spread across the callback's
 arguments after the carry.
 
-```python
+```python title="examples/collections.py"
 result = collect([[1, 2], [3, 4]]).reduce_spread(lambda carry, a, b: carry + (a * b), 0)
 
 # 14
 ```
 
-Laravel's `reduceSpread` is a different method — there it is the *carry* that is
-spread, so the callback returns several accumulators. Almasix's spreads the item
-instead, and returns a single value.
+The *item* is spread into the callback after the carry; the callback returns
+a single accumulator value.
 
 ### reject
 
 The inverse of `filter`: keeps the items for which the callback returns false.
 Keys are preserved. A non-callable argument rejects the items equal to it.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).reject(lambda value: value > 2).all()
 
 # [1, 2]
@@ -1849,7 +1840,7 @@ contiguous. Chain `values()` to renumber:
 
 Overwrites entries by key with the given items, adding keys that did not exist.
 
-```python
+```python title="examples/collections.py"
 result = collect(["Taylor", "Abigail", "James"]).replace({1: "Victoria", 3: "Finn"}).all()
 
 # ['Taylor', 'Victoria', 'James', 'Finn']
@@ -1868,7 +1859,7 @@ than appended.
 Replaces by key, descending into nested dicts rather than overwriting them
 wholesale.
 
-```python
+```python title="examples/collections.py"
 result = collect({"db": {"host": "localhost", "port": 5432}}).replace_recursive(
     {"db": {"port": 6543}}
 ).all()
@@ -1877,15 +1868,14 @@ result = collect({"db": {"host": "localhost", "port": 5432}}).replace_recursive(
 ```
 
 In Almasix this is an alias for `merge_recursive`, so it only recurses into
-dicts: nested lists are replaced as a whole, where Laravel's `replaceRecursive`
-would descend into them by index. As with `merge_recursive`, nested results are
-`OrderedDict` instances.
+dicts: nested lists are replaced as a whole rather than merged by index. As
+with `merge_recursive`, nested results are `OrderedDict` instances.
 
 ### reverse
 
 Reverses the order of the items, **keeping each item with its key**.
 
-```python
+```python title="examples/collections.py"
 result = collect(["a", "b", "c"]).reverse().all()
 
 # {2: 'c', 1: 'b', 0: 'a'}
@@ -1897,15 +1887,14 @@ renumbered = collect(["a", "b", "c"]).reverse().values().all()
 
 This catches people out: reversing a list-backed collection leaves the keys as
 `2, 1, 0`, which is no longer contiguous, so `all()` returns a dict. Chain
-`values()` when you want a list back. Laravel behaves the same way, but PHP's
-arrays make it less visible.
+`values()` when you want a list back.
 
 ### search
 
 Returns the key of the first matching item, or `False` when nothing matches.
 The argument is either a value to look for or a predicate.
 
-```python
+```python title="examples/collections.py"
 result = collect([2, 4, 6, 8]).search(4)
 
 # 1
@@ -1933,7 +1922,7 @@ to `pluck`. Keys are accepted as separate arguments or as one list or tuple, and
 each name goes through dot notation — a dotted name reads the nested value but
 keeps the whole dotted string as the key.
 
-```python
+```python title="examples/collections.py"
 result = collect([
     {"name": "Ana", "role": "dev", "age": 30},
     {"name": "Bo", "role": "ops", "age": 40},
@@ -1951,7 +1940,7 @@ A key an item does not have comes back as `None` rather than being omitted:
 Removes and returns the first item, **mutating the collection in place**. With a
 count above one it removes that many and returns them as a collection.
 
-```python
+```python title="examples/collections.py"
 items = collect([1, 2, 3, 4, 5])
 result = items.shift()
 
@@ -1978,7 +1967,7 @@ afterwards, so the collection stays list-like; other keys are left alone.
 Returns a new collection with the items in random order. The original is left
 untouched, and keys are dropped in favour of a fresh numbering.
 
-```python
+```python title="examples/collections.py"
 shuffled = collect([1, 2, 3, 4, 5]).shuffle()
 result = sorted(shuffled.all())
 
@@ -1994,7 +1983,7 @@ repeatable shuffle in a test.
 Returns a new collection with the first `count` items dropped. Keys are not
 preserved — the remaining values are reindexed from zero.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5]).skip(2).all()
 
 # [3, 4, 5]
@@ -2006,7 +1995,7 @@ Drops items until the given callback returns true, then keeps everything from
 that point on. Passing a plain value instead of a callback skips until an item
 equals it. If nothing ever matches, the result is empty.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).skip_until(lambda n: n >= 3).all()
 
 # [3, 4]
@@ -2022,7 +2011,7 @@ Drops items while the callback returns true, then keeps the rest — including
 later items that would also fail the test. Unlike `skip_until`, this takes a
 callback only, not a value.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 1]).skip_while(lambda n: n < 3).all()
 
 # [3, 4, 1]
@@ -2031,11 +2020,11 @@ result = collect([1, 2, 3, 4, 1]).skip_while(lambda n: n < 3).all()
 ### slice
 
 Returns a slice of the collection starting at `start`, optionally limited to
-`length` items. Keys are reindexed, unlike Laravel's `slice`, which preserves
-them. A negative `length` is ignored rather than counting back from the end, so
+`length` items. Keys are reindexed rather than preserved. A negative `length`
+is ignored rather than counting back from the end, so
 `slice(2, -1)` gives the same result as `slice(2)`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5, 6]).slice(2).all()
 
 # [3, 4, 5, 6]
@@ -2051,7 +2040,7 @@ Returns a collection of overlapping windows of `size` items, advanced by `step`
 each time. Each window is itself a collection, so `.all()` on the outer
 collection gives you `Collection` reprs — map over it if you want plain lists.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5]).sliding(2).map(lambda chunk: chunk.all()).all()
 
 # [[1, 2], [2, 3], [3, 4], [4, 5]]
@@ -2066,10 +2055,10 @@ result = collect([1, 2, 3, 4, 5]).sliding(3, step=2).map(lambda chunk: chunk.all
 Returns the single item matching the optional callback. Raises
 `ItemNotFoundError` when nothing matches and `MultipleItemsFoundError` when more
 than one item does; both are `LookupError` subclasses exported from
-`almasix.support`. Laravel's `sole` also accepts a key/operator/value triple —
-Almasix accepts a callback only.
+`almasix.support`. Almasix accepts a callback only — not a key/operator/value
+triple.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import collect, MultipleItemsFoundError
 
 result = collect([1, 2, 3]).sole(lambda n: n == 2)
@@ -2089,7 +2078,7 @@ except MultipleItemsFoundError as exc:
 Alias for `contains`, and accepts the same three forms (a callback, a bare
 value, or a key with an optional operator).
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).some(lambda n: n > 2)
 
 # True
@@ -2102,11 +2091,11 @@ result = collect([{"votes": 50}]).some("votes", ">", 10)
 ### sort
 
 Sorts the values with Python's `sorted`. The optional callback is a **key
-function** (as in `sorted(key=...)`), not the two-argument comparator Laravel's
-`sort` takes. Keys are discarded and the result is reindexed, so a keyed
+function** (as in `sorted(key=...)`), not a two-argument comparator. Keys are
+discarded and the result is reindexed, so a keyed
 collection comes back as a list.
 
-```python
+```python title="examples/collections.py"
 result = collect([5, 3, 1, 2, 4]).sort().all()
 
 # [1, 2, 3, 4, 5]
@@ -2122,7 +2111,7 @@ Sorts by the value at the given key, which may be a dot-notation string or a
 callable applied to each item. Pass `descending=True` to reverse, or use
 `sort_by_desc`.
 
-```python
+```python title="examples/collections.py"
 items = [{"name": "Desk", "price": 200}, {"name": "Chair", "price": 100}, {"name": "Bookcase", "price": 150}]
 result = collect(items).sort_by("price").pluck("name").all()
 
@@ -2138,7 +2127,7 @@ result = collect(["bb", "a", "ccc"]).sort_by(len).all()
 `sort_by` with `descending=True`. Takes a key or a callable, but no `descending`
 argument of its own.
 
-```python
+```python title="examples/collections.py"
 items = [{"name": "Desk", "price": 200}, {"name": "Chair", "price": 100}]
 result = collect(items).sort_by_desc("price").pluck("name").all()
 
@@ -2150,7 +2139,7 @@ result = collect(items).sort_by_desc("price").pluck("name").all()
 Sorts the values in reverse order. Unlike `sort`, it accepts no callback — for a
 descending sort by a derived value use `sort_by_desc`.
 
-```python
+```python title="examples/collections.py"
 result = collect([5, 3, 1, 2, 4]).sort_desc().all()
 
 # [5, 4, 3, 2, 1]
@@ -2161,7 +2150,7 @@ result = collect([5, 3, 1, 2, 4]).sort_desc().all()
 Sorts by key rather than by value, keeping each key paired with its value. Only
 meaningful on a keyed collection.
 
-```python
+```python title="examples/collections.py"
 result = collect({"id": 1, "first": "John", "last": "Doe"}).sort_keys().all()
 
 # {'first': 'John', 'id': 1, 'last': 'Doe'}
@@ -2171,7 +2160,7 @@ result = collect({"id": 1, "first": "John", "last": "Doe"}).sort_keys().all()
 
 `sort_keys` in reverse key order.
 
-```python
+```python title="examples/collections.py"
 result = collect({"id": 1, "first": "John", "last": "Doe"}).sort_keys_desc().all()
 
 # {'last': 'Doe', 'id': 1, 'first': 'John'}
@@ -2179,11 +2168,10 @@ result = collect({"id": 1, "first": "John", "last": "Doe"}).sort_keys_desc().all
 
 ### sort_keys_using
 
-Sorts by key using the callback to derive the sort value for each key. Laravel
-passes the keys to a comparison function such as `strnatcmp`; Almasix's callback
-is a key function receiving one key and returning something sortable.
+Sorts by key using the callback to derive the sort value for each key. The
+callback is a key function receiving one key and returning something sortable.
 
-```python
+```python title="examples/collections.py"
 result = collect({"ID": 1, "first": "John", "last": "Doe"}).sort_keys_using(str.lower).all()
 
 # {'first': 'John', 'ID': 1, 'last': 'Doe'}
@@ -2196,7 +2184,7 @@ collection, **mutating the original in place**. Omitting `length` removes
 everything from `offset` onwards. A `replacement` iterable is spliced in where
 the removed items were.
 
-```python
+```python title="examples/collections.py"
 items = collect([1, 2, 3, 4, 5])
 removed = items.splice(1, 2)
 
@@ -2214,7 +2202,7 @@ Splits the collection into exactly `number_of_groups` groups, distributing any
 remainder into the earliest groups. Asking for more groups than there are items
 yields empty groups at the end, rather than fewer groups.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5]).split(3).map(lambda group: group.all()).all()
 
 # [[1, 2], [3, 4], [5]]
@@ -2230,7 +2218,7 @@ Splits into groups of a fixed size — `ceil(count / number_of_groups)` — so t
 last group takes whatever is left. This differs from `split`, which balances the
 groups instead.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).split_in(3).map(lambda group: group.all()).all()
 
 # [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10]]
@@ -2242,7 +2230,7 @@ Sums the items. The optional argument is a dot-notation key or a callable used
 to pull the number out of each item. `None` values are skipped rather than
 raising.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4, 5]).sum()
 
 # 15
@@ -2261,7 +2249,7 @@ result = collect([{"p": [1, 2]}, {"p": [3]}]).sum(lambda item: len(item["p"]))
 Returns the first `limit` items, or the last `abs(limit)` items when `limit` is
 negative.
 
-```python
+```python title="examples/collections.py"
 result = collect([0, 1, 2, 3, 4, 5]).take(3).all()
 
 # [0, 1, 2]
@@ -2276,7 +2264,7 @@ result = collect([0, 1, 2, 3, 4, 5]).take(-2).all()
 Keeps items until the callback returns true, stopping before the matching item.
 Passing a plain value instead of a callback stops at the first item equal to it.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 4]).take_until(lambda n: n >= 3).all()
 
 # [1, 2]
@@ -2291,7 +2279,7 @@ result = collect([1, 2, 3, 4]).take_until(3).all()
 Keeps items while the callback returns true and stops at the first failure, so
 later passing items are not included. Callback only — no value form.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3, 1]).take_while(lambda n: n < 3).all()
 
 # [1, 2]
@@ -2303,7 +2291,7 @@ Hands the collection to the callback and returns the same collection, letting
 you inspect or act on it mid-chain without breaking the chain. The callback's
 return value is discarded.
 
-```python
+```python title="examples/collections.py"
 result = collect([2, 4, 3]).sort().tap(lambda c: print(c.all())).map(lambda n: n * 2).all()
 
 # tap prints [2, 3, 4]
@@ -2316,7 +2304,7 @@ Class method that builds a collection by invoking the callback with the numbers
 `1` through `count` — note the index is 1-based, not 0-based. Without a callback
 you get the numbers themselves.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Collection
 
 result = Collection.times(4, lambda n: n * 9).all()
@@ -2331,10 +2319,10 @@ result = Collection.times(3).all()
 ### to_array
 
 Alias for `all()`: a list when the keys are a contiguous range from zero, a dict
-otherwise. Unlike Laravel's `toArray` it is **not** recursive — nested
-collections are returned as `Collection` objects, not converted.
+otherwise. It is **not** recursive — nested collections are returned as
+`Collection` objects, not converted.
 
-```python
+```python title="examples/collections.py"
 result = collect({"a": 1, "b": 2}).to_array()
 
 # {'a': 1, 'b': 2}
@@ -2350,7 +2338,7 @@ Serialises `to_array()` with `json.dumps`. Any keyword arguments are passed
 straight through to `json.dumps`, and `default=str` is applied so values without
 a JSON representation are stringified instead of raising.
 
-```python
+```python title="examples/collections.py"
 result = collect({"name": "Desk", "price": 200}).to_json()
 
 # {"name": "Desk", "price": 200}
@@ -2365,7 +2353,7 @@ result = collect({"b": 1, "a": 2}).to_json(sort_keys=True)
 `to_json` with `indent=4` defaulted in. Keyword arguments still reach
 `json.dumps`, so passing `indent` explicitly overrides the default.
 
-```python
+```python title="examples/collections.py"
 result = collect({"name": "Desk"}).to_pretty_json()
 
 # {
@@ -2385,7 +2373,7 @@ Applies the callback to every item and **replaces the collection's contents in
 place**, returning the same collection rather than a new one. Use `map` when you
 want a new collection. The callback may take `(item)` or `(item, key)`.
 
-```python
+```python title="examples/collections.py"
 items = collect([1, 2, 3, 4, 5])
 items.transform(lambda n: n * 2)
 
@@ -2402,7 +2390,7 @@ Expands dot-notation keys into a nested dict. It is the inverse of `dot`, but
 numeric segments become string keys rather than list indices, so a round trip
 through `dot().undot()` does not restore lists.
 
-```python
+```python title="examples/collections.py"
 result = collect({"name.first_name": "Marie", "name.last_name": "Valentine"}).undot().all()
 
 # {'name': {'first_name': 'Marie', 'last_name': 'Valentine'}}
@@ -2418,7 +2406,7 @@ Adds the given items to the collection, keeping the original value whenever a
 key collides. For list-like collections the keys are the integer indices, so
 unioning a longer list only picks up the items past the end.
 
-```python
+```python title="examples/collections.py"
 result = collect({"a": "hello"}).union({"a": "bye", "b": "world"}).all()
 
 # {'a': 'hello', 'b': 'world'}
@@ -2435,7 +2423,7 @@ argument is a key or callable that produces the value to compare on. Keys are
 preserved, so removing items from a list-like collection leaves gaps and
 `.all()` returns a dict — chain `.values()` to get a list back.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 1, 2, 2, 3, 4, 2]).unique().all()
 
 # {0: 1, 2: 2, 4: 3, 5: 4}
@@ -2455,7 +2443,7 @@ result = collect(items).unique("b").pluck("n").all()
 `unique` with identity (`is`) comparison instead of `==`, so equal-but-distinct
 objects are both kept.
 
-```python
+```python title="examples/collections.py"
 first, second = [1], [1]
 result = collect([first, second, first]).unique_strict().all()
 
@@ -2472,7 +2460,7 @@ Runs the callback when the condition is falsy — the inverse of `when`. The
 optional third argument runs when the condition is truthy instead. Returns
 whatever the callback returns, or the collection when no branch ran.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).unless(False, lambda c: c.push(4)).all()
 
 # [1, 2, 3, 4]
@@ -2487,7 +2475,7 @@ result = collect([1, 2, 3]).unless(True, lambda c: c.push(4), lambda c: c.push(5
 Runs the callback when the collection is **not** empty. Identical to
 `when_not_empty`; the name reads as "unless it is empty".
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).unless_empty(lambda c: c.push(4)).all()
 
 # [1, 2, 3, 4]
@@ -2502,7 +2490,7 @@ result = collect([]).unless_empty(lambda c: c.push(4)).all()
 Runs the callback when the collection **is** empty. Identical to `when_empty`,
 and the opposite of `unless_empty`.
 
-```python
+```python title="examples/collections.py"
 result = collect([]).unless_not_empty(lambda c: c.push(4)).all()
 
 # [4]
@@ -2517,7 +2505,7 @@ result = collect([1]).unless_not_empty(lambda c: c.push(4)).all()
 Class method that returns the underlying items of a collection, or the value
 unchanged if it is not a collection. The counterpart to `wrap`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Collection
 
 result = Collection.unwrap(collect([1, 2, 3]))
@@ -2534,7 +2522,7 @@ result = Collection.unwrap("Desk")
 Retrieves the value at the given dot-notation key from the **first** item,
 falling back to `default`. Handy after a `where` when you only need one field.
 
-```python
+```python title="examples/collections.py"
 items = [{"product": "Desk", "price": 200}, {"product": "Speaker", "price": 400}]
 result = collect(items).value("price")
 
@@ -2551,7 +2539,7 @@ Returns a new collection of the values with the keys reset to a contiguous range
 from zero. Useful after key-preserving operations such as `filter`, `unique`, or
 the `where` family.
 
-```python
+```python title="examples/collections.py"
 result = collect({10: "a", 20: "b"}).values().all()
 
 # ['a', 'b']
@@ -2564,7 +2552,7 @@ when it is not. The return value is whatever the callback returns — it is not
 coerced back to the collection — so a callback returning a scalar gives you that
 scalar. With no branch taken, the collection itself is returned.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).when(True, lambda c: c.push(4)).all()
 
 # [1, 2, 3, 4]
@@ -2583,7 +2571,7 @@ result = collect([1, 2, 3]).when(True, lambda c: c.sum())
 Runs the callback only when the collection has no items, with an optional
 default callback for the non-empty case.
 
-```python
+```python title="examples/collections.py"
 result = collect([]).when_empty(lambda c: c.push("adam")).all()
 
 # ['adam']
@@ -2598,7 +2586,7 @@ result = collect(["michael"]).when_empty(lambda c: c.push("adam")).all()
 Runs the callback only when the collection has at least one item — the mirror of
 `when_empty`.
 
-```python
+```python title="examples/collections.py"
 result = collect(["michael"]).when_not_empty(lambda c: c.push("adam")).all()
 
 # ['michael', 'adam']
@@ -2617,7 +2605,7 @@ operator falls back to equality. Keys are preserved, so `.all()` on a filtered
 list-like collection returns a dict keyed by the original indices; chain
 `.values()` for a list.
 
-```python
+```python title="examples/collections.py"
 items = [{"product": "Desk", "price": 200}, {"product": "Chair", "price": 100}, {"product": "Door", "price": 100}]
 result = collect(items).where("price", 100).all()
 
@@ -2637,7 +2625,7 @@ result = collect([{"o": {"p": 1}}, {"o": {"p": 2}}]).where("o.p", 2).values().al
 Keeps items whose value at the key falls within the inclusive range given as a
 two-element sequence. Items whose value is `None` are excluded.
 
-```python
+```python title="examples/collections.py"
 items = [{"product": "Desk", "price": 200}, {"product": "Chair", "price": 100}, {"product": "Bookcase", "price": 150}]
 result = collect(items).where_between("price", [100, 150]).values().pluck("product").all()
 
@@ -2650,7 +2638,7 @@ Keeps items whose value at the key is in the given iterable. The candidates are
 collected into a `set`, so they must be hashable, and membership uses `==` —
 `True` matches `1`. Use `where_in_strict` for identity.
 
-```python
+```python title="examples/collections.py"
 items = [{"product": "Desk", "price": 200}, {"product": "Chair", "price": 100}, {"product": "Bookcase", "price": 150}]
 result = collect(items).where_in("price", [150, 200]).values().pluck("product").all()
 
@@ -2666,7 +2654,7 @@ result = collect([{"v": 1}, {"v": True}]).where_in("v", [1]).values().all()
 `where_in` using identity (`is`) rather than `==`, so only the exact objects you
 pass in match.
 
-```python
+```python title="examples/collections.py"
 first, second = [1], [1]
 result = collect([{"v": first}, {"v": second}]).where_in_strict("v", [first]).count()
 
@@ -2679,7 +2667,7 @@ Keeps items that are instances of the given class. Accepts anything
 `isinstance` does, including a tuple of classes. Note Python's rule that `bool`
 is a subclass of `int`.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, "a", 2, None, 3.5]).where_instance_of(int).values().all()
 
 # [1, 2]
@@ -2694,7 +2682,7 @@ result = collect([1, "a", 2.5]).where_instance_of((int, float)).values().all()
 The complement of `where_between`: keeps items outside the inclusive range, and
 also keeps items whose value at the key is `None`.
 
-```python
+```python title="examples/collections.py"
 items = [{"product": "Desk", "price": 200}, {"product": "Chair", "price": 100}, {"product": "Bookcase", "price": 150}]
 result = collect(items).where_not_between("price", [100, 150]).values().pluck("product").all()
 
@@ -2706,7 +2694,7 @@ result = collect(items).where_not_between("price", [100, 150]).values().pluck("p
 Keeps items whose value at the key is **not** in the given iterable. Same
 hashability and `==` semantics as `where_in`.
 
-```python
+```python title="examples/collections.py"
 items = [{"product": "Desk", "price": 200}, {"product": "Chair", "price": 100}, {"product": "Bookcase", "price": 150}]
 result = collect(items).where_not_in("price", [150, 200]).values().pluck("product").all()
 
@@ -2718,7 +2706,7 @@ result = collect(items).where_not_in("price", [150, 200]).values().pluck("produc
 `where_not_in` using identity (`is`), so an equal-but-distinct object is kept
 rather than excluded.
 
-```python
+```python title="examples/collections.py"
 first, second = [1], [1]
 result = collect([{"v": first}, {"v": second}]).where_not_in_strict("v", [first]).values().all()
 
@@ -2730,7 +2718,7 @@ result = collect([{"v": first}, {"v": second}]).where_not_in_strict("v", [first]
 Keeps items whose value at the key is not `None`. A missing key reads as `None`
 via `data_get`, so absent keys are excluded too.
 
-```python
+```python title="examples/collections.py"
 items = [{"n": "Desk"}, {"n": None}, {"n": "Bookcase"}]
 result = collect(items).where_not_null("n").values().all()
 
@@ -2742,7 +2730,7 @@ result = collect(items).where_not_null("n").values().all()
 Keeps items whose value at the key is `None`, including items where the key is
 absent. Keys are preserved, hence the dict below.
 
-```python
+```python title="examples/collections.py"
 items = [{"n": "Desk"}, {"n": None}, {"n": "Bookcase"}]
 result = collect(items).where_null("n").all()
 
@@ -2751,12 +2739,12 @@ result = collect(items).where_null("n").all()
 
 ### where_strict
 
-Compares with `is` instead of `==`. This is identity, not Laravel's `===`
-type-strict equality, so two equal integers or strings that are not the same
+Compares with `is` instead of `==`. This is identity, not type-strict value
+equality, so two equal integers or strings that are not the same
 object will not match — it is reliable for sentinels, `None`, and enum members,
 not for numbers built at runtime.
 
-```python
+```python title="examples/collections.py"
 marker = object()
 result = collect([{"flag": marker}, {"flag": None}]).where_strict("flag", marker).count()
 
@@ -2774,7 +2762,7 @@ unchanged, mappings become keyed collections, `None` becomes empty, lists,
 tuples and sets are wrapped as-is, and anything else becomes a single-item
 collection.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Collection
 
 result = Collection.wrap("Desk").all()
@@ -2792,7 +2780,7 @@ Pairs each item with the item at the same index in each of the given iterables,
 producing a collection of lists. Extra items past the shortest input are dropped
 rather than padded — use `pad` first if you need to keep them.
 
-```python
+```python title="examples/collections.py"
 result = collect([1, 2, 3]).zip([4, 5, 6]).all()
 
 # [[1, 4], [2, 5], [3, 6]]

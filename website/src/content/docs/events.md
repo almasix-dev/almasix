@@ -9,7 +9,7 @@ Almasix’s application event bus lives in `almasix.events`. It is separate from
 Articulate **model** events (`creating`, `saved`, …). Use it to decouple
 domain actions from side effects.
 
-```python
+```python title="examples/events.py"
 from almasix.events import Event, event, listen
 
 class OrderShipped:
@@ -29,7 +29,7 @@ Event.dispatch(OrderShipped(42))
 Register in a provider `boot()` method, or subclass `EventServiceProvider` and
 fill the `listen` map:
 
-```python
+```python title="examples/events.py"
 from almasix.events import Event, EventServiceProvider
 
 class AppEventServiceProvider(EventServiceProvider):
@@ -43,7 +43,7 @@ String class paths resolve via import.
 
 ### Wildcards
 
-```python
+```python title="examples/events.py"
 Event.listen("orders.*", lambda name, payload: ...)
 ```
 
@@ -51,7 +51,7 @@ Wildcard listeners receive `(event_name, payload)`.
 
 ### Subscribers
 
-```python
+```python title="examples/events.py"
 class OrderSubscriber:
     def subscribe(self, events) -> None:
         events.listen(OrderShipped, self.on_shipped)
@@ -64,7 +64,7 @@ Event.subscribe(OrderSubscriber)
 
 ## Dispatching
 
-```python
+```python title="examples/events.py"
 Event.dispatch(OrderShipped(1))
 Event.until("ping")          # halt on first non-None response
 event(OrderShipped(1))       # helper
@@ -77,7 +77,7 @@ Return `False` from a listener to stop propagation.
 Implement `ShouldQueue` (from `almasix.events` / `almasix.queue`) on a listener
 class. When the event fires, Almasix pushes a `CallQueuedListener` job:
 
-```python
+```python title="examples/events.py"
 from almasix.events import ShouldQueue
 
 class SendShipmentNotification(ShouldQueue):
@@ -89,11 +89,11 @@ class SendShipmentNotification(ShouldQueue):
 ```
 
 Optional `should_queue(event) -> bool`, `via_connection()`, `via_queue()`, and
-`with_delay(event)` mirror the Laravel surface.
+`with_delay(event)` cover the common dispatch shapes.
 
 ## Generating stubs
 
-```bash
+```bash title="terminal"
 smith make:event OrderShipped
 smith make:listener SendShipmentNotification --event=OrderShipped --queued
 smith event:list
@@ -105,7 +105,7 @@ An event that inherits `ShouldBroadcast` also leaves the server: dispatch puts
 it on the channels it names, before your listeners run, and the browser hears
 about it over a websocket. See [Broadcasting](/broadcasting/).
 
-```python
+```python title="examples/events.py"
 from almasix.broadcasting import PrivateChannel, ShouldBroadcast
 
 
@@ -116,7 +116,7 @@ class OrderShipped(ShouldBroadcast):
 
 ## Testing
 
-```python
+```python title="examples/events.py"
 Event.fake()
 Event.dispatch(OrderShipped(1))
 Event.assert_dispatched(OrderShipped)

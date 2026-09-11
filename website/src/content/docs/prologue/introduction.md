@@ -13,10 +13,18 @@ JSON). They do **not** assume you know another web framework.
 | **Almasix** | The framework (`pip install almasix`) |
 | **`almasix new`** | Creates a new application directory |
 | **Smith** | The in-app CLI — prefer `python smith …` from the app root |
-
 | **Articulate** | The ORM — models, queries, migrations |
 | **Prism** | The template engine (`.prism.html` files) |
 | **ASGI** | The async server interface Almasix apps run on (Uvicorn by default) |
+
+## Code examples
+
+Every example shows a **file path** above the code (the tab on the code block).
+That path is where the snippet belongs in a typical app from `almasix new` —
+for example `routes/web.py` or `app/http/controllers/post_controller.py`.
+Shell commands use the path `terminal`.
+
+Copy the idea into the matching file in your project; adjust names to fit.
 
 ## Suggested path
 

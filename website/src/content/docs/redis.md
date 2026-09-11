@@ -11,14 +11,13 @@ keeping their local defaults for development.
 
 Install the optional extra:
 
-```bash
+```bash title="terminal"
 pip install 'almasix[redis]'
 ```
 
 ## Configuration
 
-```python
-# config/redis.py
+```python title="config/redis.py"
 from almasix.config import env
 
 config = {
@@ -47,7 +46,7 @@ Cluster mode is not claimed yet — use a single connection.
 
 ## The `Redis` façade
 
-```python
+```python title="examples/redis.py"
 from almasix.redis import Redis, redis
 
 Redis.set("greeting", b"hello", ex=60)
@@ -68,15 +67,14 @@ async code when you already have an event loop.
 
 ## Cache driver
 
-```python
-# config/cache.py
+```python title="config/cache.py"
 "redis": {
     "driver": "redis",
     "connection": "default",
 }
 ```
 
-```python
+```python title="examples/redis.py"
 from almasix.cache import Cache
 
 Cache.store("redis").put("users:1", user, 60)
@@ -90,12 +88,11 @@ it the default store.
 
 ## Session driver
 
-```ini
+```ini title="examples/redis.json"
 SESSION_DRIVER=redis
 ```
 
-```python
-# config/session.py
+```python title="config/session.py"
 "driver": env("SESSION_DRIVER", "cookie"),
 "connection": env("SESSION_CONNECTION", "default"),
 "prefix": env("SESSION_PREFIX", "almasix_session:"),
@@ -106,8 +103,7 @@ the configured prefix. Default remains `cookie` for local apps.
 
 ## Queue driver
 
-```python
-# config/queue.py
+```python title="config/queue.py"
 "redis": {
     "driver": "redis",
     "connection": "default",
@@ -115,7 +111,7 @@ the configured prefix. Default remains `cookie` for local apps.
 },
 ```
 
-```ini
+```ini title="examples/redis.json"
 QUEUE_CONNECTION=redis
 ```
 

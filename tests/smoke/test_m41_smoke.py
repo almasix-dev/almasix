@@ -51,8 +51,8 @@ def test_m41_docs_cover_the_laravel_sections() -> None:
 
     # What we did not build is named rather than left for the reader to discover.
     assert "## Not shipped yet" in page
-    assert "withAttributes" in page
-    assert "automaticallyEagerLoadRelationships" in page
+    assert "Scoped relationship attributes" in page
+    assert "Automatic eager loading of every relation" in page
 
 
 def test_m41_orm_tour_exercises_the_new_relationship_surface(

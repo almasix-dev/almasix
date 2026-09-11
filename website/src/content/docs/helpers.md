@@ -3,13 +3,12 @@ title: Helpers
 description: Arr, Number, path, URL and miscellaneous helpers — documented function by function.
 ---
 
-Almasix ships the helper catalogue Laravel does: array and object utilities on
-`Arr`, number formatting on `Number`, path and URL builders, and a long tail of
+Almasix ships a large helper catalogue: array and object utilities on `Arr`,
+number formatting on `Number`, path and URL builders, and a long tail of
 miscellaneous functions. Nothing is injected into Python's builtins, so every
 helper is imported from the package that owns it:
 
-```python
-# app/http/controllers/invoice_controller.py
+```python title="app/http/controllers/invoice_controller.py"
 from almasix.support import Arr, Number, data_get
 
 Arr.get({"user": {"name": "Ada"}}, "user.name")   # 'Ada'
@@ -17,10 +16,9 @@ Number.currency(12.5)                              # '$12.50'
 data_get({"orders": [{"total": 30}]}, "orders.*.total")  # [30]
 ```
 
-`Arr`, `Number` and every helper below also answer to their Laravel camelCase
-name — `Arr.sortDesc` is `Arr.sort_desc`, `Number.fileSize` is
-`Number.file_size` — so a Laravel example can be transcribed without renaming
-as you read. The Python name is the documented one.
+Most helpers also accept camelCase aliases (`Arr.sortDesc` for
+`Arr.sort_desc`, `Number.fileSize` for `Number.file_size`). The snake_case
+name is the documented one.
 
 Two related pages carry their own surfaces: [Strings](/strings/) documents
 `Str` and the fluent `Stringable`, and [Collections](/collections/) documents
@@ -52,7 +50,7 @@ Whether the value can be treated as an array by the rest of `Arr` — that is,
 whether it is a mapping or a sequence. Strings and bytes are sequences in
 Python but are deliberately excluded, so they report `False`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Arr
 
 result = Arr.accessible({"a": 1})
@@ -74,7 +72,7 @@ Sets `key` (dot notation) only if it is currently missing, then returns the
 same mapping. The check is against `None`, so a key whose value is `None`
 counts as missing and will be overwritten. It mutates the mapping in place.
 
-```python
+```python title="config/helpers.py"
 config = {"name": "Ada"}
 Arr.add(config, "role", "engineer")
 Arr.add(config, "name", "Grace")
@@ -94,7 +92,7 @@ Reads `key` with dot notation and insists the value is a `list`, raising
 whole value is checked. Use it for configuration reads where a wrong type
 should fail at the read rather than later.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.array({"tags": ["a", "b"]}, "tags")
 
 # ['a', 'b']
@@ -113,7 +111,7 @@ Reads `key` with dot notation and insists the value is a `bool`, raising
 `TypeError` otherwise. The check is strict about Python's `bool`/`int` overlap,
 so `1` and `0` are rejected rather than coerced.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.boolean({"debug": True}, "debug")
 
 # True
@@ -132,7 +130,7 @@ Flattens one level of an iterable of iterables into a single list. Mappings
 contribute their values, and items that are neither a mapping nor a sequence
 are kept as they are rather than discarded.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.collapse([[1, 2], [3], {"a": 4}])
 
 # [1, 2, 3, 4]
@@ -148,7 +146,7 @@ Returns the Cartesian product of the given iterables as a list of lists, one
 list per combination, in the order the arguments were passed. Called with no
 arguments it returns a single empty combination.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.cross_join([1, 2], ["a", "b"])
 
 # [[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]
@@ -163,7 +161,7 @@ result = Arr.cross_join()
 Splits a mapping into its keys and its values. Almasix returns a two-element
 tuple, so it unpacks directly into two names.
 
-```python
+```python title="examples/helpers.py"
 keys, values = Arr.divide({"name": "Ada", "role": "engineer"})
 result = (keys, values)
 
@@ -177,7 +175,7 @@ dot-notation paths; list positions become numeric segments. Empty mappings and
 empty lists are kept as leaf values instead of vanishing. `prepend` is prefixed
 to every key verbatim, so include the trailing dot yourself if you want one.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.dot({"user": {"name": "Ada", "roles": ["admin"]}})
 
 # {'user.name': 'Ada', 'user.roles.0': 'admin'}
@@ -195,7 +193,7 @@ result = Arr.dot({"tags": [], "meta": {}})
 
 Whether `callback` returns true for every item. An empty iterable is `True`.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.every([2, 4, 6], lambda n: n % 2 == 0)
 
 # True
@@ -208,11 +206,11 @@ result = Arr.every([2, 3], lambda n: n % 2 == 0)
 ### except_
 
 Returns the mapping without the given keys, which may be a single string or an
-iterable of strings. Laravel calls this `except`; the trailing underscore
-avoids the Python keyword. Keys are compared exactly at the top level — dot
+iterable of strings. The trailing underscore avoids the Python keyword
+`except`. Keys are compared exactly at the top level — dot
 notation is not resolved, so `"user.id"` removes nothing.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.except_({"name": "Ada", "role": "engineer", "id": 1}, ["role", "id"])
 
 # {'name': 'Ada'}
@@ -227,7 +225,7 @@ result = Arr.except_({"user": {"name": "Ada", "id": 1}}, "user.id")
 A second name for `except_`, bound to the same function, for call sites that
 read better with an explicit noun. Behaviour is identical.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.except_keys({"name": "Ada", "role": "engineer"}, "role")
 
 # {'name': 'Ada'}
@@ -242,7 +240,7 @@ result = Arr.except_keys is Arr.except_
 Returns the items that are not in `values`, comparing by equality. This is the
 value-side counterpart of `except_`, which works on keys.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.except_values([1, 2, 3, 4], [2, 4])
 
 # [1, 3]
@@ -254,7 +252,7 @@ Whether `key` is present, without treating a `None` value as absent. Keys are
 looked up exactly — dot notation is not resolved; for a sequence the key is an
 index, coerced with `int`, and must be within range.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.exists({"a": None}, "a")
 
 # True
@@ -273,7 +271,7 @@ result = Arr.exists({"user": {"id": 1}}, "user.id")
 The first item, or the first item for which `callback` returns true. `default`
 is returned when nothing matches, and is called if it is callable.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.first([1, 2, 3])
 
 # 1
@@ -293,7 +291,7 @@ Flattens nested sequences and mappings into a single list, mappings
 contributing their values. `depth` limits how many levels are flattened and
 defaults to unlimited.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.flatten([1, [2, [3, [4]]]])
 
 # [1, 2, 3, 4]
@@ -313,7 +311,7 @@ Reads `key` with dot notation and insists the value is a `float`, raising
 `TypeError` otherwise. The check is by type and not by convertibility, so an
 `int` such as `2` is rejected — pass `2.0` or convert before storing.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.float({"rate": 1.5}, "rate")
 
 # 1.5
@@ -332,7 +330,7 @@ Removes the given keys, in dot notation, from the mapping. It mutates the
 mapping in place and returns `None`, so do not assign its result. Paths that do
 not exist are ignored.
 
-```python
+```python title="config/helpers.py"
 config = {"user": {"name": "Ada", "id": 1}, "debug": True}
 Arr.forget(config, ["user.id", "debug"])
 result = config
@@ -349,11 +347,11 @@ result = Arr.forget(config, "user.missing")
 Materialises whatever it is given as a plain `list` or `dict`: `None` becomes
 `[]`, a mapping becomes a `dict`, a string or bytes becomes a one-item list,
 any other iterable becomes a `list`, and an object exposing `to_dict`,
-`to_array` or `all` is converted through the first of those it has. Laravel
-spells this `Arr::from`; `from` is a Python keyword, so the method is `from_`,
-though the same function is also reachable as `getattr(Arr, "from")`.
+`to_array` or `all` is converted through the first of those it has. `from` is a
+Python keyword, so the method is `from_`, though the same function is also
+reachable as `getattr(Arr, "from")`.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.from_(None)
 
 # []
@@ -377,7 +375,7 @@ Reads a value by dot-notation `key`, returning `default` when any segment is
 missing. Numeric segments index into sequences, and a `key` of `None` returns
 the array unchanged.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.get({"user": {"id": 7}}, "user.id")
 
 # 7
@@ -401,7 +399,7 @@ Whether a key exists, using dot notation to reach into nested mappings and
 sequences. Given several keys it is true only when every one of them is
 present, and an empty list of keys is false.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Arr
 
 result = Arr.has({"user": {"name": "Ada"}}, "user.name")
@@ -409,7 +407,7 @@ result = Arr.has({"user": {"name": "Ada"}}, "user.name")
 # True
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.has({"user": {"name": "Ada"}}, ["user.name", "user.email"])
 
 # False
@@ -418,10 +416,10 @@ result = Arr.has({"user": {"name": "Ada"}}, ["user.name", "user.email"])
 ### has_all
 
 Whether every one of the keys exists. This is the same test `has` already
-performs for a list of keys; Laravel added `Arr::hasAll` as the explicit form
-and Almasix mirrors it. An empty list of keys is false.
+performs for a list of keys; `has_all` is the explicit spelling. An empty list
+of keys is false.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 result = Arr.has_all({"name": "Ada", "email": "ada@example.com"}, ["name", "email"])
 
 # True
@@ -432,7 +430,7 @@ result = Arr.has_all({"name": "Ada", "email": "ada@example.com"}, ["name", "emai
 Whether at least one of the keys exists, again in dot notation. An empty list
 of keys is false, since nothing can match.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.has_any({"name": "Ada"}, ["email", "name"])
 
 # True
@@ -448,13 +446,13 @@ Booleans are rejected even though `bool` subclasses `int`, so
 not an integer: True`. Almasix also provides `Arr.string`, `Arr.boolean`,
 `Arr.float` and `Arr.array` in the same shape.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.integer({"server": {"port": 8000}}, "server.port")
 
 # 8000
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.integer(8000)
 
 # 8000
@@ -467,13 +465,13 @@ dictionary rather than something list-shaped. Sequences — including lists and
 tuples — are always false, as is a dict whose keys happen to be consecutive
 integers from zero.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.is_assoc({"name": "Ada"})
 
 # True
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.is_assoc({0: "a", 1: "b"})
 
 # False
@@ -485,13 +483,13 @@ The inverse test: true for any `list`, and for a mapping whose keys are exactly
 `0..n-1`. Note that a tuple is not a list here — `Arr.is_list((1, 2))` is
 `False`.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.is_list([1, 2, 3])
 
 # True
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.is_list({0: "a", 1: "b"})
 
 # True
@@ -503,13 +501,13 @@ Joins the items into a string with `glue`, stringifying each one. If
 `final_glue` is given and there is more than one item, the last item is
 attached with it instead.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.join(["a", "b", "c"], ", ")
 
 # 'a, b, c'
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.join(["a", "b", "c"], ", ", " and ")
 
 # 'a, b and c'
@@ -520,13 +518,13 @@ result = Arr.join(["a", "b", "c"], ", ", " and ")
 Builds a dictionary keyed by the given item attribute, read in dot notation, or
 by the return value of a callback. Later items win when two share a key.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.key_by([{"id": 1, "name": "Ada"}, {"id": 2, "name": "Linus"}], "id")
 
 # {1: {'id': 1, 'name': 'Ada'}, 2: {'id': 2, 'name': 'Linus'}}
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.key_by(["ada", "linus"], lambda name: name[0])
 
 # {'a': 'ada', 'l': 'linus'}
@@ -539,19 +537,19 @@ matches, `default` is returned — and if `default` is callable it is called, so
 an expensive fallback can be deferred. Any iterable is accepted; it is
 materialised into a list first.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.last([1, 2, 3, 4])
 
 # 4
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.last([1, 2, 3, 4], lambda n: n < 3)
 
 # 2
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.last([1, 2], lambda n: n > 5, default=lambda: 0)
 
 # 0
@@ -565,13 +563,13 @@ for a sequence — so a one-argument function will not work here. A mapping
 argument still yields a list, not a mapping; use `map_with_keys` when you want
 to keep keys.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.map({"a": 1, "b": 2}, lambda value, key: f"{key}={value}")
 
 # ['a=1', 'b=2']
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.map([10, 20], lambda value, index: value * index)
 
 # [0, 20]
@@ -583,7 +581,7 @@ Like `map`, but each item that is a sequence is unpacked into the callback's
 arguments, which suits lists of pairs. Items that are not sequences are passed
 as a single argument.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.map_spread([[1, 2], [3, 4]], lambda a, b: a + b)
 
 # [3, 7]
@@ -595,7 +593,7 @@ Builds a dictionary from the callback's return value, which may be either a
 `(key, value)` tuple or a mapping that is merged into the result. The callback
 receives the value and its key or index, as in `map`.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.map_with_keys(
     [{"id": 1, "name": "Ada"}, {"id": 2, "name": "Linus"}],
     lambda item, index: (item["id"], item["name"]),
@@ -604,7 +602,7 @@ result = Arr.map_with_keys(
 # {1: 'Ada', 2: 'Linus'}
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.map_with_keys({"a": 1, "b": 2}, lambda value, key: {key.upper(): value * 10})
 
 # {'A': 10, 'B': 20}
@@ -617,13 +615,13 @@ than filled with `None`, and the result follows the order of `keys`, not of the
 mapping. A single key may be passed as a string. The complement is
 `Arr.except_`.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 result = Arr.only({"name": "Ada", "age": 36, "email": "a@b.c"}, ["name", "email"])
 
 # {'name': 'Ada', 'email': 'a@b.c'}
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.only({"name": "Ada"}, "name")
 
 # {'name': 'Ada'}
@@ -635,7 +633,7 @@ Keeps the items whose *value* appears in `values`, in the original order.
 Duplicates are kept, so an item that occurs twice is returned twice. The
 complement is `Arr.except_values`.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.only_values([1, 2, 3, 4, 2], [2, 4])
 
 # [2, 4, 2]
@@ -646,7 +644,7 @@ result = Arr.only_values([1, 2, 3, 4, 2], [2, 4])
 Splits the items into those for which the callback is true and those for which
 it is false, returned as a two-tuple to unpack.
 
-```python
+```python title="examples/helpers.py"
 passed, failed = Arr.partition([1, 2, 3, 4, 5], lambda n: n % 2 == 0)
 
 result = (passed, failed)
@@ -660,13 +658,13 @@ Collects one value out of each item, named in dot notation or produced by a
 callback. Passing `key` as well returns a dictionary keyed by that second value
 instead of a list.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.pluck([{"name": "Ada"}, {"name": "Linus"}], "name")
 
 # ['Ada', 'Linus']
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.pluck([{"id": 1, "name": "Ada"}, {"id": 2, "name": "Linus"}], "name", "id")
 
 # {1: 'Ada', 2: 'Linus'}
@@ -676,16 +674,15 @@ result = Arr.pluck([{"id": 1, "name": "Ada"}, {"id": 2, "name": "Linus"}], "name
 
 Returns a new list with the value at the front. Passing `key` changes the
 return type to a dictionary with that key first; when the argument was a list
-its items follow under their integer indexes, which is how Laravel's numeric
-array keys come out in Python.
+its items follow under their integer indexes.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.prepend([2, 3], 1)
 
 # [1, 2, 3]
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.prepend(["b", "c"], "a", key="first")
 
 # {'first': 'a', 0: 'b', 1: 'c'}
@@ -696,7 +693,7 @@ result = Arr.prepend(["b", "c"], "a", key="first")
 Returns a new dictionary with every key prefixed by the given string. Keys are
 formatted into a string, so non-string keys become strings.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.prepend_keys_with({"name": "Ada", "age": 36}, "user_")
 
 # {'user_name': 'Ada', 'user_age': 36}
@@ -708,7 +705,7 @@ Returns the value at `key` **and removes it from the mapping**, which is
 modified in place. Dot notation reaches nested keys, and `default` is returned
 when the key is absent.
 
-```python
+```python title="config/helpers.py"
 config = {"driver": "redis", "host": "127.0.0.1"}
 driver = Arr.pull(config, "driver")
 
@@ -717,7 +714,7 @@ result = (driver, config)
 # ('redis', {'host': '127.0.0.1'})
 ```
 
-```python
+```python title="examples/helpers.py"
 result = Arr.pull({"host": "127.0.0.1"}, "port", 6379)
 
 # 6379
@@ -730,7 +727,7 @@ place** and returning that same mapping rather than a copy. If the key is
 missing it is created as a list, including intermediate levels of a
 dot-notation key.
 
-```python
+```python title="examples/helpers.py"
 payload = {"tags": ["python"]}
 Arr.push(payload, "tags", "web", "orm")
 
@@ -739,7 +736,7 @@ result = payload
 # {'tags': ['python', 'web', 'orm']}
 ```
 
-```python
+```python title="examples/helpers.py"
 fresh = {}
 Arr.push(fresh, "meta.tags", "new")
 
@@ -756,7 +753,7 @@ once per item, because the encoding is done by `urllib.parse.urlencode` with
 `str`, so `None` becomes `a=None` rather than being dropped, and a nested
 mapping is flattened to its keys instead of `filter[x]=1`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Arr
 
 result = Arr.query({"name": "Ada", "tags": ["a", "b"]})
@@ -771,7 +768,7 @@ when `number` is given. The result is random, so the examples below seed
 `random` to make the output reproducible; asking for more items than the array
 holds returns the whole array in random order rather than raising.
 
-```python
+```python title="examples/helpers.py"
 import random
 
 random.seed(1)
@@ -789,7 +786,7 @@ two = Arr.random([1, 2, 3, 4, 5], 2)
 Returns the items for which `callback` is falsey — the inverse of `Arr.where`.
 The callback receives the item only, never its key or index.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.reject([1, 2, 3, 4], lambda n: n % 2 == 0)
 
 # [1, 3]
@@ -800,7 +797,7 @@ result = Arr.reject([1, 2, 3, 4], lambda n: n % 2 == 0)
 Reduces each row of `array` to the given keys, discarding the rest. `keys` may
 be a single key or an iterable of them, and each row must be a mapping.
 
-```python
+```python title="examples/helpers.py"
 rows = [{"name": "Ada", "age": 36}, {"name": "Linus", "age": 54}]
 result = Arr.select(rows, ["name"])
 
@@ -816,7 +813,7 @@ list along the way is written through by index, growing with `None` to reach an
 index past its end; an intermediate segment holding any other non-mapping value
 is replaced by a new mapping, discarding what was there.
 
-```python
+```python title="examples/helpers.py"
 prices = {"products": {"desk": {"price": 100}}}
 Arr.set(prices, "products.desk.price", 200)
 result = prices
@@ -834,7 +831,7 @@ Returns a new list holding the items in random order. Unlike `Arr.set`, it does
 not touch the argument — the original sequence is left as it was. The order is
 random, so the example seeds `random` to make the output reproducible.
 
-```python
+```python title="examples/helpers.py"
 import random
 
 random.seed(1)
@@ -850,7 +847,7 @@ no callback is given. It raises `ItemNotFoundError` when nothing matches and
 `MultipleItemsFoundError` when more than one item does, both from
 `almasix.support.collection`.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.sole([1, 2, 3], lambda n: n > 2)
 
 # 3
@@ -865,7 +862,7 @@ only = Arr.sole([{"name": "Ada"}])
 Whether `callback` holds for at least one item. It short-circuits on the first
 match and returns `False` for an empty array.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.some([1, 2, 3], lambda n: n > 2)
 
 # True
@@ -882,7 +879,7 @@ their values, and only the order changes — or a new `list` for a sequence. Pas
 `callback` to sort by a derived value instead of the value itself. See
 `Arr.sort_desc` for the descending order.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.sort({"desk": 200, "chair": 100, "table": 150})
 
 # {'chair': 100, 'table': 150, 'desk': 200}
@@ -899,7 +896,7 @@ and sequence-in/`list`-out behaviour and the same optional `callback`. It is
 implemented by reversing the ascending sort, so items with equal values come
 out in the reverse of their original order rather than keeping it.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.sort_desc({"desk": 200, "chair": 100, "table": 150})
 
 # {'desk': 200, 'table': 150, 'chair': 100}
@@ -914,11 +911,11 @@ numbers = Arr.sort_desc([1, 3, 2])
 Sorts a nested structure at every level, descending into mappings and
 sequences. A mapping is sorted by its **keys** (unlike `Arr.sort`, which sorts
 a mapping by value) and a sequence by its values; pass `descending=True` for
-the reverse, which is the keyword Almasix uses in place of Laravel's separate
+the reverse, which is the keyword Almasix uses in place of a separate
 `sortRecursiveDesc`. A sequence whose items cannot be compared with one another
 is returned in its original order instead of raising.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.sort_recursive({"users": ["Zoe", "Ada"], "b": 1, "a": 2})
 
 # {'a': 2, 'b': 1, 'users': ['Ada', 'Zoe']}
@@ -935,7 +932,7 @@ Reads the value at a dot-notation `key` and insists it is a `str`, raising
 type should fail at the read rather than further downstream. Omit `key` to
 assert on `array` itself.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.string({"app": {"name": "Almasix"}}, "app.name")
 
 # 'Almasix'
@@ -946,7 +943,7 @@ result = Arr.string({"app": {"name": "Almasix"}}, "app.name")
 Returns the first `limit` items, or the last `limit` items when `limit` is
 negative. Asking for more items than the array holds returns all of them.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.take([1, 2, 3, 4, 5], 3)
 
 # [1, 2, 3]
@@ -962,7 +959,7 @@ Builds a `class` attribute value. Given a mapping, each key is included when
 its value is truthy; given a sequence, each item is included when the item
 itself is truthy, which is how falsey entries are dropped.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.to_css_classes({"p-4": True, "font-bold": False, "bg-red": 1})
 
 # 'p-4 bg-red'
@@ -975,12 +972,12 @@ from_list = Arr.to_css_classes(["p-4", "", "font-bold", None])
 ### to_css_styles
 
 Builds a `style` attribute value, joined with `;` and with no trailing
-semicolon. It reads two shapes: property to value, and Laravel's, where the key
+semicolon. It reads two shapes: property to value, and a form where the key
 is a whole style string and the value is the flag that switches it on. An entry
 whose value is exactly `False` or `None` is skipped either way, which is how a
 style is made conditional. A plain list of style strings works too.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.to_css_styles({"background-color": "blue", "color": "red"})
 
 # 'background-color:blue;color:red'
@@ -1002,7 +999,7 @@ segment becomes a string key in a `dict` rather than an index in a list, so
 `Arr.dot` followed by `Arr.undot` does not round-trip a structure that
 contained lists.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.undot({"user.name": "Ada", "user.occupation": "Analyst"})
 
 # {'user': {'name': 'Ada', 'occupation': 'Analyst'}}
@@ -1018,7 +1015,7 @@ Returns the items for which `callback` is truthy. The callback receives the
 item only, never its key or index, so filtering a mapping filters its values
 and returns a list.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.where([1, 2, 3, 4], lambda n: n % 2 == 0)
 
 # [2, 4]
@@ -1029,7 +1026,7 @@ result = Arr.where([1, 2, 3, 4], lambda n: n % 2 == 0)
 Returns the items that are not `None`. The test is `is not None`, so falsey
 values such as `0` and `""` are kept.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.where_not_null([1, None, 3, None])
 
 # [1, 3]
@@ -1040,10 +1037,9 @@ result = Arr.where_not_null([1, None, 3, None])
 Wraps a value in a list unless it already is one. `None` becomes an empty list,
 a `list` is returned unchanged (the same object, not a copy), and any other
 non-string sequence such as a tuple is converted to a list. A mapping is
-wrapped rather than returned as-is, which differs from Laravel, where an
-associative array is its own list.
+wrapped rather than returned as-is.
 
-```python
+```python title="examples/helpers.py"
 result = Arr.wrap("Almasix")
 
 # ['Almasix']
@@ -1069,7 +1065,7 @@ mutates `target` in place rather than returning a copy (it does return the same
 object for chaining). It is `data_set` with `overwrite=False`, so the existing
 `price` below is left alone while the missing `discount` is added.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import data_fill
 
 data = {"products": {"desk": {"price": 100}}}
@@ -1085,7 +1081,7 @@ Removes the value at a dotted `key`, mutating `target` in place. `keys` may be
 a single string or a list of them, and missing keys are ignored rather than
 raising.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import data_forget
 
 data = {"products": {"desk": {"price": 100, "sku": "D1"}}}
@@ -1105,7 +1101,7 @@ segment fans out over every entry at that level and collects the matches,
 dropping the branches that came up empty; a second `*` collapses one level, so
 the result stays flat.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import data_get
 
 data = {"users": [{"name": "Ada"}, {"name": "Linus"}]}
@@ -1122,7 +1118,7 @@ A path that never reaches a list or mapping returns the default rather than an
 empty list, so a wildcard over missing data is still distinguishable from a
 wildcard over data with nothing in it.
 
-```python
+```python title="examples/helpers.py"
 nowhere = data_get({"users": []}, "orders.*.total", "no orders")
 
 # 'no orders'
@@ -1138,7 +1134,7 @@ writes into that list rather than replacing it, growing it with `None` when the
 index is past the end; a non-numeric segment against a list raises `TypeError`
 rather than quietly discarding the list.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import data_set
 
 data = {"products": {"desk": {"price": 100}}}
@@ -1157,11 +1153,10 @@ data_set(users, "users.2.name", "Alan")
 
 ### head
 
-Returns the first item of any iterable, or `None` when it is empty — Laravel
-returns `false` there. The argument is materialised into a list first, so a
-generator is consumed.
+Returns the first item of any iterable, or `None` when it is empty. The
+argument is materialised into a list first, so a generator is consumed.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import head
 
 result = (head([1, 2, 3]), head([]))
@@ -1169,7 +1164,7 @@ result = (head([1, 2, 3]), head([]))
 # (1, None)
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import head
 
 result = head({"name": "Ada", "role": "engineer"})
@@ -1183,7 +1178,7 @@ Returns the final item of any iterable, or `None` when it is empty. Like
 `head`, it materialises the argument into a list, so it works on iterators as
 well as sequences.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import last
 
 result = (last([1, 2, 3]), last([]))
@@ -1201,10 +1196,10 @@ default to `en` and `USD` and can be changed per call or process-wide.
 Formats a number in short form, dividing by 1000 until the value fits and
 appending the unit suffix (`K`, `M`, `B`, `T`). `precision` is the number of
 decimal places to keep. At the default `precision=0` the remainder is truncated
-rather than rounded, so `1999` abbreviates to `1K`, not `2K` as Laravel would
+rather than rounded, so `1999` abbreviates to `1K`, not `2K`
 give.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import Number
 
 result = Number.abbreviate(1234)
@@ -1220,7 +1215,7 @@ Returns `number` restricted to the inclusive range between `min_value` and
 `max_value`. Values below the minimum come back as the minimum, values above
 the maximum as the maximum.
 
-```python
+```python title="examples/helpers.py"
 result = Number.clamp(15, 1, 10)
 low = Number.clamp(0, 1, 10)
 
@@ -1231,13 +1226,13 @@ low = Number.clamp(0, 1, 10)
 ### currency
 
 Formats a number as currency using a symbol looked up from the currency code.
-`in_` is the ISO code — Laravel spells this argument `in`, and the trailing
-underscore avoids the Python keyword. It defaults to
+`in_` is the ISO code — the trailing underscore avoids the Python keyword
+`in`. It defaults to
 `Number.default_currency()`. Only `USD`, `EUR` and `GBP` have symbols; any
 other code is prefixed as the bare code followed by a space. `precision` sets
 the decimal places, and `locale` is accepted for signature parity but ignored.
 
-```python
+```python title="examples/helpers.py"
 result = Number.currency(1234.56)
 yen = Number.currency(1234.56, in_="JPY")
 
@@ -1250,7 +1245,7 @@ yen = Number.currency(1234.56, in_="JPY")
 Returns the currency code that `Number.currency` uses when no `in_` is passed.
 It starts as `USD` and changes only through `use_currency` or `with_currency`.
 
-```python
+```python title="examples/helpers.py"
 result = Number.default_currency()
 
 # 'USD'
@@ -1262,7 +1257,7 @@ Returns the process-wide default locale, which starts as `en`. Note that the
 locale is currently only consulted by `parse_int` and `parse_float`; the
 formatting methods accept a `locale` argument and ignore it.
 
-```python
+```python title="examples/helpers.py"
 result = Number.default_locale()
 
 # 'en'
@@ -1275,7 +1270,7 @@ Formats a byte count as a human-readable size, stepping through `B`, `KB`,
 decimal places; at the default of `0` the value is rounded, so `1536` gives `2
 KB`.
 
-```python
+```python title="examples/helpers.py"
 result = Number.file_size(1024)
 precise = Number.file_size(1024 * 1024 * 3, precision=2)
 
@@ -1290,7 +1285,7 @@ the short `1.2M` form; passing `abbreviate=False` delegates to `format`
 instead, giving the grouped `1,234` form. `precision` is forwarded to whichever
 it calls.
 
-```python
+```python title="examples/helpers.py"
 result = Number.for_humans(1234567, precision=1)
 grouped = Number.for_humans(1234, abbreviate=False)
 
@@ -1306,7 +1301,7 @@ trailing zeros. With neither, integers and whole floats print without a decimal
 part and other floats keep their full value. `locale` is accepted for signature
 parity but ignored, so output is always in the English `1,234.56` style.
 
-```python
+```python title="examples/helpers.py"
 result = Number.format(1234567.891)
 fixed = Number.format(1234567.891, precision=2)
 
@@ -1320,7 +1315,7 @@ Returns the number with its English ordinal suffix attached. The teens through
 `20` all take `th`; the sign is preserved on the digits but does not affect the
 suffix chosen.
 
-```python
+```python title="examples/helpers.py"
 result = Number.ordinal(21)
 teen = Number.ordinal(112)
 
@@ -1334,7 +1329,7 @@ Splits the range `1..total` into `(start, end)` tuples of at most `chunk` items
 each, useful for building batch or pagination ranges. The final tuple is short
 when `total` is not a multiple of `chunk`.
 
-```python
+```python title="examples/helpers.py"
 result = Number.pairs(25, 10)
 
 # [(1, 10), (11, 20), (21, 25)]
@@ -1348,7 +1343,7 @@ the formatting methods, `locale` has a real effect here: for `fr`, `de`, `es`,
 and dots and spaces as grouping; for anything else commas and spaces are
 stripped and the dot is the decimal separator.
 
-```python
+```python title="examples/helpers.py"
 result = Number.parse_float("1,234.56")
 german = Number.parse_float("1.234,56", locale="de")
 
@@ -1362,7 +1357,7 @@ Parses the string through `parse_float` and truncates towards zero, so any
 fractional part is discarded rather than rounded. `locale` is forwarded to
 `parse_float` and selects the separator convention in the same way.
 
-```python
+```python title="examples/helpers.py"
 result = Number.parse_int("1,234.99")
 german = Number.parse_int("1.234,99", locale="de")
 
@@ -1375,9 +1370,9 @@ german = Number.parse_int("1.234,99", locale="de")
 Formats a number as a percentage string with a trailing `%`. `precision` is the
 number of decimal places, defaulting to `0`. Both `max_precision` and `locale`
 are accepted for signature parity and ignored, so `max_precision` will not
-widen the output the way Laravel's does.
+widen the output beyond that.
 
-```python
+```python title="examples/helpers.py"
 result = Number.percentage(21.567, precision=2)
 
 # '21.57%'
@@ -1390,7 +1385,7 @@ covers integers from `-999` to `999`; anything outside that range comes back as
 its digits, so `1500` gives `'1500'` rather than words. Floats are truncated to
 an integer first, and `locale` is accepted for signature parity but ignored.
 
-```python
+```python title="examples/helpers.py"
 result = Number.spell(42)
 large = Number.spell(1500)
 
@@ -1405,7 +1400,7 @@ word — `one` becomes `first`, `twenty` becomes `twentieth`. Only the final
 hyphenated segment is converted, so hundreds come out wrong (`105` gives `'one
 hundred fiveth'`), and `locale` is accepted for signature parity but ignored.
 
-```python
+```python title="examples/helpers.py"
 result = Number.spell_ordinal(21)
 irregular = Number.spell_ordinal(12)
 
@@ -1418,7 +1413,7 @@ irregular = Number.spell_ordinal(12)
 Drops a meaningless trailing zero decimal by returning an `int` when the value
 is a whole number, and the `float` unchanged otherwise.
 
-```python
+```python title="examples/helpers.py"
 result = Number.trim(12.0)
 fractional = Number.trim(12.5)
 
@@ -1433,7 +1428,7 @@ module-level state for the rest of the process, so prefer `with_currency` for a
 scoped change; if you do call it, capture and restore the previous value as
 below.
 
-```python
+```python title="examples/helpers.py"
 previous = Number.default_currency()
 Number.use_currency("EUR")
 formatted = Number.currency(9.99)
@@ -1450,7 +1445,7 @@ or use `with_locale` instead. Only `parse_int` and `parse_float` read a locale,
 and they read the one passed to them rather than this default, so today this
 setting affects nothing but `default_locale`.
 
-```python
+```python title="examples/helpers.py"
 previous = Number.default_locale()
 Number.use_locale("de")
 current = Number.default_locale()
@@ -1465,7 +1460,7 @@ Runs `callback` with `currency` installed as the default, returns whatever the
 callback returns, and restores the previous default afterwards — including when
 the callback raises. The callback takes no arguments.
 
-```python
+```python title="examples/helpers.py"
 result = Number.with_currency("GBP", lambda: Number.currency(9.99))
 after = Number.default_currency()
 
@@ -1480,7 +1475,7 @@ result, and restores the previous default afterwards even if the callback
 raises. As with `use_locale`, no formatting method reads the default locale, so
 this is only observable through `default_locale`.
 
-```python
+```python title="examples/helpers.py"
 result = Number.with_locale("fr", lambda: Number.default_locale())
 after = Number.default_locale()
 
@@ -1501,7 +1496,7 @@ application's base path, falling back to the current working directory when
 nothing has been bootstrapped — so the output below is what it printed when run
 from the repository root.
 
-```python
+```python title="app/models/example.py"
 from almasix.support import app_path
 
 result = app_path("Models")
@@ -1518,7 +1513,7 @@ from the repository root. Segments may be one dotted-free string containing
 slashes or several separate arguments — `base_path("storage/logs")` and
 `base_path("storage", "logs")` are equivalent.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import base_path
 
 root = base_path()
@@ -1533,7 +1528,7 @@ logs = base_path("storage/logs")
 Returns the path to the `config` directory, where Almasix looks for the
 `config/*.py` modules that populate `config()`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import config_path
 
 result = config_path("app.py")
@@ -1546,7 +1541,7 @@ result = config_path("app.py")
 Returns the path to the `database` directory, which holds migrations, seeders
 and a SQLite file if you use one.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import database_path
 
 result = database_path("migrations")
@@ -1558,7 +1553,7 @@ result = database_path("migrations")
 
 Returns the path to the `lang` directory, where translation files live.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import lang_path
 
 result = lang_path("en/validation.py")
@@ -1571,7 +1566,7 @@ result = lang_path("en/validation.py")
 Returns the path to the `public` directory — the document root, including the
 `public/build` output that Vite and Tailwind write into.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import public_path
 
 result = public_path("build/app.css")
@@ -1583,9 +1578,9 @@ result = public_path("build/app.css")
 
 Returns the path to the `resources` directory, where templates and uncompiled
 front-end sources live. Note the directory is `resources` while the helper is
-singular, matching Laravel.
+singular.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import resource_path
 
 result = resource_path("views")
@@ -1598,7 +1593,7 @@ result = resource_path("views")
 Returns the path to the `storage` directory, used for logs, caches and other
 generated files.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import storage_path
 
 result = storage_path("logs/almasix.log")
@@ -1611,7 +1606,7 @@ result = storage_path("logs/almasix.log")
 `url()` and `asset()` resolve against `APP_URL` and `APP_BASE_PATH`, so a path
 written once works behind a subdirectory or a proxy.
 
-The named-route family — Laravel's `route()`, `to_route()`, `action()`,
+The named-route family — `route()`, `to_route()`, `action()`,
 `to_action()`, `uri()`, `secure_url()` and `secure_asset()` — arrives with
 named-route generation, and is documented with it in [Routing](/routing/)
 rather than duplicated here. Until then, build those URLs with `url()`.
@@ -1625,7 +1620,7 @@ outside a booted application raises `RuntimeError`, which is why the example
 installs a config repository first; inside a booted app the import alone is
 enough.
 
-```python
+```python title="routes/web.py"
 from almasix.config import ConfigRepository, set_repository
 from almasix.routing import asset
 
@@ -1651,7 +1646,7 @@ untouched. Calling it outside a booted application raises `RuntimeError`
 because the config repository is unset, so the example installs one; a booted
 app does this during bootstrap.
 
-```python
+```python title="routes/web.py"
 from almasix.config import ConfigRepository, set_repository
 from almasix.routing import url
 
@@ -1676,10 +1671,10 @@ so where they do.
 
 Raises an `HttpException` with the given status code, which the HTTP kernel
 turns into an error response. The code defaults to `404` and the message to
-`Aborted`; unlike Laravel, every status raises the same `HttpException` class
+`Aborted`; every status raises the same `HttpException` class
 rather than a per-status subclass, with the code on `status_code`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.http.exceptions import HttpException
 from almasix.support import abort
 
@@ -1697,7 +1692,7 @@ Calls `abort` when the condition is truthy, and does nothing otherwise. The
 arguments after the condition are the ones `abort` takes — status code,
 message, and optional headers.
 
-```python
+```python title="examples/helpers.py"
 from almasix.http.exceptions import HttpException
 from almasix.support import abort_if
 
@@ -1710,7 +1705,7 @@ except HttpException as error:
 # (404, 'No such post.')
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import abort_if
 
 result = abort_if(False, 404, "No such post.")
@@ -1723,7 +1718,7 @@ result = abort_if(False, 404, "No such post.")
 The inverse of `abort_if`: aborts when the condition is falsy. It reads well
 for guards that assert something must hold.
 
-```python
+```python title="examples/helpers.py"
 from almasix.http.exceptions import HttpException
 from almasix.support import abort_unless
 
@@ -1743,7 +1738,7 @@ when you pass a class or binding name. It raises `RuntimeError("Application is
 not set. Bootstrap the Application first.")` before bootstrap, so it is for
 code that runs inside the application, not for import-time work.
 
-```python
+```python title="examples/helpers.py"
 # needs a booted application
 from almasix.cache.manager import CacheManager
 from almasix.framework import app
@@ -1761,7 +1756,7 @@ request it hands back an empty manager configured from `config('auth')` rather
 than raising, so `auth().check()` is `False` instead of an error in console and
 queue code.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 # needs a request context
 from almasix.auth import auth
 
@@ -1775,7 +1770,7 @@ class SessionController:
 # auth() returns the AuthManager; user()/check()/id() are plain calls
 ```
 
-Unlike Laravel, the methods that change authentication state — `attempt`,
+The methods that change authentication state — `attempt`,
 `login`, `login_using_id`, `logout` — are coroutines and have to be awaited.
 `user()`, `check()`, `guest()`, and `id()` are synchronous.
 
@@ -1787,7 +1782,7 @@ Builds a 302 `Redirect` back to the page the request came from, falling back to
 arrives without one — and any call made outside a request, like the one below —
 lands on the fallback.
 
-```python
+```python title="examples/helpers.py"
 from almasix.http import back
 
 redirect = back("/posts")
@@ -1796,7 +1791,7 @@ result = (redirect.status_code, redirect.headers["location"])
 # (302, '/posts')
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.http import back
 
 result = back("/posts", status=303).status_code
@@ -1810,7 +1805,7 @@ Hashes a value with bcrypt whatever the configured default hash driver is, and
 returns the 60-character crypt string. The optional second argument is the
 driver's options, of which bcrypt reads `rounds`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.hashing import Hash, bcrypt
 
 hashed = bcrypt("secret")
@@ -1819,7 +1814,7 @@ result = (hashed[:7], len(hashed), Hash.check("secret", hashed))
 # ('$2b$12$', 60, True)
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.hashing import bcrypt
 
 result = bcrypt("secret", {"rounds": 4})[:7]
@@ -1833,7 +1828,7 @@ Reports whether a value is "empty-ish": `None`, a string that is empty or only
 whitespace, or an empty mapping, sequence, or anything else with a length of
 zero. Booleans and numbers are never blank, and neither is the string `"0"`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import blank
 
 result = (blank(""), blank("   "), blank(None), blank([]), blank({}))
@@ -1841,7 +1836,7 @@ result = (blank(""), blank("   "), blank(None), blank([]), blank({}))
 # (True, True, True, True, True)
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import blank
 
 result = (blank(0), blank(False), blank("0"))
@@ -1856,7 +1851,7 @@ value, returning `default` on a miss. Passing a dict writes every pair, and in
 that form the second argument is the time to live in seconds rather than a
 default.
 
-```python
+```python title="examples/helpers.py"
 # needs a booted application
 from almasix.cache import cache
 
@@ -1874,9 +1869,9 @@ Bootstrap the Application first.")`.
 
 Returns the class name without its module path. It accepts a class, an
 instance, or a string path, and splits a string on both `.` and `\` so
-PHP-style class strings carried over from Laravel still resolve.
+PHP-style class strings (e.g. `App\\Models\\User`) still resolve.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import class_basename
 
 result = (class_basename(dict), class_basename("app.models.User"))
@@ -1884,7 +1879,7 @@ result = (class_basename(dict), class_basename("app.models.User"))
 # ('dict', 'User')
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import class_basename
 
 result = class_basename({"a": 1})
@@ -1895,11 +1890,10 @@ result = class_basename({"a": 1})
 ### class_uses_recursive
 
 Returns the set of classes an object or class inherits from, walking the whole
-MRO and leaving out the class itself and `object`. Python has no traits, so
-where Laravel returns the traits used by a class this returns base classes —
-the sets are unordered, hence the `sorted` below.
+MRO and leaving out the class itself and `object`. The sets are unordered,
+hence the `sorted` below.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import class_uses_recursive
 
 
@@ -1926,7 +1920,7 @@ Wraps a list, dict, tuple, set, generator, or another collection in a Support
 `Collection` so you can chain over it. With no argument it builds an empty
 collection; see the [Collections](/collections/) page for the methods.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import collect
 
 result = collect([1, 2, 3, 4]).filter(lambda n: n % 2 == 0).values().all()
@@ -1934,7 +1928,7 @@ result = collect([1, 2, 3, 4]).filter(lambda n: n % 2 == 0).values().all()
 # [2, 4]
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import collect
 
 result = collect({"a": 1, "b": 2}).sum()
@@ -1945,10 +1939,10 @@ result = collect({"a": 1, "b": 2}).sum()
 ### config
 
 Reads a configuration value by dot notation, returning `default` when the key
-is missing. It is read-only: Laravel's array form for writing at runtime has no
-equivalent, so set values through the repository (`app().config.set(...)`).
+is missing. It is read-only: there is no array form for writing at runtime, so
+set values through the repository (`app().config.set(...)`).
 
-```python
+```python title="config/helpers.py"
 # needs a booted application
 from almasix.config import config
 
@@ -1968,7 +1962,7 @@ stored as `max_age` in seconds; leave it out for a session cookie. With no name
 it returns the cookie jar, whose `queue` method attaches a cookie to the
 outgoing response.
 
-```python
+```python title="examples/helpers.py"
 from almasix.session import cookie
 
 built = cookie("flavour", "mint", 60)
@@ -1977,7 +1971,7 @@ result = (built.name, built.value, built.max_age, built.path, built.httponly)
 # ('flavour', 'mint', 3600, '/', True)
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.session import cookie
 
 result = cookie().forever("theme", "dark").max_age
@@ -1991,7 +1985,7 @@ Returns the hidden `_token` input a form needs, as an `HtmlString` that the
 Prism escaper leaves alone. In a template use the `@csrf` directive, which
 compiles to the same markup.
 
-```python
+```python title="examples/helpers.py"
 # needs a request context
 from almasix.prism import csrf_field
 
@@ -2003,10 +1997,10 @@ field = csrf_field().__html__()
 ### csrf_token
 
 Returns the current session's CSRF token, generating and storing one on first
-read. Where Laravel raises when there is no session store, this returns an
+read. When there is no session store, this returns an
 empty string.
 
-```python
+```python title="examples/helpers.py"
 # needs a request context
 from almasix.session import csrf_token
 
@@ -2018,11 +2012,11 @@ token = csrf_token()
 ### dd
 
 Dumps its arguments and halts — "dump and die". It prints a Rich panel per
-value to stderr and then raises `DumpAndDie`, so unlike Laravel's `exit()` the
+value to stderr and then raises `DumpAndDie`, so unlike a process `exit()` the
 process is not killed: the HTTP kernel catches it and renders a dump page, and
 a test can catch it too. Anything after the `dd()` call does not run.
 
-```python
+```python title="examples/helpers.py"
 from almasix.debug import DumpAndDie
 from almasix.support import dd
 
@@ -2043,7 +2037,7 @@ payload has been tampered with or none of the configured keys fit — the curren
 `config('app.key')` is tried first, then `config('app.previous_keys')`, so a
 key rotation does not invalidate old payloads.
 
-```python
+```python title="examples/helpers.py"
 from almasix.encryption import decrypt, encrypt
 
 result = decrypt(encrypt({"card": "4242"}))
@@ -2054,11 +2048,10 @@ result = decrypt(encrypt({"card": "4242"}))
 ### dispatch
 
 Pushes a job onto its queue connection, or runs it in-process when the job is
-not queueable. Laravel's `dispatch()` is synchronous and returns a
-`PendingDispatch`; Almasix's is a coroutine you have to await, and for a job
+not queueable. `dispatch()` is a coroutine you have to await, and for a job
 that runs in-process it returns whatever `handle()` returned.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 import asyncio
 
 from almasix.queue import dispatch
@@ -2089,7 +2082,7 @@ bypassing queue connections entirely — the way to run a `ShouldQueue` job
 without a worker. Like `dispatch` it is a coroutine, and it returns the value
 `handle()` returned.
 
-```python
+```python title="examples/helpers.py"
 import asyncio
 
 from almasix.queue import dispatch_sync
@@ -2112,7 +2105,7 @@ Pretty-prints its arguments to stderr and carries on. It returns the values it
 was given as a tuple, so it can be wrapped around an expression without
 changing the surrounding code.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import dump
 
 result = dump({"name": "Ada"})
@@ -2120,7 +2113,7 @@ result = dump({"name": "Ada"})
 # ({'name': 'Ada'},)
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import dump
 
 result = dump(1, "two")
@@ -2134,7 +2127,7 @@ HTML-escapes a value for output, converting `None` to an empty string and
 escaping quotes as well as angle brackets. Passing `double_encode=False` leaves
 entities such as `&lt;` alone, though `&amp;` is still re-encoded.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import e
 
 result = e("<b>Ada & Co</b>")
@@ -2142,7 +2135,7 @@ result = e("<b>Ada & Co</b>")
 # '&lt;b&gt;Ada &amp; Co&lt;/b&gt;'
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import e
 
 result = e("&lt;script&gt;", double_encode=False)
@@ -2159,7 +2152,7 @@ encrypting the same value twice produces two different payloads. The key comes
 from `config('app.key')`, falling back to an insecure development key when no
 application is booted — which is why the example below runs on its own.
 
-```python
+```python title="examples/helpers.py"
 from almasix.encryption import decrypt, encrypt
 
 payload = encrypt("4242 4242 4242 4242")
@@ -2172,11 +2165,11 @@ result = (type(payload).__name__, decrypt(payload))
 
 Reads an environment variable, returning `default` when it is unset. Values
 that look boolean (`true`, `yes`, `on`, `1` and their negatives) become `bool`,
-and — unlike Laravel, which only ever returns strings here — a value is coerced
+and a value is coerced
 to `int` or `float` when the default you pass is one. `env` reads `os.environ`
 only; loading the `.env` file is the application's job at boot.
 
-```python
+```python title="config/helpers.py"
 import os
 
 from almasix.config import env
@@ -2187,7 +2180,7 @@ result = env("APP_DEBUG", False)
 # True
 ```
 
-```python
+```python title="config/helpers.py"
 import os
 
 from almasix.config import env
@@ -2204,7 +2197,7 @@ Dispatches an event to its listeners and returns the list of their return
 values. It is synchronous. The optional `payload` is for string events, whose
 listeners are called with the event name and the payload list.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 from dataclasses import dataclass
 
 from almasix.events import event, listen
@@ -2230,7 +2223,7 @@ different function from `almasix.queue.dispatch`.
 The inverse of `blank` — true when a value has something in it. `0`, `False`,
 and `"0"` are filled; whitespace-only strings are not.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import filled
 
 result = (filled("Ada"), filled(0), filled(""), filled(None))
@@ -2249,7 +2242,7 @@ For day-to-day application logging prefer the [`Log` façade](/logging/) —
 `Log.success(...)`. Do not import Python's stdlib `logging` module for app
 messages; that API is a different thing.
 
-```python
+```python title="examples/helpers.py"
 from almasix.log import info
 
 result = info("Deploy finished", {"release": "1.4.0"})
@@ -2264,7 +2257,7 @@ The line written to stderr is `[INFO] Deploy finished [release='1.4.0']`.
 Builds a throwaway object whose attributes are the keyword arguments you pass,
 for when a dict would need attribute access. It takes keyword arguments only.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import literal
 
 point = literal(x=3, y=4)
@@ -2281,7 +2274,7 @@ With a message, writes it at DEBUG level to the default channel and returns
 other levels. `with_(**context)` returns a writer that adds that context to
 every line.
 
-```python
+```python title="examples/helpers.py"
 from almasix.log import logger
 
 logger("Cache warm", {"keys": 12})
@@ -2290,7 +2283,7 @@ result = type(logger()).__name__
 # 'LogWriter'
 ```
 
-```python
+```python title="examples/helpers.py"
 from almasix.log import logger
 
 result = logger().with_(request_id="abc").warning("Disk almost full")
@@ -2304,7 +2297,7 @@ Returns the hidden `_method` input that spoofs an HTTP verb a browser form
 cannot send, upper-casing whatever you pass. The result is an `HtmlString`, so
 Prism renders it unescaped — write it with `{!! method_field("put") !!}`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.prism import method_field
 
 method_field("put")
@@ -2321,7 +2314,7 @@ str(method_field("delete"))
 Returns the current moment as a ``Chrono`` (a timezone-aware ``datetime``
 subclass), in UTC unless you pass a ``tz``. See [Dates (Chrono)](/dates/).
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import now
 
 type(now()).__name__
@@ -2348,7 +2341,7 @@ whole flashed mapping as a `dict`; with a key it returns that field or
 it returns `{}` or the default, because templates re-render old input on paths
 that may have no session at all.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 # needs a request context
 from almasix.http import redirect
 from almasix.session import old
@@ -2372,7 +2365,7 @@ body again. Because the cache lives on the object, a lambda written afresh at
 each call site is a different object and is not memoised — pass a named
 function.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import once
 
 calls = []
@@ -2395,7 +2388,7 @@ the value is `None`. Note the deviation: chained reads on an empty `Optional`
 return an `Optional`, not `None`, so test it with `bool(...)` rather than `is
 None`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import optional
 
 class User:
@@ -2420,7 +2413,7 @@ Returns the policy instance registered for a model class or model instance —
 either works, since a model instance is resolved by its class. It raises
 `LookupError` naming the model when nothing is registered for it.
 
-```python
+```python title="examples/helpers.py"
 from almasix.auth.access import Gate, Policy, policy
 
 class Post:
@@ -2452,7 +2445,7 @@ from `replacements`. `pattern` is a plain Python `re` pattern — no PHP-style
 `/.../` delimiters. Once the replacements run out, further matches are replaced
 with an empty string.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import preg_replace_array
 
 preg_replace_array(r":[a-z]+", ["8:30", "9:00"], "The event runs from :start to :end")
@@ -2475,7 +2468,7 @@ and raise `RuntimeError` asking for `StartSession` when there is none. `to` is
 required — there is no argument-less redirector, so reach for
 `response().redirect(...)` or `back()` instead.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 # needs a request context
 from almasix.http import redirect
 
@@ -2502,7 +2495,7 @@ Sends an exception to the application's exception handler without raising it,
 for the failures you want recorded but not surfaced. Before an application is
 booted there is no handler, so it prints a single line to stderr instead.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import report
 
 report(ValueError("disk almost full"))
@@ -2514,7 +2507,7 @@ report(ValueError("disk almost full"))
 
 Calls `report` only when the condition is truthy, and does nothing otherwise.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import report_if
 
 report_if(False, RuntimeError("never reported"))
@@ -2527,7 +2520,7 @@ report_if(True, RuntimeError("cache stampede"))
 
 The inverse of `report_if`: reports the exception when the condition is falsy.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import report_unless
 
 report_unless(True, ConnectionError("never reported"))
@@ -2544,7 +2537,7 @@ console and queue code can ask without pretending there is a caller — which
 also means `request().input(...)` blows up there, while `request(key, default)`
 is safe.
 
-```python
+```python title="app/http/controllers/example_controller.py"
 # needs a request context
 from almasix.http import request
 
@@ -2563,7 +2556,7 @@ Runs `callback` and returns its value; if it raises, returns `rescue_with`
 instead — called with the exception when it is a callable. The exception is
 also passed to `report` unless you pass `report=False`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import rescue
 
 rescue(lambda: 1 / 0, "unavailable", report=False)
@@ -2582,7 +2575,7 @@ name. It raises `RuntimeError` when no application has been bootstrapped, and
 `ResolutionError` when the application exists but nothing is bound for the
 abstract.
 
-```python
+```python title="app/http/controllers/example_controller.py"
 # needs a booted application
 from almasix.config import ConfigRepository
 from almasix.framework import resolve
@@ -2603,7 +2596,7 @@ that `response(None)` returns the factory rather than a 204 —
 `response().no_content()` is the 204, and `response(None, status=204)` also
 gives you one.
 
-```python
+```python title="database/factories/example_factory.py"
 from almasix.http import response
 
 response("Hello").status_code
@@ -2640,7 +2633,7 @@ not milliseconds — and accepts a callable taking the attempt number for a
 backoff. Pass `when` a predicate over the exception to retry only some
 failures; anything it rejects is re-raised at once.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import retry
 
 attempts = []
@@ -2662,7 +2655,7 @@ The coroutine counterpart to `retry` — it must be awaited, and it awaits the
 callback's result when that result is awaitable. `sleep` is a number of seconds
 slept with `asyncio.sleep`, so a retrying call does not block the event loop.
 
-```python
+```python title="examples/helpers.py"
 import asyncio
 
 from almasix.support import retry_async
@@ -2684,11 +2677,11 @@ asyncio.run(retry_async(3, fetch, sleep=0.01))
 
 Returns the session store, one of its values, or writes every pair of a mapping
 and returns `None`. It raises `RuntimeError` naming the `StartSession`
-middleware when there is no session. Keys are flat: unlike Laravel, the store
+middleware when there is no session. Keys are flat: the store
 is a plain dict, so `session("cart.total")` looks for a key literally called
 `cart.total` rather than descending into `cart`.
 
-```python
+```python title="app/http/controllers/example_controller.py"
 # needs a request context
 from almasix.session import session
 
@@ -2705,16 +2698,16 @@ class CartController(Controller):
 ### str_
 
 Wraps a value in a `Stringable` for fluent string calls, the same as
-`Str.of(value)`. Laravel spells it `str()`; the trailing underscore keeps it
+`Str.of(value)`. The trailing underscore keeps it
 clear of the builtin. Call `str(...)` on the result when you need a plain
 `str`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import str_
 
-str_("  laravel to almasix ").trim().headline()
+str_("  almasix helpers ").trim().headline()
 
-# Stringable('Laravel To Almasix')
+# Stringable('Almasix Helpers')
 
 str(str_("almasix").upper())
 
@@ -2728,7 +2721,7 @@ the middle of an expression. With no callback it returns the target unchanged
 rather than a higher-order proxy, so there is no `tap(value).method()` form to
 chain.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import tap
 
 tap([1, 2], lambda items: items.append(3))
@@ -2747,7 +2740,7 @@ exception class plus its arguments, or an already-built exception instance; a
 plain string becomes a `RuntimeError`, which is also the default when you pass
 nothing.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import throw_if
 
 try:
@@ -2769,7 +2762,7 @@ throw_if(False, ValueError, "quota exceeded")
 The inverse of `throw_if`: raises when the condition is falsy, taking the same
 exception forms.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import throw_unless
 
 try:
@@ -2787,7 +2780,7 @@ caught
 Returns the start of today as a ``Chrono`` (midnight in ``tz``, default UTC).
 Equivalent to ``Chrono.today(tz)``.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import now, today
 
 today() == now().start_of_day()
@@ -2808,7 +2801,7 @@ MRO and excluding the class itself and `object`. Python has no traits, so this
 is an alias of `class_uses_recursive` over base classes and mixins, and it
 returns a `set` of classes rather than PHP's name-keyed array.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import trait_uses_recursive
 
 class Timestamps:
@@ -2835,7 +2828,7 @@ Calls `callback` with the value when the value is filled (as `filled()` judges
 it) and returns the result; otherwise returns `default`, invoking it when it is
 a callable.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import transform
 
 transform("42", int)
@@ -2854,15 +2847,15 @@ transform(None, int, lambda: "missing")
 ### validator
 
 Validates a payload outside the request lifecycle and returns a `Validator`
-with `passes()`, `fails()`, `errors()` and `validated()`. **This is a named
-deviation from Laravel:** `rules` is a Pydantic model or a `FormRequest`
-subclass, not an array of rule strings, because that is how Almasix declares
-validation everywhere else. `errors()` maps field to a list of messages, and
+with `passes()`, `fails()`, `errors()` and `validated()`. `rules` is a
+Pydantic model or a `FormRequest` subclass, not an array of rule strings,
+because that is how Almasix declares validation everywhere else. `errors()`
+maps field to a list of messages, and
 `validated()` (aliased `validate()`) returns the cleaned payload or raises
 `ValidationException`. The `messages` and `attributes` keyword arguments
 override message text and field names.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 from almasix.validation import FormRequest, validator
 
 class Registration(FormRequest):
@@ -2885,7 +2878,7 @@ validator({"age": "thirty"}, Registration).errors()
 Returns the value it is given, or calls it and returns the result when it is
 callable. Extra positional arguments are passed to the callable.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import value
 
 (value(5), value(lambda: 5), value(lambda n: n * 2, 21))
@@ -2902,7 +2895,7 @@ reach for `almasix.prism.render()` when you want the markup as a string. It
 needs the engine the application bootstraps, and raises `RuntimeError` before
 then.
 
-```python
+```python title="resources/views/examples/helpers.prism.html"
 # needs a booted application
 from almasix.prism import view
 
@@ -2924,7 +2917,7 @@ is not, calling either if it is a callable. A callable that takes at least one
 parameter receives the condition itself, which is how you reuse the truthy
 value without repeating it.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import when
 
 when(True, "on", "off")
@@ -2943,10 +2936,10 @@ when("Ada", lambda name: f"Hi {name}")
 ### with_
 
 Passes the value into the callback and returns the **callback's** result, which
-is what distinguishes it from `tap`. Laravel calls this `with`; the trailing
-underscore avoids the Python keyword.
+is what distinguishes it from `tap`. The trailing underscore avoids the
+Python keyword `with`.
 
-```python
+```python title="examples/helpers.py"
 from almasix.support import with_
 
 with_(5, lambda n: n * 3)
@@ -2956,10 +2949,10 @@ with_(5, lambda n: n * 3)
 
 ## Not yet built
 
-Three of Laravel's miscellaneous helpers wait on features Almasix has not built,
-and are absent rather than stubbed:
+A few helpers wait on features Almasix has not finished, and are absent rather
+than stubbed:
 
-| Laravel | Waiting on |
+| Helper | Waiting on |
 | --- | --- |
 | `broadcast`, `broadcast_if`, `broadcast_unless` | Broadcasting — websockets and channel authorisation |
 | `context` | The contextual data store that carries state across jobs and log lines |
@@ -2967,19 +2960,18 @@ and are absent rather than stubbed:
 
 ## Other utilities
 
-Laravel's Helpers page closes with a set of standalone utilities. Almasix has
-not built them; they are listed here so their absence is a decision rather than
-a gap you have to discover:
+These standalone utilities are not part of the helper catalogue yet; their
+absence is intentional:
 
-| Laravel utility | Status in Almasix |
+| Utility | Status |
 | --- | --- |
-| **Benchmarking** (`Benchmark::dd`) | Not built. Time code with `time.perf_counter` or your profiler. |
-| **Dates** (`Chrono`) | `almasix.chrono` — Carbon-class fluent API; `now()` / `today()` return `Chrono`. See [Dates (Chrono)](/dates/). |
+| **Benchmarking** | Not built. Time code with `time.perf_counter` or your profiler. |
+| **Dates** (`Chrono`) | `almasix.chrono` — fluent date API; `now()` / `today()` return `Chrono`. See [Dates (Chrono)](/dates/). |
 | **Deferred functions** (`defer`) | Not built. Queue a job instead — see [Queues](/queues/). |
-| **Lottery** (`Lottery::odds`) | Not built. |
-| **Pipeline** (`Pipeline::send`) | Not built as a public utility, though the HTTP kernel runs middleware as a pipeline internally. |
-| **Sleep** (`Sleep::for`) | Not built. Use `time.sleep` / `asyncio.sleep`; `retry()` takes a sleep argument for the retry case. |
-| **Timebox** (`Timebox::call`) | Not built. |
+| **Lottery** | Not built. |
+| **Pipeline** | Not built as a public utility, though the HTTP kernel runs middleware as a pipeline internally. |
+| **Sleep** | Not built. Use `time.sleep` / `asyncio.sleep`; `retry()` takes a sleep argument for the retry case. |
+| **Timebox** | Not built. |
 
 ## Related
 

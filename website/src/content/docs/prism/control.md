@@ -25,8 +25,7 @@ description: "Conditionals, loops, and @python blocks in Prism."
 Inside `@foreach` / `@forelse`, `loop` exposes:
 `index`, `iteration`, `remaining`, `count`, `first`, `last`, `even`, `odd`, `depth`, `parent`.
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 @foreach(users as user)
   <li @if(loop.first)class="first"@endif>{{ user.name }}</li>
 @endforeach
@@ -45,8 +44,7 @@ Bare `@empty` inside `@forelse` remains the empty branch. Standalone
 
 ## Auth and authorization
 
-```html
-<!-- resources/views/partials/nav.prism.html -->
+```html title="resources/views/partials/nav.prism.html"
 @auth
   <p>Welcome back</p>
 @endauth
@@ -64,8 +62,7 @@ Bare `@empty` inside `@forelse` remains the empty branch. Standalone
 
 ## Localization in views
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 @lang("messages.welcome", {"name": name})
 {{ __("messages.welcome", {"name": name}) }}
 ```

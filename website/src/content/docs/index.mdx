@@ -24,7 +24,7 @@ Almasix is a web application framework with expressive, elegant syntax. We belie
 
 You do not need prior framework experience. Create apps with `almasix new`. Drive them with `python smith …`. Write controllers, Articulate models, Prism views, and migrations in a layout that stays navigable as the app grows. New here? Start with [How to read these docs](/prologue/introduction/).
 
-```bash
+```bash title="terminal"
 pip install almasix
 almasix new blog
 cd blog
@@ -61,7 +61,7 @@ Four files are enough for a page backed by the database.
 
 <Tabs>
 	<TabItem label="routes/web.py">
-		```python
+		```python title="examples/index.py"
 		# routes/web.py
 		from app.http.controllers.flight_controller import FlightController
 
@@ -72,7 +72,7 @@ Four files are enough for a page backed by the database.
 		```
 	</TabItem>
 	<TabItem label="Controller">
-		```python
+		```python title="examples/index.py"
 		# app/http/controllers/flight_controller.py
 		from app.models.flight import Flight
 
@@ -87,7 +87,7 @@ Four files are enough for a page backed by the database.
 		```
 	</TabItem>
 	<TabItem label="Model">
-		```python
+		```python title="examples/index.py"
 		# app/models/flight.py
 		from almasix.orm import Model, relation
 
@@ -103,7 +103,7 @@ Four files are enough for a page backed by the database.
 		```
 	</TabItem>
 	<TabItem label="View">
-		```html
+		```html title="resources/views/examples/index.prism.html"
 		<!-- resources/views/flights/index.prism.html -->
 		@extends("layouts.app")
 
@@ -139,7 +139,7 @@ Smith is the CLI that ships inside every application. It generates code, runs
 migrations, serves the app, and opens Loupe — a REPL with your application
 already booted.
 
-```bash
+```bash title="terminal"
 python smith list                     # every command available to your app
 python smith make:controller PostController
 python smith make:model Post -m       # model plus a migration

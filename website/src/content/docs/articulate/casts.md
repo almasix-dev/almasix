@@ -3,7 +3,7 @@ title: Mutators & Casts
 description: Transform Articulate attributes on read and write with accessors, mutators, and casts.
 ---
 
-Accessors and mutators let you transform attribute values as you read or write them on a model. Casts do the same thing declaratively — telling Articulate that `votes` is an integer or `meta` is JSON, without writing a transform for every column.
+**Accessors** and **mutators** let you transform attribute values as you read or write them on a model. **Casts** do the same thing declaratively — telling Articulate that `votes` is an integer or `meta` is JSON, without writing a transform for every column.
 
 ## Accessors and mutators
 
@@ -11,8 +11,7 @@ Accessors and mutators let you transform attribute values as you read or write t
 
 Declare an accessor and its mutator together as an `Attribute`:
 
-```python
-# app/models/user.py
+```python title="app/models/user.py"
 from almasix.orm import Attribute, Model
 
 
@@ -27,7 +26,7 @@ class User(Model):
 
 `get` receives the stored value and returns what the model should hand back. `set` receives the assigned value and returns what should be stored:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 user = User(name="  ada lovelace ")
 user.name                            # "Ada Lovelace"
 user.get_raw_attribute("name")       # "ada lovelace"
@@ -35,15 +34,15 @@ user.get_raw_attribute("name")       # "ada lovelace"
 
 Both callbacks may take **no arguments**, just the **value**, or the value plus the model's **raw attributes** — Articulate passes whichever your callback accepts:
 
-```python
+```python title="app/models/user.py"
 email = Attribute(get=lambda value, attributes: f"{value} <{attributes['name']}>")
 ```
 
 ### Declaring an accessor from a method
 
-When the accessor needs more than a lambda, use `@attribute` on a method that returns an `Attribute`. This is the shape Laravel uses:
+When the accessor needs more than a lambda, use `@attribute` on a method that returns an `Attribute`:
 
-```python
+```python title="app/models/user.py"
 from almasix.orm import Attribute, Model, attribute
 
 
@@ -61,7 +60,7 @@ class User(Model):
 
 A `set` callback that returns a mapping writes each key, which is how a value object spans columns:
 
-```python
+```python title="app/models/place.py"
 class Place(Model):
     position = Attribute(
         get=lambda _value, attributes: (attributes["lat"], attributes["lng"]),
@@ -73,7 +72,7 @@ class Place(Model):
 
 Accessors run on every read. When one is expensive, pass `cache=True` and it computes once per instance, until that attribute is written again:
 
-```python
+```python title="app/models/user.py"
 summary = Attribute(get=lambda value: expensive(value), cache=True)
 ```
 
@@ -81,7 +80,7 @@ summary = Attribute(get=lambda value: expensive(value), cache=True)
 
 The `get_<name>_attribute` / `set_<name>_attribute` form also works, and is often the shortest route when you only need one direction:
 
-```python
+```python title="app/models/user.py"
 def get_display_attribute(self, value=None) -> str:
     return f"{self.name} <{self.email}>"
 
@@ -96,14 +95,14 @@ A mutator returning `None` suppresses the write entirely.
 
 Declare casts as a dict:
 
-```python
+```python title="app/models/user.py"
 class User(Model):
     casts = {"votes": "int", "active": "bool", "meta": "json"}
 ```
 
 Or as a `casts()` method, when a cast needs to be constructed:
 
-```python
+```python title="app/models/user.py"
 class User(Model):
     @classmethod
     def casts(cls) -> dict:
@@ -131,14 +130,14 @@ class User(Model):
 | `EnumCollection.of(Enum)` | a list of enum members |
 
 :::note[Immutable dates]
-Python's `date` and `datetime` are already immutable, so `immutable_date` and `immutable_datetime` are accepted as aliases rather than distinct types. Nothing can mutate a date in place here, which is the guarantee the Laravel casts exist to provide.
+Python's `date` and `datetime` are already immutable, so `immutable_date` and `immutable_datetime` are accepted as aliases rather than distinct types. Nothing can mutate a date in place here.
 :::
 
 ### Encrypted casting
 
 `encrypted` encrypts on write and decrypts on read, using the same key as [Encryption](/encryption/):
 
-```python
+```python title="app/models/account.py"
 class Account(Model):
     casts = {"token": "encrypted", "recovery": "encrypted:array"}
 ```
@@ -149,7 +148,7 @@ The stored column holds ciphertext, so it must be a text column long enough to h
 
 `hashed` hashes the value on write using [Hashing](/hashing/), and leaves an already-hashed value alone — so re-saving a model does not double-hash:
 
-```python
+```python title="app/models/user.py"
 class User(Model):
     casts = {"password": "hashed"}
 
@@ -161,14 +160,14 @@ user.password = "hunter2"                  # stored as a bcrypt digest
 
 A date cast may carry a `strftime` format, which sets how the attribute serializes. Storage stays ISO-8601:
 
-```python
+```python title="app/models/event.py"
 class Event(Model):
     casts = {"day": "date:%d/%m/%Y", "at": "datetime:%Y-%m-%d %H:%M"}
 ```
 
 To change the default for every date on a model, set `date_format`, or override `serialize_date`:
 
-```python
+```python title="app/models/event.py"
 class Event(Model):
     date_format = "%Y-%m-%d"
 
@@ -177,14 +176,14 @@ class Event(Model):
 ```
 
 :::note
-Almasix uses Python `strftime` codes (`%Y-%m-%d`), not PHP's date format characters.
+Formats use Python `strftime` codes (`%Y-%m-%d`).
 :::
 
 ### Query-time casting
 
 `with_casts` applies casts to one query, which is useful for computed columns and raw selects:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 readings = await (
     Reading.query()
     .select_raw("sum(amount) as total")
@@ -199,7 +198,7 @@ readings = await (
 
 Subclass `CastsAttributes` when a cast needs real logic. `get` transforms a stored value on read, `set` on write:
 
-```python
+```python title="app/models/report.py"
 from almasix.orm import CastsAttributes
 
 
@@ -221,7 +220,7 @@ Declare the class or an instance — `casts = {"lines": AsJsonLines()}` also wor
 
 A `set` returning a mapping writes several columns, and `get` composes them back:
 
-```python
+```python title="app/casts/coordinates.py"
 class AsCoordinates(CastsAttributes):
     def get(self, model, key, value, attributes):
         return Point(attributes["lat"], attributes["lng"])
@@ -236,7 +235,7 @@ The attribute needs no column of its own.
 
 When a transform cannot be reversed, subclass `CastsInboundAttributes`. Reads pass the stored value through untouched:
 
-```python
+```python title="app/casts/slug.py"
 from almasix.orm import CastsInboundAttributes
 
 
@@ -249,7 +248,7 @@ class AsSlug(CastsInboundAttributes):
 
 A class may name its own cast with a `cast_using` classmethod, so the value type and its cast travel together:
 
-```python
+```python title="app/support/money.py"
 class Money:
     @classmethod
     def cast_using(cls):

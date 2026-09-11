@@ -11,8 +11,7 @@ from `auth.password_timeout` (default 3 hours).
 
 ## Reset broker
 
-```python
-# app/http/controllers/auth_controller.py
+```python title="app/http/controllers/auth_controller.py"
 from almasix.auth import Password
 from almasix.hashing import Hash
 
@@ -27,11 +26,10 @@ status = await Password.reset(
 
 Statuses map through `lang/en/passwords.py` via `Password.status_message(status)`.
 
-Delivery uses notifications by default (``ResetPasswordNotification`` via mail).
-Override with ``Password.create_url_using(callback)`` when you need a custom path.
+Delivery uses notifications by default (`ResetPasswordNotification` via mail).
+Override with `Password.create_url_using(callback)` when you need a custom path:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from almasix.auth.passwords import get_password_manager
 
 get_password_manager().create_url_using(lambda user, token: log_or_queue(user, token))

@@ -11,15 +11,13 @@ render path.
 
 Templates use the **`.prism.html`** extension and live under `resources/views`.
 
-```python
-# app/http/controllers/welcome_controller.py
+```python title="app/http/controllers/welcome_controller.py"
 from almasix.prism import view
 
 return view("welcome", {"name": "Ada"})
 ```
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 @extends("layouts.app")
 
 @section("content")

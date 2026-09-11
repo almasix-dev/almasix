@@ -9,7 +9,7 @@ Almasix encrypts values with an authenticated stream cipher keyed by `APP_KEY`.
 Encrypted payloads are MAC-signed so tampering fails closed. Cookie encryption
 and the app-facing `Crypt` façade share the same cipher.
 
-```python
+```python title="examples/encryption.py"
 from almasix.encryption import Crypt, DecryptException, encrypt, decrypt
 
 encrypted = Crypt.encrypt({"token": "secret"})
@@ -23,8 +23,7 @@ Helpers `encrypt` / `decrypt` / `encrypt_string` / `decrypt_string` mirror the f
 
 ## Configuration
 
-```python
-# config/app.py
+```python title="config/app.py"
 "key": env("APP_KEY", "base64:local-dev-key-change-me"),
 "previous_keys": env("APP_PREVIOUS_KEYS", ""),
 ```
@@ -36,7 +35,7 @@ Helpers `encrypt` / `decrypt` / `encrypt_string` / `decrypt_string` mirror the f
 
 Generate a key:
 
-```bash
+```bash title="terminal"
 smith key:generate
 ```
 
@@ -46,7 +45,7 @@ smith key:generate
 lists, strings, numbers, booleans, or `null`. Non-JSON-safe objects raise
 `EncryptException` — use `encrypt_string` for raw text instead.
 
-```python
+```python title="examples/encryption.py"
 from almasix.encryption import EncryptException
 
 try:
@@ -60,7 +59,7 @@ except EncryptException:
 If the MAC is invalid or no key can open the payload, Almasix raises
 `DecryptException`:
 
-```python
+```python title="examples/encryption.py"
 from almasix.encryption import Crypt, DecryptException
 
 try:
@@ -74,7 +73,7 @@ except DecryptException:
 Encrypt always uses the current `APP_KEY`. Decrypt tries the current key, then
 each entry in `APP_PREVIOUS_KEYS` until one succeeds:
 
-```ini
+```ini title=".env"
 APP_KEY="base64:new-key…"
 APP_PREVIOUS_KEYS="base64:old-key-a…,base64:old-key-b…"
 ```

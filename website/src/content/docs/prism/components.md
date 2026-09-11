@@ -9,8 +9,7 @@ description: "Anonymous and class-based components, named slots, attribute bags,
 
 Place templates under `resources/views/components/`:
 
-```html
-<!-- resources/views/components/alert.prism.html -->
+```html title="resources/views/components/alert.prism.html"
 @props({"type": "info"})
 <div class="alert alert-{{ type }}" {{ attributes }}>
   {{ slot }}
@@ -19,29 +18,26 @@ Place templates under `resources/views/components/`:
 
 Scaffold with:
 
-```bash
+```bash title="terminal"
 smith make:component alert
 smith make:component forms/input --class
 ```
 
 ### Class tag syntax
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 <x-alert type="success">Saved.</x-alert>
 ```
 
 Dynamic attributes use colon bindings:
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 <x-link :href="board_url">Board</x-link>
 ```
 
 ### Directive syntax
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 @component("alert", {"type": "success"})
   Saved.
 @endcomponent
@@ -49,8 +45,7 @@ Dynamic attributes use colon bindings:
 
 ## Named slots
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 @component("card")
   @slot("title")
     Hello
@@ -61,8 +56,7 @@ Dynamic attributes use colon bindings:
 
 Or with tag syntax:
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 <x-card>
   <x-slot:title>Hello</x-slot>
   Body copy
@@ -70,8 +64,7 @@ Or with tag syntax:
 </x-card>
 ```
 
-```html
-<!-- resources/views/components/card.prism.html -->
+```html title="resources/views/components/card.prism.html"
 <h2>{{ title }}</h2>
 <div>{{ slot }}</div>
 @if('footer' in slots)
@@ -85,8 +78,7 @@ Slot HTML is safe (not double-escaped) when echoed with `{{ slot }}`.
 
 `<x-*>` tags nest. Innermost tags expand first:
 
-```html
-<!-- resources/views/welcome.prism.html -->
+```html title="resources/views/welcome.prism.html"
 <x-card>Hi <x-badge>new</x-badge></x-card>
 ```
 
@@ -94,14 +86,12 @@ Slot HTML is safe (not double-escaped) when echoed with `{{ slot }}`.
 
 Child components can pull data from the parent component scope:
 
-```html
-<!-- resources/views/components/form.prism.html -->
+```html title="resources/views/components/form.prism.html"
 @props({"method": "post"})
 <form method="{{ method }}">{{ slot }}</form>
 ```
 
-```html
-<!-- resources/views/components/input.prism.html -->
+```html title="resources/views/components/input.prism.html"
 @aware(["method"])
 @props({"name": "field"})
 <input name="{{ name }}" data-method="{{ method }}">
@@ -112,8 +102,7 @@ Explicit child attributes win over aware data. Aliases use a dict:
 
 ## Class-based components
 
-```python
-# app/view/components/alert.py
+```python title="app/view/components/alert.py"
 from almasix.prism import Component
 
 class Alert(Component):

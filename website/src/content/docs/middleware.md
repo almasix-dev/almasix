@@ -13,8 +13,7 @@ configurator.
 
 ## Registering middleware
 
-```python
-# bootstrap/app.py
+```python title="bootstrap/app.py"
 from pathlib import Path
 
 from almasix.framework import Application, Middleware
@@ -40,7 +39,8 @@ application = (
 asgi = application.asgi
 ```
 
-Your ASGI entry point is `asgi` — deploy that with Uvicorn or any ASGI server. Application code should not import FastAPI directly.
+Your ASGI entry point is `asgi` — deploy that with Uvicorn or any ASGI server.
+Application code should not import FastAPI directly.
 
 ## Configurator API
 
@@ -54,21 +54,27 @@ Your ASGI entry point is `asgi` — deploy that with Uvicorn or any ASGI server.
 | `trust_proxies(at=…, headers=…)` | Trust `X-Forwarded-*` from the given peers |
 | `trust_hosts(at=…)` | Allowlist `Host` headers (others receive `400`) |
 
-`trust_proxies` wraps the ASGI application so client IP, scheme, host, port, and `root_path` reflect forwarded headers. `trust_hosts` prepends global middleware that rejects disallowed hosts.
+`trust_proxies` wraps the ASGI application so client IP, scheme, host, port, and
+`root_path` reflect forwarded headers. `trust_hosts` prepends global middleware
+that rejects disallowed hosts.
 
-Header bitmasks are available from `almasix.http` (`HEADER_X_FORWARDED_FOR`, `HEADER_X_FORWARDED_HOST`, `HEADER_X_FORWARDED_PORT`, `HEADER_X_FORWARDED_PROTO`, `HEADER_X_FORWARDED_PREFIX`, `HEADER_X_FORWARDED_ALL`, `HEADER_X_FORWARDED_AWS_ELB`).
+Header bitmasks are available from `almasix.http`
+(`HEADER_X_FORWARDED_FOR`, `HEADER_X_FORWARDED_HOST`,
+`HEADER_X_FORWARDED_PORT`, `HEADER_X_FORWARDED_PROTO`,
+`HEADER_X_FORWARDED_PREFIX`, `HEADER_X_FORWARDED_ALL`,
+`HEADER_X_FORWARDED_AWS_ELB`).
 
 :::tip
-Callbacks run after configuration is loaded and merge into `http.*`. In tests you can still call `Application(base).bootstrap()` without the fluent builder.
+Callbacks run after configuration is loaded and merge into `http.*`. In tests
+you can still call `Application(base).bootstrap()` without the fluent builder.
 :::
-
 
 ## Writing middleware
 
-A middleware class exposes an async `handle` method that receives the request and a `next` callable:
+A middleware class exposes an async `handle` method that receives the request
+and a `next` callable:
 
-```python
-# app/http/middleware/demo_tag_middleware.py
+```python title="app/http/middleware/demo_tag_middleware.py"
 class DemoTagMiddleware:
     async def handle(self, request, next):
         response = await next(request)
@@ -76,9 +82,9 @@ class DemoTagMiddleware:
         return response
 ```
 
-Generate a stub with:
+Generate a stub:
 
-```bash
+```bash title="terminal"
 smith make:middleware DemoTagMiddleware
 ```
 

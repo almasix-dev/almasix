@@ -9,7 +9,7 @@ Sometimes you need several independent, slow things done and none of them
 depends on the others. `almasix.concurrency` runs them at the same time and
 gives you the results in the shape you asked for.
 
-```python
+```python title="examples/concurrency.py"
 from almasix.concurrency import Concurrency
 
 user_count, order_count = Concurrency.run([
@@ -38,7 +38,7 @@ manager built from `config/concurrency.py`.
 `Concurrency.run()` takes one callable, a list of them, or a mapping, and
 returns results in the same shape:
 
-```python
+```python title="examples/concurrency.py"
 Concurrency.run(lambda: heavy())              # ["result"]
 
 Concurrency.run([first, second])              # ["a", "b"] — in order
@@ -57,7 +57,7 @@ finished.
 If a task raises, `run()` re-raises it — but only once every other task has
 settled, so nothing is left running in the background:
 
-```python
+```python title="examples/concurrency.py"
 try:
     Concurrency.run([safe, risky])
 except ValueError:
@@ -68,7 +68,7 @@ except ValueError:
 
 Configure the default in `config/concurrency.py`, or pick one per call:
 
-```python
+```python title="examples/concurrency.py"
 Concurrency.run(tasks, "fork")
 Concurrency.driver("sync").run(tasks)
 Concurrency.set_default_driver("fork")
@@ -81,17 +81,17 @@ Concurrency.set_default_driver("fork")
 | `process` | true | picklable callables | Spawns a fresh interpreter, so tasks must be importable — a module-level function, not a lambda |
 | `sync` | none | any callable | Runs in order on the current thread, for debugging |
 
-Almasix defaults to `thread` where Laravel defaults to `process`, because
-Python has real threads and PHP does not. Threads accept any closure and cover
-the work this page is actually for — queries, HTTP calls, file reads — all of
-which release the GIL. Reach for `fork` when the work is CPU-bound.
+Almasix defaults to `thread` because Python has real threads and most
+concurrency work here is I/O-bound — queries, HTTP calls, file reads — all of
+which release the GIL. Reach for `fork` or `process` when the work is
+CPU-bound.
 
 `fork` is unsafe to mix with threads in the parent process, which is a
 constraint of `fork(2)` rather than of Almasix.
 
 ### Custom drivers
 
-```python
+```python title="examples/concurrency.py"
 Concurrency.extend("my-driver", lambda app, config, name: MyDriver(config))
 ```
 
@@ -102,18 +102,18 @@ results in the task order.
 
 When you want the work done but do not need the results:
 
-```python
+```python title="examples/concurrency.py"
 Concurrency.defer([
     lambda: metrics.record(request),
     lambda: audit.log(request),
 ])
 ```
 
-Laravel runs deferred tasks after the HTTP response is sent. Almasix has no
-post-response hook yet, so they run on a background thread — and `defer()`
-returns a `DeferredTasks` handle so tests can `wait()` for them:
+Almasix has no post-response hook yet, so deferred tasks run on a background
+thread — and `defer()` returns a `DeferredTasks` handle so tests can `wait()`
+for them:
 
-```python
+```python title="examples/concurrency.py"
 deferred = Concurrency.defer([task])
 deferred.finished()
 deferred.wait(timeout=5)
@@ -122,10 +122,10 @@ deferred.wait(timeout=5)
 ## Concurrency under ASGI
 
 Almasix runs on ASGI, where the natural way to overlap work is the event loop.
-`arun()` awaits coroutines (or plain callables) concurrently and has no Laravel
-counterpart:
+`arun()` awaits coroutines (or plain callables) concurrently on the ASGI
+event loop:
 
-```python
+```python title="examples/concurrency.py"
 async def index():
     users, posts = await Concurrency.arun([
         lambda: fetch_users(),
@@ -138,8 +138,7 @@ blocking `run()` from inside a running event loop would block it.
 
 ## Configuration
 
-```python
-# config/concurrency.py
+```python title="config/concurrency.py"
 config = {
     "default": env("CONCURRENCY_DRIVER", "thread"),
     "drivers": {
@@ -154,13 +153,13 @@ config = {
 A named entry can point at any driver, so `"fast": {"driver": "sync"}` gives
 you an alias.
 
-## Deliberate deviations from Laravel
+## Design notes
 
-- **`thread` is the default driver**, and is an addition; see above.
-- **`arun()` is an addition** for the ASGI path.
+- **`thread` is the default driver**; see above.
+- **`arun()`** covers the ASGI / event-loop path.
 - **`defer()` runs on a background thread** and returns a waitable handle,
-  because Almasix has no post-response deferral hook yet. The same deviation
+  because Almasix has no post-response deferral hook yet. The same behaviour
   applies to `Batch.defer()` in the HTTP client.
 - **The `process` driver rejects unpicklable tasks with a clear error**
-  instead of serializing closures. Laravel leans on `SerializableClosure`,
-  which has no dependency-free Python equivalent.
+  instead of trying to serialize closures — there is no dependency-free
+  equivalent of serializable closures in Python.

@@ -9,7 +9,7 @@ Search adds full-text search to Articulate models. Mix `Searchable` into a
 model and it keeps a search index in step with the database on its own: a save
 indexes the row, a delete removes it, and `Model.search()` reads it back.
 
-```python
+```python title="app/models/example.py"
 from almasix.orm import Model
 from almasix.scout import Searchable
 
@@ -21,7 +21,7 @@ class Post(Searchable, Model):
         return {"id": self.id, "title": self.title, "body": self.body}
 ```
 
-```python
+```python title="examples/search.py"
 posts = await Post.search("almasix").where("published", True).get()
 ```
 
@@ -49,8 +49,7 @@ at a real index.
 
 ## Configuration
 
-```python
-# config/scout.py
+```python title="config/scout.py"
 config = {
     "driver": env("SCOUT_DRIVER", "database"),
     "prefix": env("SCOUT_PREFIX", ""),
@@ -82,7 +81,7 @@ returns an `Engine`.
 Set `queue` to `True` and every index write becomes a job, which is what you
 want with an engine that talks over the network:
 
-```python
+```python title="examples/search.py"
 "queue": {"connection": "redis", "queue": "scout"},
 ```
 
@@ -99,7 +98,7 @@ rolled-back row never reaches the index.
 The whole `to_dict()` form of the model goes into the index unless the model
 says otherwise:
 
-```python
+```python title="app/models/example.py"
 class Post(Searchable, Model):
     def to_searchable_array(self) -> dict:
         return {"id": self.id, "title": self.title, "author": self.author.name}
@@ -118,12 +117,12 @@ class Post(Searchable, Model):
 | `make_searchable_using(models)` | the models | A last look before indexing |
 
 `searchable_as()`, `get_scout_key_name()`, and `searchable_using()` are
-classmethods where Laravel's are instance methods: `scout:import` and friends
-ask a class, and there is nothing per-row about any of them.
+classmethods: `scout:import` and friends ask a class, and there is nothing
+per-row about any of them.
 
 ### Only some rows
 
-```python
+```python title="app/models/example.py"
 class Post(Searchable, Model):
     def should_be_searchable(self) -> bool:
         return bool(self.published)
@@ -135,7 +134,7 @@ directly is explicit and overrides it.
 
 ## Searching
 
-```python
+```python title="examples/search.py"
 posts = await Post.search("almasix").get()
 ```
 
@@ -158,11 +157,10 @@ posts = await Post.search("almasix").get()
 A search engine ranks and a database does not, so the rows come back in the
 engine's order, not the database's.
 
-`query_using()` is Laravel's `->query()`, renamed because a Python attribute
-and a method cannot share a name and `builder.query` is the phrase being
-searched for:
+`query_using()` is named that way because a Python attribute and a method
+cannot share a name and `builder.query` is the phrase being searched for:
 
-```python
+```python title="examples/search.py"
 posts = await Post.search("almasix").query_using(
     lambda query: query.with_("author")
 ).get()
@@ -177,7 +175,7 @@ chosen by the time the callback runs — filter with `where()` instead.
 The second argument to `search()` is handed the engine, the phrase, and the
 payload about to be sent, and whatever it returns is used as the results:
 
-```python
+```python title="examples/search.py"
 def nearby(engine, query, payload):
     payload["filter"] = "_geoRadius(lat, lng, 2000)"
     return engine._request("POST", "/indexes/posts/search", payload)
@@ -190,7 +188,7 @@ posts = await Post.search("cafe", nearby).get()
 Saving, deleting, and restoring a model do the right thing on their own. The
 rest is for everything that does not go through a single model:
 
-```python
+```python title="examples/search.py"
 await post.searchable()                     # this one row
 await post.unsearchable()
 
@@ -205,22 +203,22 @@ await Post.remove_all_from_search()         # empty the index
 
 ### Pausing
 
-```python
+```python title="examples/search.py"
 with Post.without_syncing_to_search():
     await post.save()
 ```
 
-Laravel takes a closure; Almasix takes a `with` block, which is what the rest
-of the framework does for `unguarded()` and `without_timestamps()`.
-`Post.disable_search_syncing()` and `Post.enable_search_syncing()` are there
-for the cases where a block does not fit.
+Almasix takes a `with` block, which is what the rest of the framework does for
+`unguarded()` and `without_timestamps()`. `Post.disable_search_syncing()` and
+`Post.enable_search_syncing()` are there for the cases where a block does not
+fit.
 
 ## Soft deleting
 
 Set `soft_delete` in `config/scout.py` and a trashed row stays in the index
 behind a hidden `__soft_deleted` flag instead of being removed:
 
-```python
+```python title="examples/search.py"
 await Post.search("almasix").with_trashed().get()
 await Post.search("almasix").only_trashed().get()
 ```
@@ -241,12 +239,12 @@ applications want. A force delete always removes it.
 | `scout:sync-index-settings` | Push `index-settings` from the configuration |
 | `scout:status` | Which engine, which settings, which models |
 
-`scout:status` has no Laravel counterpart. It exists because "which engine is
-this application actually using" is the first question every search bug asks.
+`scout:status` exists because "which engine is this application actually
+using" is the first question every search bug asks.
 
 ## Testing
 
-```python
+```python title="examples/search.py"
 from almasix.scout import Scout
 
 fake = Scout.fake([post])            # what searches will find
@@ -269,7 +267,7 @@ the same mixin with the `collection`, `meilisearch`, and `null` engines. The
 `database` engine is SQL — it builds `LIKE` clauses against a table — so a
 document store answers with `collection` or a real index instead.
 
-## Deliberate deviations
+## Design notes
 
 - **`query_using()`, not `query()`** — `builder.query` is the phrase; one name
   cannot be both.
@@ -281,19 +279,28 @@ document store answers with `collection` or a real index instead.
   queue driver, and the row is re-read when the job runs.
 - **`without_syncing_to_search()` is a context manager**, matching
   `unguarded()` and `without_timestamps()`.
-- **`searchable_columns`** declares what the `database` engine searches.
-  Laravel reads the keys of a searchable array built from an empty model,
-  which cannot answer when the array reads attributes; naming the columns can.
+- **`searchable_columns`** declares what the `database` engine searches —
+  naming the columns is reliable even when `to_searchable_array` reads live
+  attributes.
 - **Prefix and full-text strategies are class attributes**
-  (`search_using_prefix`, `search_using_full_text`) where Laravel uses PHP
-  attributes on the method. Full text is spoken on PostgreSQL and MySQL; other
-  dialects fall back to `LIKE`, which is slower and never wrong.
+  (`search_using_prefix`, `search_using_full_text`). Full text is spoken on
+  PostgreSQL and MySQL; other dialects fall back to `LIKE`, which is slower
+  and never wrong.
 - **`scout:status`** is an addition, and there is no `scout:queue-table`:
   Almasix's queue tables come from `queue:table`.
 
-## Living example
+## Try it in your app
 
-```bash
-smith progress:search
-curl "$BASE/api/search?q=engines"
+Mix `Searchable` into a model, set `searchable_columns`, then from your app
+root:
+
+```bash title="terminal"
+python smith scout:import "app.models.Post"
 ```
+
+```python title="examples/search.py"
+posts = await Post.search("engines").get()
+```
+
+Or expose a small search endpoint and `curl` it with `?q=…`. The default
+`database` engine needs no extra services.

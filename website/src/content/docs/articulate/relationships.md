@@ -3,12 +3,11 @@ title: Relationships
 description: Define and eager-load Articulate relationships.
 ---
 
-Database tables are often related to one another. For example, a blog post may have many comments, or an order may belong to a user. Articulate makes managing and working with these relationships easy.
+Database tables are often related to one another. For example, a blog post may have many comments, or an order may belong to a user. A **relationship** is a declared link between two models so you can query and load related rows without writing the join by hand.
 
 Declare relationships with `@relation`. Calling the method (`user.posts()`) returns the relation object so you can keep querying. Reading the attribute (`user.posts`) returns **already loaded** data only.
 
-```python
-# app/models/user.py
+```python title="app/models/user.py"
 from almasix.orm import Model, relation, RelationNotLoadedError
 
 class User(Model):
@@ -38,7 +37,7 @@ posts = await user.posts
 ```
 
 :::caution
-By default Almasix does **not** lazy-load on attribute access. A hidden query there is how N+1 problems start. Eager-load with `with_`, query with `await user.posts().get()`, or set `lazy_relations = True` and use `await user.posts`.
+By default Almasix does **not** load related rows when you read an attribute. A hidden query there is how N+1 problems start (one query per parent in a list). Eager-load with `with_`, query with `await user.posts().get()`, or set `lazy_relations = True` and use `await user.posts`.
 :::
 
 
@@ -48,9 +47,9 @@ By default Almasix does **not** lazy-load on attribute access. A hidden query th
 | --- | --- |
 | `has_one` / `has_many` | One-to-one / one-to-many |
 | `belongs_to` | Inverse of has-one/has-many (`associate` / `dissociate`) |
-| `belongs_to_many` | Many-to-many + pivot |
+| `belongs_to_many` | Many-to-many + pivot (intermediate) table |
 | `has_one_through` / `has_many_through` | Distant one-to-one / one-to-many via an intermediate |
-| `morph_one` / `morph_many` | Polymorphic one-to-one / one-to-many |
+| `morph_one` / `morph_many` | Polymorphic one-to-one / one-to-many (related type varies) |
 | `morph_to(name, types={…})` | Inverse polymorphic — pass the type map |
 | `morph_to_many` / `morphed_by_many` | Polymorphic many-to-many |
 
@@ -64,8 +63,7 @@ A user has many orders, but you often want exactly one of them — the latest, o
 the most expensive. Narrow a has-many with `latest_of_many`, `oldest_of_many`, or
 `of_many`:
 
-```python
-# app/models/user.py
+```python title="app/models/user.py"
 class User(Model):
     @relation
     def latest_order(self):
@@ -88,7 +86,7 @@ query rather than every order.
 
 Break ties by passing a mapping, and constrain the candidates with a callback:
 
-```python
+```python title="app/models/user.py"
 # The newest of the highest-priced orders.
 return self.has_many(Order).of_many({"price": "max", "id": "max"})
 
@@ -108,8 +106,7 @@ what `of_many` builds on. Morph relations support the same calls, so
 which pushes a `None` check into every template. `with_default` returns an
 unsaved placeholder model instead:
 
-```python
-# app/models/post.py
+```python title="app/models/post.py"
 class Post(Model):
     @relation
     def author(self):
@@ -119,7 +116,7 @@ class Post(Model):
 Pass nothing for an empty model, a mapping to seed attributes, or a callable
 taking the default instance and the parent:
 
-```python
+```python title="app/models/post.py"
 return self.belongs_to(User).with_default(
     lambda default, post: default.force_fill({"name": f"Author of {post.title}"})
 )
@@ -134,8 +131,7 @@ Iterating a parent's children and reading the child's parent relation raises,
 because that relation was never loaded — even though the parent is the model you
 already have. `chaperone()` hydrates it:
 
-```python
-# app/models/post.py
+```python title="app/models/post.py"
 class Post(Model):
     @relation
     def comments(self):
@@ -149,17 +145,17 @@ explicitly when it differs, as in `chaperone("article")`. It works on
 
 ## Many to many: the intermediate table
 
-Rows from a many-to-many relation carry their pivot row with them:
+A **many-to-many** link uses an intermediate (pivot) table that holds foreign
+keys for both sides. Rows from the relation carry that pivot row with them:
 
-```python
-# app/models/user.py
+```python title="app/models/user.py"
 class User(Model):
     @relation
     def plans(self):
         return self.belongs_to_many(Plan).with_pivot("tier")
 ```
 
-```python
+```python title="app/http/controllers/example_controller.py"
 for plan in await user.plans().get():
     plan.pivot.tier
 ```
@@ -176,8 +172,7 @@ table: attaching stamps both, and `update_existing_pivot` bumps `updated_at`.
 `using()` hydrates pivot rows into a `Pivot` subclass, which can carry accessors,
 casts, and methods of its own:
 
-```python
-# app/models/subscription.py
+```python title="app/models/subscription.py"
 from almasix.orm import Pivot
 
 class Subscription(Pivot):
@@ -188,7 +183,7 @@ class Subscription(Pivot):
         return self.tier == "gold"
 ```
 
-```python
+```python title="app/models/user.py"
 return self.belongs_to_many(Plan).using(Subscription).as_("subscription")
 ```
 
@@ -197,7 +192,7 @@ Pivot instances save and delete through their relation, so
 
 ### Filtering and ordering on pivot columns
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await user.plans().where_pivot("tier", "=", "gold").get()
 await user.plans().where_pivot_in("tier", ["gold", "silver"]).get()
 await user.plans().where_pivot_not_in("tier", ["free"]).get()
@@ -212,7 +207,7 @@ as direct reads.
 
 ### Attaching, syncing, toggling
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await user.plans().attach(plan.id, {"tier": "gold"})
 await user.plans().attach({1: {"tier": "gold"}, 2: {"tier": "free"}})
 await user.plans().detach([1, 2])
@@ -231,12 +226,13 @@ changed land under `updated`.
 
 ## Custom polymorphic types
 
-By default a `*_type` column stores the model's class name, which welds the
-database to the code layout — rename or move a class and the stored rows stop
-resolving. Register a morph map instead, usually in a service provider:
+A **polymorphic** relation stores both a foreign key and a type string, so one
+model (for example a comment) can belong to several parent kinds. By default a
+`*_type` column stores the model's class name, which welds the database to the
+code layout — rename or move a class and the stored rows stop resolving.
+Register a morph map instead, usually in a service provider:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from almasix.orm import morph_map
 
 class AppServiceProvider(ServiceProvider):
@@ -250,8 +246,7 @@ class AppServiceProvider(ServiceProvider):
 Now `commentable_type` holds `"post"`, and `morph_to` resolves it without an
 explicit type map:
 
-```python
-# app/models/comment.py
+```python title="app/models/comment.py"
 @relation
 def commentable(self):
     return self.morph_to("commentable")   # uses the registered map
@@ -266,8 +261,7 @@ map does not know is an error.
 
 A package can relate your models to its own without editing them:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 User.resolve_relation_using("subscription", lambda user: user.has_one(Subscription))
 ```
 
@@ -279,7 +273,7 @@ The relation then behaves like a declared one: `user.subscription()` queries it,
 When you already hold the parent, `where_belongs_to` reads better than digging
 out its key. The relation is guessed from the parent's class:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Post.query().where_belongs_to(user).get()
 await Post.query().where_belongs_to(user, "author").get()   # name it explicitly
 ```
@@ -289,8 +283,7 @@ Pass a collection or list to match any of several parents, and use
 
 ## Querying relationship existence
 
-```python
-# app/http/controllers/example_controller.py
+```python title="app/http/controllers/example_controller.py"
 await User.query().has("posts", ">=", 2).get()
 await User.query().doesnt_have("posts").get()
 await User.query().where_has(
@@ -302,14 +295,14 @@ await User.query().where_doesnt_have("posts").get()
 Each of these has an `or_` twin — `or_has`, `or_doesnt_have`, `or_where_has`,
 `or_where_doesnt_have` — that joins the clause with `OR` instead of `AND`:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await User.query().where("country", "=", "US").or_has("posts").get()
 ```
 
 Dots walk nested relations. The count and the callback apply to the innermost
 relation, so this finds users with a post that has at least one comment:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await User.query().has("posts.comments").get()
 await User.query().where_has(
     "posts.comments", lambda q: q.where("approved", "=", True)
@@ -321,7 +314,7 @@ await User.query().where_has(
 When the constraint is a single simple condition, `where_relation` saves the
 closure:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await User.query().where_relation("posts", "published", False).get()
 await User.query().where_relation("posts", "views", ">", 1000).get()
 ```
@@ -333,7 +326,7 @@ await User.query().where_relation("posts", "views", ">", 1000).get()
 `with_where_has` filters parents by a relation *and* eager-loads that relation
 under the same constraint, so the loaded children match what you filtered on:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 users = await User.query().with_where_has(
     "posts", lambda q: q.where("published", "=", True)
 ).get()
@@ -346,7 +339,7 @@ users[0].posts   # published posts only
 `morph_to` relations query across their possible types. Pass model classes, type
 aliases, a mapping, or `"*"` for every mapped type:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 # Comments left on articles.
 await Comment.query().where_has_morph("commentable", [Article]).get()
 
@@ -354,7 +347,7 @@ await Comment.query().where_has_morph("commentable", [Article]).get()
 await Comment.query().where_has_morph(
     "commentable",
     "*",
-    lambda query, morph_type: query.where("title", "like", "Laravel%")
+    lambda query, morph_type: query.where("title", "like", "Guide%")
     if morph_type is Article
     else query,
 ).get()
@@ -375,7 +368,7 @@ Counting or summing a relation does not need the related rows loaded. Each
 aggregate runs one extra query for the whole result set and lands on the parent
 under a conventional name:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 writers = await Writer.query().with_count("entries").get()
 writers[0].entries_count            # 2
 
@@ -391,11 +384,11 @@ writers = await (
 ```
 
 A relation with no rows counts `0` and exists `False`; the column aggregates are
-`None`, matching Laravel's null.
+`None` when there are no related rows.
 
 Constrain an aggregate with a keyword callback, and rename it with `as`:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Writer.query().with_count(
     entries=lambda q: q.where("published", "=", True)
 ).get()
@@ -413,7 +406,7 @@ independent of `select`, so narrowing the parent's columns does not drop them.
 
 When the parents are already in hand, the `load_` family does the same work:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await writer.load_count("entries")
 await writer.load_sum("entries", "votes")
 await writer.load_exists("entries")
@@ -427,11 +420,12 @@ These take the same callbacks, mappings, and `as` aliases as their eager twins.
 
 ## Eager loading
 
-Reading a relation you did not load raises rather than quietly running a query,
-so eager loading is not an optimisation here — it is how you get the data:
+**Eager loading** means fetching related rows up front, usually in one extra
+query for the whole result set. Reading a relation you did not load raises
+rather than quietly running a query, so eager loading is not an optimisation
+here — it is how you get the data:
 
-```python
-# app/http/controllers/example_controller.py
+```python title="app/http/controllers/example_controller.py"
 posts = await Post.query().with_("author").get()
 posts[0].author.name
 ```
@@ -441,7 +435,7 @@ count.
 
 ### Multiple, nested, and constrained
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await User.query().with_("posts", "profile").get()
 await User.query().with_("posts.comments").get()          # nested
 
@@ -459,7 +453,7 @@ an earlier scope added.
 
 When the parents are already loaded, `load` fills relations in afterwards:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await user.load("posts")
 await user.load_missing("profile")     # skips what is already loaded
 await users.load("posts")              # a whole Collection, still one query
@@ -470,7 +464,7 @@ await users.load("posts")              # a whole Collection, still one query
 A relation that every read needs can be declared on the model, so it loads on
 each `query()` without being asked for:
 
-```python
+```python title="app/models/post.py"
 class Post(Model):
     with_ = ("author",)
 ```
@@ -483,7 +477,7 @@ class Post(Model):
 A `morph_to` points at a different class on each row, so one relation list
 cannot fit them all. `load_morph` takes a relation per target class:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 comments = await Comment.query().get()
 
 await comments.load_morph("commentable", {
@@ -502,15 +496,14 @@ a single model. String class names work in place of the classes themselves.
 
 ### Preventing N+1 by default
 
-Laravel lazy-loads on property access and offers `preventLazyLoading()` to turn
-that off. Almasix inverts the default deliberately: property access on an
-unloaded relation raises `RelationNotLoadedError`, because a hidden query behind
-an attribute read is exactly how N+1 problems reach production unnoticed.
+Almasix refuses to hide a database round-trip behind attribute access. Reading
+an unloaded relation raises `RelationNotLoadedError`, because a silent query
+there is exactly how N+1 problems reach production unnoticed.
 
-If you want Laravel's behaviour on a given model, opt in explicitly — the query
-is still awaited, so the IO stays visible:
+If you want awaitable late loading on a given model, opt in explicitly — the
+query is still awaited, so the IO stays visible:
 
-```python
+```python title="app/models/user.py"
 class User(Model):
     lazy_relations = True
 
@@ -519,7 +512,7 @@ posts = await user.posts          # awaited, not hidden
 
 ## Inserting and updating related models
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await post.comments().create({"body": "Nice"})
 await post.comments().create_many([{"body": "One"}, {"body": "Two"}])
 await post.comments().create_quietly({"body": "No events"})
@@ -542,7 +535,7 @@ child.
 
 `push` saves the model and every relation already loaded on it, however deep:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 post = await Post.query().with_("comments.author").first()
 post.title = "Edited"
 post.comments[0].body = "Also edited"
@@ -561,8 +554,7 @@ When a child changes, the parent's `updated_at` often should change too — a
 cached post listing goes stale when a comment is edited. Name the relations to
 bump:
 
-```python
-# app/models/comment.py
+```python title="app/models/comment.py"
 class Comment(Model):
     touches = ("post",)
 
@@ -579,19 +571,18 @@ Saving a comment now touches its post. Suspend it with
 
 When a related model uses soft deletes, put the mixin **before** `Model` so the global scope registers correctly:
 
-```python
-# app/models/post.py
+```python title="app/models/post.py"
 class Post(SoftDeletes, Model):
     ...
 ```
 
 ## Not shipped yet
 
-Two things on Laravel's page are deliberately absent:
+Two advanced relation helpers are deliberately absent for now:
 
-- **Scoped relationships** (`withAttributes`), which push a relation's
-  constraints into the models it creates, are not shipped yet — they belong
-  with advanced subquery work on the query builder.
-- **Automatic eager loading** (`automaticallyEagerLoadRelationships`) has no
-  counterpart, because Almasix does not lazy-load in the first place — see
+- **Scoped relationship attributes** that push a relation's constraints into
+  models created through that relation are not shipped yet — they belong with
+  advanced subquery work on the query builder.
+- **Automatic eager loading of every relation** has no counterpart, because
+  Almasix does not lazy-load by default — see
   [preventing N+1 by default](#preventing-n1-by-default).
