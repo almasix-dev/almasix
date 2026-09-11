@@ -74,8 +74,8 @@ npm install && npm run build
 python smith migrate && python smith serve
 ```
 
-The Inertia server adapter ships with Almasix until it is extracted to PyPI as
-`almasix-inertia`. SPA kits only need `almasix` in `pyproject.toml`.
+Web kits declare `almasix[conduit]`; SPA kits declare `almasix[inertia]`.
+Both extras resolve to the published first-party packages.
 Pages under `resources/js/Pages/` use the official Inertia client. Root Prism
 view provides `@inertia` / `@inertiaHead`. Middleware alias `inertia` runs on
 the web stack; `stateful_api()` is enabled for cookie SPA flows.

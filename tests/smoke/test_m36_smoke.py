@@ -26,7 +26,6 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.chdir(PROGRESS)
     monkeypatch.syspath_prepend(str(PROGRESS))
     monkeypatch.syspath_prepend(str(ROOT / "packages" / "courier" / "src"))
-    monkeypatch.syspath_prepend(str(ROOT / "packages" / "inertia" / "src"))
     from almasix.console.kernel import ConsoleKernel
 
     ConsoleKernel.from_cwd(PROGRESS).register_on_typer(smith_app)
@@ -40,7 +39,6 @@ def progress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.chdir(PROGRESS)
     monkeypatch.syspath_prepend(str(PROGRESS))
     monkeypatch.syspath_prepend(str(ROOT / "packages" / "courier" / "src"))
-    monkeypatch.syspath_prepend(str(ROOT / "packages" / "inertia" / "src"))
     import importlib
 
     module = importlib.import_module("bootstrap.app")

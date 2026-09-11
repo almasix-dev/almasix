@@ -11,11 +11,20 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.6.1
+
+- **Extract** — Conduit and Inertia ship as first-party packages
+  ([`almasix-conduit`](https://pypi.org/project/almasix-conduit/),
+  [`almasix-inertia`](https://pypi.org/project/almasix-inertia/)); install via
+  `almasix[conduit]` / `almasix[inertia]`
+- Web kits declare `almasix[conduit]`; SPA kits declare `almasix[inertia]`
+- Conduit loads through PackageManifest discovery (no longer wired in Foundation)
+
 ## 0.6.0
 
-- **Conduit** — Livewire-class reactive components in-tree (`almasix.conduit`),
+- **Conduit** — Livewire-class reactive components (`almasix.conduit`),
   including signed update routes and a full parity matrix in the docs
-- **Inertia** — first-party adapter (`packages/inertia`) with lazy / defer / once /
+- **Inertia** — first-party adapter with lazy / defer / once /
   merge props, asset versioning, and Starlight docs
 - **Starter kits** — `almasix new --kit` overlays for Forge **web** (Conduit +
   Prism), **api** (Signet), and **react** / **vue** / **svelte** (Inertia), with

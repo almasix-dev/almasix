@@ -438,7 +438,12 @@ class Router:
         **kwargs: Any,
     ) -> RouteDefinition:
         """Full-page Conduit component (Livewire ``Route::livewire``)."""
-        from almasix.conduit.routing import mount_full_page
+        try:
+            from almasix.conduit.routing import mount_full_page
+        except ImportError as exc:  # pragma: no cover - optional extra
+            raise ImportError(
+                "Route.conduit requires almasix-conduit (pip install 'almasix[conduit]')."
+            ) from exc
 
         return self.add(
             ["GET"],

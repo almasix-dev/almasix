@@ -422,7 +422,7 @@ def _milestones() -> list[dict]:
             "status": "complete",
             "proof": [
                 "smith progress:inertia",
-                "packages/inertia · X-Inertia · Inertia.render",
+                "almasix-inertia · X-Inertia · Inertia.render",
                 "lazy / defer / merge props · partial reloads · asset version · SSR",
                 "GET /inertia demo",
             ],

@@ -478,7 +478,7 @@ def test_the_installer_prefers_uv_and_falls_back_to_pip(tmp_path: Path, monkeypa
     assert steps._python_install_command(_plan(tmp_path, installer="poetry"), root) is None
 
 
-def test_spa_kit_install_path_wires_monorepo_inertia(tmp_path: Path, monkeypatch) -> None:
+def test_spa_kit_install_path_wires_monorepo_framework(tmp_path: Path, monkeypatch) -> None:
     from almasix.installer import steps
 
     root = tmp_path / "app"
@@ -489,7 +489,6 @@ def test_spa_kit_install_path_wires_monorepo_inertia(tmp_path: Path, monkeypatch
 
     fw = tmp_path / "framework"
     (fw / "src" / "almasix").mkdir(parents=True)
-    (fw / "packages" / "inertia").mkdir(parents=True)
     (fw / "pyproject.toml").write_text('[project]\nname = "almasix"\n', encoding="utf-8")
 
     monkeypatch.setattr(steps, "framework_source_root", lambda: fw)
@@ -497,7 +496,7 @@ def test_spa_kit_install_path_wires_monorepo_inertia(tmp_path: Path, monkeypatch
     command = steps._python_install_command(_plan(tmp_path, install=True, kit="vue"), root)
     assert command is not None
     assert "-e" in command and str(fw) in command
-    assert str(fw / "packages" / "inertia") in command
+    assert "packages" not in " ".join(command)
     assert command[-2:] == ("-e", ".")
 
 

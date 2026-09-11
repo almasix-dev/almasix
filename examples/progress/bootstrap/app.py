@@ -23,12 +23,11 @@ from almasix.translation import SetLocaleMiddleware
 
 BASE_PATH = Path(__file__).resolve().parent.parent
 
-# In-repo packages — importable without a separate editable install.
+# In-repo Courier demo — importable without a separate editable install.
 _PACKAGES = BASE_PATH.parent.parent / "packages"
-for _pkg in ("courier", "inertia"):
-    _src = _PACKAGES / _pkg / "src"
-    if _src.is_dir() and str(_src) not in sys.path:
-        sys.path.insert(0, str(_src))
+_courier = _PACKAGES / "courier" / "src"
+if _courier.is_dir() and str(_courier) not in sys.path:
+    sys.path.insert(0, str(_courier))
 
 
 def configure_middleware(middleware: Middleware) -> None:
