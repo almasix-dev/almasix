@@ -1,0 +1,28 @@
+"""Authenticated user payload for Signet Bearer / SPA cookie clients."""
+
+from __future__ import annotations
+
+from almasix.auth import auth
+from almasix.http import Controller, UnauthorizedHttpException
+
+
+class UserController(Controller):
+    """``GET /api/user`` — current user under ``auth:signet``."""
+
+    async def show(self) -> dict:
+        user = auth().guard("signet").user() or auth().user()
+        if user is None:
+            raise UnauthorizedHttpException("Unauthenticated.")
+
+        payload = {
+            "id": user.get_key() if hasattr(user, "get_key") else getattr(user, "id", None),
+            "email": user.get_attribute("email") if hasattr(user, "get_attribute") else None,
+            "name": user.get_attribute("name") if hasattr(user, "get_attribute") else None,
+        }
+        token_can = getattr(user, "token_can", None)
+        return {
+            "user": payload,
+            "abilities": {
+                "*": bool(token_can("*")) if callable(token_can) else True,
+            },
+        }

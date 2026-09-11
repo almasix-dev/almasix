@@ -1,0 +1,23 @@
+"""Create the team_invitations table."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Migration, Schema
+
+
+class CreateTeamInvitationsTable(Migration):
+    async def up(self) -> None:
+        await Schema.create("team_invitations", self.invitations)
+
+    async def down(self) -> None:
+        await Schema.drop_if_exists("team_invitations")
+
+    def invitations(self, table: Any) -> None:
+        table.id()
+        table.foreign_id("team_id").constrained("teams").cascade_on_delete()
+        table.string("email")
+        table.string("role").nullable()
+        table.timestamps()
+        table.unique(["team_id", "email"])

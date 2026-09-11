@@ -1,0 +1,27 @@
+import { Link } from "@inertiajs/react";
+import ThemeToggle from "../Components/ThemeToggle";
+
+export default function MarketingLayout({ children, appName = "{{ app_display }}" }) {
+  return (
+    <div className="min-h-screen forge-mesh text-white">
+      <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-5 md:px-10">
+        <Link href="/" className="font-display text-xl font-semibold tracking-tight">
+          {appName}
+        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle className="border-white/20 bg-white/10 text-white hover:text-white" />
+          <Link href="/login" className="text-sm text-white/80 hover:text-white">
+            Log in
+          </Link>
+          <Link
+            href="/register"
+            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-ink"
+          >
+            Get started
+          </Link>
+        </div>
+      </header>
+      {children}
+    </div>
+  );
+}

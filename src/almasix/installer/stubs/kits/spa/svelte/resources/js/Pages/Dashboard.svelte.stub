@@ -1,0 +1,17 @@
+<script>
+  import { Head } from "@inertiajs/svelte";
+  import AuthenticatedLayout from "../Layouts/AuthenticatedLayout.svelte";
+  let { userName = "there" } = $props();
+</script>
+<AuthenticatedLayout title="Dashboard">
+  <Head title="Dashboard" />
+  <div class="mx-auto max-w-3xl">
+    <p class="font-display text-3xl font-semibold tracking-tight">Welcome back, {userName}.</p>
+    <p class="mt-2 text-muted">Your workspace is quiet on purpose — jump into settings, teams, or notifications when you need them.</p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-3">
+      <a href="/settings/profile" class="rounded-2xl border border-line bg-panel p-5 hover:border-brand/40"><p class="font-semibold">Settings</p><p class="mt-1 text-sm text-muted">Profile, password, 2FA, appearance</p></a>
+      <a href="/teams" class="rounded-2xl border border-line bg-panel p-5 hover:border-brand/40"><p class="font-semibold">Teams</p><p class="mt-1 text-sm text-muted">Create and switch workspaces</p></a>
+      <a href="/notifications" class="rounded-2xl border border-line bg-panel p-5 hover:border-brand/40"><p class="font-semibold">Notifications</p><p class="mt-1 text-sm text-muted">Inbox for database notifications</p></a>
+    </div>
+  </div>
+</AuthenticatedLayout>

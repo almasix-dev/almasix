@@ -1,0 +1,16 @@
+"""User — authenticatable model with Signet personal access tokens."""
+
+from __future__ import annotations
+
+from almasix.auth import AuthenticatableMixin
+from almasix.notifications import Notifiable
+from almasix.orm import HasFactory, Model
+from almasix.signet import HasApiTokens
+
+
+class User(HasFactory, HasApiTokens, AuthenticatableMixin, Notifiable, Model):
+    """A registered user of this API."""
+
+    fillable = ("name", "email", "password")
+    hidden = ("password", "remember_token")
+    casts = {"email_verified_at": "datetime", "password": "hashed"}  # noqa: RUF012

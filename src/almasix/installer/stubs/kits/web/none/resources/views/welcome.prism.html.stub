@@ -1,0 +1,26 @@
+@extends('layouts.marketing')
+@section('title', '{{ app_display }}')
+@section('content')
+  <section class="forge-mesh">
+    <div class="hero">
+      <header style="display:flex;justify-content:space-between;align-items:center">
+        <p class="font-display" style="font-size:1.75rem;font-weight:600;margin:0">{{ name }}</p>
+        <div style="display:flex;gap:1rem;align-items:center;font-size:.9rem;font-weight:500">
+          @guest<a href="{{ login_url }}" class="muted">Log in</a>@else<a href="{{ dashboard_url }}" class="muted">Dashboard</a>@endguest
+          <button type="button" class="btn btn-ghost" onclick="window.__forgeSetTheme && window.__forgeSetTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark')">Theme</button>
+        </div>
+      </header>
+      @isset(status)<p class="alert alert-ok" role="status">{{ status }}</p>@endisset
+      <h1>Ship the product you already see.</h1>
+      <p class="lede">{{ name }} is ready — auth, teams, and a calm workspace forged for people who build.</p>
+      <div class="actions">
+        @guest
+          <a class="btn btn-accent" href="{{ register_url }}">Get started</a>
+          <a class="btn btn-ghost" href="{{ login_url }}">Log in</a>
+        @else
+          <a class="btn btn-accent" href="{{ dashboard_url }}">Open dashboard</a>
+        @endguest
+      </div>
+    </div>
+  </section>
+@endsection

@@ -1,0 +1,17 @@
+<script>
+  import { Head, Link, useForm } from "@inertiajs/svelte";
+  import GuestLayout from "../../Layouts/GuestLayout.svelte";
+  let { appName = "{{ app_display }}" } = $props();
+  const form = useForm({ name: "", email: "", password: "", password_confirmation: "" });
+</script>
+<GuestLayout title="Create your account" {appName}>
+  <Head title="Register" />
+  <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); $form.post("/register"); }}>
+    <label class="block space-y-1.5"><span class="text-sm font-medium">Name</span><input bind:value={$form.name} class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+    <label class="block space-y-1.5"><span class="text-sm font-medium">Email</span><input bind:value={$form.email} type="email" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+    <label class="block space-y-1.5"><span class="text-sm font-medium">Password</span><input bind:value={$form.password} type="password" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+    <label class="block space-y-1.5"><span class="text-sm font-medium">Confirm password</span><input bind:value={$form.password_confirmation} type="password" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+    <button type="submit" class="w-full rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Create account</button>
+  </form>
+  <p class="mt-6 text-center text-sm text-muted">Already registered? <Link href="/login" class="text-brand">Log in</Link></p>
+</GuestLayout>

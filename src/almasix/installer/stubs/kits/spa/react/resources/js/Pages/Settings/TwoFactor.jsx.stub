@@ -1,0 +1,57 @@
+import { Head, useForm } from "@inertiajs/react";
+import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout";
+import TextInput from "../../Components/TextInput";
+import PrimaryButton from "../../Components/PrimaryButton";
+
+export default function TwoFactor({ enabled, confirming, qrUrl, secret, recoveryCodes = [], status }) {
+  const enable = useForm({});
+  const confirm = useForm({ code: "" });
+  const disable = useForm({});
+  const regen = useForm({});
+  return (
+    <AuthenticatedLayout title="Two-factor authentication">
+      <Head title="Two-factor" />
+      <div className="mx-auto max-w-xl space-y-6">
+        {status ? <p className="text-sm text-brand">{status}</p> : null}
+        <section className="rounded-2xl border border-line bg-panel p-6">
+          <h2 className="font-display text-xl font-semibold">Authenticator app</h2>
+          <p className="mt-1 text-sm text-muted">
+            {enabled ? "Two-factor authentication is enabled." : "Add a second step when signing in."}
+          </p>
+          {!enabled && !confirming ? (
+            <form className="mt-6" onSubmit={(e) => { e.preventDefault(); enable.post("/settings/two-factor"); }}>
+              <PrimaryButton className="w-auto" disabled={enable.processing}>Enable</PrimaryButton>
+            </form>
+          ) : null}
+          {confirming ? (
+            <div className="mt-6 space-y-4">
+              {qrUrl ? <p className="break-all rounded-xl bg-paper p-3 font-mono text-xs">{qrUrl}</p> : null}
+              {secret ? <p className="text-sm text-muted">Secret: <code className="text-ink">{secret}</code></p> : null}
+              <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); confirm.post("/settings/two-factor/confirm"); }}>
+                <TextInput label="Confirmation code" value={confirm.data.code} onChange={(e) => confirm.setData("code", e.target.value)} error={confirm.errors.code} />
+                <PrimaryButton className="w-auto" disabled={confirm.processing}>Confirm</PrimaryButton>
+              </form>
+            </div>
+          ) : null}
+          {enabled ? (
+            <div className="mt-6 flex flex-wrap gap-3">
+              <form onSubmit={(e) => { e.preventDefault(); regen.post("/settings/two-factor/recovery-codes"); }}>
+                <PrimaryButton className="w-auto" disabled={regen.processing}>Regenerate recovery codes</PrimaryButton>
+              </form>
+              <form onSubmit={(e) => { e.preventDefault(); disable.delete("/settings/two-factor"); }}>
+                <button type="submit" className="rounded-xl border border-line px-4 py-2.5 text-sm">Disable</button>
+              </form>
+            </div>
+          ) : null}
+          {recoveryCodes?.length ? (
+            <ul className="mt-6 grid grid-cols-2 gap-2 rounded-xl bg-paper p-4 font-mono text-sm">
+              {recoveryCodes.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      </div>
+    </AuthenticatedLayout>
+  );
+}

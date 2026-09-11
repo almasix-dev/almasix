@@ -1,0 +1,37 @@
+@extends('layouts.app')
+@section('title', 'Two-factor — {{ app_display }}')
+@section('content')
+
+  <ul class="nav nav-pills gap-1 mb-4 small">
+    <li class="nav-item"><a class="nav-link" href="/user/profile">Profile</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/password">Password</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/two-factor-authentication">Two-factor</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/appearance">Appearance</a></li>
+  </ul>
+
+  <h1 class="font-display h3 fw-semibold">Two-factor authentication</h1>
+  @isset(status)<div class="alert alert-success py-2">{{ status }}</div>@endisset
+  @isset(error)<div class="alert alert-danger py-2">{{ error }}</div>@endisset
+  @if(enabled)
+    <p class="text-success fw-medium mt-3">Two-factor is enabled.</p>
+    <form method="post" action="{{ disable_url }}" class="d-inline">@csrf{!! method_field('DELETE') !!}<button class="btn btn-outline-danger btn-sm" type="submit">Disable</button></form>
+    <form method="post" action="{{ recovery_url }}" class="d-inline ms-2">@csrf<button class="btn btn-link btn-sm" type="submit">Regenerate recovery codes</button></form>
+  @elseif(pending)
+    <p class="small text-secondary mt-3">Scan this URI, then confirm with a code.</p>
+    <code class="d-block small p-2 bg-light border rounded mb-3">{{ qr_uri }}</code>
+    <form method="post" action="{{ confirm_url }}" class="col-md-4">@csrf
+      <input type="text" name="code" required class="form-control mb-2" placeholder="6-digit code"/>
+      <button class="btn btn-brand" type="submit">Confirm</button>
+    </form>
+  @else
+    <form method="post" action="{{ enable_url }}" class="mt-3">@csrf<button class="btn btn-brand" type="submit">Enable two-factor</button></form>
+  @endif
+  @isset(recovery_codes)
+    <div class="mt-4 col-md-6">
+      <h2 class="h6">Recovery codes</h2>
+      <ul class="list-unstyled font-monospace small row">
+        @foreach(recovery_codes as code)<li class="col-6">{{ code }}</li>@endforeach
+      </ul>
+    </div>
+  @endisset
+@endsection

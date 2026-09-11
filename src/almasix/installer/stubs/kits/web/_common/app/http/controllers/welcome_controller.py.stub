@@ -1,0 +1,27 @@
+"""Welcome — brand-first Forge landing."""
+
+from __future__ import annotations
+
+from almasix.auth import auth
+from almasix.config import config
+from almasix.http import Controller, Request, Response
+from almasix.prism import view
+from almasix.routing import url
+
+
+class WelcomeController(Controller):
+    async def index(self, request: Request) -> Response:
+        app_name = str(config("app.name", "{{ app_display }}"))
+        return view(
+            "welcome",
+            {
+                "name": app_name,
+                "env": str(config("app.env", "local")),
+                "login_url": url("/login", absolute=False),
+                "register_url": url("/register", absolute=False),
+                "dashboard_url": url("/dashboard", absolute=False),
+                "status": request.session.get("status"),
+                "authenticated": auth().check(),
+                "__authenticated": auth().check(),
+            },
+        )

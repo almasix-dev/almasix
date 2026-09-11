@@ -1,0 +1,37 @@
+@extends('layouts.app')
+@section('title', 'Profile — {{ app_display }}')
+@section('content')
+
+  <ul class="nav nav-pills gap-1 mb-4 small">
+    <li class="nav-item"><a class="nav-link" href="/user/profile">Profile</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/password">Password</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/two-factor-authentication">Two-factor</a></li>
+    <li class="nav-item"><a class="nav-link" href="/user/appearance">Appearance</a></li>
+  </ul>
+
+  <h1 class="font-display h3 fw-semibold">Profile</h1>
+  <p class="text-secondary small">Update your name, email, and photo.</p>
+  @isset(status)<div class="alert alert-success py-2">{{ status }}</div>@endisset
+  @isset(error)<div class="alert alert-danger py-2">{{ error }}</div>@endisset
+  <form method="post" action="{{ photo_url_action }}" enctype="multipart/form-data" class="d-flex align-items-center gap-3 my-4">
+    @csrf
+    <input type="file" name="photo" accept="image/*" class="form-control form-control-sm" style="max-width:16rem"/>
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Upload</button>
+  </form>
+  <form method="post" action="{{ update_url }}" class="col-md-6">
+    @csrf
+    {!! method_field('PUT') !!}
+    <div class="mb-3"><label class="form-label">Name</label><input type="text" name="name" value="{{ user_name }}" required class="form-control"/></div>
+    <div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" value="{{ user_email }}" required class="form-control"/></div>
+    <button type="submit" class="btn btn-brand">Save</button>
+  </form>
+  <div class="border border-danger-subtle rounded p-3 mt-5 col-md-6">
+    <h2 class="h6 text-danger">Delete account</h2>
+    <form method="post" action="{{ delete_url }}">
+      @csrf
+      {!! method_field('DELETE') !!}
+      <input type="password" name="password" required placeholder="Confirm with password" class="form-control form-control-sm mb-2"/>
+      <button type="submit" class="btn btn-danger btn-sm">Delete account</button>
+    </form>
+  </div>
+@endsection

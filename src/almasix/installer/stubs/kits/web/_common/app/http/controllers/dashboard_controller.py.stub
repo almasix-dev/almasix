@@ -1,0 +1,44 @@
+"""Dashboard — signed-in home with Conduit theme island."""
+
+from __future__ import annotations
+
+from almasix.auth import auth
+from almasix.config import config
+from almasix.conduit import conduit
+from almasix.http import Controller, Request, Response
+from almasix.prism import view
+from almasix.routing import url
+
+
+class DashboardController(Controller):
+    async def index(self, request: Request) -> Response:
+        user = auth().user()
+        display = (
+            user.get_attribute("name")
+            if user is not None and hasattr(user, "get_attribute")
+            else getattr(user, "name", "there") if user is not None else "there"
+        )
+        team = None
+        if user is not None and hasattr(user, "current_team"):
+            try:
+                rel = user.current_team()
+                team = await rel.first() if hasattr(rel, "first") else None
+            except Exception:
+                team = None
+        team_name = (
+            team.get_attribute("name")
+            if team is not None and hasattr(team, "get_attribute")
+            else getattr(team, "name", None) if team is not None else None
+        )
+        return view(
+            "dashboard",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "user_name": display,
+                "team_name": team_name,
+                "status": request.session.get("status"),
+                "theme_toggle": conduit("theme_toggle"),
+                "logout_url": url("/logout", absolute=False),
+                "__authenticated": True,
+            },
+        )

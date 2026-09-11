@@ -1,0 +1,14 @@
+@extends('layouts.guest')
+@section('title', 'Register — {{ app_display }}')
+@section('content')
+  <h1 class="font-display" style="font-size:1.35rem;margin:0">Create your account</h1>
+  @isset(error)<p class="alert alert-error">{{ error }}</p>@endisset
+  <form method="post" action="{{ form_action }}">@csrf
+    <label class="field">Name<input type="text" name="name" required/></label>
+    <label class="field">Email<input type="email" name="email" required/></label>
+    <label class="field">Password<input type="password" name="password" required/></label>
+    <label class="field">Confirm password<input type="password" name="password_confirmation" required/></label>
+    <button type="submit" class="btn" style="width:100%">Create account</button>
+  </form>
+  <p class="muted" style="text-align:center;font-size:.875rem;margin-top:1.25rem">Already registered? <a href="{{ login_url }}">Log in</a></p>
+@endsection

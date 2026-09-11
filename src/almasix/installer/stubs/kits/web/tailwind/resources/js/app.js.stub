@@ -1,0 +1,29 @@
+import "../css/app.css";
+
+(function bootForgeTheme() {
+  const key = "forge-theme";
+  const root = document.documentElement;
+
+  function resolve(mode) {
+    if (mode === "dark") return true;
+    if (mode === "light") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  function apply(mode) {
+    const m = mode || localStorage.getItem(key) || "system";
+    root.classList.toggle("dark", resolve(m));
+    localStorage.setItem(key, m);
+  }
+
+  window.__forgeSetTheme = function (mode) {
+    apply(mode);
+  };
+
+  apply(localStorage.getItem(key) || "system");
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if ((localStorage.getItem(key) || "system") === "system") apply("system");
+  });
+})();
+
+console.log("{{ app_display }} · Forge / Tailwind");

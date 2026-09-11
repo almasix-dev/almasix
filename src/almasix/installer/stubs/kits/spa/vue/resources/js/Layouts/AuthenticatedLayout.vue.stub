@@ -1,0 +1,56 @@
+<script setup>
+import { computed } from "vue";
+import { Link, usePage } from "@inertiajs/vue3";
+import ThemeToggle from "../Components/ThemeToggle.vue";
+defineProps({ title: String });
+const page = usePage();
+const url = computed(() => page.url || "");
+const user = computed(() => page.props.auth?.user);
+const appName = computed(() => page.props.appName || "{{ app_display }}");
+const inSettings = computed(() => url.value.startsWith("/settings"));
+const nav = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/notifications", label: "Notifications" },
+  { href: "/settings/profile", label: "Settings" },
+  { href: "/teams", label: "Teams" },
+];
+const settingsNav = [
+  { href: "/settings/profile", label: "Profile" },
+  { href: "/settings/password", label: "Password" },
+  { href: "/settings/two-factor", label: "Two-factor" },
+  { href: "/settings/appearance", label: "Appearance" },
+];
+</script>
+<template>
+  <div class="flex min-h-screen bg-paper text-ink">
+    <aside class="hidden w-60 shrink-0 border-r border-line bg-panel md:flex md:flex-col">
+      <div class="border-b border-line px-5 py-4">
+        <Link href="/dashboard" class="font-display text-lg font-semibold text-brand">{{ appName }}</Link>
+      </div>
+      <nav class="flex flex-1 flex-col gap-1 p-3">
+        <Link v-for="item in nav" :key="item.href" :href="item.href"
+          :class="['rounded-lg px-3 py-2 text-sm font-medium', url.startsWith(item.href) ? 'bg-brand/10 text-brand' : 'text-muted hover:bg-paper hover:text-ink']">
+          {{ item.label }}
+        </Link>
+        <div v-if="inSettings" class="mt-4 border-t border-line pt-4">
+          <p class="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">Settings</p>
+          <Link v-for="item in settingsNav" :key="item.href" :href="item.href"
+            :class="['rounded-lg px-3 py-2 text-sm', url.startsWith(item.href) ? 'bg-brand/10 text-brand' : 'text-muted hover:text-ink']">
+            {{ item.label }}
+          </Link>
+        </div>
+      </nav>
+    </aside>
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-14 items-center justify-between border-b border-line bg-panel px-4 md:px-6">
+        <h1 class="text-sm font-semibold md:text-base">{{ title }}</h1>
+        <div class="flex items-center gap-3">
+          <ThemeToggle />
+          <span class="hidden text-sm text-muted sm:inline">{{ user?.name || "Account" }}</span>
+          <Link href="/logout" method="post" as="button" class="rounded-lg border border-line px-3 py-1.5 text-sm text-muted hover:text-ink">Log out</Link>
+        </div>
+      </header>
+      <main class="flex-1 p-4 md:p-8"><slot /></main>
+    </div>
+  </div>
+</template>

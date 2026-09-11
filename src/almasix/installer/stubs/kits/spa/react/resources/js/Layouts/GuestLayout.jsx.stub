@@ -1,0 +1,23 @@
+import { Link } from "@inertiajs/react";
+import ThemeToggle from "../Components/ThemeToggle";
+
+export default function GuestLayout({ children, title, appName = "{{ app_display }}" }) {
+  return (
+    <div className="flex min-h-screen flex-col bg-paper text-ink">
+      <header className="flex items-center justify-between px-6 py-5">
+        <Link href="/" className="font-display text-lg font-semibold text-brand">
+          {appName}
+        </Link>
+        <ThemeToggle />
+      </header>
+      <main className="flex flex-1 items-center justify-center px-4 pb-16">
+        <div className="w-full max-w-md">
+          {title ? (
+            <h1 className="font-display mb-6 text-center text-3xl font-semibold tracking-tight">{title}</h1>
+          ) : null}
+          <div className="rounded-2xl border border-line bg-panel p-8 shadow-sm">{children}</div>
+        </div>
+      </main>
+    </div>
+  );
+}

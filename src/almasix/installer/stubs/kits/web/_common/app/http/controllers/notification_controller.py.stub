@@ -1,0 +1,50 @@
+"""Notifications — inbox shell with mark-all-read."""
+
+from __future__ import annotations
+
+from almasix.auth import auth
+from almasix.config import config
+from almasix.conduit import conduit
+from almasix.http import Controller, Request, Response, redirect
+from almasix.prism import view
+from almasix.routing import url
+
+
+class NotificationController(Controller):
+    async def index(self, request: Request) -> Response:
+        user = auth().user()
+        items: list = []
+        if user is not None and hasattr(user, "notifications"):
+            try:
+                items = await user.notifications()
+            except Exception:
+                items = []
+        return view(
+            "notifications.index",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "notifications": items,
+                "empty": len(items) == 0,
+                "status": request.session.get("status"),
+                "mark_all_url": url("/notifications/mark-all-read", absolute=False),
+                "theme_toggle": conduit("theme_toggle"),
+                "__authenticated": True,
+            },
+        )
+
+    async def mark_all_read(self, request: Request) -> Response:
+        user = auth().user()
+        if user is not None and hasattr(user, "notifications"):
+            try:
+                from almasix.notifications.database import DatabaseNotificationStore
+
+                items = await user.notifications()
+                store = DatabaseNotificationStore()
+                for row in items:
+                    nid = row.get("id") if isinstance(row, dict) else getattr(row, "id", None)
+                    if nid and not (row.get("read_at") if isinstance(row, dict) else getattr(row, "read_at", None)):
+                        await store.mark_as_read(str(nid))
+            except Exception:
+                pass
+        request.session.flash("status", "All notifications marked as read.")
+        return redirect("/notifications")

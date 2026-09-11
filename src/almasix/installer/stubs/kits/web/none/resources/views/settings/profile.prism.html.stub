@@ -1,0 +1,32 @@
+@extends('layouts.app')
+@section('title', 'Profile — {{ app_display }}')
+@section('content')
+  <nav class="settings-nav">
+    <a href="/user/profile">Profile</a>
+    <a href="/user/password">Password</a>
+    <a href="/user/two-factor-authentication">Two-factor</a>
+    <a href="/user/appearance">Appearance</a>
+  </nav>
+
+  <h1 class="font-display" style="font-size:1.5rem;margin:0">Profile</h1>
+  @isset(status)<p class="alert alert-ok">{{ status }}</p>@endisset
+  @isset(error)<p class="alert alert-error">{{ error }}</p>@endisset
+  <form method="post" action="{{ photo_url_action }}" enctype="multipart/form-data" style="margin:1.25rem 0">@csrf
+    <input type="file" name="photo" accept="image/*"/>
+    <button type="submit" class="btn btn-ghost" style="margin-left:.5rem">Upload</button>
+  </form>
+  <form method="post" action="{{ update_url }}" style="max-width:24rem">@csrf
+    {!! method_field('PUT') !!}
+    <label class="field">Name<input type="text" name="name" value="{{ user_name }}" required/></label>
+    <label class="field">Email<input type="email" name="email" value="{{ user_email }}" required/></label>
+    <button type="submit" class="btn">Save</button>
+  </form>
+  <div style="margin-top:2.5rem;max-width:24rem;border:1px solid #fecaca;border-radius:.75rem;padding:1rem">
+    <h2 style="margin:0;color:#b91c1c;font-size:1rem">Delete account</h2>
+    <form method="post" action="{{ delete_url }}" style="margin-top:.75rem">@csrf
+      {!! method_field('DELETE') !!}
+      <input type="password" name="password" required placeholder="Confirm with password"/>
+      <button type="submit" class="btn btn-danger" style="margin-top:.5rem">Delete account</button>
+    </form>
+  </div>
+@endsection

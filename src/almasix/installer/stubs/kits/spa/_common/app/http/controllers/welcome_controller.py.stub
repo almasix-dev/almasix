@@ -1,0 +1,19 @@
+"""Brand-first marketing landing."""
+
+from __future__ import annotations
+
+from almasix.config import config
+from almasix.http import Controller
+from inertia import Inertia
+
+
+class WelcomeController(Controller):
+    async def index(self):
+        return Inertia.render(
+            "Welcome",
+            {
+                "appName": str(config("app.name", "{{ app_display }}")),
+                "canLogin": True,
+                "canRegister": True,
+            },
+        )

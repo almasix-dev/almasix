@@ -1,0 +1,20 @@
+import "../css/app.scss";
+import "bootstrap";
+
+(function bootForgeTheme() {
+  const key = "forge-theme";
+  function resolve(mode) {
+    if (mode === "dark") return true;
+    if (mode === "light") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function apply(mode) {
+    const m = mode || localStorage.getItem(key) || "system";
+    document.documentElement.classList.toggle("dark", resolve(m));
+    localStorage.setItem(key, m);
+  }
+  window.__forgeSetTheme = apply;
+  apply(localStorage.getItem(key) || "system");
+})();
+
+console.log("{{ app_display }} · Forge / Bootstrap");

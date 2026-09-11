@@ -1,0 +1,34 @@
+import { Head, useForm } from "@inertiajs/react";
+import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout";
+import TextInput from "../../Components/TextInput";
+import PrimaryButton from "../../Components/PrimaryButton";
+
+export default function Profile({ user, status }) {
+  const form = useForm({ name: user?.name || "", email: user?.email || "" });
+  const destroy = useForm({ password: "" });
+  return (
+    <AuthenticatedLayout title="Profile">
+      <Head title="Profile" />
+      <div className="mx-auto max-w-xl space-y-10">
+        {status ? <p className="text-sm text-brand">{status}</p> : null}
+        <section className="rounded-2xl border border-line bg-panel p-6">
+          <h2 className="font-display text-xl font-semibold">Profile information</h2>
+          <p className="mt-1 text-sm text-muted">Update your name and email address.</p>
+          <form className="mt-6 space-y-4" onSubmit={(e) => { e.preventDefault(); form.patch("/settings/profile"); }}>
+            <TextInput label="Name" value={form.data.name} onChange={(e) => form.setData("name", e.target.value)} error={form.errors.name} />
+            <TextInput label="Email" type="email" value={form.data.email} onChange={(e) => form.setData("email", e.target.value)} error={form.errors.email} />
+            <PrimaryButton className="w-auto" disabled={form.processing}>Save</PrimaryButton>
+          </form>
+        </section>
+        <section className="rounded-2xl border border-red-200 bg-panel p-6 dark:border-red-900/40">
+          <h2 className="font-display text-xl font-semibold text-red-700 dark:text-red-400">Delete account</h2>
+          <p className="mt-1 text-sm text-muted">Once deleted, resources and data will be permanently removed.</p>
+          <form className="mt-6 space-y-4" onSubmit={(e) => { e.preventDefault(); destroy.delete("/settings/profile"); }}>
+            <TextInput label="Confirm password" type="password" value={destroy.data.password} onChange={(e) => destroy.setData("password", e.target.value)} error={destroy.errors.password} />
+            <button type="submit" className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white">Delete account</button>
+          </form>
+        </section>
+      </div>
+    </AuthenticatedLayout>
+  );
+}

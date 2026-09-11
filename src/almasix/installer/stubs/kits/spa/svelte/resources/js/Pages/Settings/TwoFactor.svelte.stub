@@ -1,0 +1,45 @@
+<script>
+  import { Head, useForm } from "@inertiajs/svelte";
+  import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout.svelte";
+  let { enabled = false, confirming = false, qrUrl = "", secret = "", recoveryCodes = [], status = "" } = $props();
+  const enable = useForm({});
+  const confirm = useForm({ code: "" });
+  const disable = useForm({});
+  const regen = useForm({});
+</script>
+<AuthenticatedLayout title="Two-factor authentication">
+  <Head title="Two-factor" />
+  <div class="mx-auto max-w-xl space-y-6">
+    {#if status}<p class="text-sm text-brand">{status}</p>{/if}
+    <section class="rounded-2xl border border-line bg-panel p-6">
+      <h2 class="font-display text-xl font-semibold">Authenticator app</h2>
+      <p class="mt-1 text-sm text-muted">{enabled ? "Two-factor authentication is enabled." : "Add a second step when signing in."}</p>
+      {#if !enabled && !confirming}
+        <form class="mt-6" onsubmit={(e) => { e.preventDefault(); $enable.post("/settings/two-factor"); }}>
+          <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Enable</button>
+        </form>
+      {/if}
+      {#if confirming}
+        <div class="mt-6 space-y-4">
+          {#if qrUrl}<p class="break-all rounded-xl bg-paper p-3 font-mono text-xs">{qrUrl}</p>{/if}
+          {#if secret}<p class="text-sm text-muted">Secret: <code>{secret}</code></p>{/if}
+          <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); $confirm.post("/settings/two-factor/confirm"); }}>
+            <label class="block space-y-1.5"><span class="text-sm font-medium">Confirmation code</span><input bind:value={$confirm.code} class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+            <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Confirm</button>
+          </form>
+        </div>
+      {/if}
+      {#if enabled}
+        <div class="mt-6 flex flex-wrap gap-3">
+          <form onsubmit={(e) => { e.preventDefault(); $regen.post("/settings/two-factor/recovery-codes"); }}><button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Regenerate recovery codes</button></form>
+          <form onsubmit={(e) => { e.preventDefault(); $disable.delete("/settings/two-factor"); }}><button type="submit" class="rounded-xl border border-line px-4 py-2.5 text-sm">Disable</button></form>
+        </div>
+      {/if}
+      {#if recoveryCodes?.length}
+        <ul class="mt-6 grid grid-cols-2 gap-2 rounded-xl bg-paper p-4 font-mono text-sm">
+          {#each recoveryCodes as c}<li>{c}</li>{/each}
+        </ul>
+      {/if}
+    </section>
+  </div>
+</AuthenticatedLayout>

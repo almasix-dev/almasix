@@ -1,0 +1,18 @@
+@extends('layouts.guest')
+@section('title', 'Log in — {{ app_display }}')
+@section('content')
+  <h1 class="font-display" style="font-size:1.35rem;margin:0">Welcome back</h1>
+  <p class="muted" style="font-size:.875rem">Sign in to {{ name }}.</p>
+  @isset(error)<p class="alert alert-error" role="alert">{{ error }}</p>@endisset
+  @isset(status)<p class="alert alert-ok" role="status">{{ status }}</p>@endisset
+  <form method="post" action="{{ form_action }}">@csrf
+    <label class="field">Email<input type="email" name="email" required autocomplete="username"/></label>
+    <label class="field">Password<input type="password" name="password" required autocomplete="current-password"/></label>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:.875rem;margin-bottom:1rem">
+      <label class="muted"><input type="checkbox" name="remember" value="1"/> Remember me</label>
+      <a href="{{ forgot_url }}">Forgot password?</a>
+    </div>
+    <button type="submit" class="btn" style="width:100%">Log in</button>
+  </form>
+  <p class="muted" style="text-align:center;font-size:.875rem;margin-top:1.25rem">No account? <a href="{{ register_url }}">Sign up</a></p>
+@endsection

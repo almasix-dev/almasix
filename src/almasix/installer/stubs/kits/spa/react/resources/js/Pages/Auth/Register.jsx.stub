@@ -1,0 +1,35 @@
+import { Head, Link, useForm } from "@inertiajs/react";
+import GuestLayout from "../Layouts/GuestLayout";
+import TextInput from "../Components/TextInput";
+import PrimaryButton from "../Components/PrimaryButton";
+
+export default function Register({ appName }) {
+  const { data, setData, post, processing, errors } = useForm({
+    name: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+  });
+
+  return (
+    <GuestLayout title="Create your account" appName={appName}>
+      <Head title="Register" />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          post("/register");
+        }}
+        className="space-y-4"
+      >
+        <TextInput label="Name" value={data.name} onChange={(e) => setData("name", e.target.value)} error={errors.name} autoFocus />
+        <TextInput label="Email" type="email" value={data.email} onChange={(e) => setData("email", e.target.value)} error={errors.email} />
+        <TextInput label="Password" type="password" value={data.password} onChange={(e) => setData("password", e.target.value)} error={errors.password} />
+        <TextInput label="Confirm password" type="password" value={data.password_confirmation} onChange={(e) => setData("password_confirmation", e.target.value)} />
+        <PrimaryButton disabled={processing}>Create account</PrimaryButton>
+      </form>
+      <p className="mt-6 text-center text-sm text-muted">
+        Already registered? <Link href="/login" className="text-brand hover:underline">Log in</Link>
+      </p>
+    </GuestLayout>
+  );
+}

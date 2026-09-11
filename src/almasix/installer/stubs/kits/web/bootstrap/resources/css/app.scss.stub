@@ -1,0 +1,45 @@
+@import "bootstrap/scss/bootstrap";
+
+:root {
+  --brand: #0d9488;
+  --brand-glow: #2dd4bf;
+  --ink: #0a0f1a;
+  --paper: #f4f7fb;
+  --accent: #e8ff47;
+  --bs-primary: #0d9488;
+  --bs-body-bg: var(--paper);
+  --bs-body-color: var(--ink);
+  --font-display: "Fraunces", Georgia, serif;
+  --font-ui: "DM Sans", system-ui, sans-serif;
+}
+
+html.dark {
+  --ink: #e8eef8;
+  --paper: #070b12;
+  --bs-body-bg: #070b12;
+  --bs-body-color: #e8eef8;
+  --bs-border-color: #1e293b;
+}
+
+body { font-family: var(--font-ui); background: var(--paper); color: var(--ink); }
+.font-display { font-family: var(--font-display); }
+.btn-brand { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn-brand:hover { background: var(--brand-glow); border-color: var(--brand-glow); color: #fff; }
+.btn-accent { background: var(--accent); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+.forge-mesh {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 20%, color-mix(in srgb, var(--brand-glow) 35%, transparent), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 15%, color-mix(in srgb, var(--brand) 28%, transparent), transparent 50%),
+    radial-gradient(ellipse 55% 40% at 65% 78%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 55%),
+    linear-gradient(165deg, #e8f4f2 0%, var(--paper) 45%, #eef2f8 100%);
+}
+html.dark .forge-mesh {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 20%, color-mix(in srgb, var(--brand-glow) 28%, transparent), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 15%, color-mix(in srgb, var(--brand) 22%, transparent), transparent 50%),
+    linear-gradient(165deg, #061018 0%, #0a1628 45%, #0d1f2a 100%);
+}
+.sidebar { width: 15rem; min-height: 100vh; }
+.app-shell { display: flex; min-height: 100vh; }
+.app-main { flex: 1; min-width: 0; }

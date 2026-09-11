@@ -1,0 +1,14 @@
+<script>
+  import { Head } from "@inertiajs/svelte";
+  import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout.svelte";
+  import ThemeToggle from "../../Components/ThemeToggle.svelte";
+  let { status = "" } = $props();
+</script>
+<AuthenticatedLayout title="Appearance">
+  <Head title="Appearance" />
+  <div class="mx-auto max-w-xl rounded-2xl border border-line bg-panel p-6">
+    <h2 class="font-display text-xl font-semibold">Theme</h2>
+    <p class="mt-1 text-sm text-muted">Forge supports light and dark. Your choice is stored in this browser.</p>
+    <div class="mt-6 flex items-center gap-4"><ThemeToggle /><span class="text-sm text-muted">Toggle light / dark</span></div>
+  </div>
+</AuthenticatedLayout>

@@ -1,0 +1,10 @@
+@extends('layouts.app')
+@section('title', 'Create team — {{ app_display }}')
+@section('content')
+  <h1 class="font-display h3 fw-semibold">Create team</h1>
+  @isset(error)<div class="alert alert-danger py-2">{{ error }}</div>@endisset
+  <form method="post" action="{{ form_action }}" class="col-md-5 mt-3">@csrf
+    <div class="mb-3"><label class="form-label">Team name</label><input type="text" name="name" required class="form-control"/></div>
+    <button class="btn btn-brand" type="submit">Create</button>
+  </form>
+@endsection

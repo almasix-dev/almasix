@@ -1,0 +1,20 @@
+<script>
+  import { Head, Link } from "@inertiajs/svelte";
+  import MarketingLayout from "../Layouts/MarketingLayout.svelte";
+  let { appName = "{{ app_display }}", canLogin = true, canRegister = true } = $props();
+</script>
+<MarketingLayout {appName}>
+  <Head title="Welcome" />
+  <section class="relative flex min-h-screen items-end px-6 pb-20 pt-28 md:items-center md:px-10 md:pb-0">
+    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20"></div>
+    <div class="relative z-10 max-w-3xl">
+      <p class="font-display mb-4 text-5xl font-semibold tracking-tight text-white md:text-7xl">{appName}</p>
+      <h1 class="max-w-2xl text-2xl font-medium leading-snug text-white/95 md:text-4xl">Ship the product, not the scaffolding.</h1>
+      <p class="mt-4 max-w-xl text-base text-white/75 md:text-lg">Auth, teams, settings, and a calm workspace — ready the moment you open the app.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        {#if canRegister}<Link href="/register" class="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-black/20">Create account</Link>{/if}
+        {#if canLogin}<Link href="/login" class="rounded-full border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur">Log in</Link>{/if}
+      </div>
+    </div>
+  </section>
+</MarketingLayout>

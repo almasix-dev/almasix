@@ -1,0 +1,19 @@
+import { Head, useForm } from "@inertiajs/react";
+import GuestLayout from "../Layouts/GuestLayout";
+import TextInput from "../Components/TextInput";
+import PrimaryButton from "../Components/PrimaryButton";
+
+export default function TwoFactorChallenge() {
+  const { data, setData, post, processing, errors } = useForm({ code: "", recovery_code: "" });
+  return (
+    <GuestLayout title="Two-factor challenge">
+      <Head title="Two-factor" />
+      <p className="mb-4 text-sm text-muted">Enter an authenticator code or a recovery code.</p>
+      <form onSubmit={(e) => { e.preventDefault(); post("/two-factor-challenge"); }} className="space-y-4">
+        <TextInput label="Authentication code" value={data.code} onChange={(e) => setData("code", e.target.value)} error={errors.code} autoFocus />
+        <TextInput label="Recovery code" value={data.recovery_code} onChange={(e) => setData("recovery_code", e.target.value)} />
+        <PrimaryButton disabled={processing}>Continue</PrimaryButton>
+      </form>
+    </GuestLayout>
+  );
+}

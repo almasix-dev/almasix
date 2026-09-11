@@ -1,0 +1,25 @@
+"""Create the notifications table — database channel inbox."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from almasix.orm import Migration, Schema
+
+
+class CreateNotificationsTable(Migration):
+    async def up(self) -> None:
+        await Schema.create("notifications", self.notifications)
+
+    async def down(self) -> None:
+        await Schema.drop_if_exists("notifications")
+
+    def notifications(self, table: Any) -> None:
+        table.uuid("id").primary()
+        table.string("type")
+        table.string("notifiable_type")
+        table.string("notifiable_id")
+        table.text("data")
+        table.timestamp("read_at").nullable()
+        table.timestamps()
+        table.index(["notifiable_type", "notifiable_id"])

@@ -1,0 +1,109 @@
+"""Auth — login, register, logout with optional 2FA challenge redirect."""
+
+from __future__ import annotations
+
+from app.models.team import Team
+from app.models.user import User
+
+from almasix.auth import attempt_login, auth
+from almasix.auth.guard import pull_intended_url
+from almasix.config import config
+from almasix.http import Controller, Request, Response, redirect
+from almasix.prism import view
+from almasix.routing import url
+from almasix.translation import __
+
+
+class AuthController(Controller):
+    async def show_login(self, request: Request) -> Response:
+        return view(
+            "auth.login",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "form_action": url("/login", absolute=False),
+                "register_url": url("/register", absolute=False),
+                "forgot_url": url("/forgot-password", absolute=False),
+                "home_url": url("/", absolute=False),
+                "error": request.session.get("error"),
+                "status": request.session.get("status"),
+                "__authenticated": False,
+            },
+        )
+
+    async def login(self, request: Request) -> Response:
+        email = str(request.input("email") or "").strip()
+        password = str(request.input("password") or "")
+        remember = bool(request.boolean("remember"))
+        if not email or not password:
+            request.session.flash("error", "Email and password are required.")
+            return redirect("/login")
+
+        ok = await attempt_login(
+            {"email": email, "password": password},
+            request=request,
+            remember=remember,
+        )
+        if not ok:
+            request.session.flash("error", __("auth.failed"))
+            return redirect("/login")
+
+        user = auth().user()
+        if user is not None and hasattr(user, "has_two_factor_enabled") and user.has_two_factor_enabled():
+            user_id = user.get_key() if hasattr(user, "get_key") else user.id
+            await auth().logout()
+            request.session.put("login.id", user_id)
+            request.session.put("login.remember", remember)
+            return redirect("/two-factor-challenge")
+
+        return redirect(pull_intended_url("/dashboard"))
+
+    async def show_register(self, request: Request) -> Response:
+        return view(
+            "auth.register",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "form_action": url("/register", absolute=False),
+                "login_url": url("/login", absolute=False),
+                "home_url": url("/", absolute=False),
+                "error": request.session.get("error"),
+                "__authenticated": False,
+            },
+        )
+
+    async def register(self, request: Request) -> Response:
+        name = str(request.input("name") or "").strip()
+        email = str(request.input("email") or "").strip()
+        password = str(request.input("password") or "")
+        confirm = str(request.input("password_confirmation") or "")
+
+        if not name or not email or not password:
+            request.session.flash("error", "Name, email, and password are required.")
+            return redirect("/register")
+        if password != confirm:
+            request.session.flash("error", "Password confirmation does not match.")
+            return redirect("/register")
+
+        existing = await User.query().where("email", email).first()
+        if existing is not None:
+            request.session.flash("error", "That email is already registered.")
+            return redirect("/register")
+
+        user = await User.create(name=name, email=email, password=password)
+        team = await Team.create(user_id=user.get_key(), name=f"{name}'s Team", personal_team=True)
+        await user.teams().attach(team.get_key(), {"role": "owner"})
+        user.set_attribute("current_team_id", team.get_key())
+        await user.save()
+
+        if hasattr(user, "send_email_verification_notification"):
+            try:
+                await user.send_email_verification_notification()
+            except Exception:
+                pass
+
+        await attempt_login({"email": email, "password": password}, request=request)
+        return redirect("/dashboard")
+
+    async def logout(self, request: Request) -> Response:
+        await auth().logout()
+        request.session.flash("status", "Signed out.")
+        return redirect("/")

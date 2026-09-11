@@ -1,0 +1,157 @@
+"""Two-factor authentication — enable, confirm, disable, recovery, challenge."""
+
+from __future__ import annotations
+
+from app.models.user import User
+from app.support import totp as totp_support
+
+from almasix.auth import attempt_login, auth
+from almasix.auth.guard import pull_intended_url
+from almasix.config import config
+from almasix.http import Controller, Request, Response, redirect
+from almasix.prism import view
+from almasix.routing import url
+
+
+class TwoFactorController(Controller):
+    async def show(self, request: Request) -> Response:
+        user = auth().user()
+        enabled = bool(user and hasattr(user, "has_two_factor_enabled") and user.has_two_factor_enabled())
+        pending = bool(user and _attr(user, "two_factor_secret") and not enabled)
+        secret = _attr(user, "two_factor_secret") if pending else ""
+        qr = ""
+        if pending and secret:
+            qr = totp_support.provisioning_uri(
+                secret,
+                account=str(_attr(user, "email")),
+                issuer=str(config("app.name", "{{ app_display }}")),
+            )
+        recovery_plain = request.session.pull("two_factor_recovery_codes_plain")
+        return view(
+            "settings.two-factor",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "enabled": enabled,
+                "pending": pending,
+                "secret": secret,
+                "qr_uri": qr,
+                "recovery_codes": recovery_plain,
+                "status": request.session.get("status"),
+                "error": request.session.get("error"),
+                "enable_url": url("/user/two-factor-authentication", absolute=False),
+                "confirm_url": url("/user/confirmed-two-factor-authentication", absolute=False),
+                "disable_url": url("/user/two-factor-authentication", absolute=False),
+                "recovery_url": url("/user/two-factor-recovery-codes", absolute=False),
+                "__authenticated": True,
+            },
+        )
+
+    async def enable(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        secret = totp_support.generate_secret()
+        codes = totp_support.generate_recovery_codes()
+        user.set_attribute("two_factor_secret", secret)
+        user.set_attribute("two_factor_recovery_codes", totp_support.dump_recovery_hashes(totp_support.hash_recovery_codes(codes)))
+        user.set_attribute("two_factor_confirmed_at", None)
+        await user.save()
+        request.session.put("two_factor_recovery_codes_plain", codes)
+        request.session.flash("status", "Scan the QR code and confirm with a one-time password.")
+        return redirect("/user/two-factor-authentication")
+
+    async def confirm(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        code = str(request.input("code") or "")
+        secret = _attr(user, "two_factor_secret")
+        if not secret or not totp_support.verify(secret, code):
+            request.session.flash("error", "Invalid authentication code.")
+            return redirect("/user/two-factor-authentication")
+        from datetime import UTC, datetime
+
+        user.set_attribute("two_factor_confirmed_at", datetime.now(UTC))
+        await user.save()
+        request.session.flash("status", "Two-factor authentication is enabled.")
+        return redirect("/user/two-factor-authentication")
+
+    async def disable(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        user.set_attribute("two_factor_secret", None)
+        user.set_attribute("two_factor_recovery_codes", None)
+        user.set_attribute("two_factor_confirmed_at", None)
+        await user.save()
+        request.session.flash("status", "Two-factor authentication disabled.")
+        return redirect("/user/two-factor-authentication")
+
+    async def regenerate_recovery_codes(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        codes = totp_support.generate_recovery_codes()
+        user.set_attribute(
+            "two_factor_recovery_codes",
+            totp_support.dump_recovery_hashes(totp_support.hash_recovery_codes(codes)),
+        )
+        await user.save()
+        request.session.put("two_factor_recovery_codes_plain", codes)
+        request.session.flash("status", "New recovery codes generated. Store them somewhere safe.")
+        return redirect("/user/two-factor-authentication")
+
+    async def show_challenge(self, request: Request) -> Response:
+        if not request.session.get("login.id"):
+            return redirect("/login")
+        return view(
+            "auth.two-factor-challenge",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "form_action": url("/two-factor-challenge", absolute=False),
+                "error": request.session.get("error"),
+                "__authenticated": False,
+            },
+        )
+
+    async def challenge(self, request: Request) -> Response:
+        user_id = request.session.get("login.id")
+        if not user_id:
+            return redirect("/login")
+        user = await User.find(user_id)
+        if user is None:
+            request.session.forget("login.id")
+            return redirect("/login")
+
+        code = str(request.input("code") or "")
+        recovery = str(request.input("recovery_code") or "")
+        secret = _attr(user, "two_factor_secret")
+        ok = False
+        if code and secret and totp_support.verify(secret, code):
+            ok = True
+        elif recovery:
+            matched, updated = totp_support.consume_recovery_code(
+                _attr(user, "two_factor_recovery_codes"),
+                recovery,
+            )
+            if matched:
+                user.set_attribute("two_factor_recovery_codes", updated)
+                await user.save()
+                ok = True
+        if not ok:
+            request.session.flash("error", "Invalid authentication code.")
+            return redirect("/two-factor-challenge")
+
+        remember = bool(request.session.pull("login.remember"))
+        request.session.forget("login.id")
+        await auth().login(user, remember=remember)
+        return redirect(pull_intended_url("/dashboard"))
+
+
+def _attr(user, key: str):
+    if user is None:
+        return ""
+    if hasattr(user, "get_attribute"):
+        val = user.get_attribute(key)
+        return val if val is not None else ""
+    return getattr(user, key, "") or ""

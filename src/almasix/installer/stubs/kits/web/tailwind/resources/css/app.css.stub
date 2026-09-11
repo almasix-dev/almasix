@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #0d9488;
+  --color-brand-glow: #2dd4bf;
+  --color-ink: #0a0f1a;
+  --color-paper: #f4f7fb;
+  --color-accent: #e8ff47;
+  --color-muted: #5b657a;
+  --color-line: #d8dee9;
+  --color-surface: #ffffff;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html { color-scheme: light; }
+  html.dark {
+    color-scheme: dark;
+    --color-ink: #e8eef8;
+    --color-paper: #070b12;
+    --color-muted: #9aa6bd;
+    --color-line: #1e293b;
+    --color-surface: #0e1522;
+  }
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+  .font-display { font-family: var(--font-display); }
+}
+
+.forge-mesh {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 20%, color-mix(in oklab, var(--color-brand-glow) 35%, transparent), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 15%, color-mix(in oklab, var(--color-brand) 28%, transparent), transparent 50%),
+    radial-gradient(ellipse 60% 45% at 70% 80%, color-mix(in oklab, var(--color-accent) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 20% 85%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent 50%),
+    linear-gradient(165deg, #061018 0%, #0a1628 45%, #0d1f2a 100%);
+}
+html:not(.dark) .forge-mesh {
+  background:
+    radial-gradient(ellipse 80% 60% at 12% 18%, color-mix(in oklab, var(--color-brand-glow) 40%, transparent), transparent 55%),
+    radial-gradient(ellipse 70% 55% at 88% 12%, color-mix(in oklab, var(--color-brand) 30%, transparent), transparent 50%),
+    radial-gradient(ellipse 55% 40% at 65% 78%, color-mix(in oklab, var(--color-accent) 35%, transparent), transparent 55%),
+    linear-gradient(165deg, #e8f4f2 0%, var(--color-paper) 40%, #eef2f8 100%);
+}
+
+@keyframes forge-rise {
+  from { opacity: 0; transform: translateY(1.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes forge-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(2%, -1.5%) scale(1.03); }
+}
+.forge-rise { animation: forge-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.forge-rise-delay { animation: forge-rise 1s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.forge-rise-delay-2 { animation: forge-rise 1s 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.forge-drift { animation: forge-drift 18s ease-in-out infinite; }

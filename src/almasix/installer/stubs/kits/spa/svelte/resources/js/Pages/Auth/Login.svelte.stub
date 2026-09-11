@@ -1,0 +1,20 @@
+<script>
+  import { Head, Link, useForm } from "@inertiajs/svelte";
+  import GuestLayout from "../../Layouts/GuestLayout.svelte";
+  let { status = "", canResetPassword = true, canRegister = true, appName = "{{ app_display }}" } = $props();
+  const form = useForm({ email: "", password: "", remember: false });
+</script>
+<GuestLayout title="Welcome back" {appName}>
+  <Head title="Log in" />
+  {#if status}<p class="mb-4 text-sm text-brand">{status}</p>{/if}
+  <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); $form.post("/login"); }}>
+    <label class="block space-y-1.5"><span class="text-sm font-medium">Email</span><input bind:value={$form.email} type="email" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+    <label class="block space-y-1.5"><span class="text-sm font-medium">Password</span><input bind:value={$form.password} type="password" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+    <label class="flex items-center gap-2 text-sm text-muted"><input type="checkbox" bind:checked={$form.remember} /> Remember me</label>
+    <button type="submit" class="w-full rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Log in</button>
+  </form>
+  <div class="mt-6 flex justify-between text-sm text-muted">
+    {#if canResetPassword}<Link href="/forgot-password" class="hover:text-brand">Forgot password?</Link>{/if}
+    {#if canRegister}<Link href="/register" class="hover:text-brand">Create account</Link>{/if}
+  </div>
+</GuestLayout>

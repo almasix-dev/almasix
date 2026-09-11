@@ -1,0 +1,36 @@
+@extends('layouts.marketing')
+
+@section('title', '{{ app_display }}')
+
+@section('content')
+  <section class="forge-mesh">
+    <div class="container py-4" style="max-width:68rem">
+      <header class="d-flex justify-content-between align-items-center mb-5">
+        <p class="font-display fs-3 fw-semibold mb-0">{{ name }}</p>
+        <div class="d-flex gap-3 align-items-center small fw-medium">
+          @guest
+            <a class="text-decoration-none text-body-secondary" href="{{ login_url }}">Log in</a>
+          @else
+            <a class="text-decoration-none text-body-secondary" href="{{ dashboard_url }}">Dashboard</a>
+          @endguest
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.__forgeSetTheme && window.__forgeSetTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark')">Theme</button>
+        </div>
+      </header>
+      <div class="py-5 my-5">
+        @isset(status)
+          <div class="alert alert-success" role="status">{{ status }}</div>
+        @endisset
+        <h1 class="font-display display-3 fw-semibold lh-1 mb-4">Ship the product<br class="d-none d-sm-block"/> you already see.</h1>
+        <p class="lead text-body-secondary col-lg-7 mb-4">{{ name }} is ready — auth, teams, and a calm workspace forged for people who build.</p>
+        <div class="d-flex flex-wrap gap-2">
+          @guest
+            <a href="{{ register_url }}" class="btn btn-accent btn-lg px-4">Get started</a>
+            <a href="{{ login_url }}" class="btn btn-outline-dark btn-lg px-4">Log in</a>
+          @else
+            <a href="{{ dashboard_url }}" class="btn btn-accent btn-lg px-4">Open dashboard</a>
+          @endguest
+        </div>
+      </div>
+    </div>
+  </section>
+@endsection

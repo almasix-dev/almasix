@@ -430,10 +430,12 @@ def _milestones() -> list[dict]:
         {
             "id": "M36",
             "name": "Starter kits",
-            "status": "planned",
+            "status": "complete",
             "proof": [
-                "web / API / SPA kits",
-                "depends on M54 Conduit (web islands) + M55 Inertia (SPA)",
+                "smith progress:kits",
+                "almasix new --kit web|api|react|vue|svelte",
+                "Forge design — landing + auth chrome, light/dark",
+                "docs/starter-kits",
             ],
         },
         {

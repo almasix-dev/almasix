@@ -222,9 +222,15 @@ def scaffold_app(
     database: str = "sqlite",
     tests: bool = True,
     stubs: Path | str | None = None,
+    kit: str = "none",
 ) -> Path:
     """Create a new Almasix application directory and return its path."""
     name = validate_app_name(name)
+    from almasix.installer.kits import find_kit
+
+    chosen_kit = find_kit(kit)
+    if chosen_kit.force_stack:
+        stack = chosen_kit.force_stack
     chosen_stack = find_stack(stack)
     chosen_database = find_database(database)
     sql_default = sql_connection_name(chosen_database)
@@ -243,10 +249,13 @@ def scaffold_app(
         "app_display": title_case(name),
         "app_key": _fresh_key(),
         "stack": chosen_stack.name,
+        "kit": chosen_kit.name,
+        "kit_kind": chosen_kit.kind,
+        "inertia_frontend": chosen_kit.frontend or "",
         "db_connection": sql_default,
         "db_label": chosen_database.label,
         "db_env": database_env(chosen_database, app_name=name),
-        "frontend_section": _frontend_section(tree, chosen_stack),
+        "frontend_section": _frontend_section(tree, chosen_stack, chosen_kit),
     }
 
     _render_tree(tree / "app", root, replacements, skip_tests=not tests)
@@ -254,7 +263,11 @@ def scaffold_app(
         _render_tree(tree / "stacks" / "_node", root, replacements)
     _render_tree(tree / "stacks" / chosen_stack.name, root, replacements)
 
+    # Kit overlays — shared then stack/frontend-specific.
+    _apply_kit(tree, root, replacements, chosen_kit, chosen_stack)
+
     _write_default_migrations(root)
+    _write_kit_migrations(root, chosen_kit)
     publish_errors(root, bundle=chosen_stack.error_bundle)
     if sql_default == "sqlite":
         _create_sqlite_file(root)
@@ -265,6 +278,41 @@ def scaffold_app(
     if smith.is_file():
         smith.chmod(smith.stat().st_mode | 0o111)
     return root
+
+
+def _apply_kit(
+    tree: Path, root: Path, replacements: Mapping[str, str], kit: object, stack: Stack
+) -> None:
+    from almasix.installer.kits import Kit
+
+    assert isinstance(kit, Kit)
+    if kit.kind == "none" or not kit.folder:
+        return
+    base = tree / "kits"
+    # SPA: kits/spa/_common then kits/spa/react|vue|svelte
+    # Web: kits/web/_common then kits/web/tailwind|bootstrap|none
+    # API: kits/api/_common (and optional kits/api/none)
+    if kit.kind == "spa":
+        _render_tree(base / "spa" / "_common", root, replacements)
+        _render_tree(base / kit.folder, root, replacements)
+    elif kit.kind == "web":
+        _render_tree(base / "web" / "_common", root, replacements)
+        stack_overlay = stack.name if stack.name in {"tailwind", "bootstrap", "none"} else "none"
+        _render_tree(base / "web" / stack_overlay, root, replacements)
+    elif kit.kind == "api":
+        _render_tree(base / "api" / "_common", root, replacements)
+    else:
+        _render_tree(base / kit.folder, root, replacements)
+
+
+def _write_kit_migrations(root: Path, kit: object) -> None:
+    """Copy any ``database/migrations/*.py`` already rendered by the kit overlay.
+
+    Kit stubs write migrations under ``database/migrations/`` with dated names;
+    default migrations still run first (0001_01_01_*).
+    """
+    # Overlay already wrote files via _render_tree; nothing else required.
+    _ = (root, kit)
 
 
 def publish_scaffold_stubs(base_path: Path | str, *, force: bool = False) -> tuple[Path, int]:
@@ -333,9 +381,19 @@ def _write_default_migrations(root: Path) -> None:
         gitkeep.unlink()
 
 
-def _frontend_section(tree: Path, stack: Stack) -> str:
+def _frontend_section(tree: Path, stack: Stack, kit: object | None = None) -> str:
     path = tree / "stacks" / stack.name / f"readme-frontend.md{STUB_SUFFIX}"
-    return path.read_text(encoding="utf-8") if path.is_file() else ""
+    body = path.read_text(encoding="utf-8") if path.is_file() else ""
+    if kit is not None:
+        from almasix.installer.kits import Kit
+
+        if isinstance(kit, Kit) and kit.kind != "none" and kit.folder:
+            kit_readme = tree / "kits" / kit.folder.split("/")[0] / f"readme-kit.md{STUB_SUFFIX}"
+            if not kit_readme.is_file() and kit.kind == "spa":
+                kit_readme = tree / "kits" / "spa" / f"readme-kit.md{STUB_SUFFIX}"
+            if kit_readme.is_file():
+                body = body + "\n\n" + kit_readme.read_text(encoding="utf-8")
+    return body
 
 
 def _create_sqlite_file(root: Path) -> None:

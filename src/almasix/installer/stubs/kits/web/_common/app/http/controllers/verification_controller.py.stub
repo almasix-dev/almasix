@@ -1,0 +1,51 @@
+"""Email verification — notice, signed verify, resend."""
+
+from __future__ import annotations
+
+from almasix.auth import auth
+from almasix.config import config
+from almasix.http import Controller, Request, Response, redirect
+from almasix.notifications.verification import mark_verified_from_request
+from almasix.prism import view
+from almasix.routing import url
+
+
+class VerificationController(Controller):
+    async def notice(self, request: Request) -> Response:
+        user = auth().user()
+        if user is not None and hasattr(user, "has_verified_email") and user.has_verified_email():
+            return redirect("/dashboard")
+        return view(
+            "auth.verify-email",
+            {
+                "name": str(config("app.name", "{{ app_display }}")),
+                "resend_url": url("/email/verification-notification", absolute=False),
+                "logout_url": url("/logout", absolute=False),
+                "status": request.session.get("status"),
+                "__authenticated": True,
+            },
+        )
+
+    async def verify(self, request: Request, id: str, hash: str) -> Response:
+        user = await mark_verified_from_request(
+            user_id=id,
+            email_hash=hash,
+            expires=str(request.query("expires") or ""),
+            signature=str(request.query("signature") or ""),
+        )
+        if user is None:
+            request.session.flash("error", "Invalid or expired verification link.")
+            return redirect("/email/verify")
+        request.session.flash("status", "Email verified.")
+        return redirect("/dashboard")
+
+    async def resend(self, request: Request) -> Response:
+        user = auth().user()
+        if user is None:
+            return redirect("/login")
+        if hasattr(user, "has_verified_email") and user.has_verified_email():
+            return redirect("/dashboard")
+        if hasattr(user, "send_email_verification_notification"):
+            await user.send_email_verification_notification()
+        request.session.flash("status", "A new verification link has been sent.")
+        return redirect("/email/verify")

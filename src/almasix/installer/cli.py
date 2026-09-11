@@ -43,10 +43,14 @@ def version() -> None:
 
 @app.command("stacks")
 def stacks() -> None:
-    """List the frontend stacks `almasix new --stack` accepts."""
+    """List stacks and starter kits `almasix new` accepts."""
+    from almasix.installer.kits import KITS
     from almasix.installer.scaffold import DATABASES, STACKS
 
-    typer.secho("Stacks", bold=True)
+    typer.secho("Starter kits", bold=True)
+    for kit in KITS:
+        typer.echo(f"  {kit.name:<10} {kit.label} — {kit.description}")
+    typer.secho("\nStacks", bold=True)
     for stack in STACKS:
         typer.echo(f"  {stack.name:<10} {stack.label} — {stack.description}")
     typer.secho("\nDatabases", bold=True)
@@ -63,10 +67,15 @@ def new(
         "--path",
         help="Parent directory (default: current working directory)",
     ),
+    kit: str | None = typer.Option(
+        None,
+        "--kit",
+        help="Starter kit: none, web, api, react, vue, svelte (default: none)",
+    ),
     stack: str | None = typer.Option(
         None,
         "--stack",
-        help=f"Frontend stack: {', '.join(STACK_NAMES)} (default: tailwind)",
+        help=f"Frontend stack: {', '.join(STACK_NAMES)} (default: tailwind; SPA kits force tailwind)",
     ),
     database: str | None = typer.Option(
         None,
@@ -123,6 +132,7 @@ def new(
     """Create a new Almasix application."""
     destination = (path or Path.cwd()) / name
     answers = Answers(
+        kit=kit,
         stack=stack,
         database=database,
         tests=tests,
@@ -155,6 +165,7 @@ def new(
             database=plan.database,
             tests=plan.tests,
             stubs=plan.stubs,
+            kit=plan.kit,
         )
     except ScaffoldError as exc:
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
@@ -162,6 +173,7 @@ def new(
 
     typer.secho(f"Created Almasix application: {root}", fg=typer.colors.GREEN)
     typer.echo(
+        f"  kit       {plan.kit_info.label}\n"
         f"  stack     {plan.stack_info.label}\n"
         f"  database  {plan.database_info.label}\n"
         f"  tests     {'tests/ with pytest' if plan.tests else 'none'}"

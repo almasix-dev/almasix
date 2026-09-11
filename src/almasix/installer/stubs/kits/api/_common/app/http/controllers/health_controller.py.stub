@@ -1,0 +1,10 @@
+"""Health probe for API clients."""
+
+from __future__ import annotations
+
+from almasix.http import Controller
+
+
+class HealthController(Controller):
+    async def index(self) -> dict[str, object]:
+        return {"ok": True, "app": "{{ app_display }}", "kit": "api"}

@@ -1,0 +1,53 @@
+import { Head, useForm } from "@inertiajs/react";
+import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout";
+import TextInput from "../../Components/TextInput";
+import PrimaryButton from "../../Components/PrimaryButton";
+
+export default function Show({ team, members = [], invitations = [], isOwner, status }) {
+  const rename = useForm({ name: team?.name || "" });
+  const invite = useForm({ email: "", role: "member" });
+  return (
+    <AuthenticatedLayout title={team?.name || "Team"}>
+      <Head title={team?.name || "Team"} />
+      <div className="mx-auto max-w-2xl space-y-8">
+        {status ? <p className="text-sm text-brand">{status}</p> : null}
+        {isOwner ? (
+          <section className="rounded-2xl border border-line bg-panel p-6">
+            <h2 className="font-display text-xl font-semibold">Team settings</h2>
+            <form className="mt-4 space-y-4" onSubmit={(e) => { e.preventDefault(); rename.put(`/teams/${team.id}`); }}>
+              <TextInput label="Name" value={rename.data.name} onChange={(e) => rename.setData("name", e.target.value)} />
+              <PrimaryButton className="w-auto" disabled={rename.processing}>Save</PrimaryButton>
+            </form>
+          </section>
+        ) : null}
+        <section className="rounded-2xl border border-line bg-panel p-6">
+          <h2 className="font-display text-xl font-semibold">Members</h2>
+          <ul className="mt-4 space-y-2">
+            {members.map((m) => (
+              <li key={m.id} className="flex justify-between text-sm">
+                <span>{m.name} <span className="text-muted">({m.email})</span></span>
+                <span className="text-muted">{m.role}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        {isOwner ? (
+          <section className="rounded-2xl border border-line bg-panel p-6">
+            <h2 className="font-display text-xl font-semibold">Invite</h2>
+            <form className="mt-4 space-y-4" onSubmit={(e) => { e.preventDefault(); invite.post(`/teams/${team.id}/members`); }}>
+              <TextInput label="Email" type="email" value={invite.data.email} onChange={(e) => invite.setData("email", e.target.value)} error={invite.errors.email} />
+              <PrimaryButton className="w-auto" disabled={invite.processing}>Send invite</PrimaryButton>
+            </form>
+            {invitations.length ? (
+              <ul className="mt-4 text-sm text-muted">
+                {invitations.map((i) => (
+                  <li key={i.id}>{i.email} · {i.role}</li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
+      </div>
+    </AuthenticatedLayout>
+  );
+}

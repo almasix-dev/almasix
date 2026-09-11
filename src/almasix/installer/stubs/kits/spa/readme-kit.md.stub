@@ -1,0 +1,17 @@
+## SPA kit (Inertia)
+
+This application was scaffolded with the **SPA** starter kit — session auth over
+**almasix-inertia** with the official `@inertiajs/*` client.
+
+Product surface (Forge):
+- Brand landing → Dashboard, Notifications, Settings (Profile / Password / 2FA / Appearance), Teams
+- Light + dark (`class="dark"` on `<html>`), teal `#0d9488` + chartreuse accent `#e8ff47`
+- Fonts: Fraunces (display) + DM Sans (UI)
+
+Dev:
+```bash
+npm install && npm run dev
+uv run smith serve   # or: smith serve
+```
+
+Ensure `almasix-inertia` is installed (see `pyproject.toml`).

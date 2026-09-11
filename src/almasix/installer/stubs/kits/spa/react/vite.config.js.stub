@@ -1,0 +1,24 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { resolve } from "node:path";
+import almasix from "./vite-plugin-almasix.js";
+
+export default defineConfig({
+  plugins: [almasix(), react(), tailwindcss()],
+  publicDir: false,
+  build: {
+    outDir: "public/build",
+    emptyOutDir: true,
+    manifest: true,
+    rollupOptions: {
+      input: {
+        app: resolve("resources/js/app.jsx"),
+        css: resolve("resources/css/app.css"),
+      },
+    },
+  },
+  server: {
+    origin: "http://127.0.0.1:5173",
+  },
+});
