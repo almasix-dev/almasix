@@ -138,8 +138,34 @@ async def test_csrf_accepts_xsrf_header_plain_and_encrypted(
         enc_req._session = session
         enc_res = await VerifyCsrfToken().handle(enc_req, ok)
         assert enc_res.status_code == 200
+
+        # Tampered dotted payload → DecryptException → treated as plain (mismatch → 419).
+        bad_req = _request("POST", "/", headers={"X-XSRF-TOKEN": "aaa.bbb.ccc"})
+        bad_req._session = session
+        with pytest.raises(Exception) as exc:
+            await VerifyCsrfToken().handle(bad_req, ok)
+        assert getattr(exc.value, "status_code", None) == 419
     finally:
         reset_session(token)
+
+
+@pytest.mark.asyncio
+async def test_csrf_decrypt_xsrf_swallows_unexpected_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = ConfigRepository()
+    repo.set("app.key", "test-key")
+    set_repository(repo)
+    mw = VerifyCsrfToken()
+
+    def boom(*_a, **_k):
+        raise RuntimeError("encrypter unavailable")
+
+    monkeypatch.setattr(
+        "almasix.encryption.encrypter.Encrypter.decrypt_string",
+        boom,
+    )
+    assert mw._decrypt_xsrf("a.b.c") is None
 
 
 @pytest.mark.asyncio
