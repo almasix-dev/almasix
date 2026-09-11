@@ -27,6 +27,12 @@ def test_scaffold_web_kit_forces_auth_surface(tmp_path: Path) -> None:
     assert (root / "resources" / "views" / "settings" / "profile.prism.html").is_file()
     css = (root / "resources" / "css" / "app.css").read_text(encoding="utf-8")
     assert "0d9488" in css
+    layout = (root / "resources" / "views" / "layouts" / "app.prism.html").read_text(encoding="utf-8")
+    assert "@conduit('theme_toggle')" in layout
+    assert "theme_toggle" not in (root / "app" / "http" / "controllers" / "two_factor_controller.py").read_text(
+        encoding="utf-8"
+    )
+    assert (root / "app" / "conduit" / "theme_toggle.py").is_file()
 
 
 def test_scaffold_api_kit_forces_none_stack(tmp_path: Path) -> None:

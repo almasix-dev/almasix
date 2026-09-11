@@ -7,7 +7,6 @@ from app.models.team_invitation import TeamInvitation
 
 from almasix.auth import auth
 from almasix.config import config
-from almasix.conduit import conduit
 from almasix.http import Controller, Request, Response, redirect
 from almasix.prism import view
 from almasix.routing import url
@@ -29,7 +28,6 @@ class TeamController(Controller):
                 "teams": teams,
                 "status": request.session.get("status"),
                 "create_url": url("/teams/create", absolute=False),
-                "theme_toggle": conduit("theme_toggle"),
                 "__authenticated": True,
             },
         )
@@ -41,7 +39,6 @@ class TeamController(Controller):
                 "name": str(config("app.name", "{{ app_display }}")),
                 "form_action": url("/teams", absolute=False),
                 "error": request.session.get("error"),
-                "theme_toggle": conduit("theme_toggle"),
                 "__authenticated": True,
             },
         )
@@ -105,7 +102,6 @@ class TeamController(Controller):
                 "invite_url": url(f"/teams/{team}/invitations", absolute=False),
                 "leave_url": url(f"/teams/{team}/leave", absolute=False),
                 "delete_url": url(f"/teams/{team}", absolute=False),
-                "theme_toggle": conduit("theme_toggle"),
                 "__authenticated": True,
             },
         )

@@ -28,7 +28,7 @@
     </aside>
     <div class="main">
       <header class="topbar">
-        @isset(theme_toggle){!! theme_toggle !!}@endisset
+        @conduit('theme_toggle')
         <details>
           <summary class="btn btn-ghost" style="list-style:none">Account</summary>
           <div style="position:absolute;right:1rem;background:var(--surface);border:1px solid var(--line);border-radius:.75rem;padding:.35rem 0;min-width:10rem;z-index:20">

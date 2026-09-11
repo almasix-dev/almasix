@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from almasix.auth import auth
 from almasix.config import config
-from almasix.conduit import conduit
 from almasix.http import Controller, Request, Response, redirect
 from almasix.prism import view
 from almasix.routing import url
@@ -27,7 +26,6 @@ class NotificationController(Controller):
                 "empty": len(items) == 0,
                 "status": request.session.get("status"),
                 "mark_all_url": url("/notifications/mark-all-read", absolute=False),
-                "theme_toggle": conduit("theme_toggle"),
                 "__authenticated": True,
             },
         )

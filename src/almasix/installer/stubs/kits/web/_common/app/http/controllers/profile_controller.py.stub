@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from almasix.auth import auth
 from almasix.config import config
-from almasix.conduit import conduit
 from almasix.hashing import Hash
 from almasix.http import Controller, Request, Response, redirect
 from almasix.prism import view
@@ -25,7 +24,6 @@ class ProfileController(Controller):
                 "photo_url": user.profile_photo_url() if user is not None and hasattr(user, "profile_photo_url") else None,
                 "status": request.session.get("status"),
                 "error": request.session.get("error"),
-                "theme_toggle": conduit("theme_toggle"),
                 "update_url": url("/user/profile-information", absolute=False),
                 "photo_url_action": url("/user/profile-photo", absolute=False),
                 "delete_url": url("/user", absolute=False),
@@ -81,7 +79,6 @@ class ProfileController(Controller):
                 "form_action": url("/user/password", absolute=False),
                 "status": request.session.get("status"),
                 "error": request.session.get("error"),
-                "theme_toggle": conduit("theme_toggle"),
                 "__authenticated": True,
             },
         )
@@ -91,7 +88,6 @@ class ProfileController(Controller):
             "settings.appearance",
             {
                 "name": str(config("app.name", "{{ app_display }}")),
-                "theme_toggle": conduit("theme_toggle"),
                 "__authenticated": True,
             },
         )

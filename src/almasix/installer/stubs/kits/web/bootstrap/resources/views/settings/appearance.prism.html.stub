@@ -11,5 +11,5 @@
 
   <h1 class="font-display h3 fw-semibold">Appearance</h1>
   <p class="text-secondary small">Choose light, dark, or system.</p>
-  <div class="mt-3">@isset(theme_toggle){!! theme_toggle !!}@endisset</div>
+  <div class="mt-3">@conduit('theme_toggle')</div>
 @endsection
