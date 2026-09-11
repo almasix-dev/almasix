@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.6.1` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.6.2` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -871,7 +871,7 @@ cd examples/progress && python smith progress:deploy
 - [x] Default `GET /up` health probe (`ApplicationBuilder.with_health`); outside Almasix middleware stacks
 - [x] Starlight **Deployment** page (env, serve, optimize, migrate/queues, bare metal, container, releasing)
 - [x] `examples/deploy/` Dockerfile + compose (web + queue worker + Postgres, `/up` healthcheck)
-- [x] Package version **0.6.1** in `pyproject.toml` / `__version__` (0.5.1 already on PyPI; tag `v0.6.1` to publish)
+- [x] Package version **0.6.2** in `pyproject.toml` / `__version__` (0.5.1 already on PyPI; tag `v0.6.2` to publish)
 - [x] Living example: `smith progress:deploy`; the board marks M38 complete
 
 ---
@@ -1235,6 +1235,7 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] `almasix new --kit …` + interactive prompt; Web stacks Tailwind / Bootstrap / none
 - [x] Forge design language — brand-first landing, authenticated chrome, light/dark
 - [x] Full auth depth: reset, verify, confirm, profile/photo, 2FA, teams, notifications shell, settings
+- [x] **HTTP auth soak** — `smith progress:kits` migrates Web + Vue scaffolds and asserts CSRF 419, register → email verify, logout, login (via `almasix.installer.kit_soak`)
 - [x] Tokens API-only on API kit; SPA depends on `almasix[inertia]`; web on `almasix[conduit]`
 - [x] Starlight **Starter Kits**; `smith progress:kits`; board M36 complete; `tests/smoke/test_m36_smoke.py`
 

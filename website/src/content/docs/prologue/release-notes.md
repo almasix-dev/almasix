@@ -11,6 +11,15 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.6.2
+
+- **CSRF / Inertia** — web responses mint a readable `XSRF-TOKEN` cookie;
+  `X-XSRF-TOKEN` decrypts when `EncryptCookies` wrapped the value (fixes Vue/React
+  kit register **419**)
+- **Starter kit auth soak** — `smith progress:kits` migrates Web + Vue scaffolds
+  and asserts CSRF 419, register → email verify, logout, login
+  (`almasix.installer.kit_soak`)
+
 ## 0.6.1
 
 - **Extract** — Conduit and Inertia ship as first-party packages

@@ -7,6 +7,23 @@ Read the [Release Notes](/prologue/release-notes/) for what shipped. This page
 covers what to change in **your** application when you bump the `almasix`
 dependency.
 
+## From 0.6.1 to 0.6.2
+
+1. **Bump the package**
+
+   ```bash
+   pip install -U almasix==0.6.2
+   ```
+
+2. **Inertia / SPA CSRF** — no app code change required. Restart the app so
+   `VerifyCsrfToken` mints `XSRF-TOKEN` on web responses; Vue/React/Svelte
+   `form.post(...)` should stop returning **419**.
+
+3. **Existing kits** — if you hit kit install or Conduit `theme_toggle` issues on
+   an older scaffold, prefer re-scaffolding or pulling the stub fixes from
+   [Starter Kits](/starter-kits/). Day-1 auth is covered by `smith progress:kits`
+   in the framework tree.
+
 ## From 0.5.x to 0.6.x
 
 1. **Bump the package**
@@ -14,7 +31,7 @@ dependency.
    ```bash
    pip install -U 'almasix==0.6.*'
    # or pin exactly
-   pip install -U almasix==0.6.0
+   pip install -U almasix==0.6.2
    ```
 
 2. **Optional: starter kits** — new apps can pick a kit with

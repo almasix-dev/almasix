@@ -433,6 +433,7 @@ def _milestones() -> list[dict]:
             "status": "complete",
             "proof": [
                 "smith progress:kits",
+                "web + vue auth soak (register→verify, logout, login)",
                 "almasix new --kit web|api|react|vue|svelte",
                 "Forge design — landing + auth chrome, light/dark",
                 "docs/starter-kits",
@@ -459,7 +460,7 @@ def _milestones() -> list[dict]:
                 "smith serve --workers",
                 "GET /up health probe",
                 "docs/deployment + examples/deploy",
-                "PyPI Trusted Publishing (0.6.0)",
+                "PyPI Trusted Publishing (0.6.2)",
             ],
         },
         {

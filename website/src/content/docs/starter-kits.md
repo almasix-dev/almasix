@@ -16,7 +16,8 @@ almasix new myspa --kit react   # or vue | svelte
 almasix stacks                  # lists kits + stacks + databases
 ```
 
-Progress proof: `smith progress:kits`.
+Progress proof: `smith progress:kits` (scaffolds every kit, then soaks Web + Vue
+register → email verify → logout → login).
 
 ## Kits
 
