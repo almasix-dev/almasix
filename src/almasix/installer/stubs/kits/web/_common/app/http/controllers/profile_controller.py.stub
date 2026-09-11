@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import uuid
+from pathlib import Path
+
 from almasix.auth import auth
 from almasix.config import config
 from almasix.hashing import Hash
@@ -14,18 +17,24 @@ from almasix.translation import __
 class ProfileController(Controller):
     async def edit(self, request: Request) -> Response:
         user = auth().user()
+        name = _attr(user, "name")
         return view(
             "settings.profile",
             {
                 "name": str(config("app.name", "{{ app_display }}")),
                 "user": user,
-                "user_name": _attr(user, "name"),
+                "user_name": name,
                 "user_email": _attr(user, "email"),
-                "photo_url": user.profile_photo_url() if user is not None and hasattr(user, "profile_photo_url") else None,
+                "user_initials": _initials(name),
+                "photo_url": (
+                    user.profile_photo_url()
+                    if user is not None and hasattr(user, "profile_photo_url")
+                    else None
+                ),
                 "status": request.session.get("status"),
                 "error": request.session.get("error"),
                 "update_url": url("/user/profile-information", absolute=False),
-                "photo_url_action": url("/user/profile-photo", absolute=False),
+                "photo_action": url("/user/profile-photo", absolute=False),
                 "delete_url": url("/user", absolute=False),
                 "__authenticated": True,
             },
@@ -98,13 +107,32 @@ class ProfileController(Controller):
             return redirect("/login")
         upload = request.file("photo")
         if upload is None:
-            request.session.flash("error", "Choose a photo to upload.")
+            request.session.flash("error", "Choose an image file, then click Save photo.")
             return redirect("/user/profile")
         if isinstance(upload, list):
             upload = upload[0]
-        path = await upload.store("profile-photos")
-        user.set_attribute("profile_photo_path", path)
+        if not getattr(upload, "filename", None):
+            request.session.flash("error", "Choose an image file, then click Save photo.")
+            return redirect("/user/profile")
+        suffix = Path(str(upload.filename)).suffix.lower()
+        if suffix not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
+            request.session.flash("error", "Use a JPG, PNG, GIF, or WebP image.")
+            return redirect("/user/profile")
+        stored = await upload.store_as(
+            "profile-photos",
+            f"{uuid.uuid4().hex}{suffix}",
+            disk="public",
+        )
+        previous = _attr(user, "profile_photo_path")
+        user.set_attribute("profile_photo_path", stored)
         await user.save()
+        if previous and previous != stored:
+            try:
+                from almasix.filesystem import Storage
+
+                Storage.disk("public").delete(str(previous))
+            except Exception:
+                pass
         request.session.flash("status", "Profile photo updated.")
         return redirect("/user/profile")
 
@@ -133,3 +161,12 @@ def _attr(user, key: str):
     if hasattr(user, "get_attribute"):
         return user.get_attribute(key) or ""
     return getattr(user, key, "") or ""
+
+
+def _initials(name: str) -> str:
+    parts = [p for p in str(name or "").split() if p]
+    if not parts:
+        return "?"
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[-1][0]).upper()

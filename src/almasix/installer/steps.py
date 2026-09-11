@@ -38,6 +38,7 @@ def run_steps(plan: InstallPlan, root: Path) -> list[StepResult]:
         git_init(plan, root),
         create_venv(plan, root),
         install_dependencies(plan, root),
+        storage_link(plan, root),
     ]
     results.append(install_node(plan, root))
     results.append(migrate(plan, root))
@@ -134,6 +135,25 @@ def install_dependencies(plan: InstallPlan, root: Path) -> StepResult:
             detail=_failure_detail(completed, "dependency install failed"),
         )
     return StepResult("install", ran=True, detail=" ".join(command))
+
+
+def storage_link(plan: InstallPlan, root: Path) -> StepResult:
+    """Create ``public/storage`` → ``storage/app/public`` for profile photos etc."""
+    if not plan.install:
+        return StepResult("storage-link", ran=False)
+    python = app_python(root)
+    smith = root / "smith"
+    if not smith.is_file():
+        return StepResult("storage-link", ran=False, detail="smith script missing")
+    completed = _run((str(python), str(smith), "storage:link"), root)
+    if completed.returncode != 0:
+        return StepResult(
+            "storage-link",
+            ran=True,
+            ok=False,
+            detail=_failure_detail(completed, "smith storage:link failed"),
+        )
+    return StepResult("storage-link", ran=True, detail="smith storage:link")
 
 
 def install_node(plan: InstallPlan, root: Path) -> StepResult:

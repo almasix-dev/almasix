@@ -40,6 +40,17 @@ def test_scaffold_web_kit_forces_auth_surface(tmp_path: Path) -> None:
     destroy_idx = routes.index('Route.delete("/user"')
     confirm_block = routes.index('middleware=["password.confirm"]')
     assert destroy_idx < confirm_block
+    profile_ctl = (root / "app" / "http" / "controllers" / "profile_controller.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'disk="public"' in profile_ctl
+    assert "photo_action" in profile_ctl
+    profile_view = (root / "resources" / "views" / "settings" / "profile.prism.html").read_text(
+        encoding="utf-8"
+    )
+    assert "Save photo" in profile_view
+    assert 'enctype="multipart/form-data"' in profile_view
+    assert "photo_url_action" not in profile_view
 
 
 def test_scaffold_api_kit_forces_none_stack(tmp_path: Path) -> None:

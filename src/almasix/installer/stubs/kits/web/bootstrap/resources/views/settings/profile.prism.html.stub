@@ -3,34 +3,57 @@
 @section('content')
 
   <ul class="nav nav-pills gap-1 mb-4 small">
-    <li class="nav-item"><a class="nav-link" href="/user/profile">Profile</a></li>
+    <li class="nav-item"><a class="nav-link active" href="/user/profile">Profile</a></li>
     <li class="nav-item"><a class="nav-link" href="/user/password">Password</a></li>
     <li class="nav-item"><a class="nav-link" href="/user/two-factor-authentication">Two-factor</a></li>
     <li class="nav-item"><a class="nav-link" href="/user/appearance">Appearance</a></li>
   </ul>
 
   <h1 class="font-display h3 fw-semibold">Profile</h1>
-  <p class="text-secondary small">Update your name, email, and photo.</p>
+  <p class="text-secondary small">Your photo, name, and email.</p>
   @isset(status)<div class="alert alert-success py-2">{{ status }}</div>@endisset
   @isset(error)<div class="alert alert-danger py-2">{{ error }}</div>@endisset
-  <form method="post" action="{{ photo_url_action }}" enctype="multipart/form-data" class="d-flex align-items-center gap-3 my-4">
-    @csrf
-    <input type="file" name="photo" accept="image/*" class="form-control form-control-sm" style="max-width:16rem"/>
-    <button type="submit" class="btn btn-outline-secondary btn-sm">Upload</button>
-  </form>
-  <form method="post" action="{{ update_url }}" class="col-md-6">
-    @csrf
-    {!! method_field('PUT') !!}
-    <div class="mb-3"><label class="form-label">Name</label><input type="text" name="name" value="{{ user_name }}" required class="form-control"/></div>
-    <div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" value="{{ user_email }}" required class="form-control"/></div>
-    <button type="submit" class="btn btn-brand">Save</button>
-  </form>
+
+  <div class="card my-4 col-md-6">
+    <div class="card-body">
+      <h2 class="h6">Profile photo</h2>
+      <p class="text-secondary small mb-3">JPG, PNG, GIF, or WebP.</p>
+      <form method="post" action="{{ photo_action }}" enctype="multipart/form-data" class="d-flex flex-wrap align-items-center gap-3">
+        @csrf
+        @isset(photo_url)
+          <img src="{{ photo_url }}" alt="Your profile photo" class="rounded-circle border" width="72" height="72" style="object-fit:cover"/>
+        @else
+          <div class="rounded-circle bg-brand bg-opacity-25 text-brand d-flex align-items-center justify-content-center fw-semibold" style="width:72px;height:72px" aria-hidden="true">{{ user_initials }}</div>
+        @endisset
+        <div class="flex-grow-1" style="min-width:12rem">
+          <input type="file" name="photo" accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" required class="form-control form-control-sm mb-2"/>
+          <button type="submit" class="btn btn-outline-secondary btn-sm">Save photo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card col-md-6">
+    <div class="card-body">
+      <h2 class="h6">Name &amp; email</h2>
+      <form method="post" action="{{ update_url }}" class="mt-3">
+        @csrf
+        {!! method_field('PUT') !!}
+        <div class="mb-3"><label class="form-label">Name</label><input type="text" name="name" value="{{ user_name }}" required autocomplete="name" class="form-control"/></div>
+        <div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" value="{{ user_email }}" required autocomplete="email" class="form-control"/></div>
+        <button type="submit" class="btn btn-brand">Save profile</button>
+      </form>
+    </div>
+  </div>
+
   <div class="border border-danger-subtle rounded p-3 mt-5 col-md-6">
     <h2 class="h6 text-danger">Delete account</h2>
+    <p class="small text-secondary">This cannot be undone.</p>
     <form method="post" action="{{ delete_url }}">
       @csrf
       {!! method_field('DELETE') !!}
-      <input type="password" name="password" required placeholder="Confirm with password" class="form-control form-control-sm mb-2"/>
+      <label class="form-label small">Confirm password</label>
+      <input type="password" name="password" required autocomplete="current-password" placeholder="Your password" class="form-control form-control-sm mb-2"/>
       <button type="submit" class="btn btn-danger btn-sm">Delete account</button>
     </form>
   </div>
