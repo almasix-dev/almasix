@@ -24,7 +24,7 @@ runner = CliRunner()
 def test_s1_almasix_version() -> None:
     result = runner.invoke(almasix_app, ["version"])
     assert result.exit_code == 0
-    assert "Almasix 0.5.1" in result.stdout
+    assert "Almasix 0.6.0" in result.stdout
 
 
 def test_s2_almasix_new_tree(tmp_path: Path) -> None:
@@ -64,7 +64,7 @@ def test_s4_welcome_http(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
 def test_s5_smith_version() -> None:
     result = runner.invoke(smith_app, ["version"])
     assert result.exit_code == 0
-    assert "Almasix 0.5.1" in result.stdout
+    assert "Almasix 0.6.0" in result.stdout
 
 
 def test_s6_smith_serve_without_bootstrap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
