@@ -11,15 +11,25 @@ tokens instead of CSRF.
 
 1. `StartSession` loads the signed (and encrypted) session cookie
 2. `VerifyCsrfToken` ensures `_csrf_token` exists and checks mutating requests
-3. Prism `@csrf` emits a hidden `_token` field from `csrf_token`
+3. Every successful response also sets a readable `XSRF-TOKEN` cookie (Laravel
+   parity) so SPA / Inertia clients can echo it as `X-XSRF-TOKEN`
+4. Prism `@csrf` emits a hidden `_token` field from `csrf_token`
 
 Accepted sources for the token:
 
 - Form field `_token` (from `@csrf`)
-- Header `X-CSRF-TOKEN`
-- Header `X-XSRF-TOKEN`
+- Header `X-CSRF-TOKEN` (plain token, e.g. from a meta tag)
+- Header `X-XSRF-TOKEN` (value of the `XSRF-TOKEN` cookie — decrypts when
+  `EncryptCookies` wrapped it)
 
 Mismatch raises **419** (`TokenMismatchError`).
+
+### Inertia / Vue / React / Svelte
+
+Official `@inertiajs/*` clients use axios defaults (`xsrfCookieName` /
+`xsrfHeaderName`). After the first `GET` of a page, the browser has
+`XSRF-TOKEN`; subsequent `form.post(...)` calls send `X-XSRF-TOKEN`
+automatically. You do not need a hidden `@csrf` field in Vue forms.
 
 ## Prism
 
