@@ -433,6 +433,7 @@ def _milestones() -> list[dict]:
             "status": "complete",
             "proof": [
                 "smith progress:kits",
+                "web + vue auth soak (register→verify, logout, login)",
                 "almasix new --kit web|api|react|vue|svelte",
                 "Forge design — landing + auth chrome, light/dark",
                 "docs/starter-kits",

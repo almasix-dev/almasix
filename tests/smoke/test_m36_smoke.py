@@ -55,6 +55,8 @@ def test_m36_progress_kits_command(progress_cwd: Path) -> None:
     assert "web/tailwind ok" in result.stdout
     assert "api/signet ok" in result.stdout
     assert "spa/react ok" in result.stdout
+    assert "web auth soak ok" in result.stdout
+    assert "spa auth soak ok" in result.stdout
 
 
 def test_m36_board_marks_kits_complete(progress_client: TestClient) -> None:
@@ -62,6 +64,7 @@ def test_m36_board_marks_kits_complete(progress_client: TestClient) -> None:
     by_id = {m["id"]: m for m in data["milestones"]}
     assert by_id["M36"]["status"] == "complete"
     assert any("progress:kits" in p for p in by_id["M36"]["proof"])
+    assert any("auth soak" in p for p in by_id["M36"]["proof"])
 
 
 def test_m36_docs_and_stubs_exist() -> None:

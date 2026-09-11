@@ -1,8 +1,11 @@
-"""Demo M36 starter kits — scaffold each kit overlay and assert the Forge surface."""
+"""Demo M36 starter kits — scaffold overlays, then soak Web + Vue auth HTTP."""
 
 from __future__ import annotations
 
+import os
 import shutil
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -30,6 +33,7 @@ class ProgressKitsCommand(Command):
             )
             self._assert_web(web)
             self.info("web/tailwind ok")
+            self._soak(web, mode="web")
 
             # Web CSS variants
             for stack in ("bootstrap", "none"):
@@ -59,7 +63,7 @@ class ProgressKitsCommand(Command):
             assert "HasApiTokens" in user
             self.info("api/signet ok")
 
-            # SPA — React / Vue / Svelte
+            # SPA — React / Vue / Svelte (file surface for all; HTTP soak for Vue)
             for frontend in ("react", "vue", "svelte"):
                 root = scaffold_app(
                     f"kit{frontend}",
@@ -69,6 +73,8 @@ class ProgressKitsCommand(Command):
                 )
                 self._assert_spa(root, frontend)
                 self.info(f"spa/{frontend} ok")
+                if frontend == "vue":
+                    self._soak(root, mode="spa")
 
             # Catalogue honesty
             assert "none" in KIT_NAMES and "web" in KIT_NAMES
@@ -80,6 +86,42 @@ class ProgressKitsCommand(Command):
             return 0
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
+
+    def _soak(self, root: Path, *, mode: str) -> None:
+        """Migrate SQLite, then register→logout→login in a clean subprocess."""
+        migrated = subprocess.run(
+            [sys.executable, "smith", "migrate", "--force"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+            env={**os.environ, "APP_BASE_PATH": ""},
+        )
+        assert migrated.returncode == 0, (
+            f"migrate failed in {root}:\n{migrated.stdout}\n{migrated.stderr}"
+        )
+        self.line(f"  migrate ({mode}) -> ok")
+
+        script = (
+            "from almasix.installer.kit_soak import soak_auth; "
+            f"print(soak_auth('.', mode={mode!r}))"
+        )
+        soaked = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+            env={**os.environ, "APP_BASE_PATH": ""},
+        )
+        out = (soaked.stdout or "") + (soaked.stderr or "")
+        assert soaked.returncode == 0, f"auth soak failed ({mode}) in {root}:\n{out}"
+        line = next(
+            (row for row in soaked.stdout.splitlines() if "auth soak ok" in row),
+            soaked.stdout.strip().splitlines()[-1] if soaked.stdout.strip() else "no output",
+        )
+        self.line(f"  {line}")
+        self.info(f"{mode} auth soak ok")
 
     def _assert_web(self, root: Path) -> None:
         routes = (root / "routes" / "web.py").read_text(encoding="utf-8")

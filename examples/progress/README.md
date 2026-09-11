@@ -200,7 +200,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M51** | `smith progress:lint` — pinned `ruff==0.16.6`, `make lint`, CI lint job |
 | **M38** | `smith progress:deploy` — `serve --workers`, `/up`, Deployment docs, `examples/deploy`, Trusted Publishing |
 | **M39** | `smith progress:docs` — Prologue, Basics teaching order, latest-major+main switcher, older-docs banner |
-| **M36** | `smith progress:kits` — `almasix new --kit web|api|react|vue|svelte`, Forge design, full auth depth |
+| **M36** | `smith progress:kits` — scaffold every kit + **web/vue auth soak** (register→verify, logout, login); Forge design |
 | **M54** | `smith progress:conduit` — `almasix.conduit`, `/conduit`, wire update, Alpine `$wire`, LW4 parity matrix |
 | **M55** | `smith progress:inertia` — lazy/defer/merge props, `/inertia`, `X-Inertia` JSON, SSR stub |
 | **M48** | Roadmap on `/progress`; see `docs/PLAN.md` |

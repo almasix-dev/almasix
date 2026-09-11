@@ -1420,12 +1420,12 @@ Laravel [Starter Kits](https://laravel.com/docs/starter-kits) — opt-in applica
 - **Web (`--kit web`):** Prism + Conduit; Tailwind 4 / Bootstrap / none; full auth (register/login/reset/verify/confirm/profile/photo/2FA/teams/notifications shell/settings)
 - **API (`--kit api`):** Signet PAT JSON polarity (tokens API-only); forces `stack=none`
 - **SPA (`--kit react|vue|svelte`):** Official `@inertiajs/*` clients; same product surface as Web; forces Tailwind
-- Selected by `almasix new` prompt / `--kit`; Progress: `smith progress:kits`; smoke `tests/smoke/test_m36_smoke.py`
+- Selected by `almasix new` prompt / `--kit`; Progress: `smith progress:kits` (file surfaces + **Web/Vue HTTP auth soak**); smoke `tests/smoke/test_m36_smoke.py`
 - Docs: Starlight **Starter Kits**
 
 **Depends on:** M32, M7, M37 Signet, M6 Prism, M54 Conduit, M55 Inertia.
 
-**Gate:** each kit scaffolds; auth/token surfaces present; smoke green. **Done.**
+**Gate:** each kit scaffolds; auth/token surfaces present; Web + Vue register/login soak green; smoke green. **Done.**
 
 ### M54 — almasix.conduit (Livewire 4 parity)
 

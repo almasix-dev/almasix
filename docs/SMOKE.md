@@ -1235,6 +1235,7 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] `almasix new --kit …` + interactive prompt; Web stacks Tailwind / Bootstrap / none
 - [x] Forge design language — brand-first landing, authenticated chrome, light/dark
 - [x] Full auth depth: reset, verify, confirm, profile/photo, 2FA, teams, notifications shell, settings
+- [x] **HTTP auth soak** — `smith progress:kits` migrates Web + Vue scaffolds and asserts CSRF 419, register → email verify, logout, login (via `almasix.installer.kit_soak`)
 - [x] Tokens API-only on API kit; SPA depends on `almasix[inertia]`; web on `almasix[conduit]`
 - [x] Starlight **Starter Kits**; `smith progress:kits`; board M36 complete; `tests/smoke/test_m36_smoke.py`
 
