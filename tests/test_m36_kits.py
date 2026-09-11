@@ -42,6 +42,9 @@ def test_scaffold_spa_react(tmp_path: Path) -> None:
     assert (root / "resources" / "js" / "Pages" / "Welcome.jsx").is_file()
     assert "InertiaServiceProvider" in (root / "config" / "app.py").read_text(encoding="utf-8")
     assert (root / "package.json").is_file()
+    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
+    assert "almasix" in pyproject
+    assert "almasix-inertia" not in pyproject
 
 
 def test_resolve_plan_kit_flag(tmp_path: Path) -> None:

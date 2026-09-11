@@ -459,6 +459,7 @@ def test_the_installer_prefers_uv_and_falls_back_to_pip(tmp_path: Path, monkeypa
     python.write_text("", encoding="utf-8")
 
     monkeypatch.setattr(steps.shutil, "which", lambda name: "/usr/bin/uv" if name == "uv" else None)
+    monkeypatch.setattr(steps, "kit_install_packages", lambda _plan: [])
     command = steps._python_install_command(_plan(tmp_path, install=True), root)
     assert command is not None and command[:2] == ("uv", "pip")
     assert "--python" in command and "-e" in command and "." in command
@@ -468,6 +469,29 @@ def test_the_installer_prefers_uv_and_falls_back_to_pip(tmp_path: Path, monkeypa
     assert command is not None and command[1:4] == ("-m", "pip", "install")
     assert "-e" in command and "." in command
     assert steps._python_install_command(_plan(tmp_path, installer="poetry"), root) is None
+
+
+def test_spa_kit_install_path_wires_monorepo_inertia(tmp_path: Path, monkeypatch) -> None:
+    from almasix.installer import steps
+
+    root = tmp_path / "app"
+    root.mkdir()
+    python = steps.venv_python(root)
+    python.parent.mkdir(parents=True, exist_ok=True)
+    python.write_text("", encoding="utf-8")
+
+    fw = tmp_path / "framework"
+    (fw / "src" / "almasix").mkdir(parents=True)
+    (fw / "packages" / "inertia").mkdir(parents=True)
+    (fw / "pyproject.toml").write_text('[project]\nname = "almasix"\n', encoding="utf-8")
+
+    monkeypatch.setattr(steps, "framework_source_root", lambda: fw)
+    monkeypatch.setattr(steps.shutil, "which", lambda _name: None)
+    command = steps._python_install_command(_plan(tmp_path, install=True, kit="vue"), root)
+    assert command is not None
+    assert "-e" in command and str(fw) in command
+    assert str(fw / "packages" / "inertia") in command
+    assert command[-2:] == ("-e", ".")
 
 
 def test_run_streams_subprocess_output_instead_of_capturing(

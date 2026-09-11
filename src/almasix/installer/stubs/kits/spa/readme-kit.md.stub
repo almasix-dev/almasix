@@ -1,7 +1,7 @@
 ## SPA kit (Inertia)
 
 This application was scaffolded with the **SPA** starter kit — session auth over
-**almasix-inertia** with the official `@inertiajs/*` client.
+the Almasix Inertia adapter with the official `@inertiajs/*` client.
 
 Product surface (Forge):
 - Brand landing → Dashboard, Notifications, Settings (Profile / Password / 2FA / Appearance), Teams
@@ -14,4 +14,4 @@ npm install && npm run dev
 uv run smith serve   # or: smith serve
 ```
 
-Ensure `almasix-inertia` is installed (see `pyproject.toml`).
+The Inertia server adapter ships with Almasix (`import inertia`).

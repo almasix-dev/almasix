@@ -70,11 +70,12 @@ Conduit ships a theme-toggle island on the authenticated layout. Routes live in
 almasix new forgespa --kit react -n
 cd forgespa
 pip install -e .
-pip install -e /path/to/almasix/packages/inertia   # until PyPI almasix-inertia
 npm install && npm run build
 python smith migrate && python smith serve
 ```
 
+The Inertia server adapter ships with Almasix until it is extracted to PyPI as
+`almasix-inertia`. SPA kits only need `almasix` in `pyproject.toml`.
 Pages under `resources/js/Pages/` use the official Inertia client. Root Prism
 view provides `@inertia` / `@inertiaHead`. Middleware alias `inertia` runs on
 the web stack; `stateful_api()` is enabled for cookie SPA flows.

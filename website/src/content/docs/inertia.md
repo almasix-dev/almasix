@@ -10,8 +10,8 @@ description: Server-side Inertia.js adapter for official Vue, React, and Svelte 
 **no forked JS client**. SSR uses Inertia’s Node `/render` protocol.
 
 ```bash
-pip install -e packages/inertia
-# register inertia.provider.InertiaServiceProvider (Progress already does)
+pip install almasix   # Inertia adapter ships in the wheel until extract
+# register inertia.provider.InertiaServiceProvider (SPA kits / Progress already do)
 ```
 
 ```python
