@@ -36,8 +36,8 @@ with Route.group(middleware=["web"]):
         Route.get("/email/verify/{id}/{hash}", [VerificationController, "verify"], name="verification.verify")
         Route.post("/email/verification-notification", [VerificationController, "resend"], name="verification.send")
 
-        Route.get("/user/confirm-password", [ConfirmPasswordController, "show"], name="password.confirm")
-        Route.post("/user/confirm-password", [ConfirmPasswordController, "store"])
+        Route.get("/confirm-password", [ConfirmPasswordController, "show"], name="password.confirm")
+        Route.post("/confirm-password", [ConfirmPasswordController, "store"])
 
         with Route.group(middleware=["verified"]):
             Route.get("/dashboard", [DashboardController, "index"], name="dashboard")

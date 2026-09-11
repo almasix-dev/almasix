@@ -49,14 +49,15 @@ with Route.group(middleware=["web"]):
             Route.put("/settings/password", [ProfileController, "update_password"], name="password.update")
             Route.post("/settings/profile-photo", [ProfileController, "update_photo"], name="profile.photo")
 
-            Route.get("/settings/two-factor", [TwoFactorController, "show"], name="two-factor.show")
-            Route.post("/settings/two-factor", [TwoFactorController, "enable"], name="two-factor.enable")
-            Route.post("/settings/two-factor/confirm", [TwoFactorController, "confirm"], name="two-factor.confirm")
-            Route.delete("/settings/two-factor", [TwoFactorController, "disable"], name="two-factor.disable")
-            Route.get("/settings/two-factor/recovery-codes", [TwoFactorController, "recovery_codes"], name="two-factor.recovery")
-            Route.post("/settings/two-factor/recovery-codes", [TwoFactorController, "regenerate"], name="two-factor.regenerate")
-
             Route.get("/settings/appearance", [ProfileController, "appearance"], name="appearance.edit")
+
+            with Route.group(middleware=["password.confirm"]):
+                Route.get("/settings/two-factor", [TwoFactorController, "show"], name="two-factor.show")
+                Route.post("/settings/two-factor", [TwoFactorController, "enable"], name="two-factor.enable")
+                Route.post("/settings/two-factor/confirm", [TwoFactorController, "confirm"], name="two-factor.confirm")
+                Route.delete("/settings/two-factor", [TwoFactorController, "disable"], name="two-factor.disable")
+                Route.get("/settings/two-factor/recovery-codes", [TwoFactorController, "recovery_codes"], name="two-factor.recovery")
+                Route.post("/settings/two-factor/recovery-codes", [TwoFactorController, "regenerate"], name="two-factor.regenerate")
 
             Route.get("/teams", [TeamController, "index"], name="teams.index")
             Route.post("/teams", [TeamController, "store"], name="teams.store")
