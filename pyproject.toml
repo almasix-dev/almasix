@@ -95,8 +95,10 @@ inertia = []
 almasix = "almasix.installer.cli:app"
 almasix-lsp = "almasix.lsp.cli:main"
 
-[project.entry-points."almasix.providers"]
-inertia = "inertia.provider:InertiaServiceProvider"
+# Inertia's provider is registered by SPA kit ``config/app.py`` while the
+# package is force-included in this wheel. The ``almasix.providers`` entry
+# point lives on the extracted ``almasix-inertia`` distribution
+# (``packages/inertia/pyproject.toml``) so plain apps are not auto-wired.
 
 [tool.hatch.build.targets.wheel]
 # Stubs and exception views live inside the package and are tracked, so hatchling

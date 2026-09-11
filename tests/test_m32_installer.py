@@ -408,7 +408,14 @@ def _plan(tmp_path: Path, **kwargs: object) -> InstallPlan:
 def test_nothing_runs_when_nothing_was_asked_for(tmp_path: Path) -> None:
     results = run_steps(_plan(tmp_path, npm=False), tmp_path)
 
-    assert [result.name for result in results] == ["git", "venv", "install", "npm", "migrate"]
+    assert [result.name for result in results] == [
+        "git",
+        "venv",
+        "install",
+        "storage-link",
+        "npm",
+        "migrate",
+    ]
     assert all(not result.ran for result in results)
 
 
