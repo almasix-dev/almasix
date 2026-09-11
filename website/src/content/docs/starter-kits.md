@@ -9,15 +9,15 @@ Starter kits are **overlays** on the application scaffolder. Pick one when you r
 `almasix new` (or pass `--kit`) and the installer layers production auth,
 settings, teams, and a shared **Forge** design language on top of the blank app.
 
-```bash
+```bash title="terminal"
 almasix new myapp --kit web --stack tailwind
 almasix new myapi --kit api
 almasix new myspa --kit react   # or vue | svelte
 almasix stacks                  # lists kits + stacks + databases
 ```
 
-Progress proof: `smith progress:kits` (scaffolds every kit, then soaks Web + Vue
-register → email verify → logout → login).
+After scaffolding, migrate and walk register → email verify → logout → login
+in the browser to confirm Day-1 auth.
 
 ## Kits
 
@@ -32,7 +32,7 @@ register → email verify → logout → login).
 
 Same language across Web and SPA:
 
-- **Landing** — brand-first, full-bleed hero (Outfit + JetBrains Mono, same as Progress), chartreuse CTA, teal brand `#0d9488`. No cards in the first viewport.
+- **Landing** — brand-first, full-bleed hero (Outfit + JetBrains Mono), chartreuse CTA, teal brand `#0d9488`. No cards in the first viewport.
 - **Authenticated chrome** — quiet sidebar (Dashboard, Notifications, Settings, Teams), theme toggle, light **and** dark (`class="dark"` + `localStorage`).
 - **CSS stacks** — Web kit honors Tailwind / Bootstrap / none; SPA kits always ship Vite + Tailwind 4.
 
@@ -53,7 +53,7 @@ Kits aim at Jetstream-class depth (not a thin login form):
 
 ## Web kit (Conduit)
 
-```bash
+```bash title="terminal"
 almasix new forgeweb --kit web --stack tailwind -n
 cd forgeweb && python -m venv .venv && source .venv/bin/activate
 pip install -e .
@@ -67,7 +67,7 @@ Conduit ships a theme-toggle island on the authenticated layout. Routes live in
 
 ## SPA kit (Inertia)
 
-```bash
+```bash title="terminal"
 almasix new forgespa --kit react -n
 cd forgespa
 pip install -e .
@@ -83,7 +83,7 @@ the web stack; `stateful_api()` is enabled for cookie SPA flows.
 
 ## API kit (Signet)
 
-```bash
+```bash title="terminal"
 almasix new forgeapi --kit api -n
 # issue a token
 curl -X POST /api/tokens -d '{"email":"…","password":"…","name":"cli"}'
@@ -95,14 +95,3 @@ curl /api/user -H "Authorization: Bearer …"
 Kits are files under `src/almasix/installer/stubs/kits/`. Publish a private
 scaffold with `smith stub:publish --scaffold` and point `almasix new --stubs`
 at your tree to keep team overlays.
-
-## Exhaust checklist
-
-- [x] Web / API / SPA overlays
-- [x] React + Vue + Svelte
-- [x] Tailwind 4 + Bootstrap + none (Web)
-- [x] Forge landing + authenticated chrome + dark mode
-- [x] Full auth / 2FA / teams / settings / notifications shell
-- [x] Tokens API-only
-- [x] Installer prompt + flags
-- [x] Progress + smoke

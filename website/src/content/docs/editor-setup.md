@@ -16,7 +16,7 @@ and the [Language server](/language-server/).
 
 ## Quick path
 
-```bash
+```bash title="terminal"
 # From an Almasix application root
 pip install 'almasix[lsp]'
 smith ide:install          # .vscode settings + JetBrains note
@@ -79,7 +79,7 @@ Full details: [`jetbrains/README.md`](https://github.com/almasix-dev/ide-support
 
 ## Type stubs
 
-```bash
+```bash title="terminal"
 smith ide:stubs
 ```
 

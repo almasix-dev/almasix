@@ -16,9 +16,9 @@ For how these docs relate to package versions, see
 - **CSRF / Inertia** — web responses mint a readable `XSRF-TOKEN` cookie;
   `X-XSRF-TOKEN` decrypts when `EncryptCookies` wrapped the value (fixes Vue/React
   kit register **419**)
-- **Starter kit auth soak** — `smith progress:kits` migrates Web + Vue scaffolds
-  and asserts CSRF 419, register → email verify, logout, login
-  (`almasix.installer.kit_soak`)
+- **Starter kit auth** — Web and Vue scaffolds migrate cleanly; CSRF minting
+  unblocks register; register → email verify → logout → login works out of the
+  box
 
 ## 0.6.1
 
@@ -59,8 +59,8 @@ GitHub Release.
 
 - **Breaking: `Artisan` → `Smith`** — console façade is `Smith.call` /
   `Smith.command` / `Smith.queue`; testing helper is `smith()` /
-  `TestCase.smith()`. No deprecated alias — see the
-  [Upgrade Guide](/prologue/upgrade/)
+  `TestCase.smith()`. (PHP Laravel's CLI was named Artisan.) No deprecated
+  alias — see the [Upgrade Guide](/prologue/upgrade/)
 - **Installer UX** — MongoDB as a documents option; live step logs; rich UI kit
   (layouts, auth, dashboard, stack error pages); default `npm install && npm
   run build` for Vite stacks when Node is available
@@ -81,7 +81,7 @@ GitHub Release.
   (`examples/deploy/`)
 - **Health probe** — `GET /up` registered by default (`Application.configure(…).with_health`)
 - **Docs journey** — Prologue (introduction, release notes, upgrade, versions);
-  Basics teaching order; beginner-first openings; no milestone IDs in user docs
+  Basics teaching order; beginner-first openings
 - **Version switcher** — latest major (`0.x`) by default; `main` opt-in; banner when
   not on latest
 - **Lint gate** — pinned Ruff check + format in CI (`make lint`)

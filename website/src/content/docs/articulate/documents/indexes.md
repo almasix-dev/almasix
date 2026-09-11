@@ -11,7 +11,7 @@ worth declaring so queries stay fast and unique constraints are enforced.
 Indexes live on the model as a tuple of dicts. The shape mirrors what Mongo's
 `create_index` accepts:
 
-```python
+```python title="app/models/article.py"
 class Article(Document):
     indexes = (
         {"keys": [("slug", 1)], "unique": True},
@@ -35,16 +35,16 @@ Mongo. Other options are best-effort there.
 
 ## Syncing
 
-```bash
-smith documents:index                 # every Document model under app/models
+```bash title="terminal"
+smith documents:index
 smith documents:index --model Article
-smith documents:index --pretend       # print what would be created
+smith documents:index --pretend
 smith documents:show --database mongodb
 ```
 
 From code:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Article.sync_indexes()
 ```
 

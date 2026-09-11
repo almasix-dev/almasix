@@ -5,8 +5,7 @@ description: Work with Articulate collections returned from queries.
 
 All multi-result sets returned by Articulate are instances of `almasix.orm.Collection`, including results retrieved via the `get` method or accessed via a relationship. The Articulate collection object extends Python list semantics and provides many helpful methods for working with your results.
 
-```python
-# app/http/controllers/example_controller.py
+```python title="app/http/controllers/example_controller.py"
 from almasix.orm import Collection
 
 users = await User.query().order_by("id").get()
@@ -34,9 +33,9 @@ users.to_dict()
 
 ## Keyed by the model, not the index
 
-Several inherited methods are overridden to work on the models' primary keys, matching Eloquent:
+Several methods work on the models' primary keys rather than list indexes:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 users.find(1)                    # the model whose key is 1
 users.find(other_model)          # by another model's key
 users.contains(1)                # membership by key, model, or callback
@@ -54,14 +53,14 @@ users.unique()                   # deduplicate by primary key
 
 `fresh` reloads every model from the database, dropping any that no longer exist. It accepts relations to eager-load:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 users = await users.fresh()
 users = await users.fresh("posts")
 ```
 
 `to_query` returns a query builder constrained to the collection's models, which is how you turn a loaded set back into a query:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await users.to_query().update({"active": True})
 ```
 
@@ -71,7 +70,7 @@ It raises `ValueError` on an empty collection, since there would be nothing to c
 
 To return your own collection type from a model, set `collection_class`:
 
-```python
+```python title="app/models/user.py"
 from almasix.orm import Collection, Model
 
 

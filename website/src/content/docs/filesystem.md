@@ -5,7 +5,7 @@ description: FlySystem-shaped Storage disks — local, memory, and S3-compatible
 
 ## Storage
 
-```python
+```python title="examples/filesystem.py"
 from almasix.filesystem import Storage, storage
 
 Storage.put("avatars/ada.png", contents)
@@ -19,7 +19,7 @@ Config lives in `config/filesystems.py`. Default disks: `local`, `public`, `s3` 
 
 ## Public disk
 
-```bash
+```bash title="terminal"
 python smith storage:link
 ```
 
@@ -29,7 +29,7 @@ Creates `public/storage` → `storage/app/public` (configurable via `filesystems
 
 ## Uploads
 
-```python
+```python title="examples/filesystem.py"
 await Storage.disk("public").put_file_async("uploads", request.file("avatar"))
 ```
 

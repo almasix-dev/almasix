@@ -8,7 +8,7 @@ description: Log channels and the Log façade — wired to the exception Handler
 Application logging lives in **`almasix.log`**, not Python's stdlib `logging`
 module. The names look similar; the APIs do not:
 
-```python
+```python title="examples/logging.py"
 # Correct — Almasix façade (autocomplete: info, debug, success, …)
 from almasix.log import Log
 
@@ -19,11 +19,11 @@ import logging
 logging.log(...)   # not what you want in an Almasix app
 ```
 
-Prefer the `Log` façade the way Laravel uses `Log::info()`.
+Prefer the `Log` façade (`Log.info(...)`, `Log.error(...)`, and friends).
 
 ## Writing log lines
 
-```python
+```python title="database/migrations/example_migration.py"
 from almasix.log import Log
 
 Log.info("Application started")

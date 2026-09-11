@@ -7,7 +7,7 @@ description: Install Motor, configure MongoDB or the memory store, and define yo
 
 SQLite-style document work needs nothing extra. MongoDB needs Motor:
 
-```bash
+```bash title="terminal"
 pip install "almasix[mongodb]"
 ```
 
@@ -15,7 +15,7 @@ Run a MongoDB server locally (Community Server or Docker) or use
 [MongoDB Atlas](https://www.mongodb.com/atlas). Set the connection string in
 `.env`:
 
-```ini
+```ini title=".env"
 MONGODB_DSN="mongodb://localhost:27017"
 MONGODB_DATABASE="almasix"
 # Atlas example:
@@ -30,7 +30,7 @@ when to choose collections — is under
 [Database → Document stores](/database/documents/). A short reminder for model
 authors:
 
-```python
+```python title="config/database.py"
 "mongodb": {
     "driver": "mongodb",
     "dsn": env("MONGODB_DSN", ""),
@@ -39,16 +39,12 @@ authors:
 "documents": {"driver": "memory"},
 ```
 
-```bash
-pip install "almasix[mongodb]"
-```
-
 Point a model at a connection with `connection = "mongodb"` (or whatever name
 you gave the block). A new app's scaffold already includes both blocks.
 
 ## Store vs connection
 
-```python
+```python title="app/http/controllers/example_controller.py"
 from almasix.orm import get_manager
 
 manager = get_manager()
@@ -62,8 +58,7 @@ More detail: [Document stores](/database/documents/).
 
 ## Your first Document
 
-```python
-# app/models/article.py
+```python title="app/models/article.py"
 from almasix.orm import Document, HasFactory, SoftDeletes
 
 
@@ -84,7 +79,7 @@ class Article(HasFactory, SoftDeletes, Document):
 events, serialization — applies. Collections appear on first write; there is
 no migration.
 
-```python
+```python title="app/http/controllers/example_controller.py"
 article = await Article.create(title="Notes", tags=["math"], published=True)
 found = await Article.find(article.get_key())
 await Article.query().where("published", True).count()
@@ -112,18 +107,21 @@ same as on SQL models.
 
 ## Generating models
 
-```bash
-smith make:document Article            # app/models/article.py
-smith make:document Article --factory  # + database/factories/article_factory.py
-smith make:document Address --embed    # an EmbeddedDocument subclass
+```bash title="terminal"
+smith make:document Article
+smith make:document Article --factory
+smith make:document Address --embed
 ```
+
+Those write `app/models/article.py`, optionally
+`database/factories/article_factory.py`, or an `EmbeddedDocument` subclass.
 
 ## Factories and soft deletes
 
 Nothing is special-cased. `HasFactory` writes documents; `SoftDeletes` filters
 on `deleted_at` the same way it filters a table:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Article.factory().count(3).create()
 await article.delete()                 # soft
 await Article.with_trashed().count()

@@ -7,10 +7,9 @@ description: Soft delete models, define query scopes, and listen for model lifec
 
 ### Local scopes
 
-Local scopes allow you to define common sets of query constraints for reuse. Name the method `scope_<name>`. The **query is the first argument**:
+Local scopes let you name a common set of query constraints and reuse them. Name the method `scope_<name>`. The **query is the first argument**:
 
-```python
-# app/models/post.py
+```python title="app/models/post.py"
 class Post(Model):
     def scope_published(query):
         return query.where("published", True)
@@ -22,8 +21,9 @@ Also accepted: `scope_published(cls, query)` as a classmethod, or `(self, query)
 
 ### Global scopes
 
-```python
-# app/models/user.py
+A **global scope** applies to every query on the model unless you opt out:
+
+```python title="app/models/user.py"
 User.add_global_scope("active", lambda query: query.where("active", True))
 await User.without_global_scope("active").get()
 await User.without_global_scopes().get()
@@ -31,10 +31,9 @@ await User.without_global_scopes().get()
 
 ## Soft deleting
 
-In addition to actually removing records from your database, Articulate can "soft delete" models. Soft deletes do not remove the row; they set a `deleted_at` timestamp.
+In addition to actually removing records from your database, Articulate can **soft delete** models. Soft deletes do not remove the row; they set a `deleted_at` timestamp so normal queries hide the row until you restore or permanently delete it.
 
-```python
-# app/models/post.py
+```python title="app/models/post.py"
 from almasix.orm import Model, SoftDeletes
 
 class Post(SoftDeletes, Model):   # mixin before Model
@@ -58,8 +57,7 @@ Trashed rows still occupy the table. To clear them out on a schedule, make the m
 
 Articulate models dispatch several events, allowing you to hook into the following moments: `retrieved`, `creating`, `created`, `updating`, `updated`, `saving`, `saved`, `deleting`, `deleted`, `restoring`, `restored`, and `replicating`.
 
-```python
-# app/models/post.py
+```python title="app/models/post.py"
 Post.listen("creating", lambda model: ...)
 
 class PostObserver:
@@ -73,7 +71,7 @@ A listener that returns `False` aborts that lifecycle step (`save` / `delete` / 
 
 ### Muting events
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await post.save_quietly()
 await post.delete_quietly()
 await post.force_delete_quietly()

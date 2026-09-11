@@ -9,20 +9,21 @@ description: Server-side Inertia.js adapter for official Vue, React, and Svelte 
 `@inertiajs/vue3`, `@inertiajs/react`, or `@inertiajs/svelte` clients — there is
 **no forked JS client**. SSR uses Inertia’s Node `/render` protocol.
 
-```bash
-pip install almasix   # Inertia adapter ships in the wheel until extract
-# register inertia.provider.InertiaServiceProvider (SPA kits / Progress already do)
+```bash title="terminal"
+pip install 'almasix[inertia]'
+# SPA starter kits already register inertia.provider.InertiaServiceProvider
 ```
 
-```python
+```python title="examples/inertia.py"
 from inertia import Inertia, lazy, defer, once, merge
 ```
 
-Progress: `smith progress:inertia`, `GET /inertia`, `smith inertia:start-ssr --check`.
+Render a page with `Inertia.render(...)`, browse it in the browser, and
+optionally run `smith inertia:start-ssr --check` if you use SSR.
 
 ## Rendering
 
-```python
+```python title="examples/inertia.py"
 def dashboard():
     return Inertia.render("Dashboard", {
         "user": user,
@@ -42,7 +43,7 @@ The page `url` is built with `url()` so **`APP_BASE_PATH` is honored**.
 
 ## Shared props
 
-```python
+```python title="examples/inertia.py"
 Inertia.share("app_name", config("app.name"))
 Inertia.share(lambda: {"auth": {"user": current_user()}})
 ```
@@ -69,7 +70,7 @@ Headers:
 
 ## Asset versioning
 
-```python
+```python title="examples/inertia.py"
 Inertia.set_version("v42")
 # or config inertia.version
 ```
@@ -90,7 +91,7 @@ Smoke: with the worker up, first HTML contains both page JSON and SSR markup.
 
 ## Root template
 
-```html
+```html title="resources/views/examples/inertia.prism.html"
 <!DOCTYPE html>
 <html>
 <head>
@@ -102,21 +103,6 @@ Smoke: with the worker up, first HTML contains both page JSON and SSR markup.
 </body>
 </html>
 ```
-
-## Exhaust checklist
-
-- [x] `Inertia.render` Responsable (`to_response`)
-- [x] `X-Inertia` JSON visits
-- [x] Shared + partial props
-- [x] Lazy / optional / defer / once / merge props
-- [x] Asset version 409
-- [x] `Inertia.location` external visits
-- [x] Flash errors → props
-- [x] Subpath-aware page `url`
-- [x] `@inertia` / `@inertiaHead`
-- [x] Node SSR contract + graceful fallback
-- [x] `inertia:start-ssr`
-- [x] Progress demo + smoke
 
 ## Starter kits
 

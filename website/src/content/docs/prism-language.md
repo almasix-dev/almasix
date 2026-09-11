@@ -55,7 +55,7 @@ Helix / Zed. Build steps are documented in the
 
 Library entry point (framework package):
 
-```python
+```python title="examples/prism-language.py"
 from almasix.prism.formatter import format_prism
 
 formatted = format_prism(source, indent_size=4, line_length=120)
@@ -67,7 +67,7 @@ structure and Prism directives. Content between `@python` and `@endpython` is
 
 CLI (registered by `PrismServiceProvider`):
 
-```bash
+```bash title="terminal"
 smith prism:format                      # write under cwd
 smith prism:format resources/views      # directory or file
 smith prism:format --check              # CI: fail if would change

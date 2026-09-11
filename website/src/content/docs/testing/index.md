@@ -12,7 +12,7 @@ perfectly well — but what it adds is the vocabulary: a client that drives the
 real middleware stack in-process, assertions that say what went wrong, console
 commands that answer their own questions, and one door to every fake.
 
-```python
+```python title="tests/feature/example_test.py"
 from almasix.testing import TestCase
 
 
@@ -48,7 +48,7 @@ methods pytest calls, and coroutines pytest awaits.
 `env("APP_ENV")` and choose a different database, mailer, or queue for a test
 run. A `.env.testing` file, when there is one, is read in preference to `.env`.
 
-```bash
+```bash title="terminal"
 smith test                      # every test
 smith test tests/feature        # one directory
 smith test -k posts             # pytest's -k
@@ -61,21 +61,21 @@ Anything `smith test` does not recognise is handed to pytest untouched.
 
 ## Creating tests
 
-```bash
+```bash title="terminal"
 smith make:test PostTest        # tests/feature/post_test.py
 smith make:test PostTest --unit # tests/unit/post_test.py
 ```
 
 A feature test boots the application and drives it through HTTP; a unit test
-does not, and should not need to. The generated file is a class named the way
-Laravel names them — `PostTest`, not `TestPost` — which the scaffolded pytest
-configuration collects through `python_classes = ["Test*", "*Test"]`.
+does not, and should not need to. Name the class `PostTest`, not `TestPost` —
+the scaffolded pytest configuration collects through
+`python_classes = ["Test*", "*Test"]`.
 
 ## The test case
 
 `TestCase` boots the application once per test and hands you a client:
 
-```python
+```python title="resources/views/examples/testing.prism.html"
 class PostTest(TestCase):
     use_refresh_database = True
 
@@ -104,15 +104,14 @@ class PostTest(TestCase):
 | `teardown()` | After every test. Call `super().teardown()` when overriding. |
 
 `create_application()` runs the application's own `bootstrap/app.py` when there
-is one, exactly as Laravel's tests require `bootstrap/app.php`, so a test drives
-the same middleware stack a server would. `boot_application(path)` does the same
-thing outside a `TestCase`.
+is one, so a test drives the same middleware stack a server would.
+`boot_application(path)` does the same thing outside a `TestCase`.
 
 When the application's path is decided by a fixture — a `tmp_path`, say —
 declare a fixture named `almasix_base_path` and it is read before the
 application is built:
 
-```python
+```python title="resources/views/examples/testing.prism.html"
 class PostTest(TestCase):
     @pytest.fixture
     def almasix_base_path(self, tmp_path: Path) -> Path:
@@ -124,7 +123,7 @@ class PostTest(TestCase):
 Every piece works on its own. A test that already has an application can make
 its own client, and the assertion helpers are plain functions:
 
-```python
+```python title="tests/feature/example_test.py"
 from almasix.testing import TestClient, assert_database_has
 
 

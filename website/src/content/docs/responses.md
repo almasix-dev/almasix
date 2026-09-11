@@ -3,7 +3,8 @@ title: Responses
 description: Return HTML, JSON, redirects, and other HTTP responses.
 ---
 
-Controller actions may return several shapes. The HTTP kernel normalizes them into ASGI responses.
+Controller actions may return several shapes. The HTTP kernel normalizes them
+into ASGI responses.
 
 ## Return values
 
@@ -17,26 +18,23 @@ Controller actions may return several shapes. The HTTP kernel normalizes them in
 
 Prefer explicit helpers when the intent matters:
 
-```python
-# app/http/controllers/welcome_controller.py
-from almasix.http import html, json, redirect
+```python title="app/http/controllers/welcome_controller.py"
+from almasix.http import Controller, html, json, redirect
 from almasix.prism import view
 
 
-async def index(self):
-    return view("welcome", {"name": "Ada"})
+class WelcomeController(Controller):
+    async def index(self):
+        return view("welcome", {"name": "Ada"})
 
+    async def data(self):
+        return json({"ok": True})
 
-async def data(self):
-    return json({"ok": True})
+    async def legacy_markup(self):
+        return html("<h1>Hi</h1>")
 
-
-async def legacy_markup(self):
-    return html("<h1>Hi</h1>")
-
-
-async def leave(self):
-    return redirect("/progress")
+    async def leave(self):
+        return redirect("/dashboard")
 ```
 
 ## Web vs API polarity
@@ -44,21 +42,25 @@ async def leave(self):
 - **Web routes** (`routes/web.py`) should return Prism views or `html(...)`.
 - **API routes** (`routes/api.py`) should return `dict` / `list` / `json(...)`.
 
-Throwing an [`HttpException`](/errors/) on an API route still yields the locked JSON envelope `{message, status, errors?}`.
+Throwing an [`HttpException`](/errors/) on an API route still yields the locked
+JSON envelope `{message, status, errors?}`.
 
 ## Redirects
 
-`redirect(to)` resolves `to` through [`url()`](/urls/) so `APP_BASE_PATH` is honored:
+`redirect(to)` resolves `to` through [`url()`](/urls/) so `APP_BASE_PATH` is
+honored:
 
-```python
-# app/http/controllers/welcome_controller.py
-return redirect("/dashboard")  # → /apps/progress/dashboard when mounted
+```python title="app/http/controllers/welcome_controller.py"
+return redirect("/dashboard")  # → /apps/blog/dashboard when mounted under /apps/blog
 ```
+
+The returned object supports session flashes when a session is available:
+`with_`, `with_input`, and `with_errors`. Use `back()` to send the browser to
+the previous page (via `Referer`, with a fallback path).
 
 ## Headers and status
 
-```python
-# app/http/controllers/welcome_controller.py
+```python title="app/http/controllers/welcome_controller.py"
 return json({"ok": True}, status=201, headers={"X-Demo": "1"})
 return html("<p>Gone</p>", status=410)
 ```
@@ -68,3 +70,4 @@ return html("<p>Gone</p>", status=410)
 - [Views](/views/) — Prism templates
 - [URL Generation](/urls/)
 - [Error Handling](/errors/)
+- [Requests](/requests/)

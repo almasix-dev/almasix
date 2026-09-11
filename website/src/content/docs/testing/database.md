@@ -6,11 +6,11 @@ description: A fresh database for every test, transactions that take their write
 ## Introduction
 
 A test that writes to the database has to decide what happens to those rows
-when it finishes. Almasix offers the two answers Laravel does: migrate a fresh
+when it finishes. Almasix offers two answers: migrate a fresh
 database before each test, or run each test inside a transaction and roll it
 back.
 
-```python
+```python title="tests/feature/example_test.py"
 class PostTest(TestCase):
     use_refresh_database = True
 
@@ -33,7 +33,7 @@ disk, which is what you want when a test cares about the schema itself.
 
 Both are available as functions, for a test that is not a `TestCase`:
 
-```python
+```python title="examples/database.py"
 from almasix.testing import database_transactions, refresh_database
 
 await refresh_database(path=Path("database/migrations"))
@@ -48,7 +48,7 @@ and returns the migrations it ran.
 
 ## Row assertions
 
-```python
+```python title="examples/database.py"
 await assert_database_has("posts", {"title": "Hello"})
 await assert_database_has(Post, {"title": "Hello"})   # a model names its table
 await assert_database_missing("posts", {"title": "Draft"})
@@ -61,7 +61,7 @@ message says what went wrong rather than only that something did.
 
 ## Model assertions
 
-```python
+```python title="examples/database.py"
 await assert_model_exists(post)
 await assert_model_missing(post)
 await assert_soft_deleted(post)
@@ -80,7 +80,7 @@ Inside a `TestCase`, each of these is a method — `await self.assert_database_h
 
 A test that needs rows should usually make them itself, with a factory:
 
-```python
+```python title="tests/feature/example_test.py"
 class PostTest(TestCase):
     use_refresh_database = True
 
@@ -101,8 +101,7 @@ Nothing here chooses a database for you: the connection is the one
 `config/database.py` returns, and `smith test` sets `APP_ENV=testing` so that
 file can choose a different one for a test run.
 
-```python
-# config/database.py
+```python title="config/database.py"
 "default": env("DB_CONNECTION", "sqlite" if env("APP_ENV") == "testing" else "postgres"),
 ```
 

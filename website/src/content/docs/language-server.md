@@ -13,7 +13,7 @@ keys were loaded.
 
 ## Install
 
-```bash
+```bash title="terminal"
 pip install 'almasix[lsp]'
 # or with the full dev set
 pip install 'almasix[dev]'
@@ -25,7 +25,7 @@ Both extras pull in `pygls` and `lsprotocol` (Python 3.11–3.13).
 
 Any of these starts the stdio language server:
 
-```bash
+```bash title="terminal"
 almasix-lsp
 python -m almasix.lsp
 smith lsp:serve          # from an application root
@@ -106,7 +106,7 @@ VSIX (see [Editor setup](/editor-setup/)). Source:
 
 Or, until the extension is installed, a minimal `settings.json`:
 
-```json
+```json title="examples/language-server.json"
 {
   "almasix.pythonPath": "${workspaceFolder}/.venv/bin/python"
 }
@@ -117,7 +117,7 @@ Associate `*.prism.html` with language id `prism-html` so hover on directives wo
 
 ### Neovim (nvim-lspconfig)
 
-```lua
+```lua title="examples/language-server.lua"
 vim.lsp.config("almasix_lsp", {
   cmd = { "almasix-lsp" },
   filetypes = { "python", "html" },
@@ -128,7 +128,7 @@ vim.lsp.enable("almasix_lsp")
 
 ### Helix
 
-```toml
+```toml title="pyproject.toml"
 [language-server.almasix-lsp]
 command = "almasix-lsp"
 
@@ -139,7 +139,7 @@ language-servers = ["almasix-lsp", "pylsp"]
 
 ### Zed
 
-```json
+```json title="examples/language-server.json"
 {
   "languages": {
     "Python": {
@@ -156,7 +156,7 @@ language-servers = ["almasix-lsp", "pylsp"]
 
 ## Library API
 
-```python
+```python title="examples/language-server.py"
 from almasix.lsp import build_index, create_server, find_app_root
 
 index = build_index("/path/to/app")   # or find_app_root()
@@ -166,24 +166,27 @@ server = create_server()              # pygls LanguageServer
 # server.start_io()
 ```
 
-`build_index` is usable without starting the LSP process — the progress demo
-uses it directly.
+`build_index` is usable without starting the LSP process — handy for scripts
+or tests that only need the symbol table.
 
-## Demo
+## Try it in your app
 
-From `examples/progress`:
+From your application root (the directory with `bootstrap/app.py`):
 
-```bash
-smith progress:lsp
+```bash title="terminal"
+smith lsp:serve
+# or:
+almasix-lsp
 ```
 
-Prints view / route / config / model / middleware / translation counts and
-`lsp ok`.
+Wire the binary into your editor as shown above. To inspect what was indexed
+without an editor, call `build_index(".")` from a short script and print
+`len(index.views)`, `len(index.routes)`, and so on.
 
 ## Scope notes
 
 Shipped for day-to-day editing: views, routes, config, translations,
 middleware aliases, find-references for views, and a create-view code action.
-Still on the roadmap: disk / queue / cache / gate / relation / column /
-component completions, Prism structural diagnostics, rename, Starlight-sourced
-hover, and filesystem watchers. Editor packaging is on [Editor setup](/editor-setup/).
+Not yet shipped: disk / queue / cache / gate / relation / column / component
+completions, Prism structural diagnostics, rename, Starlight-sourced hover,
+and filesystem watchers. Editor packaging is on [Editor setup](/editor-setup/).

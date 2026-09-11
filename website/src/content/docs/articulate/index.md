@@ -3,12 +3,11 @@ title: Articulate — Getting Started
 description: Define Active Record models and work with your database records.
 ---
 
-**Articulate** is Almasix's Active Record ORM. Each database table has a corresponding model used to query and persist rows, with first-class `async`/`await`.
+**Articulate** is Almasix's Active Record ORM. A **model** is a Python class that maps to one database table: you read and write rows through instances of that class, with first-class `async`/`await`.
 
 Every persistence and read method is **`await`ed** — Almasix is async-first for ASGI.
 
-```python
-# app/models/flight.py
+```python title="app/models/flight.py"
 from almasix.orm import Model, relation
 
 class Flight(Model):
@@ -24,7 +23,7 @@ flights = await Flight.query().with_("airline").where("active", True).get()
 
 Generate a model (and optionally a migration) with Smith:
 
-```bash
+```bash title="terminal"
 smith make:model Flight
 smith make:model Flight -m
 ```
@@ -33,10 +32,9 @@ smith make:model Flight -m
 
 ### Table names
 
-By convention, the "snake case", plural name of the class is used as the table name — unless another name is explicitly specified. So `Flight` stores records in `flights`, and `BlogPost` in `blog_posts`. Override with:
+By convention, the snake_case, plural name of the class is used as the table name — unless another name is explicitly specified. So `Flight` stores records in `flights`, and `BlogPost` in `blog_posts`. Override with:
 
-```python
-# app/models/flight.py
+```python title="app/models/flight.py"
 class Flight(Model):
     table = "my_flights"
 ```
@@ -49,8 +47,7 @@ Articulate assumes each model has an auto-incrementing `id` primary key. Customi
 
 Mix in `HasUuids` for time-ordered (version 7) UUID keys, or `HasUlids` for 26-character ULIDs. Both turn off auto-increment, set `key_type = "string"`, and fill the key on insert:
 
-```python
-# app/models/article.py
+```python title="app/models/article.py"
 from almasix.orm import HasUuids, Model
 
 
@@ -64,7 +61,7 @@ article.id  # "0199c6f1-...", ordered by creation time
 
 Mix them in **before** `Model`. Ordered UUIDs keep inserts local in the index, which is why they are the default rather than random v4. To generate ids yourself, or fill more than one column, override the hooks:
 
-```python
+```python title="app/models/article.py"
 class Article(HasUuids, Model):
     def new_unique_id(self) -> str:
         return my_own_generator()
@@ -81,7 +78,7 @@ By default, Articulate expects `created_at` and `updated_at` columns. Set `times
 
 To save without touching the timestamps just once, use the `without_timestamps` block. It is scoped to that model class, and `touch()` becomes a no-op inside it:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 with User.without_timestamps():
     user.name = "Ada"
     await user.save()
@@ -89,8 +86,7 @@ with User.without_timestamps():
 
 ## Retrieving models
 
-```python
-# app/http/controllers/example_controller.py
+```python title="app/http/controllers/example_controller.py"
 await Flight.all()
 await Flight.query().where("active", True).order_by("name").get()
 await Flight.find(1)
@@ -102,8 +98,7 @@ await Flight.where("name", "Aurora").first()
 
 ## Inserting and updating
 
-```python
-# app/http/controllers/example_controller.py
+```python title="app/http/controllers/example_controller.py"
 flight = await Flight.create(name="Aurora", airline_id=1)
 flight.name = "Northern Lights"
 await flight.save()
@@ -115,11 +110,11 @@ await Flight.destroy(1, 2, 3)
 
 ### Mass assignment
 
-Models are guarded by default (`guarded = ("*",)`). List attributes in `fillable`, or use `force_fill` / `force_create`. Filling a totally guarded model raises `MassAssignmentError`.
+**Mass assignment** means filling many attributes from a dict (for example request input) in one call. Models are guarded by default (`guarded = ("*",)`): only attributes listed in `fillable` may be set that way. Use `force_fill` / `force_create` to bypass the guard intentionally. Filling a totally guarded model raises `MassAssignmentError`.
 
 For a block where the rules should not apply — seeding, for instance — unguard them:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 with Model.unguarded():
     await User.create(**untrusted)
 ```
@@ -130,8 +125,7 @@ with Model.unguarded():
 
 Two checks are off by default because they are stricter than most apps want in production. Turn them on in a service provider, typically for local development only:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from almasix.orm import Model
 
 
@@ -152,8 +146,9 @@ Missing-attribute checks apply only to models that came from the database — a 
 
 ## Casts
 
-```python
-# app/models/user.py
+A **cast** tells Articulate how to convert a column between the database and Python. Declare them on the model:
+
+```python title="app/models/user.py"
 class User(Model):
     fillable = ("email", "name", "votes")
     casts = {"votes": "int", "active": "bool", "meta": "json"}
@@ -164,8 +159,9 @@ Known cast names: `int`, `float`, `string`, `bool`, `decimal[:scale]`, `json` / 
 
 ### Accessors and mutators
 
-```python
-# app/models/user.py
+An **accessor** transforms a value when you read it; a **mutator** transforms it when you write it:
+
+```python title="app/models/user.py"
 from almasix.orm import Attribute
 
 class User(Model):
@@ -180,7 +176,7 @@ See [Mutators & Casts](/articulate/casts/) for attribute objects, custom casts, 
 
 `hidden` is a denylist and `visible` an allowlist, both declared on the model. To adjust them for a single record, use the instance methods — they affect **that model only**, never the class:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 user.make_hidden("email").to_dict()      # hide more on this record
 user.make_visible("meta").to_dict()      # reveal a normally hidden attribute
 user.set_hidden(["email"]).to_dict()     # replace the denylist outright
@@ -193,7 +189,7 @@ Each returns the model, so they chain. Relation names may be hidden the same way
 
 Every write fires model events. To save, delete, or restore without them:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await user.save_quietly()
 await user.delete_quietly()
 await user.force_delete_quietly()
@@ -206,8 +202,7 @@ Quiet writes are scoped to that one instance, so a concurrent request keeps its 
 
 Mix in `Prunable` and declare which rows are stale. `smith model:prune` deletes them:
 
-```python
-# app/models/flight.py
+```python title="app/models/flight.py"
 from almasix.orm import Model, Prunable
 
 
@@ -222,7 +217,7 @@ class Flight(Prunable, Model):
 
 `MassPrunable` deletes in bulk instead, which is far faster on large tables but skips `pruning()` since no models are loaded.
 
-```bash
+```bash title="terminal"
 smith model:prune
 smith model:prune --pretend            # report counts, delete nothing
 smith model:prune --model=Flight
@@ -236,7 +231,7 @@ Models are discovered from `app/models`. Schedule it in `routes/console.py` to r
 
 Loading a million rows into memory is how a worker dies. Four ways to avoid it:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 # One query per chunk, offset-paged.
 await Flight.query().chunk(200, handle_chunk)
 
@@ -280,10 +275,6 @@ endpoints. For awaitable late loading, set `lazy_relations = True` and
 **await** the relation (`posts = await user.posts`) — never silent attribute IO.
 :::
 
-:::note[Coming from Eloquent?]
-If you know Laravel Eloquent, Articulate will feel familiar — same Active Record shape, snake_case methods, and async throughout. The biggest habit change is **no silent lazy loading** unless you opt in.
-:::
-
 ## Next steps
 
 - [Relationships](/articulate/relationships/)
@@ -294,6 +285,6 @@ If you know Laravel Eloquent, Articulate will feel familiar — same Active Reco
 - [Documents (NoSQL)](/articulate/documents/) — MongoDB and the memory store
   ([getting started](/articulate/documents/getting-started/),
   [querying](/articulate/documents/querying/),
-  [compared with Laravel](/articulate/documents/compared/))
+  [feature map](/articulate/documents/compared/))
 - [Task Scheduling](/scheduling/) — for `model:prune`
 - [Query Builder](/database/queries/)

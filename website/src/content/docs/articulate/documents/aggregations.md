@@ -7,7 +7,7 @@ description: Use builder aggregates for simple totals, and raw_aggregate for Mon
 
 For single-field totals the builder is enough:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await Article.query().where("published", True).count()
 await Article.query().sum("views")
 await Article.query().avg("views")
@@ -23,7 +23,7 @@ These run on both Mongo and the memory store. They are not a substitute for
 When you need grouping, `$lookup`, `$facet`, or anything the builder refuses,
 hand Mongo a pipeline:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 rows = await Article.query().raw_aggregate([
     {"$match": {"published": True}},
     {"$group": {"_id": "$author_id", "views": {"$sum": "$views"}}},
@@ -50,7 +50,7 @@ That keeps the escape hatch honest: what you write is what Motor runs.
 
 ## When the builder refuses
 
-```python
+```python title="app/http/controllers/example_controller.py"
 Article.query().group_by("author_id")   # UnsupportedQueryError → raw_aggregate()
 Article.query().having("views", ">", 1)
 Article.query().join("authors", ...)

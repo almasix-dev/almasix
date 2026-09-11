@@ -5,12 +5,14 @@ description: Organize request handling into controller classes.
 
 A **controller** is a class that answers one or more routes. Instead of putting
 every handler inline in `routes/web.py`, group related actions under
-`app/http/controllers` so each file stays small and testable.
+`app/http/controllers/` so each file stays small and testable.
 
 ## Basic controllers
 
-```python
-# app/http/controllers/welcome_controller.py
+Subclass `Controller` and write async methods. Return a Prism view, JSON, a
+redirect, or any shape the [Responses](/responses/) page covers:
+
+```python title="app/http/controllers/welcome_controller.py"
 from almasix.http import Controller
 from almasix.prism import view
 
@@ -22,25 +24,29 @@ class WelcomeController(Controller):
 
 Wire the action in a route file:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
+from app.http.controllers.welcome_controller import WelcomeController
+
+from almasix.routing import Route
+
 Route.get("/", [WelcomeController, "index"])
 ```
 
 Generate a stub:
 
-```bash
+```bash title="terminal"
 python smith make:controller PostController
 ```
 
-Nested namespaces work (`python smith make:controller Admin/UserController`) and create `__init__.py` files as needed.
+Nested namespaces work (`python smith make:controller Admin/UserController`)
+and create `__init__.py` files as needed.
 
 ## Dependency injection
 
-Constructor and method dependencies are resolved from the application container:
+Constructor and method dependencies are resolved from the application
+container — type-hint what you need and Almasix builds it:
 
-```python
-# app/http/controllers/demo_controller.py
+```python title="app/http/controllers/demo_controller.py"
 from almasix.config import ConfigRepository
 from almasix.http import Controller, Request
 
@@ -53,11 +59,17 @@ class DemoController(Controller):
         return {"app": self.config.get("app.name")}
 ```
 
-Type-hint `Request` or a [`FormRequest`](/validation/) subclass to receive the current request (validated when using FormRequest).
+Type-hint `Request` or a [`FormRequest`](/validation/) subclass to receive the
+current request (validated when using FormRequest). Path parameters and bound
+models arrive as extra method arguments — see [Routing](/routing/#route-model-binding).
 
-## Single-action style
+## Resource-style methods
 
-Prefer one public `index` / `store` / `show` method per intent. Almasix does not require invokable `__call__` controllers — use an explicitly named method on the route.
+For CRUD resources, name methods after the seven resource actions (`index`,
+`create`, `store`, `show`, `edit`, `update`, `destroy`) so
+`Route.resource(...)` can wire them automatically. Prefer one public method per
+intent. Almasix does not require invokable `__call__` controllers — use an
+explicitly named method on the route.
 
 ## Related
 
@@ -65,3 +77,4 @@ Prefer one public `index` / `store` / `show` method per intent. Almasix does not
 - [Requests](/requests/)
 - [Validation](/validation/)
 - [Views](/views/)
+- [Responses](/responses/)

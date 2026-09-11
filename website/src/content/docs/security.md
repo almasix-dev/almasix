@@ -30,7 +30,7 @@ Both are opt-in, because a Content-Security-Policy that the application did
 not plan for breaks every page, and HSTS on a local `http://` install is a
 trap.
 
-```python
+```python title="examples/security.py"
 from almasix.http import SecurityHeaders
 
 middleware.alias({
@@ -44,7 +44,7 @@ middleware.alias({
 `{nonce}` is replaced with a per-request value. Read it from a template with
 `csp_nonce()`:
 
-```html
+```html title="resources/views/examples/security.prism.html"
 <script nonce="{{ csp_nonce() }}">
   /* trusted */
 </script>
@@ -55,7 +55,7 @@ middleware.alias({
 Remove the middleware from the web stack, or replace the global and group
 stacks entirely:
 
-```python
+```python title="examples/security.py"
 def configure(middleware: Middleware) -> None:
     middleware.web(replace=["cookies.encrypt", "session.start", "csrf", "auth.start"])
     # Or clear the global stack (also drops maintenance):
@@ -68,8 +68,7 @@ def configure(middleware: Middleware) -> None:
 browser. Paths that do not match `paths` are left alone — a public
 marketing page does not sprout `Access-Control-Allow-Origin`.
 
-```python
-# config/cors.py
+```python title="config/cors.py"
 config = {
     "paths": ["api/*", "signet/csrf-cookie"],
     "allowed_methods": ["*"],
@@ -90,7 +89,7 @@ configuration to disable the middleware entirely.
 `smith down` writes `storage/framework/down`. While that marker exists, the
 scheduler skips tasks (unless exempted) and HTTP responses answer **503**.
 
-```bash
+```bash title="terminal"
 smith down --secret=let-me-in --retry=60
 # Application is now in maintenance mode.
 # Bypass secret: let-me-in
@@ -131,7 +130,7 @@ A new application from `almasix new` ships with:
 
 - `maintenance` on the global middleware stack
 - `security.headers` on the `web` group
-- `config/cors.py` with the Laravel-shaped defaults above
+- `config/cors.py` with the defaults above
 
 That is deliberate: a scaffold that forgets the headers is worse than one
 that opts out of them.

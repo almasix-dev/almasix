@@ -36,9 +36,3 @@ Today the site is a single corpus. Selecting a non-latest line sets
 `?docsVersion=` so the switcher and banner stay in sync in the browser. When
 **1.x** ships, archived major trees (`/0.x/…`, `/1.x/…`) will hold frozen page
 sets — same switcher behaviour, with real path prefixes.
-
-## Contributor docs
-
-Roadmaps and smoke contracts live under `docs/` in the repository (`PLAN.md`,
-`SMOKE.md`). Those are for people building Almasix, not for people building
-applications on it.

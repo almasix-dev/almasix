@@ -8,10 +8,11 @@ import { Steps } from '@astrojs/starlight/components';
 ## Meet Almasix
 
 Almasix is a Python web framework with expressive structure and first-class
-`async`/`await` for ASGI. Create applications with `almasix new`, then drive them
-with **Smith** — Almasix’s in-app CLI:
+`async`/`await` for **ASGI** (the async server interface apps run on). Create
+applications with `almasix new`, then drive them with **Smith** — Almasix’s
+in-app CLI:
 
-```bash
+```bash title="terminal"
 almasix new blog
 cd blog
 pip install -e .
@@ -24,10 +25,9 @@ Templates, routing, validation, localization, and the ORM all live behind the
 compiles your routes, and serves them over ASGI.
 
 :::note
-Almasix’s application layout will feel familiar if you have used other
-structured PHP or Node frameworks — but you do not need that background.
 Public APIs, the CLI, the ORM, and the view engine are Almasix’s own:
-**Smith**, **Articulate**, and **Prism**.
+**Smith** (CLI), **Articulate** (ORM), and **Prism** (templates). You only need
+Python and basic web knowledge to follow these docs.
 :::
 
 ## Requirements
@@ -42,7 +42,7 @@ Public APIs, the CLI, the ORM, and the view engine are Almasix’s own:
 
 1. **Install Almasix** (from PyPI, or from a local checkout while developing against main):
 
-   ```bash
+   ```bash title="terminal"
    pip install almasix
    # or, from a local clone of the framework:
    pip install -e /path/to/almasix
@@ -51,11 +51,11 @@ Public APIs, the CLI, the ORM, and the view engine are Almasix’s own:
 2. **Create a new application.** Run it bare and it asks; pass flags and it
    asks only about what you left out:
 
-   ```bash
+   ```bash title="terminal"
    almasix new blog
    ```
 
-   ```text
+   ```text title="terminal"
    Which frontend stack?
      ● Tailwind CSS — Vite + Tailwind CSS 4 (recommended default)
        Bootstrap — Vite + Bootstrap 5 Sass
@@ -76,7 +76,7 @@ Public APIs, the CLI, the ORM, and the view engine are Almasix’s own:
 3. **Create a virtual environment and install dependencies** — unless you
    answered yes to creating a `.venv` and installing (which did it for you):
 
-   ```bash
+   ```bash title="terminal"
    cd blog
    python -m venv .venv
    source .venv/bin/activate
@@ -91,13 +91,13 @@ Public APIs, the CLI, the ORM, and the view engine are Almasix’s own:
    migrations (`users`, `password_reset_tokens`, `sessions`, plus cache and
    queue tables). Unless you already answered yes to running them:
 
-   ```bash
+   ```bash title="terminal"
    python smith migrate
    ```
 
 5. **Build the frontend** (any stack except `none`):
 
-   ```bash
+   ```bash title="terminal"
    npm install
    npm run dev      # dev server with hot reload, while you work
    npm run build    # hashed files in public/build, for a deploy
@@ -105,7 +105,7 @@ Public APIs, the CLI, the ORM, and the view engine are Almasix’s own:
 
 6. **Start the development server:**
 
-   ```bash
+   ```bash title="terminal"
    python smith serve
    ```
 
@@ -117,7 +117,7 @@ Public APIs, the CLI, the ORM, and the view engine are Almasix’s own:
 Smith belongs to your **application**, not to a global Almasix install. The
 reliable form from the app root is always:
 
-```bash
+```bash title="terminal"
 python smith serve
 python smith migrate
 python smith loupe
@@ -148,7 +148,7 @@ Every prompt has a command-line option and a documented default, so the same
 | Where the app is created | `--path DIR` | the working directory |
 | Which stubs to scaffold from | `--stubs DIR` | Almasix's own |
 
-```bash
+```bash title="terminal"
 # Scripted, start to finish: a Bootstrap app on PostgreSQL, in a git repo,
 # with dependencies installed and migrations run.
 almasix new shop -n --stack bootstrap --database pgsql --git --install --migrate
@@ -196,7 +196,7 @@ later with `smith errors:publish --bundle`.
 SQLite works out of the box, and the installer creates
 `database/database.sqlite` for you. The other engines need their driver:
 
-```bash
+```bash title="terminal"
 pip install almasix[pgsql]    # PostgreSQL
 pip install almasix[mysql]    # MySQL
 pip install almasix[mariadb]  # MariaDB
@@ -229,7 +229,7 @@ create the tables the framework itself reads:
 If you removed one and want it back — or you switched a driver and now need a
 table you did not before — each has a command:
 
-```bash
+```bash title="terminal"
 smith cache:table              # cache, cache_locks
 smith queue:table              # jobs
 smith queue:failed-table       # failed_jobs
@@ -244,7 +244,7 @@ cannot disagree with what the driver expects.
 
 A fresh application looks like this:
 
-```text
+```text title="blog/"
 blog/
   app/
     http/controllers/
@@ -274,7 +274,7 @@ Read more in [Directory Structure](/structure/) and [Asset Bundling](/asset-bund
 The scaffold is a stub tree, not strings inside the installer, so a team can
 publish it, edit it, and create every future application from its own copy:
 
-```bash
+```bash title="terminal"
 smith stub:publish --scaffold        # stubs/scaffold/{app,stacks}/…
 # edit stubs/scaffold/app/routes/web.py.stub, then:
 almasix new next-app --stubs stubs/scaffold

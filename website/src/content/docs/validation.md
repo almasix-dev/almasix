@@ -3,12 +3,12 @@ title: Validation
 description: Validate incoming data with FormRequest before controller actions run.
 ---
 
-Almasix validates HTTP input with **FormRequest** classes built on **Pydantic v2**. Invalid input never reaches the controller action.
+Almasix validates HTTP input with **FormRequest** classes built on
+**Pydantic v2**. Invalid input never reaches the controller action.
 
 ## Defining a form request
 
-```python
-# app/http/requests/store_post_request.py
+```python title="app/http/requests/store_post_request.py"
 from pydantic import Field
 
 from almasix.validation import FormRequest
@@ -24,7 +24,7 @@ class StorePostRequest(FormRequest):
 
 Generate a stub:
 
-```bash
+```bash title="terminal"
 smith make:request StorePostRequest
 ```
 
@@ -32,14 +32,15 @@ smith make:request StorePostRequest
 
 Type-hint the FormRequest; the kernel builds, authorizes, and validates it:
 
-```python
-# app/http/controllers/post_controller.py
+```python title="app/http/controllers/post_controller.py"
 class PostController(Controller):
     async def store(self, request: StorePostRequest) -> dict:
         return {"title": request.data.title}
 ```
 
-Validated fields live on `request.data`. The FormRequest also **proxies** to the underlying [`Request`](/requests/), so `input()`, `header()`, `file()`, and friends remain available.
+Validated fields live on `request.data`. The FormRequest also **proxies** to
+the underlying [`Request`](/requests/), so `input()`, `header()`, `file()`, and
+friends remain available.
 
 ## Hooks
 
@@ -51,13 +52,14 @@ Validated fields live on `request.data`. The FormRequest also **proxies** to the
 | `messages()` / `attributes()` | Customize error text and attribute names |
 | `validation_data()` | Override the dict being validated |
 
-Pydantic `@field_validator` / `@model_validator` on the FormRequest class are honored.
+Pydantic `@field_validator` / `@model_validator` on the FormRequest class are
+honored.
 
 ## Failure envelope
 
-Validation failures raise a **422** with the locked JSON shape:
+Validation failures raise a **422** with this JSON shape:
 
-```json
+```json title="response"
 {
   "message": "The given data was invalid.",
   "status": 422,
@@ -67,7 +69,8 @@ Validation failures raise a **422** with the locked JSON shape:
 }
 ```
 
-Messages resolve through Almasix's translator (localized catalogs under `lang/`).
+Messages resolve through Almasix's translator (localized catalogs under
+`lang/`).
 
 ## Related
 

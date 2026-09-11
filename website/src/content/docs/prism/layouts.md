@@ -9,8 +9,7 @@ Prism layouts use `@extends`, `@section`, and `@yield`.
 
 ## Yielding sections
 
-```html
-<!-- resources/views/layouts/app.prism.html -->
+```html title="resources/views/layouts/app.prism.html"
 <html>
   <head>
     <title>@yield("title", "Almasix")</title>
@@ -24,8 +23,7 @@ Prism layouts use `@extends`, `@section`, and `@yield`.
 
 ## Extending a layout
 
-```html
-<!-- resources/views/home.prism.html -->
+```html title="resources/views/home.prism.html"
 @extends("layouts.app")
 
 @section("title", "Home")
@@ -43,8 +41,7 @@ Prism layouts use `@extends`, `@section`, and `@yield`.
 When a child overrides a section that an intermediate layout already defined,
 `@parent` inserts the parent section’s content:
 
-```html
-<!-- resources/views/home.prism.html -->
+```html title="resources/views/home.prism.html"
 @section("content")
   @parent
   <p>Extra for this page.</p>

@@ -5,10 +5,10 @@ description: Reference other models across SQL and document stores, or embed chi
 
 ## References
 
-A reference is a key lookup. It does not care whether the related model lives
+A **reference** is a key lookup. It does not care whether the related model lives
 in a table or a collection, so the usual Articulate relations work unmodified:
 
-```python
+```python title="app/models/article.py"
 from almasix.orm import Document, relation
 from app.models.user import User   # a SQL Model
 
@@ -28,7 +28,7 @@ class Article(Document):
 Eager loading, lazy loading, and relation counts work across the store
 boundary:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 articles = await Article.query().with_("author").with_count("comments").get()
 article = await Article.find(key)
 author = await article.get_relation("author").get()
@@ -57,7 +57,7 @@ The relation SQL has no answer for is the child stored *inside* the parent.
 An `EmbeddedDocument` has no key and no collection of its own — it is a value
 with behaviour:
 
-```python
+```python title="app/models/author.py"
 from almasix.orm import Document, EmbeddedDocument, relation
 
 
@@ -78,7 +78,7 @@ class Author(Document):
 
 ### embeds_one
 
-```python
+```python title="app/http/controllers/example_controller.py"
 await author.get_relation("address").create(city="Nairobi", country="KE")
 
 address = author.get_relation("address").get()
@@ -91,7 +91,7 @@ await author.get_relation("address").delete()
 
 ### embeds_many
 
-```python
+```python title="app/http/controllers/example_controller.py"
 tags = author.get_relation("tags")
 await tags.create(name="math")
 await tags.create_many([{"name": "engines"}, {"name": "docs"}])

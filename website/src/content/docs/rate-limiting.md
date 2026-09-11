@@ -13,7 +13,7 @@ By default the limiter uses the application's default cache store. Point it at
 a dedicated store (typically Redis in production) with the `limiter` key in
 `config/cache.py`:
 
-```python
+```python title="config/rate-limiting.py"
 config = {
     "default": env("CACHE_STORE", "file"),
     "limiter": env("CACHE_LIMITER_STORE", "redis"),
@@ -30,7 +30,7 @@ why production deployments usually point the limiter at Redis.
 
 ## Basic usage
 
-```python
+```python title="examples/rate-limiting.py"
 from almasix.http import RateLimiter
 
 executed = RateLimiter.attempt(
@@ -47,13 +47,13 @@ if not executed:
 callback's result (or `True` when the callback returns `None`). Pass a fourth
 argument to change the window from the default sixty seconds:
 
-```python
+```python title="examples/rate-limiting.py"
 RateLimiter.attempt(f"send-message:{user.id}", 5, send_message, decay_seconds=120)
 ```
 
 ### Manual increments
 
-```python
+```python title="examples/rate-limiting.py"
 if RateLimiter.too_many_attempts(f"send-message:{user.id}", 5):
     seconds = RateLimiter.available_in(f"send-message:{user.id}")
     return f"Try again in {seconds} seconds."
@@ -71,7 +71,7 @@ available where they help existing snippets.
 Register named limiters in a service provider — the scaffold's
 `AppServiceProvider` already registers an `api` limiter:
 
-```python
+```python title="examples/rate-limiting.py"
 from almasix.http import Limit, RateLimiter
 
 RateLimiter.for_("api", lambda request: Limit.per_minute(60).by(
@@ -96,7 +96,7 @@ throttling for that request.
 
 Chain `.by(key)`, `.response(callback)`, and `.after(callback)`:
 
-```python
+```python title="examples/rate-limiting.py"
 RateLimiter.for_("uploads", lambda request: [
     Limit.per_minute(10).by(f"minute:{request.user().id}"),
     Limit.per_day(1000).by(f"day:{request.user().id}"),
@@ -119,7 +119,7 @@ RateLimiter.for_("global", lambda request:
 
 ## Attaching rate limiters to routes
 
-```python
+```python title="routes/web.py"
 Route.get("/audio", upload, middleware=["throttle:uploads"])
 Route.get("/burst", handler, middleware=["throttle:60,1"])  # 60 / minute
 Route.get("/mixed", handler, middleware=["throttle:10|60"])  # guest|auth
@@ -131,7 +131,7 @@ authenticated users.
 
 Put the named `api` limiter on every API route via bootstrap:
 
-```python
+```python title="examples/rate-limiting.py"
 def configure(middleware: Middleware) -> None:
     middleware.throttle_api()  # prepends throttle:api to the api group
 ```
@@ -145,7 +145,7 @@ refusal is a `429 Too Many Attempts.` with `Retry-After` and
 Protect login the same way you protect any other budget — hit on failure, clear
 on success:
 
-```python
+```python title="examples/rate-limiting.py"
 from almasix.auth import LoginRateLimiter, attempt_login
 
 limiter = LoginRateLimiter(max_attempts=5, decay_seconds=60)
@@ -162,11 +162,17 @@ When the budget is spent, `LoginRateLimiter.raise_for` (and `attempt_login`)
 raise `TooManyRequestsHttpException` with the translated `auth.throttle`
 message and a `Retry-After` header.
 
-## Living example
+## Try it in your app
 
-```bash
-smith progress:rate-limiting
+Register a tight limiter and protect a route:
+
+```python title="app/providers/app_service_provider.py"
+RateLimiter.for_("demo", lambda request: Limit.per_minute(3).by(request.ip()))
 ```
 
-The progress app also exposes `/api/throttle-demo` behind `throttle:progress`
-(three hits per minute) so a browser or `curl` can watch the 429 land.
+```python title="routes/api.py"
+Route.get("/api/throttle-demo", handler).middleware("throttle:demo")
+```
+
+Hit the route four times with `curl` — the fourth should return **429** with a
+`Retry-After` header.

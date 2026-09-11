@@ -6,9 +6,9 @@ description: Gates, policies, auto-discovery, custom abilities, @can, and the ca
 ## Introduction
 
 Authentication answers *who* the user is. **Authorization** answers *what they
-may do*. Almasix ships Laravel-shaped Gates and Policies on `almasix.auth`:
+may do*. Almasix ships Gates and Policies on `almasix.auth`:
 
-```python
+```python title="app/providers/app_service_provider.py"
 from almasix.auth import Gate, Policy, authorize
 ```
 
@@ -35,8 +35,7 @@ synchronous so they work in controllers, Form Requests, and Prism templates.
 A gate is a named closure. Define it in a provider — **not** at import time on
 a model module — so the bound `Gate` façade exists:
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from almasix.auth import Gate
 from almasix.providers.provider import ServiceProvider
 
@@ -52,7 +51,7 @@ The first argument is always the user (or `None` for guests).
 
 If the user parameter is optional, guests may pass:
 
-```python
+```python title="app/providers/app_service_provider.py"
 def view_post(user=None, post=None):
     return post is not None and post.published
 
@@ -64,7 +63,7 @@ A required user parameter **denies** guests without calling the callback.
 
 ### Checking abilities
 
-```python
+```python title="app/http/controllers/post_controller.py"
 if Gate.allows("update-post", post):
     ...
 
@@ -84,13 +83,13 @@ string, or `[PolicyClass, "method"]`.
 
 ### Another user
 
-```python
+```python title="app/http/controllers/post_controller.py"
 Gate.for_user(other).allows("update-post", post)
 ```
 
 ### Intercepting checks
 
-```python
+```python title="app/providers/app_service_provider.py"
 Gate.before(lambda user, ability: True if getattr(user, "admin", False) else None)
 Gate.after(lambda user, ability, result, arguments: result)
 ```
@@ -106,7 +105,7 @@ returns `False` / `None`.
 `AuthenticatableMixin` includes `Authorizable`. You do **not** register this
 separately — any user loaded by the auth guard already has:
 
-```python
+```python title="app/http/controllers/post_controller.py"
 user.can("update-post", post)
 user.cannot("update-post", post)
 user.cant("update-post", post)       # alias of cannot
@@ -121,16 +120,15 @@ request user.
 
 Policies group abilities for a model. Generate a stub:
 
-```bash
+```bash title="terminal"
 smith make:policy PostPolicy --model=Post --resource
-# writes app/policies/post_policy.py
 ```
 
-`--resource` (implied when `--model` is set) stubs `view_any`, `view`, `create`,
-`update`, `delete`, `restore`, and `force_delete`.
+That writes `app/policies/post_policy.py`. `--resource` (implied when `--model`
+is set) stubs `view_any`, `view`, `create`, `update`, `delete`, `restore`, and
+`force_delete`.
 
-```python
-# app/policies/post_policy.py
+```python title="app/policies/post_policy.py"
 from almasix.auth import Policy
 from app.models.post import Post
 
@@ -159,8 +157,7 @@ class PostPolicy(Policy):
 
 **Explicit (recommended in `boot()`):**
 
-```python
-# app/providers/app_service_provider.py
+```python title="app/providers/app_service_provider.py"
 from almasix.auth import Gate
 from app.models.post import Post
 from app.policies.post_policy import PostPolicy
@@ -168,7 +165,7 @@ from app.policies.post_policy import PostPolicy
 class AppServiceProvider(ServiceProvider):
     def boot(self) -> None:
         Gate.policy(Post, PostPolicy)
-        # or many at once (Laravel AuthServiceProvider::$policies):
+        # or many at once:
         Gate.register_policies({
             Post: PostPolicy,
         })
@@ -196,7 +193,7 @@ put the policy on the guessed path, or register it explicitly.
 `Gate.guess_policy_names_using` **replaces** the default guesser (it does not
 append). Return a class, an import string, a list of either, or `None`:
 
-```python
+```python title="app/providers/app_service_provider.py"
 Gate.guess_policy_names_using(
     lambda model: f"app.policies.{model.__name__.lower()}_policy.{model.__name__}Policy"
 )
@@ -208,45 +205,46 @@ Any method on the policy is an ability. There is no extra registration step.
 
 1. Add the method to `app/policies/post_policy.py`:
 
-   ```python
-   def publish(self, user, post: Post) -> bool:
-       return user.id == post.user_id and not post.published
+```python title="app/policies/post_policy.py"
+def publish(self, user, post: Post) -> bool:
+    return user.id == post.user_id and not post.published
 
-   def assign_editor(self, user, post: Post, editor) -> bool:
-       return user.admin
-   ```
+def assign_editor(self, user, post: Post, editor) -> bool:
+    return user.admin
+```
 
 2. Call it by **method name** (snake or camelCase) against an instance or class:
 
-   ```python
-   Gate.allows("publish", post)
-   user.can("publish", post)
-   self.authorize("publish", post)
-   Gate.allows("assign_editor", [post, editor])
-   ```
+```python title="app/http/controllers/post_controller.py"
+Gate.allows("publish", post)
+user.can("publish", post)
+self.authorize("publish", post)
+Gate.allows("assign_editor", [post, editor])
+```
 
 3. Optional HTTP wiring:
 
-   ```python
-   # routes/web.py
-   Route.post("/posts/{post}/publish", [PostController, "publish"]).can("publish", "post")
+```python title="routes/web.py"
+Route.post("/posts/{post}/publish", [PostController, "publish"]).can("publish", "post")
+```
 
-   # controller
-   class PostController(Controller):
-       async def publish(self, post: Post):
-           self.authorize("publish", post)
+```python title="app/http/controllers/post_controller.py"
+class PostController(Controller):
+    async def publish(self, post: Post):
+        self.authorize("publish", post)
+```
 
-   # form request
-   class PublishPostRequest(FormRequest):
-       def authorize(self):
-           return Gate.allows("publish", self.route("post"))
-   ```
+```python title="app/http/requests/publish_post_request.py"
+class PublishPostRequest(FormRequest):
+    def authorize(self):
+        return Gate.allows("publish", self.route("post"))
+```
 
-   ```html
-   @can('publish', post)
-     <button>Publish</button>
-   @endcan
-   ```
+```html title="resources/views/posts/show.prism.html"
+@can('publish', post)
+  <button>Publish</button>
+@endcan
+```
 
 Resource actions (`index`/`show`/`store`/`update`/`destroy`) still map to the
 standard CRUD names; custom methods are only used when you authorize that name.
@@ -254,7 +252,7 @@ standard CRUD names; custom methods are only used when you authorize that name.
 Authorize against an **instance** (`update`, `publish`) or a **class**
 (`create` / `view_any`):
 
-```python
+```python title="app/http/controllers/post_controller.py"
 Gate.allows("update", post)
 Gate.allows("create", Post)
 ```
@@ -263,7 +261,7 @@ Gate.allows("create", Post)
 
 Named abilities on a policy without going through model matching:
 
-```python
+```python title="app/providers/app_service_provider.py"
 Gate.resource("posts", PostPolicy)
 Gate.allows("posts.update", post)
 Gate.resource("posts", PostPolicy, abilities={"publish": "publish"})
@@ -275,7 +273,7 @@ Gate.allows("posts.publish", post)
 Controllers inherit `authorize` / `authorize_for_user` / `can` / `cannot` /
 `authorize_when` / `authorize_unless`:
 
-```python
+```python title="app/http/controllers/post_controller.py"
 class PostController(Controller):
     async def update(self, post: Post):
         self.authorize("update", post)
@@ -291,8 +289,7 @@ Set `authorizes_resource = Post` (or `(Post, "post")`) to map resource actions
 
 Form Requests may return a bool or an `AuthorizationResponse`:
 
-```python
-# app/http/requests/update_post_request.py
+```python title="app/http/requests/update_post_request.py"
 class UpdatePostRequest(FormRequest):
     def authorize(self):
         return Gate.allows("update", self.route("post"))
@@ -304,7 +301,7 @@ class UpdatePostRequest(FormRequest):
 
 The `can` alias is registered in `bootstrap/app.py`:
 
-```python
+```python title="routes/web.py"
 Route.put("/posts/{post}", [PostController, "update"]).can("update", "post")
 # equivalent: middleware=["can:update,post"]
 ```
@@ -313,7 +310,7 @@ Pass a class path for class-based abilities: `can:create,app.models.post.Post`.
 
 ## Prism
 
-```html
+```html title="resources/views/posts/show.prism.html"
 @can('update', post)
   <a href="/posts/edit">Edit</a>
 @else
@@ -333,7 +330,7 @@ Pass a class path for class-based abilities: `can:create,app.models.post.Post`.
 
 ## Testing
 
-```python
+```python title="tests/feature/authorization_test.py"
 from almasix.auth import Gate, AuthorizationException
 
 Gate.flush()

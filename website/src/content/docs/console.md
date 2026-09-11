@@ -8,14 +8,14 @@ description: Smith commands, Command classes, discovery, and the Loupe REPL.
 Every Almasix application ships **Smith** — the in-app CLI. From the application
 root, the reliable invocation is:
 
-```bash
+```bash title="terminal"
 python smith list
 python smith make:command SendDigest
 python smith inspire
 python smith loupe
 ```
 
-That uses the root `smith` script (same idea as `php artisan`). After
+That uses the root `smith` script. After
 `pip install -e .` **of the application** (not only of Almasix), a `smith`
 console script is also installed into that virtualenv, so bare `smith …` works
 with the env active. Installing Almasix alone — or only the framework editable
@@ -31,7 +31,7 @@ Framework commands (`serve`, `migrate`, `make:*`, …) live on the same surface 
 interactive shell with helpers and models available. Install the optional extra
 for Tinker-class coloring and completion:
 
-```bash
+```bash title="terminal"
 pip install 'almasix[loupe]'   # IPython + One Dark Pro highlighting
 ```
 
@@ -40,7 +40,7 @@ Input, completions, and matched brackets use the **One Dark Pro** Pygments theme
 
 Articulate is **async**. Loupe auto-resolves coroutine expression results, so these both work:
 
-```python
+```python title="examples/console.py"
 User.all()
 await User.query().get()
 users = run(User.all())   # explicit sync bridge for assignments
@@ -48,7 +48,7 @@ users = run(User.all())   # explicit sync bridge for assignments
 
 Results render as **JSON key/value panels** (models, collections, dicts, lists). Helpers:
 
-```python
+```python title="examples/console.py"
 dump(users)          # pretty dump, continue
 dd(users)            # dump and exit Loupe
 to_json(users)       # JSON string
@@ -57,8 +57,7 @@ serialize(users)     # plain Python dict/list
 
 ## Writing commands
 
-```python
-# app/console/commands/send_digest.py
+```python title="app/console/commands/send_digest.py"
 from almasix.console import Command
 
 class SendDigest(Command):
@@ -77,7 +76,7 @@ Generate a stub with `smith make:command SendDigest`.
 
 `handle()` may return an `int`, or nothing at all (which means success). Use the constants rather than bare numbers:
 
-```python
+```python title="examples/console.py"
 def handle(self) -> int:
     if not self.argument("user"):
         return self.INVALID      # 2
@@ -86,17 +85,16 @@ def handle(self) -> int:
 
 To stop immediately with a message, call `fail()`. It raises `CommandFailed`, prints the message on stderr, and the command exits with `FAILURE`:
 
-```python
+```python title="examples/console.py"
 if not queue_is_reachable():
     self.fail("The queue connection is unreachable.")
 ```
 
 ## Closure commands
 
-Commands do not need a class. Define them in `routes/console.py`, the way Laravel defines them in `routes/console.php`:
+Commands do not need a class. Define them in `routes/console.py`:
 
-```python
-# routes/console.py
+```python title="routes/console.py"
 from almasix.console import Smith
 
 def send(user: str, queue: str) -> int:
@@ -108,7 +106,7 @@ Smith.command("mail:send {user} {--queue=default}", send).purpose("Send a messag
 
 Parameters are filled by name from the command's arguments and options. A parameter named `command` receives the `Command` instance itself, and any parameter type-hinted with a class is resolved from the container:
 
-```python
+```python title="examples/console.py"
 def report(command, reports: ReportService, format: str = "text") -> int:
     command.info(reports.render(format))
     return 0
@@ -122,7 +120,7 @@ Smith.command("report:daily {--format=text}", report)
 
 Mix in `Isolatable` and the command gains an `--isolated` flag. While one instance holds the lock, other invocations exit immediately instead of running concurrently:
 
-```python
+```python title="app/console/commands/example_command.py"
 from almasix.console import Command, Isolatable
 
 class ImportOrders(Isolatable, Command):
@@ -135,7 +133,7 @@ class ImportOrders(Isolatable, Command):
         return 300
 ```
 
-```bash
+```bash title="terminal"
 smith orders:import --isolated       # exits 0 when already running
 smith orders:import --isolated=12    # exits 12 instead
 ```
@@ -164,11 +162,11 @@ The lock uses the [cache](/cache/) when a store is configured, and falls back to
 
 Descriptions are separated by a colon surrounded by spaces, so defaults containing colons (`{--url=https://…}`) are safe.
 
-```python
+```python title="app/console/commands/example_command.py"
 signature = "mail:send {user : Who to notify} {--Q|queue=default : Which queue} {--cc=*}"
 ```
 
-```bash
+```bash title="terminal"
 smith mail:send 7 -Q bulk --cc=a@example.com --cc=b@example.com
 ```
 
@@ -178,7 +176,7 @@ smith mail:send 7 -Q bulk --cc=a@example.com --cc=b@example.com
 
 Mix in `PromptsForMissingInput` and a required argument that was not supplied is asked for instead of erroring:
 
-```python
+```python title="app/console/commands/example_command.py"
 from almasix.console import Command, PromptsForMissingInput
 
 class SendDigest(PromptsForMissingInput, Command):
@@ -200,7 +198,7 @@ Values may be callables for full control, and `prompt_for_missing_argument(name)
 
 `line`, `info`, `comment`, `question`, `warn`, `error`, `success`, and `alert` write styled output (`error` goes to stderr). `new_line(count)` adds blank lines, and `table(headers, rows)` prints an aligned table.
 
-```python
+```python title="examples/console.py"
 self.alert("Digest complete")
 self.table(["Queue", "Sent"], [["bulk", 128]])
 ```
@@ -209,13 +207,13 @@ self.table(["Queue", "Sent"], [["bulk", 128]])
 
 `with_progress_bar()` maps over an iterable while advancing a bar, returning the results:
 
-```python
+```python title="examples/console.py"
 sent = self.with_progress_bar(users, lambda user: mailer.send(user))
 ```
 
 ### Asking questions
 
-`ask`, `secret`, `confirm`, `anticipate`, and `choice` are the Laravel-shaped wrappers over [Prompts](/prompts/). `choice(..., multiple=True)` collects several answers.
+`ask`, `secret`, `confirm`, `anticipate`, and `choice` are thin wrappers over [Prompts](/prompts/). `choice(..., multiple=True)` collects several answers.
 
 ## Registering commands
 
@@ -230,7 +228,7 @@ There is no list to maintain: a `Command` subclass with a `signature` in one of 
 
 A command module that fails to import does not take the rest of the CLI down with it. Smith reports it and carries on:
 
-```
+```text title="terminal"
 Some commands could not be loaded:
   app.console.commands.broken: ModuleNotFoundError: No module named 'nowhere'
 ```
@@ -241,7 +239,7 @@ Failed command *runs* report through the exception `Handler` before exiting.
 
 The `Smith` façade runs commands from anywhere — controllers, jobs, other commands:
 
-```python
+```python title="resources/views/examples/console.prism.html"
 from almasix.console import Smith
 
 Smith.call("mail:send 7 --queue=bulk")
@@ -252,13 +250,13 @@ Keys beginning with `--` are options; a `True` boolean passes the flag and `Fals
 
 To run a command on a queue worker, `await Smith.queue()` (Almasix's queue dispatch is async):
 
-```python
+```python title="examples/console.py"
 await Smith.queue("mail:send", {"user": 7}, queue="bulk")
 ```
 
 ### Calling commands from other commands
 
-```python
+```python title="examples/console.py"
 def handle(self) -> int:
     self.call("cache:clear")
     self.call_silently("queue:restart")
@@ -269,7 +267,7 @@ def handle(self) -> int:
 
 `trap()` registers OS signal handlers for long-running commands:
 
-```python
+```python title="examples/console.py"
 def handle(self) -> int:
     self.stopping = False
     self.trap([signal.SIGTERM, signal.SIGINT], lambda _sig: setattr(self, "stopping", True))
@@ -282,14 +280,14 @@ def handle(self) -> int:
 
 Every generator — `make:model`, `make:controller`, `make:migration`, and the rest — renders a `.stub` file. Publish them to change what your application generates:
 
-```bash
+```bash title="terminal"
 smith stub:publish
 smith stub:publish --force   # overwrite stubs you have already published
 ```
 
 The stubs land in `stubs/` at your project root. A generator prefers your copy and falls back to the framework's, so publish only the ones you want to change and delete the rest:
 
-```
+```text title="terminal"
 stubs/
 ├── model.stub
 ├── controller.stub
@@ -303,14 +301,14 @@ Placeholders are `{{ name }}`-style tokens, filled by the generator that renders
 
 A service provider offers files to the application with `publishes()`, and the user copies them when they choose:
 
-```python
+```python title="examples/console.py"
 class CourierServiceProvider(ServiceProvider):
     def boot(self) -> None:
         here = Path(__file__).parent
         self.publishes({here / "config" / "courier.py": self.app.path("config", "courier.py")}, "courier-config")
 ```
 
-```bash
+```bash title="terminal"
 smith vendor:publish                                  # choose from a list
 smith vendor:publish --tag=courier-config
 smith vendor:publish --provider=courier.CourierServiceProvider
@@ -329,7 +327,7 @@ The console dispatches through the [event dispatcher](/events/):
 | `CommandStarting` | Before `handle()` runs — carries name, arguments, options |
 | `CommandFinished` | After it returns — adds `exit_code` |
 
-```python
+```python title="app/console/commands/example_command.py"
 from almasix.console import CommandFinished
 from almasix.events import Event
 
@@ -595,7 +593,7 @@ What the framework ships, 112 commands, as `smith list` groups them. An applicat
 
 Debug helpers live on the package root:
 
-```python
+```python title="examples/console.py"
 from almasix import dump, dd
 
 dump(user, request)   # Rich panel(s) in the terminal; execution continues
@@ -619,7 +617,7 @@ Shell preference:
 2. **ptpython** — if IPython is absent
 3. **Rich fallback** — pretty output + tip to install IPython
 
-```bash
+```bash title="terminal"
 pip install 'almasix[loupe]'
 # or, for contributors:
 pip install -e '.[dev]'
@@ -631,7 +629,7 @@ Preloaded names typically include `app`, `config`, `Route`, `url`, `DB`, `Model`
 
 `config/loupe.py` decides what is waiting for you in the shell:
 
-```python
+```python title="app/console/commands/example_command.py"
 config = {
     # Commands to have as callables: "inspire" → inspire()
     "commands": ["inspire"],
@@ -644,7 +642,7 @@ config = {
 
 Your models under `app/models` are aliased automatically; `dont_alias` wins over everything, including `alias`. A command listed in `commands` becomes a callable — `:` and `-` become `_`, arguments are positional, and options are keywords:
 
-```python
+```python title="examples/console.py"
 inspire()
 queue_work(once=True)     # smith queue:work --once
 ```

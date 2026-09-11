@@ -8,9 +8,9 @@ description: Beautiful interactive console prompts for Smith commands.
 Almasix Prompts give Smith commands rich terminal UX: styled text fields,
 arrow-key selects, confirmations, spinners, and progress bars. Colours follow
 **One Dark Pro** (true color when the terminal supports it) so interactive
-prompts match Loupe and feel as polished as Laravel Prompts.
+prompts match Loupe and feel at home in a Smith session.
 
-```python
+```python title="examples/prompts.py"
 from almasix.console.prompts import text, select, confirm, spin, progress, intro, outro
 
 intro("Create a user")
@@ -23,7 +23,7 @@ outro("Done")
 
 Inside a `Command`, use the built-in helpers:
 
-```python
+```python title="examples/prompts.py"
 name = self.ask("Name", default="Sam")
 role = self.choice("Role", ["admin", "user"])
 secret = self.secret("API token")
@@ -46,7 +46,7 @@ city = self.anticipate("City", ["Nairobi", "Mombasa"])
 
 ### Validation
 
-```python
+```python title="examples/prompts.py"
 text(
     "Name",
     required="Name is required.",
@@ -66,12 +66,18 @@ When stdin/stdout are not a TTY, `CI=true`, or `ALMASIX_PROMPTS_INTERACTIVE=0`:
 
 That keeps CI and scripted runs deterministic.
 
-## Try it
+## Try it in your app
 
-```bash
-cd examples/progress
-smith progress:prompts
+Add a Smith command that calls `text`, `select`, and `confirm`, then run it
+from your app root:
+
+```bash title="terminal"
+python smith make:command GreetUser
+# edit handle() to use the prompt helpers, then:
+python smith greet:user
 ```
+
+In CI (`CI=true`), prompts use defaults instead of waiting for a TTY.
 
 ## Related
 

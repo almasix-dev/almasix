@@ -23,7 +23,7 @@ stack has no `package.json` at all: `public/css/app.css` is served as written.
 | `plain` | `resources/css/app.css`, `resources/js/app.js` | none |
 | `none` | `public/css/app.css` | none, and no build step |
 
-```bash
+```bash title="terminal"
 npm install
 npm run dev      # Vite development server (hot reload)
 npm run build    # production assets → public/build
@@ -32,9 +32,9 @@ npm run build    # production assets → public/build
 ## `@vite`
 
 Prism's `@vite` directive renders the tags for one or more entry points. It
-takes the same argument Laravel's does — a string, or a list:
+takes a string, or a list:
 
-```html
+```html title="resources/views/examples/asset-bundling.prism.html"
 <head>
   <title>{{ name }}</title>
   @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -51,7 +51,7 @@ file:
   `npm run build` wrote, naming the hashed files it emitted. A stylesheet a
   listed JS entry imports is linked once, not twice.
 
-```html
+```html title="resources/views/examples/asset-bundling.prism.html"
 <!-- npm run dev -->
 <script type="module" src="http://127.0.0.1:5173/@vite/client"></script>
 <link rel="stylesheet" href="http://127.0.0.1:5173/resources/css/app.css"/>
@@ -83,7 +83,7 @@ React's Fast Refresh needs a preamble before any component loads, and only in
 development. `@viteReactRefresh` renders it while the dev server is running and
 nothing at all otherwise:
 
-```html
+```html title="resources/views/examples/asset-bundling.prism.html"
 <head>
   @viteReactRefresh
   @vite('resources/js/app.jsx')
@@ -94,7 +94,7 @@ nothing at all otherwise:
 
 The same resolution is available outside a template:
 
-```python
+```python title="examples/asset-bundling.py"
 from almasix.prism import Vite, vite
 
 vite(["resources/css/app.css"])          # the tags, as a string
@@ -110,7 +110,7 @@ cases where those are not the defaults.
 
 You can also place finished assets directly under `public/`:
 
-```text
+```text title="terminal"
 public/
   css/app.css
   js/app.js
@@ -124,7 +124,7 @@ public/
 Use `asset()` in Python or `@asset` / `asset()` inside Prism so
 `APP_BASE_PATH` is applied:
 
-```python
+```python title="routes/web.py"
 from almasix.routing import asset
 
 asset("css/app.css")
@@ -133,7 +133,7 @@ asset("css/app.css")
 asset("build/assets/app.css")
 ```
 
-```html
+```html title="resources/views/examples/asset-bundling.prism.html"
 <!-- resources/views/layouts/app.prism.html -->
 <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 <script src="@asset('js/app.js')" defer></script>

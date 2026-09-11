@@ -9,15 +9,14 @@ description: Livewire 4–class reactive components for Almasix — Prism views,
 semantics: server-driven components that render Prism templates, talk over a
 CSRF-safe wire protocol, and interop with Alpine.js via `$wire`.
 
-```python
+```python title="examples/conduit.py"
 from almasix.conduit import Component, Conduit, conduit
 ```
 
 The HTML attribute vocabulary stays **`wire:*`** (same as Livewire) so muscle
 memory and docs transfer. The Python package is namespaced under Almasix —
-not a top-level `flux` import.
-
-Progress demo: `smith progress:conduit` and browse `/conduit`.
+not a top-level `flux` import. After installing, register a component and
+browse a page that embeds it with `@conduit`.
 
 :::note[Livewire 4 parity]
 Every row in the [parity matrix](#livewire-4-parity-matrix) is **complete**
@@ -29,22 +28,21 @@ stricter than Livewire) are documented on this page.
 
 Conduit ships inside the `almasix` distribution (like Signet):
 
-```bash
+```bash title="terminal"
 pip install 'almasix[conduit]'   # extra reserved; currently zero extra deps
 ```
 
 `ConduitServiceProvider` boots with the framework foundation providers. Publish
 optional config/assets:
 
-```bash
+```bash title="terminal"
 smith vendor:publish --tag=conduit-config
 smith vendor:publish --tag=conduit-assets
 ```
 
 ## Quick start
 
-```python
-# app/conduit/counter.py
+```python title="app/conduit/counter.py"
 from almasix.conduit import Component
 
 class Counter(Component):
@@ -57,7 +55,7 @@ class Counter(Component):
         return "conduit.counter"
 ```
 
-```html
+```html title="resources/views/examples/conduit.prism.html"
 <!-- resources/views/conduit/counter.prism.html -->
 <div>
   <h1 wire:text="count">{{ count }}</h1>
@@ -67,13 +65,13 @@ class Counter(Component):
 </div>
 ```
 
-```html
+```html title="resources/views/examples/conduit.prism.html"
 <!-- layout -->
 @conduitScripts
 @conduit('counter')
 ```
 
-```python
+```python title="examples/conduit.py"
 from almasix.conduit import conduit
 from almasix.prism.helpers import view
 
@@ -107,7 +105,7 @@ instant while still syncing to the server.
 Class attributes that are not methods become public properties (snapshotted,
 checksummed, syncable):
 
-```python
+```python title="examples/conduit.py"
 class Search(Component):
     query = ""
     page = 1
@@ -126,7 +124,7 @@ class Search(Component):
 
 ### Actions
 
-```python
+```python title="examples/conduit.py"
 def save(self) -> None:
     self.validate()
     self.dispatch("saved", id=self.id)
@@ -141,7 +139,7 @@ Call from the browser with `wire:click="save"`, `wire:click="add(1)"`, or
 
 ### Validation
 
-```python
+```python title="app/models/example.py"
 from pydantic import BaseModel, Field
 
 class Rules(BaseModel):
@@ -159,14 +157,14 @@ Errors land in `component.errors` / `$errors` / `effects.errors`.
 
 ### Nested components
 
-```html
+```html title="resources/views/examples/conduit.prism.html"
 @conduit('counter')
 @conduit('forms.profile', user_id=user.id)
 ```
 
 ### Lazy / defer
 
-```python
+```python title="examples/conduit.py"
 class Heavy(Component):
     lazy = True           # load when scrolled into view
     # defer = True        # load on next frame after paint
@@ -183,7 +181,7 @@ see [Signed update requests](#signed-update-requests).
 
 Send `X-CSRF-TOKEN` (or `_token`) and JSON:
 
-```json
+```json title="examples/conduit.json"
 {
   "fingerprint": { "id": "...", "name": "counter" },
   "serverMemo": { "data": { "count": 0 }, "checksum": "...", "errors": {} },
@@ -252,7 +250,7 @@ Prefer bundling Alpine yourself and loading only Conduit’s script in productio
 
 ## Alpine `$wire`
 
-```html
+```html title="resources/views/examples/conduit.prism.html"
 <button @click="$wire.increment()">+</button>
 <span x-text="$wire.count"></span>
 ```
@@ -264,7 +262,7 @@ Magics: `$wire`, `$errors`. Helpers: `$wire.$set`, `$toggle`, `$refresh`,
 
 Mark a region:
 
-```html
+```html title="resources/views/examples/conduit.prism.html"
 <div wire:island="stats">
   <p wire:text="visits">{{ visits }}</p>
 </div>
@@ -273,7 +271,7 @@ Mark a region:
 
 Or declare island views on the component:
 
-```python
+```python title="examples/conduit.py"
 class Dashboard(Component):
     island_views = {"stats": "conduit.dashboard.stats"}
 ```
@@ -283,7 +281,7 @@ Only that island’s HTML is applied when the request targets it.
 ## Signed update requests
 
 Every `POST /conduit/update` must present a **valid relative signature**
-(Laravel `signed:relative`). This is stricter than Livewire’s snapshot checksum
+(`signed:relative`). This is stricter than a client-side snapshot checksum
 alone:
 
 1. `@conduitScripts` embeds a short-lived signed endpoint in
@@ -302,8 +300,8 @@ Config: `conduit.signature_ttl_minutes` (default 720).
 
 ## Subpath hosting (`APP_BASE_PATH`)
 
-Laravel Livewire is a known footgun under a public prefix (`/my-app`,
-`/apps/foo`). Conduit is built on Almasix’s existing subpath story:
+Serving interactive components under a public prefix (`/my-app`, `/apps/foo`)
+is a common footgun. Conduit is built on Almasix’s existing subpath story:
 
 1. Route URIs stay unprefixed (`POST /conduit/update`) inside the app.
 2. The HTTP kernel mounts ASGI at `APP_BASE_PATH` (`almasix.http.subpath`).
@@ -314,19 +312,18 @@ Laravel Livewire is a known footgun under a public prefix (`/my-app`,
    config (or derives the prefix from the script `src`), and `withBase()`
    guards `wire:navigate` / root-absolute paths.
 
-```bash
+```bash title="terminal"
 # .env
 APP_BASE_PATH=/my-app
 ```
 
 Then the browser posts to `/my-app/conduit/update` and loads
-`/my-app/conduit/conduit.js`. Progress smoke also covers this contract in
-unit tests (`test_public_paths_honor_app_base_path`).
+`/my-app/conduit/conduit.js`. Confirm those URLs in DevTools after setting
+`APP_BASE_PATH`.
 
 ## Configuration
 
-```python
-# config/conduit.py
+```python title="config/conduit.py"
 config = {
     "endpoint": "/conduit/update",
     "asset_url": "/conduit/conduit.js",
@@ -341,8 +338,7 @@ config = {
 
 ## Livewire 4 parity matrix
 
-All rows **complete**. Machine source: `almasix.conduit.parity.PARITY`
-(`smith progress:conduit` asserts `partial == planned == 0`).
+All rows **complete**. Machine source: `almasix.conduit.parity.PARITY`.
 
 | Feature | Status |
 | --- | --- |

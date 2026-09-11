@@ -11,8 +11,8 @@ tokens instead of CSRF.
 
 1. `StartSession` loads the signed (and encrypted) session cookie
 2. `VerifyCsrfToken` ensures `_csrf_token` exists and checks mutating requests
-3. Every successful response also sets a readable `XSRF-TOKEN` cookie (Laravel
-   parity) so SPA / Inertia clients can echo it as `X-XSRF-TOKEN`
+3. Every successful response also sets a readable `XSRF-TOKEN` cookie so SPA /
+   Inertia clients can echo it as `X-XSRF-TOKEN`
 4. Prism `@csrf` emits a hidden `_token` field from `csrf_token`
 
 Accepted sources for the token:
@@ -31,10 +31,9 @@ Official `@inertiajs/*` clients use axios defaults (`xsrfCookieName` /
 `XSRF-TOKEN`; subsequent `form.post(...)` calls send `X-XSRF-TOKEN`
 automatically. You do not need a hidden `@csrf` field in Vue forms.
 
-## Prism
+## Prism forms
 
-```html
-<!-- resources/views/auth/login.prism.html -->
+```html title="resources/views/auth/login.prism.html"
 <form method="post" action="/login">
   @csrf
   <input name="email" type="email">
@@ -42,15 +41,14 @@ automatically. You do not need a hidden `@csrf` field in Vue forms.
 </form>
 ```
 
-`AuthServiceProvider` shares `csrf_token` into every view so `@csrf` works without
-manual wiring.
+`AuthServiceProvider` shares `csrf_token` into every view so `@csrf` works
+without manual wiring.
 
 ## Middleware group
 
 Register on the `web` stack (scaffold default):
 
-```python
-# bootstrap/app.py
+```python title="bootstrap/app.py"
 middleware.web(
     prepend=["cookies.encrypt", "session.start", "csrf", "auth.start"],
     append=["locale"],

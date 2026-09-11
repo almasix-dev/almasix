@@ -5,12 +5,12 @@ description: Run, stream, pool, and pipe subprocesses with Process.run and fakes
 
 ## Introduction
 
-Almasix's process layer lives in `almasix.process`. It is the Laravel-shaped
-wrapper around Python's `subprocess`: one façade for running commands, waiting
-on them, streaming their output, running them concurrently, piping one into the
-next, and faking all of it in tests.
+Almasix's process layer lives in `almasix.process`. It wraps Python's
+`subprocess` behind one façade for running commands, waiting on them,
+streaming their output, running them concurrently, piping one into the next,
+and faking all of it in tests.
 
-```python
+```python title="examples/processes.py"
 from almasix.process import Process
 
 result = Process.run("ls -la")
@@ -43,7 +43,7 @@ process-wide `Factory`. You rarely construct it yourself.
 
 `Process.run()` runs a command and blocks until it finishes.
 
-```python
+```python title="examples/processes.py"
 result = Process.run("ls -la")
 ```
 
@@ -51,7 +51,7 @@ A **string** command runs through the shell, so pipes and globs work. A
 **list** command does not, which is what you want for anything built from user
 input:
 
-```python
+```python title="examples/processes.py"
 Process.run(["git", "commit", "-m", message])
 ```
 
@@ -60,7 +60,7 @@ Process.run(["git", "commit", "-m", message])
 `throw()` raises `ProcessFailedException` when the process failed and returns
 the result otherwise, so it chains:
 
-```python
+```python title="examples/processes.py"
 Process.run("bash deploy.sh").throw()
 
 result = Process.run("bash deploy.sh").throw_if(deploying)
@@ -69,7 +69,7 @@ result = Process.run("bash deploy.sh").throw_unless(dry_run)
 
 `throw()` takes a callback that runs before the exception is raised:
 
-```python
+```python title="examples/processes.py"
 Process.run("bash deploy.sh").throw(
     lambda result, exception: logger.error(result.error_output())
 )
@@ -83,7 +83,7 @@ The exception proxies the result, so `exception.exit_code()` and
 Every option returns a **copy** of the pending process, so a configured builder
 is safe to reuse:
 
-```python
+```python title="examples/processes.py"
 git = Process.path(repo).timeout(15)
 
 git.run("git fetch")
@@ -92,13 +92,13 @@ git.run("git status")
 
 ### Working directory
 
-```python
+```python title="examples/processes.py"
 Process.path("/var/www/app").run("ls -la")
 ```
 
 ### Input
 
-```python
+```python title="examples/processes.py"
 Process.input("Hello World").run("cat")
 ```
 
@@ -108,7 +108,7 @@ The default timeout is **60 seconds**, and blowing it raises
 `ProcessTimedOutException` — which carries the partial result gathered before
 the process was killed, on `exception.result`.
 
-```python
+```python title="examples/processes.py"
 Process.timeout(120).run("bash import.sh")
 Process.forever().run("bash import.sh")
 ```
@@ -116,7 +116,7 @@ Process.forever().run("bash import.sh")
 `idle_timeout()` measures time since the last byte of output rather than total
 runtime:
 
-```python
+```python title="examples/processes.py"
 Process.timeout(60).idle_timeout(30).run("bash import.sh")
 ```
 
@@ -124,7 +124,7 @@ Process.timeout(60).idle_timeout(30).run("bash import.sh")
 
 Variables are merged into the environment the parent inherited:
 
-```python
+```python title="examples/processes.py"
 Process.env({"IMPORT_MODE": "test"}).run("bash import.sh")
 ```
 
@@ -133,7 +133,7 @@ Process.env({"IMPORT_MODE": "test"}).run("bash import.sh")
 `tty()` connects the process to the parent's terminal. Output goes to the
 screen, which means it is *not* captured and `result.output()` is empty.
 
-```python
+```python title="examples/processes.py"
 Process.tty().run("vim")
 ```
 
@@ -142,13 +142,13 @@ Process.tty().run("vim")
 `options()` passes keyword arguments straight to `subprocess.Popen` for the
 cases the façade does not name:
 
-```python
+```python title="examples/processes.py"
 Process.options({"start_new_session": True}).run("bash long-job.sh")
 ```
 
 ### Conditional configuration
 
-```python
+```python title="examples/processes.py"
 Process.when(verbose, lambda process, _: process.tty()).run("bash import.sh")
 Process.unless(quiet, lambda process, _: process.tty()).run("bash import.sh")
 ```
@@ -159,7 +159,7 @@ Process.unless(quiet, lambda process, _: process.tty()).run("bash import.sh")
 `see_in_output()` and `see_in_error_output()` answer the common question
 directly:
 
-```python
+```python title="examples/processes.py"
 if Process.run("ls -la").see_in_output("README.md"):
     ...
 ```
@@ -169,7 +169,7 @@ if Process.run("ls -la").see_in_output("README.md"):
 Pass a callback as the second argument to `run()`. It receives the stream name
 (`"out"` or `"err"`) and the chunk:
 
-```python
+```python title="examples/processes.py"
 Process.run("bash import.sh", lambda kind, chunk: print(chunk, end=""))
 ```
 
@@ -179,7 +179,7 @@ The constants live in `almasix.process` as `OUT` and `ERR`.
 
 `quietly()` discards output rather than streaming it, and skips the callback:
 
-```python
+```python title="examples/processes.py"
 Process.quietly().run("bash import.sh")
 ```
 
@@ -189,7 +189,7 @@ Process.quietly().run("bash import.sh")
 returns the **last** result. A failing stage short-circuits the pipeline and is
 returned as-is.
 
-```python
+```python title="examples/processes.py"
 result = Process.pipe([
     "cat example.txt",
     "grep -i almasix",
@@ -200,7 +200,7 @@ result.output()
 
 Name the stages when you want to know which one produced which output:
 
-```python
+```python title="examples/processes.py"
 Process.pipe(
     lambda pipe: [
         pipe.as_("read").command("cat example.txt"),
@@ -214,7 +214,7 @@ Process.pipe(
 
 `Process.start()` returns an `InvokedProcess` immediately.
 
-```python
+```python title="examples/processes.py"
 process = Process.start("bash import.sh")
 
 while process.running():
@@ -233,7 +233,7 @@ result = process.wait()
 | `stop(timeout=10, sig=None)` | Terminate, then kill if it outlives `timeout` |
 | `wait(callback=None)` | Block for the result, optionally streaming output |
 
-```python
+```python title="examples/processes.py"
 process = Process.start("bash import.sh")
 
 while process.running():
@@ -249,7 +249,7 @@ A started process still honours its timeout: `wait()` raises
 
 `Process.pool()` collects processes and starts them together.
 
-```python
+```python title="examples/processes.py"
 pool = Process.pool(lambda pool: [
     pool.command("bash import-1.sh"),
     pool.command("bash import-2.sh"),
@@ -269,7 +269,7 @@ for result in results:
 
 `Process.concurrently()` is the shorthand for start-then-wait:
 
-```python
+```python title="examples/processes.py"
 results = Process.concurrently(lambda pool: [
     pool.command("bash import-1.sh"),
     pool.command("bash import-2.sh"),
@@ -283,7 +283,7 @@ results[0].output()
 Integer keys are awkward to read, so name them with `as_()` — results answer to
 the name *and* to the position:
 
-```python
+```python title="examples/processes.py"
 results = Process.concurrently(lambda pool: [
     pool.as_("first").command("bash import-1.sh"),
     pool.as_("second").command("bash import-2.sh"),
@@ -298,7 +298,7 @@ results[0].output()
 
 ### Pool process IDs and signals
 
-```python
+```python title="examples/processes.py"
 running = pool.start()
 
 for process in running:
@@ -310,7 +310,7 @@ running.stop()
 
 The start callback receives the pool key as a third argument:
 
-```python
+```python title="examples/processes.py"
 pool.start(lambda kind, chunk, key: print(f"{key}: {chunk}", end=""))
 ```
 
@@ -321,7 +321,7 @@ pool.start(lambda kind, chunk, key: print(f"{key}: {chunk}", end=""))
 `Process.fake()` with no arguments makes every process succeed with empty
 output:
 
-```python
+```python title="examples/processes.py"
 Process.fake()
 
 Process.run("bash import.sh")
@@ -334,7 +334,7 @@ Process.assert_ran("bash import.sh")
 Pass a mapping of command patterns to results. `*` is the only wildcard, and
 patterns must match the whole command:
 
-```python
+```python title="examples/processes.py"
 Process.fake({
     "cat *": "file contents",
     "bash *": Process.result(error_output="failed", exit_code=1),
@@ -344,7 +344,7 @@ Process.fake({
 A bare string (or list of lines) becomes successful output.
 `Process.result()` spells out all three parts:
 
-```python
+```python title="examples/processes.py"
 Process.result(output="ok", error_output="", exit_code=0)
 Process.result(output=["line one", "line two"])
 ```
@@ -353,7 +353,7 @@ Commands with **no** matching pattern still run for real — `fake()` is a
 mapping, not a wall. `prevent_stray_processes()` turns the misses into a
 `StrayProcessException`:
 
-```python
+```python title="examples/processes.py"
 Process.fake({"cat *": "file contents"})
 Process.prevent_stray_processes()
 
@@ -363,7 +363,7 @@ Process.run("rm -rf /")   # StrayProcessException
 A callable stub receives the pending process, so the fake can depend on the
 command:
 
-```python
+```python title="examples/processes.py"
 Process.fake(lambda process: Process.result(output=process.described_command))
 ```
 
@@ -371,7 +371,7 @@ Process.fake(lambda process: Process.result(output=process.described_command))
 
 When the same command is run repeatedly and should answer differently:
 
-```python
+```python title="examples/processes.py"
 Process.fake({
     "bash deploy.sh": Process.sequence()
         .push_result(error_output="locked", exit_code=1)
@@ -390,7 +390,7 @@ A drained sequence raises `OutOfFakeProcesses`. `dont_fail_when_empty()` or
 `Process.describe()` scripts an asynchronous process: each `running()` check
 releases the next chunk of output.
 
-```python
+```python title="examples/processes.py"
 Process.fake({
     "bash import.sh": Process.describe()
         .id(1234)
@@ -407,7 +407,7 @@ while process.running():
     print(process.latest_output(), end="")
 ```
 
-`runs_for(iterations=...)` is the same thing under Laravel's other name.
+`runs_for(iterations=...)` is another name for the same iteration limit.
 `replace_output()` and `replace_error_output()` discard what was scripted
 before.
 
@@ -424,7 +424,7 @@ before.
 A callable assertion receives the pending process, and the result too if it
 takes a second argument:
 
-```python
+```python title="examples/processes.py"
 Process.assert_ran(lambda process: process.described_command == "ls -la")
 Process.assert_ran(lambda process, result: result.successful())
 ```
@@ -432,19 +432,18 @@ Process.assert_ran(lambda process, result: result.successful())
 `Process.recorded()` returns the `(process, result)` pairs directly, optionally
 filtered by the same pattern or callable.
 
-## Deliberate deviations from Laravel
+## Python-shaped details
 
 - **`as_()` carries a trailing underscore** in pools and pipes, because `as` is
   a Python keyword. Same for `input`, which shadows a builtin only inside the
   builder.
 - **Fluent calls copy** the pending process instead of mutating it, matching
-  Almasix's HTTP client. Laravel's `PendingProcess` mutates in place.
-- **`options()` takes `subprocess.Popen` keyword arguments**, where Laravel
-  takes Symfony Process options.
+  Almasix's HTTP client.
+- **`options()` takes `subprocess.Popen` keyword arguments**, not a separate
+  process-options vocabulary.
 - **`described_command`** is a property, not a `command` accessor method, so it
   does not collide with the fluent `command()` setter.
 - **Signals are the `signal` module's integers** — there is no
   cross-platform signal abstraction.
-- **`quietly()` also silences the run callback.** Laravel's only affects TTY
-  passthrough; Almasix captures output either way, so the callback is the only
-  thing left to silence.
+- **`quietly()` also silences the run callback.** Almasix captures output
+  either way, so the callback is the only thing left to silence.

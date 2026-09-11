@@ -11,7 +11,7 @@ dependency.
 
 1. **Bump the package**
 
-   ```bash
+   ```bash title="terminal"
    pip install -U almasix==0.6.2
    ```
 
@@ -21,14 +21,14 @@ dependency.
 
 3. **Existing kits** — if you hit kit install or Conduit `theme_toggle` issues on
    an older scaffold, prefer re-scaffolding or pulling the stub fixes from
-   [Starter Kits](/starter-kits/). Day-1 auth is covered by `smith progress:kits`
-   in the framework tree.
+   [Starter Kits](/starter-kits/). After re-scaffolding, walk register → email
+   verify → logout → login in the browser to confirm Day-1 auth.
 
 ## From 0.5.x to 0.6.x
 
 1. **Bump the package**
 
-   ```bash
+   ```bash title="terminal"
    pip install -U 'almasix==0.6.*'
    # or pin exactly
    pip install -U almasix==0.6.2
@@ -53,16 +53,17 @@ dependency.
 
 1. **Bump the package**
 
-   ```bash
+   ```bash title="terminal"
    pip install -U 'almasix==0.5.*'
    # or pin exactly
    pip install -U almasix==0.5.1
    ```
 
 2. **Breaking: `Artisan` → `Smith`** — the console façade and test helper are
-   renamed. Update imports and call sites:
+   renamed (PHP Laravel's CLI was named Artisan; Almasix now uses Smith).
+   Update imports and call sites:
 
-   ```python
+   ```python title="examples/upgrade.py"
    # before
    from almasix.console import Artisan
    from almasix.testing import artisan
@@ -95,7 +96,7 @@ dependency.
 
 1. **Bump the package**
 
-   ```bash
+   ```bash title="terminal"
    pip install -U 'almasix==0.4.*'
    # or pin exactly
    pip install -U almasix==0.4.0
@@ -107,7 +108,7 @@ dependency.
 
 3. **Production serve** — prefer:
 
-   ```bash
+   ```bash title="terminal"
    smith serve --host 0.0.0.0 --port 8000 --workers 4 --no-reload --proxy-headers
    ```
 

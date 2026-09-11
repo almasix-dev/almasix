@@ -16,8 +16,7 @@ the token guard on the `api` group and stay stateless.
 
 Scaffolded by `almasix new`:
 
-```python
-# config/auth.py
+```python title="config/auth.py"
 config = {
     "defaults": {"guard": "web", "passwords": "users"},
     "guards": {
@@ -36,8 +35,7 @@ config = {
 
 ## Retrieving the user
 
-```python
-# app/http/controllers/auth_controller.py
+```python title="app/http/controllers/auth_controller.py"
 from almasix.auth import auth
 
 user = auth().user()
@@ -56,8 +54,7 @@ Prism `@auth` / `@guest` read `auth_user` / `__authenticated` shared by
 
 ## Attempt login
 
-```python
-# app/http/controllers/auth_controller.py
+```python title="app/http/controllers/auth_controller.py"
 ok = await auth().attempt(
     {"email": email, "password": password},
     remember=True,
@@ -69,12 +66,12 @@ await auth().logout()
 ```
 
 With `remember=True`, Almasix rotates the user’s `remember_token` and queues a
-long-lived `remember_{guard}` cookie (`{id}|{token}`). `EncryptCookies` encrypts
-it; `StartAuth` hydrates the session from that cookie when no login payload
-exists. Logout clears the cookie and nulls the token.
+long-lived `remember_{guard}` cookie (`{id}|{token}`). `EncryptCookies`
+encrypts it; `StartAuth` hydrates the session from that cookie when no login
+payload exists. Logout clears the cookie and nulls the token.
 
-Passwords are verified with [`Hash`](/hashing/). On success, Almasix rehashes when
-`Hash.needs_rehash` says the work factor changed.
+Passwords are verified with [`Hash`](/hashing/). On success, Almasix rehashes
+when `Hash.needs_rehash` says the work factor changed.
 
 Failed and successful attempts dispatch auth events (`Attempting`, `Validated`,
 `Login`, `Failed`, `Logout`, …) — listen with `almasix.auth.listen`.
@@ -87,8 +84,7 @@ session and redirect to `/login`. After `attempt()`, redirect with
 
 ## Protecting routes
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/settings", [SettingsController, "edit"], middleware=["auth"])
 Route.get("/login", [AuthController, "show"], middleware=["guest"])
 Route.get("/admin", ..., middleware=["auth:web"])
@@ -113,8 +109,7 @@ flows, see [API Tokens](/api-tokens/) (`auth:signet`). The classic
 
 ## Email verification
 
-```python
-# app/models/user.py
+```python title="app/models/user.py"
 from almasix.auth import AuthenticatableMixin
 from almasix.notifications import MustVerifyEmail, Notifiable
 from almasix.orm import Model
@@ -123,7 +118,7 @@ class User(AuthenticatableMixin, Notifiable, MustVerifyEmail, Model):
     fillable = ("email", "name", "password", "email_verified_at")
 ```
 
-```python
+```python title="app/http/controllers/verification_controller.py"
 await user.send_email_verification_notification()
 await user.mark_email_as_verified()
 user.has_verified_email()
@@ -135,8 +130,7 @@ and [Passwords](/passwords/).
 
 ## viaRequest
 
-```python
-# app/http/controllers/auth_controller.py
+```python title="app/http/controllers/auth_controller.py"
 from almasix.auth import auth
 
 auth().via_request("custom", lambda request: lookup(request))
@@ -144,8 +138,7 @@ auth().via_request("custom", lambda request: lookup(request))
 
 ## User model
 
-```python
-# app/models/user.py
+```python title="app/models/user.py"
 from almasix.auth import AuthenticatableMixin
 from almasix.notifications import MustVerifyEmail, Notifiable
 from almasix.orm import Model

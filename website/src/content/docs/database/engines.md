@@ -29,7 +29,7 @@ SQLite (or another engine) refuses rather than pretends.
 
 | Store | Driver extra | Executed in CI | Notes |
 | --- | --- | --- | --- |
-| Memory | included | yes (unit + smoke) | In-process collections — the document `:memory:` |
+| Memory | included | yes | In-process collections — the document `:memory:` |
 | MongoDB | `almasix[mongodb]` (`motor`) | unit fakes + optional live | Production document store; see [Document stores](/database/documents/) |
 
 Document connections share `config/database.py` with SQL but resolve through
@@ -71,30 +71,27 @@ server feature:
   your migration opened.
 - **Full-text / vectors** — no `MATCH … AGAINST`, no `to_tsvector`, no pgvector.
 
-Use PostgreSQL or MySQL in CI (or locally) when you rely on those paths. The
-dialect conformance suite (`tests/test_m44_conformance.py`) runs schema DDL,
-upserts, JSON wheres, locking, transactions, and pagination against SQLite,
-PostgreSQL, and MySQL in GitHub Actions.
+Use PostgreSQL or MySQL in CI (or locally) when you rely on those paths.
 
-## Running the suite against another engine
+## Verify against your database
 
-```bash
-pip install -e ".[dev,pgsql,mysql]"
+Point your app's default connection at the engine you care about, install the
+matching extra, migrate, and exercise the features you use:
 
-# SQLite (default) — offline
-pytest -q tests/test_m44_conformance.py
+```bash title="terminal"
+# .env — example for PostgreSQL
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=myapp
+DB_USERNAME=myapp
+DB_PASSWORD=secret
 
-# PostgreSQL
-ALMASIX_TEST_DB=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 \
-  DB_DATABASE=almasix_test DB_USERNAME=almasix DB_PASSWORD=secret \
-  pytest -q tests/test_m44_conformance.py
-
-# MySQL
-ALMASIX_TEST_DB=mysql DB_HOST=127.0.0.1 DB_PORT=3306 \
-  DB_DATABASE=almasix_test DB_USERNAME=almasix DB_PASSWORD=secret \
-  pytest -q tests/test_m44_conformance.py
+pip install 'almasix[pgsql]'   # or mysql / mariadb / …
+smith migrate
 ```
 
-`make test-orm-engines` is the same target with whatever `ALMASIX_TEST_DB` the
-environment already holds. The living example `smith progress:engines` probes
-the app's default connection the same way.
+Run your feature tests — or hit the routes that use upserts, JSON wheres,
+locking, and pagination — against that database. SQLite is fine for day-to-day
+local work; switch engines when you depend on capabilities SQLite cannot offer
+(see the matrix above).

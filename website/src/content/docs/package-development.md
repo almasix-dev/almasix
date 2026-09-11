@@ -1,6 +1,6 @@
 ---
 title: Package Development
-description: Build first-party and third-party packages that extend Almasix like Laravel packages do.
+description: Build first-party and third-party packages that extend Almasix.
 ---
 
 ## Introduction
@@ -8,14 +8,14 @@ description: Build first-party and third-party packages that extend Almasix like
 Packages are how first-party and community code plugs into Almasix: a
 `ServiceProvider` registers bindings, merges config, loads routes / views /
 translations / migrations, offers publishable assets, and optionally registers
-console commands. The progress app's in-repo **Courier** package
-(`packages/courier`) is the living example — run `smith progress:packages` to
-see it boot, publish tags, resolve `courier::welcome`, and hit `/courier`.
+console commands. Scaffold a package inside your app (or a sibling repo),
+install it editable, and publish its assets:
 
-```bash
+```bash title="terminal"
 smith make:package courier
 pip install -e packages/courier
 smith vendor:publish --tag=courier-config
+# resolve a namespaced view or hit a package route to confirm the provider booted
 ```
 
 ## Service providers
@@ -24,7 +24,7 @@ Every package ships a provider that subclasses
 `almasix.providers.ServiceProvider`. Call the helpers from `register()` (config
 and bindings) and `boot()` (routes, views, publishes, commands):
 
-```python
+```python title="app/console/commands/example_command.py"
 from pathlib import Path
 from almasix.providers import ServiceProvider
 
@@ -63,7 +63,7 @@ or rely on [auto-discovery](#package-discovery) via entry points.
 Installed packages advertise providers with the **`almasix.providers`**
 entry-point group:
 
-```toml
+```toml title="pyproject.toml"
 [project.entry-points."almasix.providers"]
 courier = "courier.provider:CourierServiceProvider"
 ```
@@ -76,15 +76,14 @@ On boot, `Application.register_configured_providers` registers:
 
 ### Configuring discovery
 
-```python
-# config/app.py
+```python title="config/app.py"
 config = {
     "providers": [
         "app.providers.app_service_provider.AppServiceProvider",
     ],
     # Skip entry-point discovery entirely.
     "skip_provider_discovery": False,
-    # Distribution names to exclude (Laravel ``dont-discover``).
+    # Distribution names to exclude from auto-discovery.
     "dont_discover": ["almasix-spam"],
 }
 ```
@@ -100,7 +99,7 @@ Loads a Python config module (`config = {...}` or top-level names) under a key.
 Package defaults fill missing keys; values already in the application win
 (published config overrides package defaults):
 
-```python
+```python title="examples/package-development.py"
 self.merge_config_from(_HERE / "config" / "courier.py", "courier")
 # config("courier.driver")
 ```
@@ -110,7 +109,7 @@ self.merge_config_from(_HERE / "config" / "courier.py", "courier")
 Executes a route file through `Application.load_route_file` — the same path
 broadcasting uses for `routes/channels.py`:
 
-```python
+```python title="examples/package-development.py"
 self.load_routes_from(_HERE / "routes" / "web.py")
 ```
 
@@ -121,7 +120,7 @@ package tree. Published overrides live under
 `resources/views/vendor/courier/` and win over the package hint. The helper
 also declares a `{namespace}-views` publish tag for the whole views directory.
 
-```python
+```python title="examples/package-development.py"
 self.load_views_from(_HERE / "resources" / "views", "courier")
 from almasix.prism.helpers import render
 render("courier::welcome", {"driver": "pigeon"})
@@ -141,7 +140,7 @@ migrations sort after the application's existing ones.
 Registers a language namespace. Catalog files live under
 `{path}/{locale}/{group}.py`; keys use `namespace::group.key`:
 
-```python
+```python title="examples/package-development.py"
 self.load_translations_from(_HERE / "lang", "courier")
 __("courier::messages.greeting")
 ```
@@ -151,7 +150,7 @@ __("courier::messages.greeting")
 Registers `Command` subclasses on the console kernel when it is bound
 (providers' `boot()` runs after the kernel is available during Smith boots):
 
-```python
+```python title="app/console/commands/example_command.py"
 self.commands([CourierStatusCommand])
 ```
 
@@ -160,7 +159,7 @@ self.commands([CourierStatusCommand])
 `publishes` / `publishes_migrations` only **declare** paths. Users copy them
 with:
 
-```bash
+```bash title="terminal"
 smith vendor:publish --tag=courier-config
 smith vendor:publish --provider=courier.provider.CourierServiceProvider
 smith vendor:publish --all
@@ -181,7 +180,7 @@ full `vendor:publish` surface.
 
 ## Scaffolding — `smith make:package`
 
-```bash
+```bash title="terminal"
 smith make:package courier
 smith make:package acme-billing --path=packages/billing
 ```
@@ -199,10 +198,10 @@ Creates under `packages/{name}/` (or `--path`):
   calling `register()` / `boot()`, and asserting config, routes, view
   resolution, and publish tags (`ServiceProvider.forget_publishes()` between
   tests).
-- Smoke the living example: `smith progress:packages` and
-  `tests/smoke/test_m29_smoke.py`.
 - Prefer `almasix.testing.TestCase` / `boot_application()` when the package
   needs a full app boot — see [Testing](/testing/).
+- After `pip install -e`, resolve a namespaced view (`courier::welcome`) or
+  hit a package route from your app to confirm discovery and publishing work.
 
 ## File map
 
@@ -213,5 +212,4 @@ Creates under `packages/{name}/` (or `--path`):
 | View namespaces | `src/almasix/prism/engine.py` — `add_namespace` / `::` finder |
 | Migration paths | `src/almasix/orm/migration.py` — `register_migration_paths` |
 | Generator | `smith make:package` → `almasix.smith.make.make_package` |
-| Example package | `packages/courier/` |
-| Progress demo | `smith progress:packages` |
+| Scaffold output | `packages/{name}/` in your app or repo |

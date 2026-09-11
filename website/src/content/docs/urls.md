@@ -32,8 +32,7 @@ configuration describes.
 `APP_URL`. The outputs below are what an app configured with
 `APP_URL=https://shop.test` and `APP_BASE_PATH=/eu` emits:
 
-```python
-# app/http/controllers/checkout_controller.py
+```python title="app/http/controllers/checkout_controller.py"
 from almasix.routing import url
 
 url("/checkout")                   # 'https://shop.test/eu/checkout'
@@ -43,7 +42,7 @@ url("/checkout", absolute=False)   # '/eu/checkout'
 Extra path segments may be passed as the second argument, and a query string as
 `query`:
 
-```python
+```python title="examples/urls.py"
 url("users", [1, "posts", 2])      # 'https://shop.test/eu/users/1/posts/2'
 url("/posts", query={"page": 2})   # 'https://shop.test/eu/posts?page=2'
 url("/posts", query={"tag": ["a", "b"]})  # '…/posts?tag=a&tag=b'
@@ -54,9 +53,8 @@ serialized as the word `None`. A path that is already absolute (`https://…` or
 `//…`) is returned unchanged, though it will still take a query string.
 
 :::note
-Laravel spells the query string with a fluent `withQuery`. Almasix takes it as
-a `query=` keyword argument, since `url()` is a function rather than the entry
-point to a builder.
+`url()` takes the query string as a `query=` keyword argument. It is a
+function, not the entry point to a fluent URI builder.
 :::
 
 ### Assets
@@ -64,8 +62,7 @@ point to a builder.
 `asset()` is the same code path for files under `public/`, so a subpath app
 emits correct asset links too:
 
-```python
-# app/http/controllers/welcome_controller.py
+```python title="app/http/controllers/welcome_controller.py"
 from almasix.routing import asset
 
 asset("build/app.css")                  # 'https://shop.test/eu/build/app.css'
@@ -82,7 +79,7 @@ Default apps ship Vite and Tailwind emitting into `public/build/`; keep calling
 handful of links — a checkout, a login form — that must not be downgraded even
 in a development environment served over HTTP:
 
-```python
+```python title="routes/web.py"
 from almasix.routing import secure_asset, secure_url
 
 # With APP_URL=http://shop.test:
@@ -96,7 +93,7 @@ url("/checkout")                   # 'http://shop.test/checkout'
 A script or a unit test has no `APP_URL` to honour and no base path to prefix,
 so the generator emits a relative URL rather than raising:
 
-```python
+```python title="examples/urls.py"
 url("/a")                # '/a'
 asset("build/app.css")   # '/build/app.css'
 ```
@@ -105,8 +102,7 @@ asset("build/app.css")   # '/build/app.css'
 
 `UrlGenerator` reads the request in flight:
 
-```python
-# app/http/controllers/nav_controller.py
+```python title="app/http/controllers/nav_controller.py"
 from almasix.routing import UrlGenerator
 
 
@@ -128,9 +124,8 @@ class NavController(Controller):
 `full()` and `current()` answer the site root instead of raising.
 
 :::note
-Laravel's `previous()` reads a session-stored previous URL and falls back to the
-`Referer` header. Almasix reads the header only, so a request that arrives
-without one lands on the fallback.
+`previous()` reads the `Referer` header only. A request that arrives without
+one lands on the fallback you pass (or the site root).
 :::
 
 ## URLs for named routes
@@ -139,12 +134,11 @@ without one lands on the fallback.
 `/blog/{post}` becomes one edit in `routes/web.py` instead of a search through
 every template:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/posts/{post}", [PostController, "show"]).name("posts.show")
 ```
 
-```python
+```python title="routes/web.py"
 from almasix.routing import route
 
 route("posts.show", 7)   # 'https://shop.test/posts/7'
@@ -153,7 +147,7 @@ route("posts.show", 7)   # 'https://shop.test/posts/7'
 Parameters may be passed in whichever shape reads best at the call site — all
 five of these mean the same thing:
 
-```python
+```python title="examples/urls.py"
 route("posts.show", 7)              # a scalar fills a single-parameter route
 route("posts.show", [7])            # a list, positionally
 route("posts.show", (7,))           # a tuple, positionally
@@ -163,27 +157,25 @@ route("posts.show", post=7)         # keyword arguments
 
 Keyword arguments are usually clearest once there is more than one:
 
-```python
-# /users/{user}/posts/{post}
+```python title="/users/{user}/posts/{post}"
 route("users.posts.show", user=1, post=2)  # 'https://shop.test/users/1/posts/2'
 ```
 
 A model is read for its route key, so you can pass the object you already have
 rather than digging out its id:
 
-```python
+```python title="examples/urls.py"
 route("posts.show", post)  # calls post.get_route_key()
 ```
 
-Almasix looks for `get_route_key()`, then Laravel's `getRouteKey()`, then
-`get_key()`.
+Almasix looks for `get_route_key()`, then `getRouteKey()`, then `get_key()`.
 
 ### Parameters the URI does not name
 
 A parameter the URI has no place for becomes the query string, which is the
 rule that makes pagination and filter links work:
 
-```python
+```python title="examples/urls.py"
 route("posts.show", post=7, page=2)
 # 'https://shop.test/posts/7?page=2'
 
@@ -200,7 +192,7 @@ An optional parameter may simply be left out, and `absolute=False` drops the
 origin while keeping the base path — which is what a `Location` header or an
 in-page link wants:
 
-```python
+```python title="examples/urls.py"
 route("greet")                        # 'https://shop.test/greet'
 route("greet", "ada")                 # 'https://shop.test/greet/ada'
 route("posts.show", 7, absolute=False)  # '/posts/7'
@@ -210,7 +202,7 @@ route("posts.show", 7, absolute=False)  # '/posts/7'
 
 Both failures name what is wrong rather than emitting a broken link:
 
-```python
+```python title="examples/urls.py"
 route("nope")
 # RouteNotFound: No route is named 'nope'. Named routes: about, greet, home, …
 
@@ -224,9 +216,8 @@ route("posts.show", [1, 2, 3])
 ```
 
 :::note
-Laravel appends leftover positional values to the URL as extra path segments.
-Almasix raises, because a count that does not match the URI is far more likely
-a mistake than an intention.
+Leftover positional values raise. A count that does not match the URI is far
+more likely a mistake than an intention to append extra path segments.
 :::
 
 ### Redirecting to a named route
@@ -234,8 +225,7 @@ a mistake than an intention.
 `to_route` builds the redirect response, with a relative `Location` so it works
 behind a subpath or a proxy:
 
-```python
-# app/http/controllers/post_controller.py
+```python title="app/http/controllers/post_controller.py"
 from almasix.routing import to_route
 
 
@@ -252,14 +242,13 @@ route alone. It wins over the application-wide
 [URL defaults](#default-values) below, being the more specific statement about
 that one URI:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/{locale}/about", [PageController, "about"]).name("about").defaults(
     "locale", "en"
 )
 ```
 
-```python
+```python title="examples/urls.py"
 route("about")  # 'https://shop.test/en/about'
 ```
 
@@ -273,8 +262,7 @@ to a user without also handing them the ability to edit it. An "unsubscribe me"
 mail can name the subscription in the open, because changing the id
 invalidates the signature.
 
-```python
-# app/mail/unsubscribe.py
+```python title="app/mail/unsubscribe.py"
 from almasix.routing import signed_route, temporary_signed_route
 
 signed_route("unsubscribe", user.id)
@@ -294,8 +282,7 @@ The `signed` middleware is the usual way to check one — see
 [Routing](/routing/#signed-routes). It answers `403` rather than `404`, because
 the resource is there and this link is simply not allowed to reach it:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/unsubscribe/{user}", [UnsubscribeController, "show"]).name(
     "unsubscribe"
 ).middleware("signed")
@@ -303,7 +290,7 @@ Route.get("/unsubscribe/{user}", [UnsubscribeController, "show"]).name(
 
 To check one yourself:
 
-```python
+```python title="routes/web.py"
 from almasix.routing import has_valid_relative_signature, has_valid_signature
 
 target = signed_route("unsubscribe", 7)
@@ -324,7 +311,7 @@ The two shapes differ in what the signature covers:
   `absolute=False`, check it with `has_valid_relative_signature`, and validate
   it on the route with `signed:relative`.
 
-```python
+```python title="examples/urls.py"
 target = signed_route("unsubscribe", 7, absolute=False)
 # '/unsubscribe/7?signature=ea8ee073a083…'
 
@@ -339,7 +326,7 @@ An expired link fails `has_valid_signature` even though its signature is still
 correct. Pass `ignore_expiry=True` to separate the two cases, which is how you
 tell a user "this link has expired" instead of "this link is invalid":
 
-```python
+```python title="routes/web.py"
 import time
 
 from almasix.routing.signing import sign
@@ -372,7 +359,7 @@ strips the two parameters signing owns — `signature` and `expires`.
 find by its handler than by a name. It takes the same shapes a route
 registration does:
 
-```python
+```python title="resources/views/examples/urls.prism.html"
 from almasix.routing import action, to_action
 
 action([PostController, "index"])       # 'https://shop.test/posts'
@@ -391,7 +378,7 @@ A localized application prefixes every route with `{locale}` and would
 otherwise have to pass it at every single call site. `defaults` supplies the
 value once:
 
-```python
+```python title="routes/web.py"
 from almasix.routing import UrlGenerator
 
 urls = UrlGenerator.from_config()
@@ -407,26 +394,24 @@ A default only fills a parameter a URI actually **names**. It never becomes a
 query string, so setting a `locale` default does not append `?locale=en` to
 every other link in the application:
 
-```python
+```python title="examples/urls.py"
 route("posts.show", 7)  # 'https://shop.test/posts/7'
 ```
 
 ### Defaults are request-scoped
 
 :::note
-This is a deliberate departure from Laravel, and an important one. Laravel keeps
-default parameters on a singleton, which is safe because a PHP process serves
-one request at a time. An ASGI process serves many at once, so Almasix keeps a
-per-request overlay in a `ContextVar`: a `{locale}` read off *this* request
-cannot leak into the links another request is generating on another task, and
-the values die with the request that supplied them.
+An ASGI process serves many requests at once, so Almasix keeps default URL
+parameters in a per-request `ContextVar` overlay rather than a process-wide
+singleton: a `{locale}` read off *this* request cannot leak into the links
+another request is generating on another task, and the values die with the
+request that supplied them.
 :::
 
 The `url.defaults` middleware opens that overlay, copying the parameters it is
 named off the current request:
 
-```python
-# routes/web.py
+```python title="routes/web.py"
 Route.get("/{locale}/dashboard", [DashboardController, "index"]).middleware(
     "url.defaults"
 )
@@ -448,7 +433,7 @@ own `defaults()`, then the request overlay, then the application-wide values.
 Behind a proxy that terminates TLS, the application sees `http` and would emit
 `http` links. `force_scheme` overrides the scheme of every absolute URL:
 
-```python
+```python title="examples/urls.py"
 urls = UrlGenerator.from_config()
 urls.force_scheme("https")
 urls.to("/a")           # 'https://shop.test/a'
@@ -458,7 +443,7 @@ urls.force_scheme(None) # back to whatever APP_URL says
 `force_root_url` overrides `APP_URL` itself, for the generator you call it on —
 pointing asset URLs at a CDN, say:
 
-```python
+```python title="examples/urls.py"
 urls.force_root_url("https://cdn.test")
 urls.to("/a")   # 'https://cdn.test/a'
 urls.force_root_url(None)
@@ -485,7 +470,7 @@ Templates receive the whole URL surface without importing anything:
 | `action` | Controller-action generation |
 | `route_is`, `current_route_name` | The current route, for active nav links |
 
-```html
+```html title="resources/views/examples/urls.prism.html"
 <!-- resources/views/posts/index.prism.html -->
 <a href="{{ route('posts.show', post) }}">{{ post.title }}</a>
 <a href="{{ url('/checkout') }}">Checkout</a>
@@ -498,7 +483,7 @@ Templates receive the whole URL surface without importing anything:
 Two directives are shorthand for the two most common calls, and take the same
 arguments as the functions:
 
-```html
+```html title="resources/views/examples/urls.prism.html"
 <!-- resources/views/mail/unsubscribe.prism.html -->
 <a href="@route('posts.show', 7)">Read the post</a>
 <a href="@signedRoute('unsubscribe', 7)">Unsubscribe</a>
@@ -506,23 +491,21 @@ arguments as the functions:
 
 Both write an escaped URL, so they are safe inside an attribute.
 
-## Deliberate deviations from Laravel
+## Design notes
 
 - **Default parameters are request-scoped**, not process-wide, because an ASGI
   process serves many requests at once. See
   [Defaults are request-scoped](#defaults-are-request-scoped).
 - **Leftover positional parameters raise** instead of being appended to the
   URL as path segments.
-- **The query string is a `query=` keyword argument**, where Laravel chains a
-  fluent `withQuery`.
+- **The query string is a `query=` keyword argument**.
 - **`previous()` reads the `Referer` header only**, not a session-stored
   previous URL.
-- **No fluent `Uri` object.** Laravel's immutable URI builder has no Almasix
-  equivalent; build URLs with the helpers here and `urllib.parse` for the rest.
-- **Every method also answers to its camelCase name** — `secureAsset` is
-  `secure_asset`, `hasValidSignature` is `has_valid_signature`, `forceScheme`
-  is `force_scheme` — so a Laravel example transcribes without renaming. The
-  snake_case name is the documented one.
+- **No fluent `Uri` object** — build URLs with the helpers here and
+  `urllib.parse` for the rest.
+- **Every method also accepts a camelCase alias** — `secureAsset` for
+  `secure_asset`, `hasValidSignature` for `has_valid_signature`, `forceScheme`
+  for `force_scheme`. The snake_case name is the documented one.
 - **Without a booted application the generator emits relative URLs** rather
   than raising, so a script or a unit test gets a usable answer.
 

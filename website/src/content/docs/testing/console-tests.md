@@ -10,7 +10,7 @@ parsing, the same `handle()`. Only the terminal is a fake — questions are
 answered from a queue the test fills, and output goes to a buffer the
 assertions read.
 
-```python
+```python title="tests/feature/example_test.py"
 from almasix.testing import smith
 
 
@@ -23,7 +23,7 @@ application the case booted.
 
 ## Expectations
 
-```python
+```python title="resources/views/examples/console-tests.prism.html"
 (
     smith("mail:send")
     .expects_question("Who is it for?", "ada@example.com")
@@ -51,7 +51,7 @@ a test only has to say what it cares about.
 
 ## Assertions
 
-```python
+```python title="examples/console-tests.py"
 pending = smith("app:import").assert_successful()
 
 pending.assert_exit_code(0)
@@ -69,10 +69,9 @@ assertion does not cover.
 
 ## Arguments and options
 
-Arguments and options are spelled the way Laravel spells them — one mapping,
-with options carrying their dashes:
+Pass arguments and options as one mapping; options keep their leading dashes:
 
-```python
+```python title="examples/console-tests.py"
 smith("app:import", {"file": "posts.csv", "--chunk": 100, "--dry-run": True})
 ```
 
@@ -84,7 +83,7 @@ names it.
 `smith()` finds the console kernel the way `smith` does. Pass one explicitly
 when a test builds its own:
 
-```python
+```python title="examples/console-tests.py"
 smith("demo:greet", kernel=kernel).assert_successful()
 smith("demo:greet", app=application).assert_successful()
 ```
@@ -94,7 +93,7 @@ smith("demo:greet", app=application).assert_successful()
 A command whose work lives in a method is worth testing directly, without the
 console at all:
 
-```python
+```python title="tests/feature/example_test.py"
 async def test_the_importer_skips_rows_without_a_title() -> None:
     imported = await ImportPosts().import_rows([{"title": ""}, {"title": "Hi"}])
 

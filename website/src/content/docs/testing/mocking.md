@@ -9,7 +9,7 @@ A test should not send mail, run a job, or call someone else's API. Every
 façade that reaches outside the process can be faked, and a fake records what
 would have happened so the test can assert on it.
 
-```python
+```python title="resources/views/examples/mocking.prism.html"
 from almasix.testing import fake
 
 
@@ -43,7 +43,7 @@ faked it.
 
 ## Queues
 
-```python
+```python title="examples/mocking.py"
 queue = fake("queue")
 
 await dispatch(SendDigest())
@@ -62,7 +62,7 @@ else run — useful when one job in a flow is slow and the rest are the point.
 
 ## Notifications
 
-```python
+```python title="examples/mocking.py"
 notifications = fake("notification")
 
 await notify(user, ShipmentArrived())
@@ -76,7 +76,7 @@ notifications.assert_nothing_sent()
 
 A callback may take the notification, or the notification and the notifiable:
 
-```python
+```python title="examples/mocking.py"
 notifications.assert_sent_to(user, ShipmentArrived, lambda n, to: to.get_key() == 1)
 ```
 
@@ -85,7 +85,7 @@ the same recipient.
 
 ## Storage
 
-```python
+```python title="examples/mocking.py"
 disk = fake("storage")
 
 await client.post("/avatars", files={"file": ("me.png", b"...")})
@@ -112,7 +112,7 @@ one door, so a test does not have to remember nine different ways in.
 
 A test that depends on the clock can move it:
 
-```python
+```python title="examples/mocking.py"
 from almasix.testing import freeze_time, frozen_time, travel, travel_back, travel_to
 
 travel(days=2)                                  # forward two days
@@ -135,7 +135,7 @@ test fails; the plain calls return a traveller whose `.back()` does the same.
 None of this replaces `unittest.mock`. A collaborator of your own is best
 mocked the ordinary way:
 
-```python
+```python title="tests/feature/example_test.py"
 from unittest.mock import AsyncMock
 
 async def test_the_report_asks_the_ledger(monkeypatch) -> None:

@@ -9,7 +9,7 @@ When you build an API, you rarely want to hand the client a model exactly as it
 is stored. An API resource is the transformation layer that sits between your
 Articulate models and the JSON your users see.
 
-```python
+```python title="app/http/controllers/example_controller.py"
 from almasix.http.resources import JsonResource
 
 
@@ -24,19 +24,19 @@ class UserResource(JsonResource):
 
 Return one from a controller and it becomes the response:
 
-```python
+```python title="examples/api-resources.py"
 async def show(user_id: int):
     return UserResource(await User.query().find_or_fail(user_id))
 ```
 
-```json
+```json title="examples/api-resources.json"
 {
   "data": {"id": 1, "name": "Ada", "created_at": "2026-09-08T12:30:00"}
 }
 ```
 
 Anything with a `to_response()` method can be returned from a controller —
-Almasix's version of Laravel's `Responsable`.
+the framework turns it into an HTTP response for you.
 
 ## File map
 
@@ -50,7 +50,7 @@ Almasix's version of Laravel's `Responsable`.
 
 ## Generating resources
 
-```bash
+```bash title="terminal"
 smith make:resource UserResource
 smith make:resource UserCollection            # a collection, by name
 smith make:resource UserResource --collection # or by flag
@@ -64,7 +64,7 @@ Files land in `app/http/resources/`, snake_cased: `app/http/resources/user_resou
 A resource wraps one object, available as `self.resource`. Attributes fall
 through, so `self.name` reads the model's `name`:
 
-```python
+```python title="examples/api-resources.py"
 class UserResource(JsonResource):
     def to_dict(self, request=None):
         return {
@@ -81,7 +81,7 @@ If you never override `to_dict`, the resource serializes whatever it was given
 
 Nest resources inside each other. Only the **outermost** resource is wrapped:
 
-```python
+```python title="examples/api-resources.py"
 class PostResource(JsonResource):
     def to_dict(self, request=None):
         return {
@@ -97,17 +97,17 @@ In practice you want `when_loaded()` — see conditional relationships below.
 
 `SomeResource.collection(items)` wraps many:
 
-```python
+```python title="examples/api-resources.py"
 return UserResource.collection(await User.query().get())
 ```
 
-```json
+```json title="examples/api-resources.json"
 {"data": [{"id": 1, "name": "Ada"}, {"id": 2, "name": "Bob"}]}
 ```
 
 For collection-level metadata, declare a collection class:
 
-```python
+```python title="app/http/controllers/example_controller.py"
 from almasix.http.resources import ResourceCollection
 
 
@@ -125,7 +125,7 @@ module and falls back to the plain `JsonResource`.
 
 Collections renumber by default. To keep the keys of a keyed collection:
 
-```python
+```python title="examples/collections.py"
 class UserCollection(ResourceCollection):
     collects = UserResource
     preserve_keys = True
@@ -136,14 +136,14 @@ class UserCollection(ResourceCollection):
 The outermost resource is wrapped in `data`. Turn that off, or rename it,
 once at boot — usually in a service provider:
 
-```python
+```python title="examples/api-resources.py"
 JsonResource.without_wrapping()
 JsonResource.wrap_with("record")
 ```
 
 One resource can differ from the rest by declaring its own key:
 
-```python
+```python title="examples/api-resources.py"
 class UserResource(JsonResource):
     wrap = "user"
 ```
@@ -154,11 +154,11 @@ If your `to_dict()` already returns a `data` key, it is not wrapped twice.
 
 Hand a paginator to a collection and the response gains `meta`:
 
-```python
+```python title="examples/api-resources.py"
 return UserResource.collection(await User.query().paginate(per_page=15))
 ```
 
-```json
+```json title="examples/api-resources.json"
 {
   "data": [...],
   "meta": {
@@ -185,7 +185,7 @@ A paginated payload is always wrapped, even when wrapping is disabled, because
 
 ### Customizing pagination information
 
-```python
+```python title="examples/collections.py"
 class UserCollection(ResourceCollection):
     collects = UserResource
 
@@ -199,7 +199,7 @@ class UserCollection(ResourceCollection):
 Include a key only sometimes. Anything that resolves to *missing* disappears
 from the output entirely — at any depth.
 
-```python
+```python title="examples/api-resources.py"
 class UserResource(JsonResource):
     def to_dict(self, request=None):
         return {
@@ -224,7 +224,7 @@ needed.
 
 Sometimes a whole block of keys should appear together:
 
-```python
+```python title="examples/api-resources.py"
 "merged": self.merge_when(request.user.is_admin, {
     "first_secret": "value",
     "second_secret": "value",
@@ -238,7 +238,7 @@ are spliced into the parent. Merging a list renumbers into the parent instead.
 
 ### Conditional relationships
 
-```python
+```python title="examples/api-resources.py"
 class PostResource(JsonResource):
     def to_dict(self, request=None):
         return {
@@ -263,7 +263,7 @@ class PostResource(JsonResource):
 `when_loaded` never triggers a query — an unloaded relation simply vanishes
 from the payload, which is what makes N+1 impossible here.
 
-```python
+```python title="examples/api-resources.py"
 "added_by": self.when_pivot_loaded("post_tag", lambda pivot: pivot.added_by),
 ```
 
@@ -272,13 +272,13 @@ from the payload, which is what makes N+1 impossible here.
 `with_()` adds top-level data to **every** response of a resource;
 `additional()` adds it to **one**:
 
-```python
+```python title="examples/collections.py"
 class UserCollection(ResourceCollection):
     def with_(self, request=None):
         return {"meta": {"key": "value"}}
 ```
 
-```python
+```python title="examples/api-resources.py"
 return UserResource(user).additional({"meta": {"token": token}})
 ```
 
@@ -287,11 +287,11 @@ return UserResource(user).additional({"meta": {"token": token}})
 Status and headers are fluent, and `with_response()` is the hook for anything
 else:
 
-```python
+```python title="examples/api-resources.py"
 return UserResource(user).status(201).header("X-Rate-Limit", "60")
 ```
 
-```python
+```python title="examples/api-resources.py"
 class UserResource(JsonResource):
     def with_response(self, request, response):
         response.headers["X-Value"] = "True"
@@ -302,19 +302,17 @@ the one being handled.
 
 Dates, decimals, UUIDs, and sets serialize without a custom encoder.
 
-## Deliberate deviations from Laravel
+## Python-shaped details
 
-- **`to_dict()` rather than `toArray()`**, matching the rest of Almasix, and
-  it takes an optional `request` because Almasix reads the current request
-  from context rather than injecting it everywhere.
+- **`to_dict()`** takes an optional `request` because Almasix reads the current
+  request from context rather than injecting it everywhere.
 - **`with_()` and `merge()`** carry trailing or shortened names because `with`
   is a Python keyword.
 - **`links` and `meta.path` appear only when a request URL is available.**
   The resource layer reads the current request instead of inventing a URL when
   the paginator has no path of its own.
-- **`status()` / `header()` / `headers()` live on the resource**, where
-  Laravel chains them off `->response()`. Starlette responses have no fluent
-  header setter to chain from.
+- **`status()` / `header()` / `headers()` live on the resource**, because
+  Starlette responses have no fluent header setter to chain from.
 - **`collects` is a class attribute holding the class itself**, not a string
   class name, because Python has no autoloading to resolve one from.
 
