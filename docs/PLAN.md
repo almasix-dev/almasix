@@ -5,7 +5,7 @@
 > Last aligned: 2026-09-10 (**Laravel 13** is the parity reference; user-facing docs are
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
-> closed; package line **0.6.0** prepared; **M39** docs journey + Prologue closed;
+> closed; package line **0.6.2** prepared; **M39** docs journey + Prologue closed;
 > **M37** Signet-class tokens closed; autopilot **M53 → M45 → M46 → M47 → M52** closed;
 > **M54** Conduit + **M55** Inertia + **M36** starter kits closed).
 
