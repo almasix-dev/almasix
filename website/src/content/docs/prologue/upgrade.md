@@ -24,6 +24,11 @@ dependency.
    [Starter Kits](/starter-kits/). After re-scaffolding, walk register → email
    verify → logout → login in the browser to confirm Day-1 auth.
 
+4. **Docs** — no application changes. If you bookmarked older section titles
+   (Laravel-framed headings, “Living example” / progress demos in the docs),
+   use the sidebar or search; the teaching pages were rewritten for first-time
+   Almasix readers.
+
 ## From 0.5.x to 0.6.x
 
 1. **Bump the package**

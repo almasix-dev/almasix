@@ -19,6 +19,9 @@ For how these docs relate to package versions, see
 - **Starter kit auth** — Web and Vue scaffolds migrate cleanly; CSRF minting
   unblocks register; register → email verify → logout → login works out of the
   box
+- **Docs rewrite** — user-facing docs assume Python + web only (no Laravel
+  required); every code fence names a file path; Basics / Database / Articulate /
+  Digging Deeper rewritten for first-time Almasix developers
 
 ## 0.6.1
 
