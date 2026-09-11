@@ -61,8 +61,6 @@ dev = [
     "redis>=5",
     "pygls>=2.0.0,<3",
     "lsprotocol>=2024.0.0",
-    "almasix-conduit>=0.1.0",
-    "almasix-inertia>=0.1.0",
 ]
 pgsql = ["asyncpg>=0.29"]
 mysql = ["aiomysql>=0.2"]
