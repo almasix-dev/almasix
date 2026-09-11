@@ -22,11 +22,19 @@ from almasix.session.signing import unsign_payload
 from almasix.session.store import Session, get_session, reset_session, set_session
 
 
-def _request(method: str = "GET", path: str = "/", *, cookies: dict | None = None) -> Request:
-    headers: list[tuple[bytes, bytes]] = []
+def _request(
+    method: str = "GET",
+    path: str = "/",
+    *,
+    cookies: dict | None = None,
+    headers: dict[str, str] | None = None,
+) -> Request:
+    raw_headers: list[tuple[bytes, bytes]] = []
     if cookies:
         cookie_header = "; ".join(f"{k}={v}" for k, v in cookies.items())
-        headers.append((b"cookie", cookie_header.encode("latin-1")))
+        raw_headers.append((b"cookie", cookie_header.encode("latin-1")))
+    for name, value in (headers or {}).items():
+        raw_headers.append((name.lower().encode("latin-1"), value.encode("latin-1")))
     scope = {
         "type": "http",
         "asgi": {"version": "3.0"},
@@ -36,7 +44,7 @@ def _request(method: str = "GET", path: str = "/", *, cookies: dict | None = Non
         "path": path,
         "raw_path": path.encode(),
         "query_string": b"",
-        "headers": headers,
+        "headers": raw_headers,
         "client": ("127.0.0.1", 123),
         "server": ("test", 80),
     }
@@ -75,7 +83,12 @@ async def test_start_session_and_csrf_flow(tmp_path: Path, monkeypatch: pytest.M
 
     response = await session_mw.handle(_request(), after_csrf)
     assert response.status_code == 200
-    assert "almasix_session" in (response.headers.get("set-cookie") or "")
+    set_cookie = response.headers.getlist("set-cookie") if hasattr(response.headers, "getlist") else [
+        response.headers.get("set-cookie") or ""
+    ]
+    joined = "\n".join(set_cookie)
+    assert "almasix_session" in joined
+    assert "XSRF-TOKEN=" in joined
 
 
 @pytest.mark.asyncio
@@ -91,6 +104,38 @@ async def test_csrf_rejects_bad_token(monkeypatch: pytest.MonkeyPatch) -> None:
         with pytest.raises(Exception) as exc:
             await VerifyCsrfToken().handle(request, lambda r: Response("no"))
         assert getattr(exc.value, "status_code", None) == 419
+    finally:
+        reset_session(token)
+
+
+@pytest.mark.asyncio
+async def test_csrf_accepts_xsrf_header_plain_and_encrypted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = ConfigRepository()
+    repo.set("app.key", "test-key")
+    repo.set("session.lifetime", 120)
+    set_repository(repo)
+    session = Session({"_csrf_token": "expected-token"})
+    token = set_session(session)
+
+    async def ok(_request: Request) -> Response:
+        return Response("ok")
+
+    try:
+        # Plain X-XSRF-TOKEN (e.g. before EncryptCookies wraps the cookie).
+        plain_req = _request("POST", "/", headers={"X-XSRF-TOKEN": "expected-token"})
+        plain_req._session = session
+        plain_res = await VerifyCsrfToken().handle(plain_req, ok)
+        assert plain_res.status_code == 200
+        assert "XSRF-TOKEN=expected-token" in (plain_res.headers.get("set-cookie") or "")
+
+        # Encrypted cookie value echoed as X-XSRF-TOKEN (Inertia / axios).
+        encrypted = encrypt_string("expected-token", key="test-key")
+        enc_req = _request("POST", "/", headers={"X-XSRF-TOKEN": encrypted})
+        enc_req._session = session
+        enc_res = await VerifyCsrfToken().handle(enc_req, ok)
+        assert enc_res.status_code == 200
     finally:
         reset_session(token)
 
