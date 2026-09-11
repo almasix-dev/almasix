@@ -280,7 +280,9 @@ def scaffold_app(
     return root
 
 
-def _apply_kit(tree: Path, root: Path, replacements: Mapping[str, str], kit: object, stack: Stack) -> None:
+def _apply_kit(
+    tree: Path, root: Path, replacements: Mapping[str, str], kit: object, stack: Stack
+) -> None:
     from almasix.installer.kits import Kit
 
     assert isinstance(kit, Kit)
