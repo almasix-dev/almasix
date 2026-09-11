@@ -6,7 +6,7 @@ the Almasix Inertia adapter with the official `@inertiajs/*` client.
 Product surface (Forge):
 - Brand landing → Dashboard, Notifications, Settings (Profile / Password / 2FA / Appearance), Teams
 - Light + dark (`class="dark"` on `<html>`), teal `#0d9488` + chartreuse accent `#e8ff47`
-- Fonts: Fraunces (display) + DM Sans (UI)
+- Fonts: Outfit (UI) + JetBrains Mono (code) — same as Progress
 
 Dev:
 ```bash

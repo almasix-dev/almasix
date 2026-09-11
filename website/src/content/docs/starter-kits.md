@@ -31,7 +31,7 @@ Progress proof: `smith progress:kits`.
 
 Same language across Web and SPA:
 
-- **Landing** — brand-first, full-bleed hero (Fraunces + DM Sans), chartreuse CTA, teal brand `#0d9488`. No cards in the first viewport.
+- **Landing** — brand-first, full-bleed hero (Outfit + JetBrains Mono, same as Progress), chartreuse CTA, teal brand `#0d9488`. No cards in the first viewport.
 - **Authenticated chrome** — quiet sidebar (Dashboard, Notifications, Settings, Teams), theme toggle, light **and** dark (`class="dark"` + `localStorage`).
 - **CSS stacks** — Web kit honors Tailwind / Bootstrap / none; SPA kits always ship Vite + Tailwind 4.
 

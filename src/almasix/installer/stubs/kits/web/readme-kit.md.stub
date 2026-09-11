@@ -5,6 +5,7 @@ Jetstream-class depth (email verification, password reset, profile, 2FA,
 teams, notifications shell).
 
 - Brand theme **Forge** (teal + chartreuse) with light/dark via `class="dark"`
+- Fonts: **Outfit** + JetBrains Mono (same as Progress)
 - Authenticated chrome: sidebar (Dashboard, Notifications, Settings, Teams)
 - Interactive islands via Conduit (`@conduit('theme_toggle')`)
 - After migrate: register → verify email → enable 2FA under Settings

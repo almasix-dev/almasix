@@ -8,8 +8,9 @@
   --muted: #5b657a;
   --line: #d8dee9;
   --surface: #ffffff;
-  --font-display: "Fraunces", Georgia, serif;
-  --font-ui: "DM Sans", system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 html.dark {
   --ink: #e8eef8;

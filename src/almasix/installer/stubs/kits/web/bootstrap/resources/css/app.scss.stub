@@ -9,8 +9,9 @@
   --bs-primary: #0d9488;
   --bs-body-bg: var(--paper);
   --bs-body-color: var(--ink);
-  --font-display: "Fraunces", Georgia, serif;
-  --font-ui: "DM Sans", system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 html.dark {
@@ -23,6 +24,7 @@ html.dark {
 
 body { font-family: var(--font-ui); background: var(--paper); color: var(--ink); }
 .font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--font-mono); }
 .btn-brand { background: var(--brand); border-color: var(--brand); color: #fff; }
 .btn-brand:hover { background: var(--brand-glow); border-color: var(--brand-glow); color: #fff; }
 .btn-accent { background: var(--accent); border-color: var(--accent); color: var(--ink); font-weight: 600; }

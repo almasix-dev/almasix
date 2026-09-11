@@ -51,6 +51,10 @@ def test_scaffold_web_kit_forces_auth_surface(tmp_path: Path) -> None:
     assert "Save photo" in profile_view
     assert 'enctype="multipart/form-data"' in profile_view
     assert "photo_url_action" not in profile_view
+    css = (root / "resources" / "css" / "app.css").read_text(encoding="utf-8")
+    assert "Outfit" in css
+    assert "JetBrains Mono" in css
+    assert "Fraunces" not in css
 
 
 def test_scaffold_api_kit_forces_none_stack(tmp_path: Path) -> None:
