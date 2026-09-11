@@ -81,7 +81,7 @@ async def test_database_edges(memory_db) -> None:
     store.put("exp", 1, 0)
     time.sleep(0.01)
     # expired
-    store.put("exp2", 1, 1)
+    store.put("exp2", 1, 60)
     assert store.get("exp2") == 1
     store.put("s", "x", None)
     assert store.increment("s") is False
