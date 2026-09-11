@@ -11,6 +11,21 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.6.0
+
+- **Conduit** — Livewire-class reactive components in-tree (`almasix.conduit`),
+  including signed update routes and a full parity matrix in the docs
+- **Inertia** — first-party adapter (`packages/inertia`) with lazy / defer / once /
+  merge props, asset versioning, and Starlight docs
+- **Starter kits** — `almasix new --kit` overlays for Forge **web** (Conduit +
+  Prism), **api** (Signet), and **react** / **vue** / **svelte** (Inertia), with
+  Tailwind 4 by default plus Bootstrap / none for web
+- **Auth polish** — `password.confirm` redirects to the named `password.confirm`
+  route (fixes Two Factor settings 404 on Jetstream-style paths)
+
+Published on [PyPI](https://pypi.org/project/almasix/0.6.0/) after the `v0.6.0`
+GitHub Release.
+
 ## 0.5.1
 
 - **Brand refresh** — glassy blue diamond accents on the Almasix mark and wordmark;

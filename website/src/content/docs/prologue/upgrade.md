@@ -7,6 +7,31 @@ Read the [Release Notes](/prologue/release-notes/) for what shipped. This page
 covers what to change in **your** application when you bump the `almasix`
 dependency.
 
+## From 0.5.x to 0.6.x
+
+1. **Bump the package**
+
+   ```bash
+   pip install -U 'almasix==0.6.*'
+   # or pin exactly
+   pip install -U almasix==0.6.0
+   ```
+
+2. **Optional: starter kits** — new apps can pick a kit with
+   `almasix new myapp --kit web|api|react|vue|svelte` (CSS via `--css` for web).
+   Existing apps are unchanged; see [Starter Kits](/starter-kits/).
+
+3. **Optional: Conduit / Inertia** — enable Conduit for Prism + reactive
+   components, or install the Inertia adapter for SPA stacks. Both are additive.
+
+4. **password.confirm** — middleware now follows the named `password.confirm`
+   route (fallback `/confirm-password`). If you registered confirm under another
+   path with that name, Two Factor and similar screens redirect correctly after
+   restarting the app server.
+
+5. **No required app layout changes** for a typical 0.5 scaffold. Re-run your
+   test suite after upgrading.
+
 ## From 0.4.x to 0.5.x
 
 1. **Bump the package**

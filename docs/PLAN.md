@@ -5,9 +5,9 @@
 > Last aligned: 2026-09-10 (**Laravel 13** is the parity reference; user-facing docs are
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
-> closed; package line **0.5.1** prepared; **M39** docs journey + Prologue closed;
+> closed; package line **0.6.0** prepared; **M39** docs journey + Prologue closed;
 > **M37** Signet-class tokens closed; autopilot **M53 → M45 → M46 → M47 → M52** closed;
-> **M54** Conduit + **M55** Inertia closed pre-M36).
+> **M54** Conduit + **M55** Inertia + **M36** starter kits closed).
 
 ## Working identity
 
@@ -1488,11 +1488,11 @@ Laravel [Deployment](https://laravel.com/docs/deployment) — how an Almasix app
 - `optimize` / cache-warm story tied to M30; env/secrets, logs, migrate + queue workers
 - Container sketch: `examples/deploy/` (Dockerfile + compose with Postgres + `queue:work`)
 - Docs: Starlight **Deployment** (`website/.../deployment.md`)
-- **Releasing Almasix:** `.github/workflows/publish.yml` (OIDC Trusted Publishing). Bump version → tag `vX.Y.Z` matching `pyproject.toml` → GitHub Release. Rehearse with workflow_dispatch → TestPyPI. Tree version is **0.5.1** ready to tag (0.5.0 already published).
+- **Releasing Almasix:** `.github/workflows/publish.yml` (OIDC Trusted Publishing). Bump version → tag `vX.Y.Z` matching `pyproject.toml` → GitHub Release. Rehearse with workflow_dispatch → TestPyPI. Tree version is **0.6.0** ready to tag (0.5.1 already published).
 
 **Depends on:** M30 (optimize commands), M11 (workers), M34 (headers behind a proxy).
 
-**Gate:** documented and reproducible for container + bare-metal paths; `--workers` shipped; `pip install almasix` already works from PyPI (0.5.0 live; 0.5.1 prepared).
+**Gate:** documented and reproducible for container + bare-metal paths; `--workers` shipped; `pip install almasix` already works from PyPI (0.5.1 live; 0.6.0 prepared).
 
 ### M39 — Docs site: user journey rewrite + versioning + Prologue
 
