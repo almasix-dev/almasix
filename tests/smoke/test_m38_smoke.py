@@ -36,9 +36,9 @@ def progress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
 def test_m38_package_version_is_040() -> None:
     from almasix import __version__
 
-    assert __version__ == "0.6.0"
+    assert __version__ == "0.6.1"
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    assert 'version = "0.6.0"' in pyproject
+    assert 'version = "0.6.1"' in pyproject
 
 
 def test_m38_serve_passes_workers_and_proxy_headers(
@@ -126,7 +126,7 @@ def test_m38_demo_command_runs() -> None:
         "docs/deployment.md -> present",
         "examples/deploy -> Dockerfile + compose",
         "publish.yml -> Trusted Publishing",
-        "almasix.__version__ -> 0.6.0",
+        "almasix.__version__ -> 0.6.1",
         "deployment + production ops ok",
     ):
         assert line in out, line

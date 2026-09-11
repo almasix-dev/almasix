@@ -23,7 +23,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -e ".[dev]"
+          # Namespace extras after editable almasix (avoids stripping overlapping paths).
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
+          fi
 
       - name: Ruff version pin
         run: python -c "import importlib.metadata as m; v=m.version('ruff'); assert v=='0.16.6', v"
@@ -50,7 +57,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -e ".[dev]"
+          # Namespace extras after editable almasix (avoids stripping overlapping paths).
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
+          fi
 
       - name: Smoke tests
         run: pytest -q tests/smoke -m smoke
@@ -72,7 +86,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -e ".[dev]"
+          # Namespace extras after editable almasix (avoids stripping overlapping paths).
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
+          fi
 
       - name: Full suite with coverage
         run: >
@@ -105,7 +126,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -e ".[dev]"
+          # Namespace extras after editable almasix (avoids stripping overlapping paths).
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
+          fi
 
       - name: Regression suite
         run: pytest -q -m regression
@@ -160,7 +188,13 @@ jobs:
           python-version: "3.12"
 
       - name: Install
-        run: pip install -e ".[dev,pgsql,mysql]"
+        run: |
+          pip install -e ".[dev,pgsql,mysql]"
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
+          fi
 
       - name: Dialect conformance
         env:

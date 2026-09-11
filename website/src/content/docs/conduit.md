@@ -381,6 +381,8 @@ Conduit itself is exhausted.
 
 ## Extract
 
-In-tree at `src/almasix/conduit/` (Signet-style). Checklist:
-`src/almasix/conduit/EXTRACT.md`. Future `almasix-dev/conduit` keeps
-`from almasix.conduit import …`.
+Published as [`almasix-conduit`](https://pypi.org/project/almasix-conduit/)
+from [`almasix-dev/conduit`](https://github.com/almasix-dev/conduit).
+Install with `pip install 'almasix[conduit]'`. Import path stays
+`from almasix.conduit import …`. The provider is discovered via the
+`almasix.providers` entry-point group.

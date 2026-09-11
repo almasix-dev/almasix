@@ -223,6 +223,7 @@ config = {
     "name": env("APP_NAME", "Fallback"),
     "debug": env("APP_DEBUG", True),
     "providers": ["app.providers.tracking_provider.TrackingProvider"],
+    "skip_provider_discovery": True,
 }
 """,
         encoding="utf-8",

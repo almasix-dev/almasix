@@ -1431,7 +1431,7 @@ Laravel [Starter Kits](https://laravel.com/docs/starter-kits) — opt-in applica
 
 Livewire 4–class stack in async Python: Prism components, Alpine `$wire`, morph updates, CSRF-safe wire protocol, islands, client `wire:bind` / `wire:text` for JS-feel UX.
 
-**Status: complete (in-tree as `src/almasix/conduit/`).** Formerly sketched as “Flux”; renamed **Conduit** to avoid collision with Livewire’s Flux UI kit and to nest under `almasix.conduit`.
+**Status: complete (extracted to [`almasix-dev/conduit`](https://github.com/almasix-dev/conduit) / PyPI `almasix-conduit`).** Formerly sketched as “Flux”; renamed **Conduit** to avoid collision with Livewire’s Flux UI kit and to nest under `almasix.conduit`.
 
 - Import: `from almasix.conduit import Component, Conduit, conduit`
 - Extra `almasix[conduit]`; `POST /conduit/update`; client `/conduit/conduit.js`
@@ -1446,14 +1446,13 @@ Livewire 4–class stack in async Python: Prism components, Alpine `$wire`, morp
 
 Server-only Inertia.js adapter compatible with official clients. **No forked client.** SSR via Inertia’s Node SSR protocol.
 
-**Status: complete (in-monorepo).** Extract to `almasix-dev/inertia` when maintainers cut the publish repo.
+**Status: complete (extracted to [`almasix-dev/inertia`](https://github.com/almasix-dev/inertia) / PyPI `almasix-inertia`).**
 
-- Package `packages/inertia/` → PyPI `almasix-inertia` / extra `almasix[inertia]`
+- PyPI `almasix-inertia` / extra `almasix[inertia]`
 - `Inertia.render` Responsable; `X-Inertia` JSON; asset version 409; shared + partial props
 - Lazy / optional / defer / once / merge props; flash errors; subpath-aware page `url`
 - Root Prism `@inertia` / `@inertiaHead`; `smith inertia:start-ssr`; SSR graceful fallback
 - Progress: `smith progress:inertia`; board M55; smoke `tests/smoke/test_m55_smoke.py`
-- Extract checklist: `packages/inertia/EXTRACT.md` → `almasix-dev/inertia`
 
 **Depends on:** M6 Prism, M5 HTTP/session, Vite asset helpers.
 

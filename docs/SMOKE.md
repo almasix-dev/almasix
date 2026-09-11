@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.6.0` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.6.1` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -871,7 +871,7 @@ cd examples/progress && python smith progress:deploy
 - [x] Default `GET /up` health probe (`ApplicationBuilder.with_health`); outside Almasix middleware stacks
 - [x] Starlight **Deployment** page (env, serve, optimize, migrate/queues, bare metal, container, releasing)
 - [x] `examples/deploy/` Dockerfile + compose (web + queue worker + Postgres, `/up` healthcheck)
-- [x] Package version **0.6.0** in `pyproject.toml` / `__version__` (0.5.1 already on PyPI; tag `v0.6.0` to publish)
+- [x] Package version **0.6.1** in `pyproject.toml` / `__version__` (0.5.1 already on PyPI; tag `v0.6.1` to publish)
 - [x] Living example: `smith progress:deploy`; the board marks M38 complete
 
 ---
@@ -1207,7 +1207,7 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 
 ### M54 exit criteria
 
-- [x] `src/almasix/conduit/` provider, `Component`, `POST /conduit/update`, Alpine `$wire` client
+- [x] `almasix-conduit` provider, `Component`, `POST /conduit/update`, Alpine `$wire` client
 - [x] `from almasix.conduit import …` namespace (not top-level `flux`)
 - [x] Livewire 4 surface: coalescing, idiomorph-lite, wire:bind/text/show, islands, intersect, ref, data-loading
 - [x] **Subpath-safe:** `@conduitScripts` + client honor `APP_BASE_PATH` (no hardcoded `/conduit/update`)
@@ -1215,15 +1215,16 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] Parity matrix in Starlight **Conduit** — all rows `complete` (`almasix.conduit.parity.PARITY`)
 - [x] `Route.conduit()`, `WithPagination`, `Computed`/`Locked`, `make:conduit`, islands, navigate, entangle
 - [x] `smith progress:conduit`; board marks M54 complete; `tests/smoke/test_m54_smoke.py`
+- [x] Extracted to [`almasix-dev/conduit`](https://github.com/almasix-dev/conduit) / `almasix[conduit]`
 
 ## M55 — almasix-inertia (Inertia adapter)
 
 ### M55 exit criteria
 
-- [x] `packages/inertia/` provider, `Inertia.render`, `X-Inertia` JSON, version 409, shared/partial props
+- [x] `almasix-inertia` provider, `Inertia.render`, `X-Inertia` JSON, version 409, shared/partial props
 - [x] Lazy / optional / defer / once / merge props; flash errors; subpath-aware page `url`
 - [x] Root `@inertia` / `@inertiaHead`; SSR Node contract + `inertia:start-ssr`; graceful fallback
-- [x] Starlight **Inertia**; extract-ready for `almasix-dev/inertia` (`EXTRACT.md`)
+- [x] Starlight **Inertia**; extracted to [`almasix-dev/inertia`](https://github.com/almasix-dev/inertia)
 - [x] `smith progress:inertia`; board marks M55 complete; `tests/smoke/test_m55_smoke.py`
 
 ## M36 — Starter kits
@@ -1234,7 +1235,7 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] `almasix new --kit …` + interactive prompt; Web stacks Tailwind / Bootstrap / none
 - [x] Forge design language — brand-first landing, authenticated chrome, light/dark
 - [x] Full auth depth: reset, verify, confirm, profile/photo, 2FA, teams, notifications shell, settings
-- [x] Tokens API-only on API kit; SPA depends on `almasix-inertia`
+- [x] Tokens API-only on API kit; SPA depends on `almasix[inertia]`; web on `almasix[conduit]`
 - [x] Starlight **Starter Kits**; `smith progress:kits`; board M36 complete; `tests/smoke/test_m36_smoke.py`
 
 ---

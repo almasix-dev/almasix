@@ -121,4 +121,6 @@ Smoke: with the worker up, first HTML contains both page JSON and SSR markup.
 ## Starter kits
 
 SPA starter kits consume this adapter plus an official `@inertiajs/*` client.
-Extract target: `almasix-dev/inertia` (see `packages/inertia/EXTRACT.md`).
+Published as [`almasix-inertia`](https://pypi.org/project/almasix-inertia/)
+from [`almasix-dev/inertia`](https://github.com/almasix-dev/inertia).
+Install with `pip install 'almasix[inertia]'`.

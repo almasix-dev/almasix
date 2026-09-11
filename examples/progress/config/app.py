@@ -7,12 +7,11 @@ from pathlib import Path
 
 from almasix.config import env
 
-# In-repo packages (Courier M29, Inertia M55). Conduit lives in ``almasix.conduit``.
+# In-repo Courier demo package (M29). Conduit / Inertia come from PyPI extras.
 _PACKAGES = Path(__file__).resolve().parents[3] / "packages"
-for _pkg in ("courier", "inertia"):
-    _src = _PACKAGES / _pkg / "src"
-    if _src.is_dir() and str(_src) not in sys.path:
-        sys.path.insert(0, str(_src))
+_courier = _PACKAGES / "courier" / "src"
+if _courier.is_dir() and str(_courier) not in sys.path:
+    sys.path.insert(0, str(_courier))
 
 config = {
     "name": env("APP_NAME", "Progress"),

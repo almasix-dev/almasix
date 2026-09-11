@@ -28,7 +28,6 @@ def progress_cwd(monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.chdir(PROGRESS)
     monkeypatch.syspath_prepend(str(PROGRESS))
     monkeypatch.syspath_prepend(str(ROOT / "packages" / "courier" / "src"))
-    monkeypatch.syspath_prepend(str(ROOT / "packages" / "inertia" / "src"))
     from almasix.console.kernel import ConsoleKernel
 
     ConsoleKernel.from_cwd(PROGRESS).register_on_typer(smith_app)
@@ -42,7 +41,6 @@ def progress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.chdir(PROGRESS)
     monkeypatch.syspath_prepend(str(PROGRESS))
     monkeypatch.syspath_prepend(str(ROOT / "packages" / "courier" / "src"))
-    monkeypatch.syspath_prepend(str(ROOT / "packages" / "inertia" / "src"))
     module = importlib.import_module("bootstrap.app")
     app = module.application
     app._asgi = None
@@ -64,10 +62,9 @@ def test_m54_conduit_demo_page(progress_client: TestClient) -> None:
 
 
 def test_m54_conduit_update_endpoint(progress_client: TestClient) -> None:
-    from app.conduit.counter import Counter
-
     from almasix.conduit import Conduit
     from almasix.conduit.mechanism import snapshot
+    from app.conduit.counter import Counter
 
     page = progress_client.get("/conduit")
     assert page.status_code == 200
@@ -138,5 +135,6 @@ def test_m54_docs_exist() -> None:
     summary = parity_summary()
     assert summary["partial"] == 0 and summary["planned"] == 0
     assert summary["complete"] == sum(summary.values())
-    assert (ROOT / "src" / "almasix" / "conduit" / "EXTRACT.md").is_file()
-    assert (ROOT / "src" / "almasix" / "conduit" / "stubs" / "conduit.py.stub").is_file()
+    import importlib.util
+
+    assert importlib.util.find_spec("almasix.conduit") is not None

@@ -35,6 +35,8 @@ def test_scaffold_web_kit_forces_auth_surface(tmp_path: Path) -> None:
         root / "app" / "http" / "controllers" / "two_factor_controller.py"
     ).read_text(encoding="utf-8")
     assert (root / "app" / "conduit" / "theme_toggle.py").is_file()
+    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
+    assert "almasix[conduit]" in pyproject or "almasix-conduit" in pyproject
     routes = (root / "routes" / "web.py").read_text(encoding="utf-8")
     # Account delete confirms via form password — not password.confirm (no GET /user).
     destroy_idx = routes.index('Route.delete("/user"')
@@ -71,8 +73,7 @@ def test_scaffold_spa_react(tmp_path: Path) -> None:
     assert "InertiaServiceProvider" in (root / "config" / "app.py").read_text(encoding="utf-8")
     assert (root / "package.json").is_file()
     pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
-    assert "almasix" in pyproject
-    assert "almasix-inertia" not in pyproject
+    assert "almasix[inertia]" in pyproject or "almasix-inertia" in pyproject
 
 
 def test_resolve_plan_kit_flag(tmp_path: Path) -> None:

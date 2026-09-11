@@ -17,14 +17,12 @@ pytestmark = [pytest.mark.smoke]
 PROGRESS = Path(__file__).resolve().parents[2] / "examples" / "progress"
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "website" / "src" / "content" / "docs"
-INERTIA = ROOT / "packages" / "inertia"
 runner = CliRunner()
 
 
 def _prepend_packages(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.syspath_prepend(str(PROGRESS))
-    for pkg in ("courier", "inertia"):
-        monkeypatch.syspath_prepend(str(ROOT / "packages" / pkg / "src"))
+    monkeypatch.syspath_prepend(str(ROOT / "packages" / "courier" / "src"))
 
 
 @pytest.fixture()
@@ -111,10 +109,10 @@ def test_m55_board_marks_inertia_complete(progress_client: TestClient) -> None:
 
 
 def test_m55_docs_and_package_exist() -> None:
+    import importlib.util
+
     assert (DOCS / "inertia.md").is_file()
-    assert (INERTIA / "src" / "inertia" / "provider.py").is_file()
-    assert (INERTIA / "src" / "inertia" / "ssr" / "server.js").is_file()
-    assert (INERTIA / "EXTRACT.md").is_file()
+    assert importlib.util.find_spec("inertia") is not None
     sidebar = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
     assert "inertia" in sidebar
     docs = (DOCS / "inertia.md").read_text(encoding="utf-8")

@@ -231,22 +231,17 @@ def framework_source_root() -> Path | None:
 
 
 def kit_install_packages(plan: InstallPlan) -> list[str]:
-    """Extra ``pip install`` args so kit deps resolve (Conduit is in-tree).
+    """Extra ``pip install`` args so kit deps resolve from the monorepo checkout.
 
-    When the CLI comes from a monorepo checkout, install that tree editable so
-    the app gets the same Almasix (and Inertia) the installer was run from —
-    not a stale PyPI wheel. SPA kits also path-install ``packages/inertia`` for
-    editable checkouts where the wheel force-include is not on ``sys.path``.
+    When the CLI comes from an editable checkout, install that tree so the app
+    gets the same Almasix the installer was run from — not a stale PyPI wheel.
+    Conduit and Inertia resolve from PyPI extras declared in kit pyprojects.
     """
     packages: list[str] = []
     root = framework_source_root()
     if root is None:
         return packages
     packages.extend(["-e", str(root)])
-    if plan.kit_info.kind == "spa":
-        inertia = root / "packages" / "inertia"
-        if inertia.is_dir():
-            packages.extend(["-e", str(inertia)])
     return packages
 
 

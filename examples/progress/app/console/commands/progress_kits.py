@@ -118,7 +118,6 @@ class ProgressKitsCommand(Command):
             or (pages / "Welcome.vue").is_file()
             or (pages / "Welcome.svelte").is_file()
         )
-        # Inertia ships inside the almasix wheel until extract; SPA stubs
-        # depend only on ``almasix`` and register the provider in config.
+        # SPA stubs pull Inertia via the ``almasix[inertia]`` extra.
         pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
-        assert "almasix" in pyproject
+        assert "almasix[inertia]" in pyproject or "almasix-inertia" in pyproject
