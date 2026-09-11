@@ -113,8 +113,10 @@ class ProgressKitsCommand(Command):
         assert "inertia" in boot
         pages = root / "resources" / "js" / "Pages"
         assert pages.is_dir()
-        assert (pages / "Welcome.jsx").is_file() or (pages / "Welcome.vue").is_file() or (
-            pages / "Welcome.svelte"
-        ).is_file()
+        assert (
+            (pages / "Welcome.jsx").is_file()
+            or (pages / "Welcome.vue").is_file()
+            or (pages / "Welcome.svelte").is_file()
+        )
         pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
         assert "almasix-inertia" in pyproject or "inertia" in pyproject
