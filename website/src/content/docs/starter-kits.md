@@ -31,7 +31,7 @@ Progress proof: `smith progress:kits`.
 
 Same language across Web and SPA:
 
-- **Landing** — brand-first, full-bleed hero (Fraunces + DM Sans), chartreuse CTA, teal brand `#0d9488`. No cards in the first viewport.
+- **Landing** — brand-first, full-bleed hero (Outfit + JetBrains Mono, same as Progress), chartreuse CTA, teal brand `#0d9488`. No cards in the first viewport.
 - **Authenticated chrome** — quiet sidebar (Dashboard, Notifications, Settings, Teams), theme toggle, light **and** dark (`class="dark"` + `localStorage`).
 - **CSS stacks** — Web kit honors Tailwind / Bootstrap / none; SPA kits always ship Vite + Tailwind 4.
 
@@ -70,11 +70,12 @@ Conduit ships a theme-toggle island on the authenticated layout. Routes live in
 almasix new forgespa --kit react -n
 cd forgespa
 pip install -e .
-pip install -e /path/to/almasix/packages/inertia   # until PyPI almasix-inertia
 npm install && npm run build
 python smith migrate && python smith serve
 ```
 
+The Inertia server adapter ships with Almasix until it is extracted to PyPI as
+`almasix-inertia`. SPA kits only need `almasix` in `pyproject.toml`.
 Pages under `resources/js/Pages/` use the official Inertia client. Root Prism
 view provides `@inertia` / `@inertiaHead`. Middleware alias `inertia` runs on
 the web stack; `stateful_api()` is enabled for cookie SPA flows.

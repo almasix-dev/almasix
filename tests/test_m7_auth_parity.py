@@ -224,6 +224,31 @@ async def test_password_confirm_redirects_to_named_route() -> None:
 
 
 @pytest.mark.asyncio
+async def test_password_confirm_mutating_uses_referer_as_intended() -> None:
+    """DELETE/POST cannot be replayed after confirm — store Referer, not the mutate path."""
+    from almasix.auth.guard import pull_intended_url
+
+    session = Session()
+    request = _req(
+        method="DELETE",
+        path="/user",
+        session=session,
+        headers=[(b"referer", b"http://localhost/user/profile")],
+    )
+    token = set_session(session)
+    try:
+
+        async def ok(req):
+            return Response("ok")
+
+        redirected = await RequirePassword(timeout=10).handle(request, ok)
+        assert redirected.status_code in {302, 303, 307}
+        assert pull_intended_url("/dashboard") == "/user/profile"
+    finally:
+        reset_session(token)
+
+
+@pytest.mark.asyncio
 async def test_password_confirm_and_guest_named_guard() -> None:
     session = Session()
     request = _req(session=session)

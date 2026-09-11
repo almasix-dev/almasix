@@ -27,6 +27,34 @@ def test_scaffold_web_kit_forces_auth_surface(tmp_path: Path) -> None:
     assert (root / "resources" / "views" / "settings" / "profile.prism.html").is_file()
     css = (root / "resources" / "css" / "app.css").read_text(encoding="utf-8")
     assert "0d9488" in css
+    layout = (root / "resources" / "views" / "layouts" / "app.prism.html").read_text(
+        encoding="utf-8"
+    )
+    assert "@conduit('theme_toggle')" in layout
+    assert "theme_toggle" not in (
+        root / "app" / "http" / "controllers" / "two_factor_controller.py"
+    ).read_text(encoding="utf-8")
+    assert (root / "app" / "conduit" / "theme_toggle.py").is_file()
+    routes = (root / "routes" / "web.py").read_text(encoding="utf-8")
+    # Account delete confirms via form password — not password.confirm (no GET /user).
+    destroy_idx = routes.index('Route.delete("/user"')
+    confirm_block = routes.index('middleware=["password.confirm"]')
+    assert destroy_idx < confirm_block
+    profile_ctl = (root / "app" / "http" / "controllers" / "profile_controller.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'disk="public"' in profile_ctl
+    assert "photo_action" in profile_ctl
+    profile_view = (root / "resources" / "views" / "settings" / "profile.prism.html").read_text(
+        encoding="utf-8"
+    )
+    assert "Save photo" in profile_view
+    assert 'enctype="multipart/form-data"' in profile_view
+    assert "photo_url_action" not in profile_view
+    css = (root / "resources" / "css" / "app.css").read_text(encoding="utf-8")
+    assert "Outfit" in css
+    assert "JetBrains Mono" in css
+    assert "Fraunces" not in css
 
 
 def test_scaffold_api_kit_forces_none_stack(tmp_path: Path) -> None:
@@ -42,6 +70,9 @@ def test_scaffold_spa_react(tmp_path: Path) -> None:
     assert (root / "resources" / "js" / "Pages" / "Welcome.jsx").is_file()
     assert "InertiaServiceProvider" in (root / "config" / "app.py").read_text(encoding="utf-8")
     assert (root / "package.json").is_file()
+    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
+    assert "almasix" in pyproject
+    assert "almasix-inertia" not in pyproject
 
 
 def test_resolve_plan_kit_flag(tmp_path: Path) -> None:

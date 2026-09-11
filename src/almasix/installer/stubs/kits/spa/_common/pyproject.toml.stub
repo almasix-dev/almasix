@@ -9,7 +9,6 @@ description = "{{ app_display }} — Almasix SPA application"
 requires-python = ">=3.11"
 dependencies = [
     "almasix",
-    "almasix-inertia",
 ]
 
 [project.scripts]

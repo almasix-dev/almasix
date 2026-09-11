@@ -56,7 +56,7 @@ class User(HasFactory, AuthenticatableMixin, MustVerifyEmail, Notifiable, Model)
         from almasix.filesystem import Storage
 
         try:
-            return Storage.url(str(path))
+            return Storage.disk("public").url(str(path))
         except Exception:
             return f"/storage/{path}"
 

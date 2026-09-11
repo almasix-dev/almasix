@@ -5,54 +5,66 @@
 @section('content')
 
   <nav class="mb-8 flex flex-wrap gap-2 text-sm font-medium">
-    <a href="/user/profile" class="rounded-lg px-3 py-1.5 hover:bg-surface border border-transparent hover:border-line">Profile</a>
+    <a href="/user/profile" class="rounded-lg px-3 py-1.5 border border-line bg-surface text-brand">Profile</a>
     <a href="/user/password" class="rounded-lg px-3 py-1.5 hover:bg-surface border border-transparent hover:border-line">Password</a>
     <a href="/user/two-factor-authentication" class="rounded-lg px-3 py-1.5 hover:bg-surface border border-transparent hover:border-line">Two-factor</a>
     <a href="/user/appearance" class="rounded-lg px-3 py-1.5 hover:bg-surface border border-transparent hover:border-line">Appearance</a>
   </nav>
 
   <h1 class="font-display text-2xl font-semibold tracking-tight">Profile</h1>
-  <p class="mt-1 text-sm text-muted">Update your name, email, and photo.</p>
+  <p class="mt-1 text-sm text-muted">Your photo, name, and email.</p>
   @isset(status)
-    <p class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">{{ status }}</p>
+    <p class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200" role="status">{{ status }}</p>
   @endisset
   @isset(error)
-    <p class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ error }}</p>
+    <p class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200" role="alert">{{ error }}</p>
   @endisset
 
-  <form method="post" action="{{ photo_url_action }}" enctype="multipart/form-data" class="mt-8 flex items-center gap-4">
-    @csrf
-    @isset(photo_url)
-      <img src="{{ photo_url }}" alt="" class="h-16 w-16 rounded-full object-cover border border-line"/>
-    @else
-      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-brand/15 text-brand font-semibold text-xl">●</div>
-    @endisset
-    <div>
-      <input type="file" name="photo" accept="image/*" class="text-sm"/>
-      <button type="submit" class="mt-2 rounded-lg border border-line px-3 py-1.5 text-sm font-medium hover:border-brand">Upload photo</button>
-    </div>
-  </form>
+  <section class="mt-8 max-w-lg rounded-xl border border-line bg-surface p-5">
+    <h2 class="text-sm font-semibold tracking-wide text-ink">Profile photo</h2>
+    <p class="mt-1 text-sm text-muted">Shown on your account menu. JPG, PNG, GIF, or WebP.</p>
+    <form method="post" action="{{ photo_action }}" enctype="multipart/form-data" class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+      @csrf
+      @isset(photo_url)
+        <img src="{{ photo_url }}" alt="Your profile photo" class="h-20 w-20 shrink-0 rounded-full object-cover border border-line"/>
+      @else
+        <div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand font-display text-xl font-semibold" aria-hidden="true">{{ user_initials }}</div>
+      @endisset
+      <div class="min-w-0 flex-1 space-y-2">
+        <label class="block text-sm font-medium text-ink">
+          <span class="sr-only">Choose photo</span>
+          <input type="file" name="photo" accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" required class="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-glow"/>
+        </label>
+        <button type="submit" class="rounded-lg border border-line bg-paper px-3 py-1.5 text-sm font-medium hover:border-brand">Save photo</button>
+      </div>
+    </form>
+  </section>
 
-  <form method="post" action="{{ update_url }}" class="mt-8 max-w-lg space-y-4">
-    @csrf
-    {!! method_field('PUT') !!}
-    <label class="block text-sm font-medium">Name
-      <input type="text" name="name" value="{{ user_name }}" required class="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"/>
-    </label>
-    <label class="block text-sm font-medium">Email
-      <input type="email" name="email" value="{{ user_email }}" required class="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"/>
-    </label>
-    <button type="submit" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-glow">Save</button>
-  </form>
+  <section class="mt-8 max-w-lg rounded-xl border border-line bg-surface p-5">
+    <h2 class="text-sm font-semibold tracking-wide text-ink">Name &amp; email</h2>
+    <form method="post" action="{{ update_url }}" class="mt-4 space-y-4">
+      @csrf
+      {!! method_field('PUT') !!}
+      <label class="block text-sm font-medium">Name
+        <input type="text" name="name" value="{{ user_name }}" required autocomplete="name" class="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"/>
+      </label>
+      <label class="block text-sm font-medium">Email
+        <input type="email" name="email" value="{{ user_email }}" required autocomplete="email" class="mt-1 w-full rounded-lg border border-line bg-paper px-3 py-2 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"/>
+      </label>
+      <button type="submit" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-glow">Save profile</button>
+    </form>
+  </section>
 
-  <div class="mt-12 max-w-lg rounded-xl border border-red-200 bg-red-50/50 p-5 dark:border-red-900 dark:bg-red-950/30">
+  <section class="mt-12 max-w-lg rounded-xl border border-red-200 bg-red-50/50 p-5 dark:border-red-900 dark:bg-red-950/30">
     <h2 class="font-semibold text-red-700 dark:text-red-300">Delete account</h2>
-    <p class="mt-1 text-sm text-muted">Permanently remove your account and data.</p>
+    <p class="mt-1 text-sm text-muted">Permanently remove your account and data. This cannot be undone.</p>
     <form method="post" action="{{ delete_url }}" class="mt-4 space-y-3">
       @csrf
       {!! method_field('DELETE') !!}
-      <input type="password" name="password" required placeholder="Confirm with password" class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm"/>
+      <label class="block text-sm font-medium text-ink">Confirm password
+        <input type="password" name="password" required autocomplete="current-password" placeholder="Your password" class="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm"/>
+      </label>
       <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">Delete account</button>
     </form>
-  </div>
+  </section>
 @endsection

@@ -33,6 +33,18 @@ def test_forelse_empty() -> None:
     assert "a" in render({"items": ["a"]}, None)
 
 
+def test_isset_missing_name_is_false() -> None:
+    """``@isset`` must not raise when the name is absent (Blade parity)."""
+    render = compile_template("@isset(theme_toggle)shown@endisset")
+    assert render({}, None) == ""
+    assert "shown" in render({"theme_toggle": "<x>"}, None)
+
+
+def test_isset_null_is_false() -> None:
+    render = compile_template("@isset(theme_toggle)shown@endisset")
+    assert render({"theme_toggle": None}, None) == ""
+
+
 def test_python_block() -> None:
     render = compile_template("@python\nn = n + 1\n@endpython{{ n }}")
     assert render({"n": 1}, None) == "2"

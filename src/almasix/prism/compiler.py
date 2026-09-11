@@ -787,7 +787,16 @@ def _compile_fragment(
             indent -= 1
         elif kind == "isset":
             expr = _paren_inner(match.group(0) or "")
-            emit(f"if __eval({_py_str(expr)}) is not None:")
+            # Blade ``@isset`` is false for missing names — do not raise NameError.
+            emit("try:")
+            indent += 1
+            emit(f"__isset_ok = __eval({_py_str(expr)}) is not None")
+            indent -= 1
+            emit("except NameError:")
+            indent += 1
+            emit("__isset_ok = False")
+            indent -= 1
+            emit("if __isset_ok:")
             indent += 1
         elif kind == "endisset":
             indent -= 1

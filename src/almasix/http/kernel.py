@@ -166,6 +166,24 @@ class HttpKernel:
                         name=f"public-{folder}",
                     )
 
+            # Profile photos / Storage::disk('public') — prefer ``public/storage``
+            # (``smith storage:link``), else serve ``storage/app/public`` directly.
+            storage_link = public_dir / "storage"
+            storage_fallback = Path(self.app.base_path) / "storage" / "app" / "public"
+            storage_dir = (
+                storage_link
+                if storage_link.exists()
+                else storage_fallback
+                if storage_fallback.is_dir()
+                else None
+            )
+            if storage_dir is not None:
+                asgi.mount(
+                    "/storage",
+                    StaticFiles(directory=str(storage_dir.resolve())),
+                    name="public-storage",
+                )
+
         if self.app.config.get("http.spoof_methods", True):
             from almasix.http.spoofing import SpoofMethodASGI
 

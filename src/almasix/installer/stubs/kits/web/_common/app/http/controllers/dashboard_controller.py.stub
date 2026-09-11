@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from almasix.auth import auth
 from almasix.config import config
-from almasix.conduit import conduit
 from almasix.http import Controller, Request, Response
 from almasix.prism import view
 from almasix.routing import url
@@ -37,7 +36,6 @@ class DashboardController(Controller):
                 "user_name": display,
                 "team_name": team_name,
                 "status": request.session.get("status"),
-                "theme_toggle": conduit("theme_toggle"),
                 "logout_url": url("/logout", absolute=False),
                 "__authenticated": True,
             },

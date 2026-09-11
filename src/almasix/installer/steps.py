@@ -38,6 +38,7 @@ def run_steps(plan: InstallPlan, root: Path) -> list[StepResult]:
         git_init(plan, root),
         create_venv(plan, root),
         install_dependencies(plan, root),
+        storage_link(plan, root),
     ]
     results.append(install_node(plan, root))
     results.append(migrate(plan, root))
@@ -136,6 +137,25 @@ def install_dependencies(plan: InstallPlan, root: Path) -> StepResult:
     return StepResult("install", ran=True, detail=" ".join(command))
 
 
+def storage_link(plan: InstallPlan, root: Path) -> StepResult:
+    """Create ``public/storage`` → ``storage/app/public`` for profile photos etc."""
+    if not plan.install:
+        return StepResult("storage-link", ran=False)
+    python = app_python(root)
+    smith = root / "smith"
+    if not smith.is_file():
+        return StepResult("storage-link", ran=False, detail="smith script missing")
+    completed = _run((str(python), str(smith), "storage:link"), root)
+    if completed.returncode != 0:
+        return StepResult(
+            "storage-link",
+            ran=True,
+            ok=False,
+            detail=_failure_detail(completed, "smith storage:link failed"),
+        )
+    return StepResult("storage-link", ran=True, detail="smith storage:link")
+
+
 def install_node(plan: InstallPlan, root: Path) -> StepResult:
     if not plan.npm:
         return StepResult("npm", ran=False)
@@ -185,6 +205,51 @@ def app_python(root: Path) -> Path:
     return candidate if candidate.is_file() else Path(sys.executable)
 
 
+def framework_source_root() -> Path | None:
+    """Monorepo root when ``almasix`` was imported from an editable checkout.
+
+    Layout: ``<root>/src/almasix/__init__.py``. Returns ``None`` for a plain
+    wheel install (no ``packages/`` tree beside ``src/``).
+    """
+    import almasix
+
+    init = Path(almasix.__file__).resolve()
+    # …/src/almasix/__init__.py → parents[0]=almasix, [1]=src, [2]=root
+    if len(init.parents) < 3:
+        return None
+    root = init.parents[2]
+    marker = root / "pyproject.toml"
+    if not marker.is_file():
+        return None
+    try:
+        text = marker.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    if 'name = "almasix"' not in text and "name = 'almasix'" not in text:
+        return None
+    return root
+
+
+def kit_install_packages(plan: InstallPlan) -> list[str]:
+    """Extra ``pip install`` args so kit deps resolve (Conduit is in-tree).
+
+    When the CLI comes from a monorepo checkout, install that tree editable so
+    the app gets the same Almasix (and Inertia) the installer was run from —
+    not a stale PyPI wheel. SPA kits also path-install ``packages/inertia`` for
+    editable checkouts where the wheel force-include is not on ``sys.path``.
+    """
+    packages: list[str] = []
+    root = framework_source_root()
+    if root is None:
+        return packages
+    packages.extend(["-e", str(root)])
+    if plan.kit_info.kind == "spa":
+        inertia = root / "packages" / "inertia"
+        if inertia.is_dir():
+            packages.extend(["-e", str(inertia)])
+    return packages
+
+
 def _venv_create_command(plan: InstallPlan, root: Path) -> tuple[str, ...] | None:
     target = str(root / ".venv")
     choice = plan.installer
@@ -198,9 +263,9 @@ def _venv_create_command(plan: InstallPlan, root: Path) -> tuple[str, ...] | Non
 
 
 def _python_install_command(plan: InstallPlan, root: Path) -> tuple[str, ...] | None:
-    """Install the app editable into ``.venv`` (plus the engine extra when set)."""
+    """Install kit framework deps, then the app editable (plus DB engine extra)."""
     python = venv_python(root)
-    packages = ["-e", "."]
+    packages = [*kit_install_packages(plan), "-e", "."]
     extra = plan.database_info.extra
     if extra:
         packages.append(extra)

@@ -174,3 +174,35 @@ def test_request_json_and_form(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         "/json", content=b"not-json", headers={"content-type": "application/json"}
     ).json() == {"json": None}
     assert client.post("/form", data={"name": "almasix"}).json() == {"name": "almasix"}
+
+
+def test_asgi_serves_public_storage_disk(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Profile photos land on the public disk and must be reachable at /storage/…"""
+    purge_generated_app_modules()
+    (tmp_path / ".env").write_text("APP_NAME=Storage\nAPP_DEBUG=false\n", encoding="utf-8")
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "app.py").write_text(
+        'config = {"name": "Storage", "debug": False, "providers": []}\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "config" / "http.py").write_text(
+        "config = {'middleware': [], 'middleware_aliases': {}}\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "public").mkdir()
+    storage_public = tmp_path / "storage" / "app" / "public" / "profile-photos"
+    storage_public.mkdir(parents=True)
+    (storage_public / "avatar.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    (tmp_path / "routes").mkdir()
+    monkeypatch.chdir(tmp_path)
+    app = Application(tmp_path)
+    app.load_environment()
+    app.load_configuration()
+    app.register_configured_providers()
+    app.boot()
+    set_router(app.router)
+    app._routes_loaded = True
+    client = TestClient(app.asgi)
+    response = client.get("/storage/profile-photos/avatar.png")
+    assert response.status_code == 200
+    assert response.content.startswith(b"\x89PNG")
