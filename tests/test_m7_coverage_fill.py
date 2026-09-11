@@ -83,9 +83,11 @@ async def test_start_session_and_csrf_flow(tmp_path: Path, monkeypatch: pytest.M
 
     response = await session_mw.handle(_request(), after_csrf)
     assert response.status_code == 200
-    set_cookie = response.headers.getlist("set-cookie") if hasattr(response.headers, "getlist") else [
-        response.headers.get("set-cookie") or ""
-    ]
+    set_cookie = (
+        response.headers.getlist("set-cookie")
+        if hasattr(response.headers, "getlist")
+        else [response.headers.get("set-cookie") or ""]
+    )
     joined = "\n".join(set_cookie)
     assert "almasix_session" in joined
     assert "XSRF-TOKEN=" in joined
