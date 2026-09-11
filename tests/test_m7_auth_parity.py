@@ -190,6 +190,40 @@ async def test_token_guard_and_basic_auth_middleware() -> None:
 
 
 @pytest.mark.asyncio
+async def test_password_confirm_redirects_to_named_route() -> None:
+    """Kit routes may live at /user/confirm-password; middleware must follow the name."""
+    from almasix.routing import Route
+    from almasix.routing.router import Router, get_router, set_router
+
+    previous = None
+    try:
+        previous = get_router()
+    except RuntimeError:
+        pass
+    router = Router()
+    set_router(router)
+    Route.get("/user/confirm-password", lambda: "ok", name="password.confirm")
+
+    session = Session()
+    request = _req(path="/user/two-factor-authentication", session=session)
+    token = set_session(session)
+    try:
+
+        async def ok(req):
+            return Response("ok")
+
+        redirected = await RequirePassword(timeout=10).handle(request, ok)
+        assert redirected.status_code in {302, 303, 307}
+        assert redirected.headers.get("location", "").endswith("/user/confirm-password")
+    finally:
+        reset_session(token)
+        if previous is not None:
+            set_router(previous)
+        else:
+            set_router(Router())
+
+
+@pytest.mark.asyncio
 async def test_password_confirm_and_guest_named_guard() -> None:
     session = Session()
     request = _req(session=session)
@@ -201,6 +235,7 @@ async def test_password_confirm_and_guest_named_guard() -> None:
 
         redirected = await RequirePassword(timeout=10).handle(request, ok)
         assert redirected.status_code in {302, 303, 307}
+        assert redirected.headers.get("location", "").endswith("/confirm-password")
         mark_password_confirmed(request)
         allowed = await RequirePassword(timeout=10).handle(request, ok)
         assert allowed.status_code == 200

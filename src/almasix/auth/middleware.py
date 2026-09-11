@@ -174,14 +174,44 @@ class RequirePassword(Middleware):
         except RuntimeError:
             if _wants_json(request):
                 raise UnauthorizedHttpException(__("auth.password")) from None
-            return redirect("/confirm-password")
+            return _redirect_to_password_confirm(request)
 
         confirmed_at = session.get(_PASSWORD_CONFIRMED_AT)
         if confirmed_at is None or (time.time() - float(confirmed_at)) > timeout:
             if _wants_json(request):
                 raise UnauthorizedHttpException(__("auth.password"))
-            return redirect("/confirm-password")
+            return _redirect_to_password_confirm(request)
         return await call_next(request)
+
+
+def _password_confirm_path() -> str:
+    """Prefer the named ``password.confirm`` route; fall back to ``/confirm-password``."""
+    try:
+        from almasix.routing.router import get_router
+
+        named = get_router().route_named("password.confirm")
+        if named is not None:
+            uri = str(named.uri or "").strip()
+            if uri:
+                return uri if uri.startswith("/") else f"/{uri}"
+    except Exception:
+        pass
+    return "/confirm-password"
+
+
+def _redirect_to_password_confirm(request: Request) -> StarletteResponse:
+    intended = request.path or "/"
+    query = getattr(getattr(request, "raw", None), "url", None)
+    raw_query = getattr(query, "query", None) if query is not None else None
+    if not raw_query:
+        try:
+            raw_query = request.raw.url.query  # type: ignore[attr-defined]
+        except Exception:
+            raw_query = ""
+    if raw_query:
+        intended = f"{intended}?{raw_query}"
+    store_intended_url(intended)
+    return redirect(_password_confirm_path())
 
 
 class AuthenticateWithBasicAuth(Middleware):
