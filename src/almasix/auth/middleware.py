@@ -200,18 +200,41 @@ def _password_confirm_path() -> str:
 
 
 def _redirect_to_password_confirm(request: Request) -> StarletteResponse:
-    intended = request.path or "/"
-    query = getattr(getattr(request, "raw", None), "url", None)
-    raw_query = getattr(query, "query", None) if query is not None else None
-    if not raw_query:
-        try:
-            raw_query = request.raw.url.query  # type: ignore[attr-defined]
-        except Exception:
-            raw_query = ""
-    if raw_query:
-        intended = f"{intended}?{raw_query}"
-    store_intended_url(intended)
+    store_intended_url(_intended_url_for_password_confirm(request))
     return redirect(_password_confirm_path())
+
+
+def _intended_url_for_password_confirm(request: Request) -> str:
+    """URL to resume after confirming — must be a safe GET target.
+
+    Mutating requests (DELETE/POST/…) cannot be replayed by a redirect, and
+    paths like ``DELETE /user`` often have no GET twin (404 after confirm).
+    Prefer Referer, then the request path only for GET/HEAD.
+    """
+    method = (getattr(request, "method", None) or "GET").upper()
+    if method in {"GET", "HEAD"}:
+        intended = request.path or "/"
+        query = getattr(getattr(request, "raw", None), "url", None)
+        raw_query = getattr(query, "query", None) if query is not None else None
+        if not raw_query:
+            try:
+                raw_query = request.raw.url.query  # type: ignore[attr-defined]
+            except Exception:
+                raw_query = ""
+        if raw_query:
+            intended = f"{intended}?{raw_query}"
+        return intended
+
+    referer = (request.header("Referer") or request.header("referer") or "").strip()
+    if referer:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(referer)
+        path = parsed.path or "/"
+        if parsed.query:
+            path = f"{path}?{parsed.query}"
+        return path
+    return "/dashboard"
 
 
 class AuthenticateWithBasicAuth(Middleware):

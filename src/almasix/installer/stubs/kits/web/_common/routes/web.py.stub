@@ -48,6 +48,7 @@ with Route.group(middleware=["web"]):
             Route.get("/user/password", [ProfileController, "edit_password"], name="user-password.edit")
             Route.put("/user/password", [ProfileController, "update_password"], name="user-password.update")
             Route.get("/user/appearance", [ProfileController, "appearance"], name="appearance.edit")
+            Route.delete("/user", [ProfileController, "destroy"], name="current-user.destroy")
 
             Route.get("/notifications", [NotificationController, "index"], name="notifications.index")
             Route.post("/notifications/mark-all-read", [NotificationController, "mark_all_read"], name="notifications.mark-all")
@@ -68,4 +69,3 @@ with Route.group(middleware=["web"]):
                 Route.post("/user/confirmed-two-factor-authentication", [TwoFactorController, "confirm"], name="two-factor.confirm")
                 Route.delete("/user/two-factor-authentication", [TwoFactorController, "disable"], name="two-factor.disable")
                 Route.post("/user/two-factor-recovery-codes", [TwoFactorController, "regenerate_recovery_codes"], name="two-factor.recovery")
-                Route.delete("/user", [ProfileController, "destroy"], name="current-user.destroy")
