@@ -644,6 +644,21 @@ at run time rather than writing a fixed day into the expression when the task
 is defined — so it is right in February, and right for a process that runs
 across a month boundary.
 
+## Design notes
+
+A few choices differ from “cron expression in, process out” schedulers — they
+are intentional, not unfinished:
+
+- **Sub-minute tasks keep `schedule:run` alive for the whole minute.** Cron
+  cannot tick below sixty seconds; when any every-second / every-N-seconds task
+  is registered, the runner stays up until the minute ends so those ticks fire.
+- **`run_in_background()` uses a worker thread, not a subprocess.** Sibling
+  events still run in the same process; use a queue job when you need isolation
+  or a separate worker pool.
+- **`L` / `W` / `#` cron extensions are not parsed.** Use
+  `last_day_of_month()` (and friends) instead of embedding those letters in a
+  raw expression.
+
 ## Related
 
 - [Smith Console](/console/) — the commands the scheduler runs

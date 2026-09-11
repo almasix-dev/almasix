@@ -184,9 +184,14 @@ def test_the_page_is_as_thorough_as_the_one_it_ports() -> None:
 def test_the_page_names_its_deviations_rather_than_hiding_them() -> None:
     page = PAGE.read_text(encoding="utf-8")
 
-    assert "Named deviation" in page
-    # Remaining gaps are called out inline as named deviations (no separate backlog).
-    assert page.count("Named deviation") >= 3
+    assert "## Design notes" in page
+    # Intentional scheduler choices are named rather than left for the reader to discover.
+    for note in (
+        "Sub-minute tasks keep `schedule:run` alive",
+        "`run_in_background()` uses a worker thread",
+        "`L` / `W` / `#` cron extensions are not parsed",
+    ):
+        assert note in page, note
 
 
 # --- the living example -------------------------------------------------------

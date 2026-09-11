@@ -76,13 +76,13 @@ def test_m25_docs_are_broken_down_and_in_the_sidebar() -> None:
     assert "### Document stores" in engines
 
 
-def test_m25_compared_page_is_an_honest_l13_map() -> None:
+def test_m25_compared_page_is_an_honest_feature_map() -> None:
     compared = (DOCS / "compared.md").read_text(encoding="utf-8")
-    assert "laravel.com/docs/13.x/mongodb" in compared
+    assert "Document store feature map" in compared
     for heading in (
-        "## Eloquent-on-collections",
-        "## Laravel feature list (package integrations)",
-        "## Deliberate deviations",
+        "## Core document ORM",
+        "## Framework integrations often bundled elsewhere",
+        "## Deliberate design choices",
     ):
         assert heading in compared, heading
     for phrase in (
@@ -92,16 +92,17 @@ def test_m25_compared_page_is_an_honest_l13_map() -> None:
         "MongoDB cache driver",
         "GridFS",
         "Scout",
-        "vectorSearch",
-        "Transactions",
+        "Vector / Atlas Search",
+        "Multi-document transactions",
         "memory` is a real store",
     ):
         assert phrase in compared, phrase
 
-    # The withdrawn claim must not return.
+    # User docs stay framework-agnostic; no Laravel URLs or Eloquent framing.
+    assert "laravel.com" not in compared.lower()
+    assert "Eloquent" not in compared
     index = (DOCS / "index.md").read_text(encoding="utf-8")
     assert "Laravel has no first-party NoSQL" not in index
-    assert "Laravel 13 documents MongoDB" in index
 
 
 def test_m25_the_mongodb_extra_is_declared() -> None:

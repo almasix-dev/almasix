@@ -148,7 +148,7 @@ def test_the_pages_cover_the_concepts_around_the_method_lists() -> None:
     ):
         assert heading in helpers, heading
 
-    for heading in ("## Not ported", "## Strings", "## Fluent strings"):
+    for heading in ("## Not included", "## Strings", "## Fluent strings"):
         assert heading in strings, heading
 
 

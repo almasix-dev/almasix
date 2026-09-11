@@ -74,7 +74,7 @@ def test_m44_docs_publish_an_honest_support_matrix() -> None:
         "## Engines Almasix claims",
         "## Feature matrix",
         "## What SQLite cannot do",
-        "## Running the suite against another engine",
+        "## Verify against your database",
     ):
         assert heading in engines, heading
     for phrase in (
@@ -83,7 +83,7 @@ def test_m44_docs_publish_an_honest_support_matrix() -> None:
         "Native upsert",
         "Row locks",
         "Transactional DDL",
-        "ALMASIX_TEST_DB",
+        "almasix[pgsql]",
     ):
         assert phrase in engines, phrase
 
