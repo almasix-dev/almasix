@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.6.2` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.7.0` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -148,6 +148,7 @@ Automated: `tests/smoke/test_m3_smoke.py` + `tests/regression/test_m3_contracts.
 | --- | --- | --- |
 | V1 | `make:controller/middleware/provider/request` | Files land in Python snake_case dirs (`app/http/controllers/…`), importable (`__init__.py` created), `--force` + duplicate guard |
 | V2 | FormRequest injection | Validation runs before the action; the action never sees invalid input |
+| V2b | `request.validate(Schema)` | `POST /api/items/inline` — Laravel `$request->validate` equivalent |
 | V3 | Failure envelope | 422 `{message: "The given data was invalid.", status, errors}` — the locked M2 shape |
 | V4 | Message wording | `required` / `min` / `max` / `boolean` / `array` use Almasix’s default copy; `attributes()` + `messages()` override |
 | V5 | `authorize()` false | 403 `{message: "This action is unauthorized.", status}` |
@@ -871,7 +872,7 @@ cd examples/progress && python smith progress:deploy
 - [x] Default `GET /up` health probe (`ApplicationBuilder.with_health`); outside Almasix middleware stacks
 - [x] Starlight **Deployment** page (env, serve, optimize, migrate/queues, bare metal, container, releasing)
 - [x] `examples/deploy/` Dockerfile + compose (web + queue worker + Postgres, `/up` healthcheck)
-- [x] Package version **0.6.2** in `pyproject.toml` / `__version__` (0.5.1 already on PyPI; tag `v0.6.2` to publish)
+- [x] Package version **0.7.0** in `pyproject.toml` / `__version__` (tag `v0.7.0` to publish)
 - [x] Living example: `smith progress:deploy`; the board marks M38 complete
 
 ---
@@ -1238,6 +1239,17 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] **HTTP auth soak** — `smith progress:kits` migrates Web + Vue scaffolds and asserts CSRF 419, register → email verify, logout, login (via `almasix.installer.kit_soak`)
 - [x] Tokens API-only on API kit; SPA depends on `almasix[inertia]`; web on `almasix[conduit]`
 - [x] Starlight **Starter Kits**; `smith progress:kits`; board M36 complete; `tests/smoke/test_m36_smoke.py`
+
+## M56 — Validation exhaust (Laravel parity)
+
+### M56 exit criteria
+
+- [x] Shared rule engine + parser (`required|email`, `Rule.*`, schema)
+- [x] All 112 Laravel 12 available rules registered (`LARAVEL_RULES`)
+- [x] `request.validate` / `validator()` accept rules dict or schema
+- [x] Starlight Validation — one `###` section per rule; `docs/VALIDATION_PARITY.md`
+- [x] `smith progress:validation`; `POST /api/validate/dsl`; board M56; `tests/smoke/test_m56_smoke.py`
+- [x] Coverage HTML under `htmlcov/validation/` (engine omit `builtins.py` ≥90%; 112-rule behavioral suite is the parity gate)
 
 ---
 

@@ -11,6 +11,16 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.7.0
+
+- **Validation exhaust** — `request.validate({...})` accepts pipe-string rules and
+  `Rule.*` helpers alongside FormRequest / Pydantic schemas; all available rules
+  ship with docs and a maintainer catalog
+- **Inspired by Laravel** — Prologue credits Laravel’s design tradition with a
+  link to [laravel.com](https://laravel.com/); feature pages stay Almasix-first
+- **Validation docs** — teaching page covers inline validation, soft checks,
+  custom rules, and every available rule without framework-comparison digressions
+
 ## 0.6.2
 
 - **CSRF / Inertia** — web responses mint a readable `XSRF-TOKEN` cookie;
@@ -19,9 +29,9 @@ For how these docs relate to package versions, see
 - **Starter kit auth** — Web and Vue scaffolds migrate cleanly; CSRF minting
   unblocks register; register → email verify → logout → login works out of the
   box
-- **Docs rewrite** — user-facing docs assume Python + web only (no Laravel
-  required); every code fence names a file path; Basics / Database / Articulate /
-  Digging Deeper rewritten for first-time Almasix developers
+- **Docs rewrite** — user-facing docs assume Python + web only; every code fence
+  names a file path; Basics / Database / Articulate / Digging Deeper rewritten
+  for first-time Almasix developers
 
 ## 0.6.1
 

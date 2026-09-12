@@ -31,6 +31,7 @@ with Route.group(prefix="/api", middleware=["api"]):
     Route.post("/signet/token", [SignetController, "issue_token"])
     Route.get("/ping", [DemoController, "ping"])
     Route.get("/progress", [ProgressController, "data"])
+    Route.post("/validate/dsl", [DemoController, "validate_dsl"])
     # M35 — tight limiter so `smith progress:rate-limiting` can prove a 429.
     Route.get("/throttle-demo", lambda: {"ok": True}, middleware=["throttle:progress"])
     Route.get("/locale", [LocaleController, "index"])
@@ -77,6 +78,7 @@ with Route.group(prefix="/api", middleware=["api"]):
     with Route.group(prefix="/items"):
         Route.get("/{item}", [DemoController, "show"])
         Route.post("", [DemoController, "store"])
+        Route.post("/inline", [DemoController, "store_inline"])
         Route.put("/{item}", [DemoController, "update"])
         Route.patch("/{item}", [DemoController, "patch"])
         Route.delete("/{item}", [DemoController, "destroy"])

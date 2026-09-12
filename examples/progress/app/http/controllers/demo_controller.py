@@ -43,6 +43,21 @@ class DemoController(Controller):
             "post": request.post(),
         }
 
+    async def store_inline(self, request: Request) -> dict[str, object]:
+        """M3: ``request.validate(Schema)`` — Laravel ``$request->validate``."""
+        data = request.validate(StoreItemRequest)
+        return {"created": True, "via": "request.validate", "validated": data}
+
+    async def validate_dsl(self, request: Request) -> dict[str, object]:
+        """M56: pipe-string / Rule DSL on ``request.validate``."""
+        data = request.validate(
+            {
+                "email": "required|email",
+                "name": "required|string|min:2",
+            }
+        )
+        return {"via": "dsl", "validated": data}
+
     async def echo_bag(self, request: Request) -> dict[str, object]:
         """Inspect the full Laravel-style input surface for one request."""
         return {

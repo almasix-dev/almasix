@@ -38,12 +38,15 @@ class DemoController(Controller):
 | `only(...)` / `except_(...)` | Subset of the merged input |
 | `has` / `has_any` / `filled` / `missing` | Presence helpers |
 | `boolean` / `integer` / `float` / `string` | Coercion helpers |
+| `validate(...)` | Validate the bag — schema or rule strings; see [Validation](/validation/) |
+
 
 ```python title="app/http/controllers/demo_controller.py"
 request.input("email")
 request.query("page", 1)
 request.route("post")
 request.merge({"source": "demo"})
+request.validate(StoreItemRequest)  # raises 422 on failure
 ```
 
 Path parameters stay out of `all()` / `input()` on purpose: a query string

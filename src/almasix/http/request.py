@@ -369,6 +369,29 @@ class Request:
         excluded = set(_normalize_keys(keys))
         return {key: value for key, value in self._input.items() if key not in excluded}
 
+    def validate(
+        self,
+        rules: type[Any] | Mapping[str, Any],
+        *,
+        messages: Mapping[str, str] | None = None,
+        attributes: Mapping[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Validate the input bag (Laravel ``$request->validate``).
+
+        ``rules`` is either a Pydantic / FormRequest schema class **or** a
+        field → rule-string / ``Rule`` list mapping (pipe syntax supported).
+        Returns the cleaned dict or raises
+        :class:`~almasix.validation.ValidationException` (422).
+        """
+        from almasix.validation import validator
+
+        return validator(
+            self.all(),
+            rules,
+            messages=messages,
+            attributes=attributes,
+        ).validate()
+
     def keys(self) -> list[str]:
         return list(self._input.keys())
 

@@ -13,7 +13,7 @@ runner = CliRunner()
 def test_almasix_version() -> None:
     result = runner.invoke(almasix_app, ["version"])
     assert result.exit_code == 0
-    assert "Almasix 0.6.2" in result.stdout
+    assert "Almasix 0.7.0" in result.stdout
 
 
 def test_almasix_new_creates_app(tmp_path: Path) -> None:
@@ -56,7 +56,7 @@ def test_smith_has_no_new_command() -> None:
 def test_smith_version() -> None:
     result = runner.invoke(smith_app, ["version"])
     assert result.exit_code == 0
-    assert "Almasix 0.6.2" in result.stdout
+    assert "Almasix 0.7.0" in result.stdout
 
 
 def test_smith_serve_requires_bootstrap(tmp_path: Path, monkeypatch) -> None:

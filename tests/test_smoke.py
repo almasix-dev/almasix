@@ -6,7 +6,7 @@ from almasix.framework import Application, Container
 
 
 def test_version() -> None:
-    assert __version__ == "0.6.2"
+    assert __version__ == "0.7.0"
 
 
 def test_version_matches_the_packaged_metadata() -> None:

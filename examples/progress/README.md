@@ -107,10 +107,16 @@ curl -s "$BASE/api/echo/7?q=api" | python -m json.tool
 ## M3 checklist — validation + URLs
 
 `POST /api/items` is backed by `StoreItemRequest`, so validation runs before the controller.
+`POST /api/items/inline` uses `request.validate(StoreItemRequest)` — the Laravel
+`$request->validate` equivalent.
 
 ```bash
 # Types coerced from strings; defaults filled in
 curl -s -X POST "$BASE/api/items" -H 'Content-Type: application/json' \
+  -d '{"name":"almasix","count":"3","flag":"true"}' | python -m json.tool
+
+# Same rules via request.validate (no FormRequest injection)
+curl -s -X POST "$BASE/api/items/inline" -H 'Content-Type: application/json' \
   -d '{"name":"almasix","count":"3","flag":"true"}' | python -m json.tool
 
 # 422 with Almasix validation messages; attributes() renames count -> "item count"
@@ -197,6 +203,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M44** | `smith progress:engines` — DDL, upsert, JSON, locks, transactions, pagination on the app engine; CI runs the same suite on SQLite + PostgreSQL + MySQL |
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
+| **M56** | `smith progress:validation` — DSL + Rule helpers; 112 Laravel rules; `POST /api/validate/dsl` |
 | **M51** | `smith progress:lint` — pinned `ruff==0.16.6`, `make lint`, CI lint job |
 | **M38** | `smith progress:deploy` — `serve --workers`, `/up`, Deployment docs, `examples/deploy`, Trusted Publishing |
 | **M39** | `smith progress:docs` — Prologue, Basics teaching order, latest-major+main switcher, older-docs banner |
@@ -207,7 +214,8 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 
 ## Growing with Almasix
 
-M0–M55 are closed on the ladder (including **M36** starter kits). M32–M35
+M0–M56 are closed on the ladder (including **M36** starter kits and **M56**
+validation exhaust). M32–M35
 closed the installer, routing, security headers/CORS, and rate limiting; M25’s
 Laravel 13 Mongo audit, M51’s lint gate, M38’s deployment ops, and M39’s docs
 journey are closed with them. **Stability track:** API tokens (**M37**, Signet),
@@ -227,6 +235,7 @@ smith progress:hello Almasix
 smith progress:prompts
 smith progress:demo
 smith progress:helpers
+smith progress:validation
 smith progress:collections
 smith progress:queries
 smith progress:schema

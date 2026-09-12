@@ -17,6 +17,16 @@ JSON). They do **not** assume you know another web framework.
 | **Prism** | The template engine (`.prism.html` files) |
 | **ASGI** | The async server interface Almasix apps run on (Uvicorn by default) |
 
+## Inspired by Laravel
+
+Almasix’s application layout, request lifecycle, FormRequest-style validation,
+facades, ORM habits, queues, and console role (Smith) are **heavily inspired
+by** [Laravel](https://laravel.com/) — Taylor Otwell’s PHP framework and the
+community around it. We are grateful for that design tradition.
+
+These docs still teach Almasix on its own terms in Python. You do not need to
+know Laravel to follow along; if you already do, many shapes will feel familiar.
+
 ## Code examples
 
 Every example shows a **file path** above the code (the tab on the code block).

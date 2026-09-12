@@ -160,6 +160,14 @@ def test_m3_s4_progress_example_validation_loop(monkeypatch: pytest.MonkeyPatch)
             "note": None,
         }
 
+        inline = client.post(
+            "/api/items/inline",
+            json={"name": "almasix", "count": "3", "flag": "true"},
+        )
+        assert inline.status_code == 200
+        assert inline.json()["via"] == "request.validate"
+        assert inline.json()["validated"]["name"] == "almasix"
+
         invalid = client.post("/api/items", json={"name": "a", "count": 0, "tags": "nope"})
         assert invalid.status_code == 422
         assert invalid.json()["errors"] == {
