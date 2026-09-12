@@ -34,6 +34,9 @@ class Validator:
         self._validated_data: dict[str, Any] | None = None
         self._errors: dict[str, list[str]] | None = None
         self._dsl = isinstance(rules, Mapping)
+        if not self._dsl:
+            # Fail fast for nonsense schema targets (same moment as before DSL).
+            _schema(rules)  # type: ignore[arg-type]
 
     def passes(self) -> bool:
         return not self.fails()
@@ -88,12 +91,12 @@ class Validator:
             self._errors = {}
 
 
-def _schema(rules: type[BaseModel | FormRequest]) -> type[BaseModel]:
+def _schema(rules: type[BaseModel | FormRequest] | Any) -> type[BaseModel]:
     if isinstance(rules, type) and issubclass(rules, BaseModel):
         return rules
     if isinstance(rules, type) and issubclass(rules, FormRequest):
         return rules.__schema__
-    raise TypeError("Rules must be a Pydantic model, FormRequest subclass, or rules mapping.")
+    raise TypeError("Rules must be a Pydantic model or a FormRequest subclass.")
 
 
 def validator(

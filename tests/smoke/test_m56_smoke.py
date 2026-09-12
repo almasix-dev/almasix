@@ -42,9 +42,8 @@ def test_progress_validation_demo(progress_cwd: pathlib.Path) -> None:
 
 
 def test_m56_board_marks_validation_complete(progress_cwd: pathlib.Path) -> None:
-    from fastapi.testclient import TestClient
-
     import bootstrap.app as module
+    from fastapi.testclient import TestClient
 
     client = TestClient(module.asgi, raise_server_exceptions=False)
     board = client.get("/api/progress").json()
