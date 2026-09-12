@@ -48,6 +48,7 @@ def _milestones() -> list[dict]:
             "status": "complete",
             "proof": [
                 "FormRequest + Laravel-shaped 422",
+                "request.validate(Schema) on POST /api/items/inline",
                 "authorize() -> 403, messages(), attributes()",
                 "python smith make:controller/middleware/provider/request",
                 "url() honoring APP_BASE_PATH",
@@ -428,6 +429,18 @@ def _milestones() -> list[dict]:
             ],
         },
         {
+            "id": "M56",
+            "name": "Validation exhaust (Laravel parity)",
+            "status": "complete",
+            "proof": [
+                "smith progress:validation",
+                "request.validate DSL + Rule helpers + FormRequest",
+                "112 Laravel available rules",
+                "POST /api/validate/dsl",
+                "docs/VALIDATION_PARITY.md",
+            ],
+        },
+        {
             "id": "M36",
             "name": "Starter kits",
             "status": "complete",
@@ -460,7 +473,7 @@ def _milestones() -> list[dict]:
                 "smith serve --workers",
                 "GET /up health probe",
                 "docs/deployment + examples/deploy",
-                "PyPI Trusted Publishing (0.6.2)",
+                "PyPI Trusted Publishing (0.7.0)",
             ],
         },
         {

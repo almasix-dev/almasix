@@ -39,6 +39,55 @@ class _Stub:
         self._data.update(values)
 
 
+def test_request_validate_is_the_inline_validate_entry_point() -> None:
+    """Laravel ``$request->validate([...])`` → ``request.validate(Schema)``."""
+    from starlette.requests import Request as StarletteRequest
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/",
+        "raw_path": b"/",
+        "query_string": b"",
+        "headers": [],
+        "client": ("127.0.0.1", 0),
+        "server": ("test", 80),
+    }
+
+    async def receive() -> dict[str, object]:
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    request = Request(
+        StarletteRequest(scope, receive),
+        body={"name": "almasix", "count": "3"},
+        hydrated=True,
+    )
+    assert request.validate(StoreRequest) == {
+        "name": "almasix",
+        "count": 3,
+        "flag": False,
+        "tags": [],
+        "note": None,
+    }
+
+    bad = Request(StarletteRequest(scope, receive), body={"name": "a"}, hydrated=True)
+    with pytest.raises(ValidationException) as failed:
+        bad.validate(StoreRequest)
+    assert failed.value.errors["name"] == ["The name must be at least 2 characters."]
+
+    custom = Request(StarletteRequest(scope, receive), body={"name": "a"}, hydrated=True)
+    with pytest.raises(ValidationException) as renamed:
+        custom.validate(
+            StoreRequest,
+            messages={"name.min": "Too short."},
+            attributes={"name": "label"},
+        )
+    assert renamed.value.errors["name"] == ["Too short."]
+
+
 def test_valid_input_is_coerced_and_exposed() -> None:
     form = StoreRequest.validate_request(_Stub({"name": "almasix", "count": "3", "flag": "yes"}))
 

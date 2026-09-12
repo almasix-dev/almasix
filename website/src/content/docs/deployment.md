@@ -186,7 +186,7 @@ To cut a release (maintainers):
    (CI refuses a tag that disagrees with the packaged version).
 2. Merge to `main`.
 3. Optional rehearsal: Actions → **Publish** → Run workflow → target `testpypi`.
-4. Create an annotated tag (for example `v0.6.2`) and a GitHub Release on that
+4. Create an annotated tag (for example `v0.7.0`) and a GitHub Release on that
    tag. Publishing the Release triggers the PyPI job.
 
 Install with:
@@ -194,7 +194,7 @@ Install with:
 ```bash title="terminal"
 pip install almasix
 # or pin
-pip install almasix==0.6.2
+pip install almasix==0.7.0
 ```
 
 ## Related

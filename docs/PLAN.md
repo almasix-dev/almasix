@@ -5,7 +5,7 @@
 > Last aligned: 2026-09-10 (**Laravel 13** is the parity reference; user-facing docs are
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
-> closed; package line **0.6.2** prepared; **M39** docs journey + Prologue closed;
+> closed; package line **0.7.0** prepared; **M39** docs journey + Prologue closed;
 > **M37** Signet-class tokens closed; autopilot **M53 → M45 → M46 → M47 → M52** closed;
 > **M54** Conduit + **M55** Inertia + **M36** starter kits closed).
 
@@ -1458,6 +1458,20 @@ Server-only Inertia.js adapter compatible with official clients. **No forked cli
 
 **Gate:** I0–I2 green; HTML shell + JSON visits + SSR contract covered.
 
+### M56 — Validation exhaust (Laravel parity)
+
+Full Laravel 12 **Available Validation Rules** catalog via a shared rule engine:
+
+- DSL: `request.validate({"email": "required|email"})` and `Rule.*` lists
+- Schema: existing FormRequest / Pydantic path unchanged
+- 112 rules registered (`LARAVEL_RULES`); matrix in [`VALIDATION_PARITY.md`](VALIDATION_PARITY.md)
+- Starlight Validation page: one section per rule
+- Progress: `smith progress:validation`; `POST /api/validate/dsl`; smoke `tests/smoke/test_m56_smoke.py`
+
+**Depends on:** M3 FormRequest, M4 i18n messages, M5 DB (for `exists` / `unique`).
+
+**Gate:** every Laravel available rule registered + tested; docs headings sync; `almasix.validation` coverage ≥ 99%.
+
 ### M37 — API tokens, OAuth, and social auth
 
 First-party packages in Laravel: [Sanctum](https://laravel.com/docs/sanctum), [Passport](https://laravel.com/docs/passport), [Socialite](https://laravel.com/docs/socialite). Almasix ships the Sanctum-class surface as **Signet**.
@@ -1927,9 +1941,9 @@ Work these before starter kits and other growth milestones, unless a concrete bl
 
 **Process (2026-09-09):** one milestone at a time; exhaust completely; Laravel **13** as the parity page; stability track before growth. See **Follow-up plan** above.
 
-**Suggested next:** **M48** MCP / agents (and Socialite / Passport outside Signet). **Recently closed:** **M36** starter kits; **M54** Conduit; **M55** Inertia.
+**Suggested next:** **M48** MCP / agents (and Socialite / Passport outside Signet). **Recently closed:** **M56** validation exhaust (Laravel rule parity); **M36** starter kits; **M54** Conduit; **M55** Inertia.
 
-**Recently closed:** **M54** almasix.conduit (Livewire 4 target; renamed from Flux); **M55** almasix-inertia; M52 Sonar; M46 Almasix language server; M45 Prism language support; M53 Chrono; M37 Signet; M39 docs; M38 deployment; M51 lint; M25 L13 Mongo; M44 multi-engine CI; M32–M35.
+**Recently closed:** **M56** Laravel validation parity (DSL + `Rule` + FormRequest; 112 available rules); **M54** almasix.conduit (Livewire 4 target; renamed from Flux); **M55** almasix-inertia; M52 Sonar; M46 Almasix language server; M45 Prism language support; M53 Chrono; M37 Signet; M39 docs; M38 deployment; M51 lint; M25 L13 Mongo; M44 multi-engine CI; M32–M35.
 
 **M39** — Prologue published; Basics teaching order; no milestone IDs in Starlight; header version switcher is **latest major** + `main` (never defaulting to `main`) with an older-docs banner when not on latest.
 

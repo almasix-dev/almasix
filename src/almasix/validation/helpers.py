@@ -1,4 +1,4 @@
-"""``validator()`` — validate a payload outside the request lifecycle."""
+"""``validator()`` — schema or Laravel-style rules dict."""
 
 from __future__ import annotations
 
@@ -14,64 +14,84 @@ from almasix.validation.messages import translate
 class Validator:
     """One validation run over a payload (Laravel's ``Validator`` instance).
 
-    **Named deviation:** rules are a Pydantic model or a
-    :class:`~almasix.validation.FormRequest` subclass rather than Laravel's
-    array of rule strings, because that is how Almasix declares validation
-    everywhere else.
+    ``rules`` may be a Pydantic model / FormRequest subclass **or** a
+    field → rule-string / ``Rule`` list mapping.
     """
 
     def __init__(
         self,
         data: Mapping[str, Any],
-        rules: type[BaseModel | FormRequest],
+        rules: type[BaseModel | FormRequest] | Mapping[str, Any],
         *,
         messages: Mapping[str, str] | None = None,
         attributes: Mapping[str, str] | None = None,
     ) -> None:
         self._data = dict(data)
-        self._schema = _schema(rules)
+        self._rules = rules
         self._messages = dict(messages or {})
         self._attributes = dict(attributes or {})
         self._model: BaseModel | None = None
+        self._validated_data: dict[str, Any] | None = None
         self._errors: dict[str, list[str]] | None = None
+        self._dsl = isinstance(rules, Mapping)
+        if not self._dsl:
+            # Fail fast for nonsense schema targets (same moment as before DSL).
+            _schema(rules)  # type: ignore[arg-type]
 
     def passes(self) -> bool:
-        """Run validation, returning whether the payload is valid."""
         return not self.fails()
 
     def fails(self) -> bool:
-        """Run validation, returning whether the payload is invalid."""
         self._run()
         return bool(self._errors)
 
     def errors(self) -> dict[str, list[str]]:
-        """Return field → messages, empty when the payload is valid."""
         self._run()
         return dict(self._errors or {})
 
     def validated(self) -> dict[str, Any]:
-        """Return the validated payload, raising ``ValidationException`` if invalid."""
         self._run()
         if self._errors:
             raise ValidationException(dict(self._errors))
+        if self._dsl:
+            assert self._validated_data is not None
+            return dict(self._validated_data)
         assert self._model is not None
         return self._model.model_dump()
 
-    # Laravel spells the raising form ``validate()``.
     validate = validated
 
     def _run(self) -> None:
-        if self._model is not None or self._errors is not None:
+        if self._errors is not None:
             return
+        if self._dsl:
+            from almasix.validation.engine import AttributeValidator
+
+            assert isinstance(self._rules, Mapping)
+            runner = AttributeValidator(
+                self._data,
+                self._rules,
+                messages=self._messages,
+                attributes=self._attributes,
+            )
+            if runner.fails():
+                self._errors = runner.errors()
+                self._validated_data = None
+            else:
+                self._errors = {}
+                self._validated_data = runner.validated()
+            return
+
+        schema = _schema(self._rules)  # type: ignore[arg-type]
         try:
-            self._model = self._schema.model_validate(self._data)
+            self._model = schema.model_validate(self._data)
         except ValidationError as exc:
             self._errors = translate(exc, messages=self._messages, attributes=self._attributes)
         else:
             self._errors = {}
 
 
-def _schema(rules: type[BaseModel | FormRequest]) -> type[BaseModel]:
+def _schema(rules: type[BaseModel | FormRequest] | Any) -> type[BaseModel]:
     if isinstance(rules, type) and issubclass(rules, BaseModel):
         return rules
     if isinstance(rules, type) and issubclass(rules, FormRequest):
@@ -81,12 +101,12 @@ def _schema(rules: type[BaseModel | FormRequest]) -> type[BaseModel]:
 
 def validator(
     data: Mapping[str, Any],
-    rules: type[BaseModel | FormRequest],
+    rules: type[BaseModel | FormRequest] | Mapping[str, Any],
     *,
     messages: Mapping[str, str] | None = None,
     attributes: Mapping[str, str] | None = None,
 ) -> Validator:
-    """Validate ``data`` against ``rules`` (Laravel ``validator``)."""
+    """Validate ``data`` against a schema or Laravel-style rules mapping."""
     return Validator(data, rules, messages=messages, attributes=attributes)
 
 

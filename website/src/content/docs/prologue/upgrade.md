@@ -7,6 +7,28 @@ Read the [Release Notes](/prologue/release-notes/) for what shipped. This page
 covers what to change in **your** application when you bump the `almasix`
 dependency.
 
+## From 0.6.x to 0.7.0
+
+1. **Bump the package**
+
+   ```bash title="terminal"
+   pip install -U almasix==0.7.0
+   ```
+
+2. **Inline validation** — you can validate without a FormRequest type-hint:
+
+   ```python title="app/http/controllers/post_controller.py"
+   data = request.validate({
+       "email": "required|email",
+       "title": ["required", "min:3"],
+   })
+   ```
+
+   FormRequest injection is unchanged. Soft checks use `validator(data, rules)`.
+
+3. **No required app layout changes** for a typical 0.6 scaffold. Re-run your
+   test suite after upgrading.
+
 ## From 0.6.1 to 0.6.2
 
 1. **Bump the package**
@@ -24,8 +46,7 @@ dependency.
    [Starter Kits](/starter-kits/). After re-scaffolding, walk register → email
    verify → logout → login in the browser to confirm Day-1 auth.
 
-4. **Docs** — no application changes. If you bookmarked older section titles
-   (Laravel-framed headings, “Living example” / progress demos in the docs),
+4. **Docs** — no application changes. If you bookmarked older section titles,
    use the sidebar or search; the teaching pages were rewritten for first-time
    Almasix readers.
 
@@ -38,6 +59,9 @@ dependency.
    # or pin exactly
    pip install -U almasix==0.6.2
    ```
+
+   Prefer **0.7.0** if you are jumping from 0.5.x in one step — see
+   [From 0.6.x to 0.7.0](#from-06x-to-070) for validation DSL notes.
 
 2. **Optional: starter kits** — new apps can pick a kit with
    `almasix new myapp --kit web|api|react|vue|svelte` (CSS via `--css` for web).
