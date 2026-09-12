@@ -50,7 +50,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Authenticated so the star badge survives the shared Actions IP quota;
+      # SocialIcons memoizes to one api.github.com call per build.
       - name: Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build
 
       # The site is served from a subpath. Starlight rewrites its own navigation
