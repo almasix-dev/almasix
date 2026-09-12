@@ -4,39 +4,13 @@
  */
 import config from 'virtual:starlight/user-config';
 import { Icon } from '@astrojs/starlight/components';
+import { githubStarsLabel } from '../lib/github-stars';
 
 const links = config.social || [];
 const github = links.find((link) => link.icon === 'github');
 const others = links.filter((link) => link.icon !== 'github');
 
-function formatStars(count: number): string {
-	if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}m`;
-	if (count >= 1_000) return `${(count / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
-	return String(count);
-}
-
-let starsLabel: string | null = null;
-if (github) {
-	try {
-		const match = github.href.match(/github\.com\/([^/]+)\/([^/#?]+)/);
-		if (match) {
-			const res = await fetch(`https://api.github.com/repos/${match[1]}/${match[2]}`, {
-				headers: {
-					Accept: 'application/vnd.github+json',
-					'User-Agent': 'almasix-docs',
-				},
-			});
-			if (res.ok) {
-				const data = (await res.json()) as { stargazers_count?: number };
-				if (typeof data.stargazers_count === 'number') {
-					starsLabel = formatStars(data.stargazers_count);
-				}
-			}
-		}
-	} catch {
-		// Offline / rate-limited builds still show the icon alone.
-	}
-}
+const starsLabel = github ? await githubStarsLabel(github.href) : null;
 ---
 
 {
