@@ -17,7 +17,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/almasix/"><img alt="PyPI" src="https://img.shields.io/pypi/v/almasix?style=for-the-badge&label=pypi&color=4c1d95"></a>
-  <a href="https://pypi.org/project/almasix/"><img alt="downloads" src="https://img.shields.io/pypi/dm/almasix?style=for-the-badge&label=downloads%2Fmonth"></a>
+  <a href="https://pepy.tech/projects/almasix"><img alt="downloads/month" src="https://static.pepy.tech/badge/almasix/month"></a>
   <a href="https://github.com/almasix-dev/almasix/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/almasix-dev/almasix/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=white"></a>
   <a href="https://github.com/almasix-dev/almasix/blob/main/docs/SMOKE.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-99%25-31c48d?style=for-the-badge&logo=codecov&logoColor=white"></a>
   <a href="https://github.com/almasix-dev/almasix/tree/main/tests"><img alt="tests" src="https://img.shields.io/badge/tests-2%2C301-31c48d?style=for-the-badge&logo=pytest&logoColor=white"></a>
