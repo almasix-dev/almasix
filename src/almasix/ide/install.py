@@ -148,15 +148,17 @@ def _write_jetbrains_note(root: Path, result: IdeInstallResult, *, force: bool) 
     note.write_text(
         "\n".join(
             [
-                "# Almasix — JetBrains / PyCharm",
+                "# Almasix — JetBrains / PyCharm (Almasix Idea)",
                 "",
                 "1. Install **Almasix** from the JetBrains Marketplace "
                 "(plugin id `com.almasix.ide`), **or** download a zip from",
                 f"   {_IDE_SUPPORT_RELEASES} and use",
                 "   **Settings → Plugins → ⚙ → Install Plugin from Disk…**",
-                "2. Restart when prompted. Enable **LSP4IJ** if asked so Prism",
-                "   completions come from `almasix-lsp` in the project venv.",
-                "3. Run configurations for `smith serve` / `smith queue:work` ship",
+                "2. Restart when prompted. Plugin **0.2.0+** is native Almasix Idea:",
+                "   completions come from `smith ide:index --json` (project interpreter),",
+                "   not LSP4IJ / almasix-lsp.",
+                "3. Use **Almasix → Rebuild Index** after large route/config changes.",
+                "4. Run configurations for `smith serve` / `smith queue:work` ship",
                 "   with the plugin; or add them manually pointing at `.venv/bin/smith`.",
                 "",
                 f"Source and releases: {_IDE_SUPPORT_REPO}",

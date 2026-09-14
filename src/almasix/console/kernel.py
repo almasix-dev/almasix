@@ -130,11 +130,13 @@ class ConsoleKernel:
         except ImportError:  # pragma: no cover - package always present in-tree
             pass
         try:
+            from almasix.ide.commands.index import IdeIndexCommand
             from almasix.ide.commands.install import IdeInstallCommand
             from almasix.ide.commands.stubs import IdeStubsCommand
 
             self.register(IdeInstallCommand)
             self.register(IdeStubsCommand)
+            self.register(IdeIndexCommand)
         except ImportError:  # pragma: no cover - package always present in-tree
             pass
 

@@ -40,7 +40,9 @@ def test_m47_demo_command_runs() -> None:
     for line in (
         "install ->",
         "stubs   ->",
+        "index   ->",
         "ide-support -> https://github.com/almasix-dev/ide-support",
+        "native Almasix Idea",
         "ide ok",
     ):
         assert line in out, line
@@ -52,3 +54,5 @@ def test_m47_board_marks_ide_complete(progress_client: TestClient) -> None:
     assert by_id["M47"]["status"] == "complete"
     assert "smith progress:ide" in by_id["M47"]["proof"]
     assert any("almasix-dev/ide-support" in p for p in by_id["M47"]["proof"])
+    assert any("ide:index" in p for p in by_id["M47"]["proof"])
+    assert any("Almasix Idea" in p or "no LSP4IJ" in p for p in by_id["M47"]["proof"])
