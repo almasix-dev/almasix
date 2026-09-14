@@ -484,7 +484,7 @@ def _milestones() -> list[dict]:
                 "smith serve --workers",
                 "GET /up health probe",
                 "docs/deployment + examples/deploy",
-                "PyPI Trusted Publishing (0.8.1)",
+                "PyPI Trusted Publishing (0.9.0)",
             ],
         },
         {

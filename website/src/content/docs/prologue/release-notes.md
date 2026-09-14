@@ -13,6 +13,19 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.9.0
+
+- **`smith ide:index`** — JSON app symbol index (routes, views, config, gates,
+  validation rules, relations, components, Smith commands, and related
+  surfaces) for native IDE tooling
+- **Almasix Idea architecture** — JetBrains uses the index dump (no LSP4IJ);
+  VS Code continues on `almasix-lsp`. Docs: [Editor setup](/editor-setup/)
+- **Global installer** — `pipx` / `uv tool` documented for installing the
+  `almasix` project generator outside PEP 668-managed system Pythons
+
+Published on [PyPI](https://pypi.org/project/almasix/0.9.0/) after the `v0.9.0`
+GitHub Release.
+
 ## 0.8.1
 
 - **Compared to other frameworks** — Prologue page covering Django, FastAPI,
