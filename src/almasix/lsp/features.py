@@ -407,10 +407,8 @@ def _completions_for_env_value(index: AppIndex, ctx: CursorContext) -> list[Comp
     if not options:
         return []
     names = _filter_prefix(list(options), ctx.prefix)
-    return [
-        _string_completion(name, "env_value", ctx, detail=f"{key} option")
-        for name in names
-    ]
+    return [_string_completion(name, "env_value", ctx, detail=f"{key} option") for name in names]
+
 
 def _completions_for_column(index: AppIndex, ctx: CursorContext) -> list[CompletionItem]:
     """Columns of the table in context, or every column when it cannot be pinned down."""
