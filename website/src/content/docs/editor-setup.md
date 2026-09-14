@@ -71,7 +71,15 @@ migrations; `.env` files are mapped to the LSP in both editors.
    `com.almasix.ide`), **or** **Settings → Plugins → ⚙ → Install Plugin from
    Disk…** with a zip from
    [`almasix-dev/ide-support` Releases](https://github.com/almasix-dev/ide-support/releases)
-2. Restart; open an Almasix app with `almasix[lsp]` in the venv
+2. Restart; open an Almasix app with `almasix[lsp]` in the **project**
+   interpreter (or `.venv` next to `bootstrap/app.py`)
+
+If the Language Servers tool window shows
+`Cannot start server … almasixLsp (pid=null)`, the IDE could not spawn
+`almasix-lsp`. Install the extra into the interpreter PyCharm is using
+(`pip install 'almasix[lsp]'`), confirm LSP4IJ is installed, and open the app
+root — not a parent folder without that venv. Plugin **0.1.12+** also follows
+the project Python SDK and walks up to `bootstrap/app.py`.
 
 `smith ide:install` also writes `.idea/almasix-editor.md` with these steps.
 
