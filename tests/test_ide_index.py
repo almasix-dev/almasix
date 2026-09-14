@@ -46,9 +46,23 @@ def test_build_ide_index_progress() -> None:
     assert "int" in payload["casts"]
     assert isinstance(payload["directives"], list)
     assert "if" in payload["directives"]
+    locations = payload["config_locations"]
+    assert isinstance(locations, dict)
+    assert "app.env" in locations
+    assert locations["app.env"]["path"].endswith("config/app.py")
+    assert isinstance(locations["app.env"]["line"], int)
+    assert locations["app.env"]["line"] >= 0
+    # Spot-check the AST line against the source file
+    app_py = Path(locations["app.env"]["path"])
+    line_text = app_py.read_text(encoding="utf-8").splitlines()[locations["app.env"]["line"]]
+    assert '"env"' in line_text or "'env'" in line_text
+    assert "QUEUE_CONNECTION" in payload["env_options"]
+    assert "redis" in payload["env_options"]["QUEUE_CONNECTION"]
     data = json.loads(dump_index_json(PROGRESS))
     assert data["ok"] is True
     assert data["base_path"] == str(PROGRESS.resolve())
+    assert "app.env" in data["config_locations"]
+    assert "QUEUE_CONNECTION" in data["env_options"]
 
 
 def test_ide_index_cli_json() -> None:

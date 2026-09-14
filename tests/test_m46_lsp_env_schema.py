@@ -157,6 +157,34 @@ def test_dotenv_interpolation_and_key_completion(progress_index) -> None:
     assert "DB_CONNECTION" in key_labels or "DB_DATABASE" in key_labels
 
 
+def test_env_options_and_value_completion(progress_index) -> None:
+    assert "QUEUE_CONNECTION" in progress_index.env_options
+    assert "sync" in progress_index.env_options["QUEUE_CONNECTION"]
+    assert "redis" in progress_index.env_options["QUEUE_CONNECTION"]
+    # Alias used by some Laravel docs / muscle memory.
+    from almasix.lsp.env_context import options_for_env_key
+
+    assert "redis" in options_for_env_key(progress_index.env_options, "QUEUE_DRIVER")
+
+    source = "QUEUE_CONNECTION=re"
+    ctx = dotenv_context_at(source, 0, len(source))
+    assert ctx is not None
+    assert ctx.kind == "env_value"
+    assert ctx.receiver == "QUEUE_CONNECTION"
+    assert ctx.prefix == "re"
+    labels = {
+        item.label for item in completions(progress_index, source, 0, len(source), language="dotenv")
+    }
+    assert "redis" in labels
+
+    py = 'default = env("QUEUE_CONNECTION", "sy'
+    py_labels = {
+        item.label
+        for item in completions(progress_index, py, 0, len(py), language="python")
+    }
+    assert "sync" in py_labels
+
+
 def test_migration_schema_replays_create_alter_and_method_blueprints() -> None:
     tables = discover_migration_schema(PROGRESS)
     assert "posts" in tables

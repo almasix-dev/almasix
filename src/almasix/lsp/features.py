@@ -256,6 +256,8 @@ def completions_for_context(
         ]
     if ctx.kind == "env":
         return _completions_for_env(index, ctx)
+    if ctx.kind == "env_value":
+        return _completions_for_env_value(index, ctx)
     if ctx.kind == "table":
         names = _filter_prefix(sorted(index.tables), ctx.prefix)
         return [
@@ -390,9 +392,25 @@ def _completions_for_env(index: AppIndex, ctx: CursorContext) -> list[Completion
         info = index.env_keys[name]
         shown = display_value(name, info.value)
         detail = f"{info.detail} = {shown}" if shown else info.detail
+        if info.used_by and info.kind == "config":
+            detail = info.detail
         items.append(_string_completion(name, "env", ctx, detail=detail))
     return items
 
+
+def _completions_for_env_value(index: AppIndex, ctx: CursorContext) -> list[CompletionItem]:
+    """Drivers / stores / connections for ``KEY=`` or ``env("KEY", …)``."""
+    from almasix.lsp.env_context import options_for_env_key
+
+    key = ctx.receiver or ""
+    options = options_for_env_key(index.env_options, key)
+    if not options:
+        return []
+    names = _filter_prefix(list(options), ctx.prefix)
+    return [
+        _string_completion(name, "env_value", ctx, detail=f"{key} option")
+        for name in names
+    ]
 
 def _completions_for_column(index: AppIndex, ctx: CursorContext) -> list[CompletionItem]:
     """Columns of the table in context, or every column when it cannot be pinned down."""
@@ -641,6 +659,14 @@ def _definition_for_call(
             return None
         return LocationItem(path=info.path, start_line=info.line, end_line=info.line)
     if call.kind == "config":
+        from almasix.ide.index import discover_config_key_locations
+
+        loc = discover_config_key_locations(index.config_files).get(call.value)
+        if loc and loc.get("path"):
+            path = Path(str(loc["path"]))
+            if path.is_file():
+                line = int(loc.get("line") or 0)
+                return LocationItem(path=path, start_line=line, end_line=line)
         path = config_file_for_key(index, call.value)
         if path is None or not path.is_file():
             return None

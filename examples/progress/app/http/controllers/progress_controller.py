@@ -598,7 +598,7 @@ def _milestones() -> list[dict]:
                 "smith progress:ide",
                 "smith ide:install + ide:stubs + ide:index --json",
                 "almasix-dev/ide-support (VS Marketplace + JetBrains Marketplace)",
-                "JetBrains Almasix Idea (native completions via ide:index; no LSP4IJ)",
+                "JetBrains Almasix Idea (native; ide:index; Ctrl-click config keys + {{ vars }})",
                 "VS Code ↔ PyCharm parity matrix (Editor setup)",
             ],
         },

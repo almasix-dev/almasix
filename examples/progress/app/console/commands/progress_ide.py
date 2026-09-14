@@ -46,10 +46,13 @@ class ProgressIdeCommand(Command):
         self.line(
             f"  index   -> views={len(payload['views'])} "
             f"routes={len(payload['routes'])} "
+            f"config_keys={len(payload['config_keys'])} "
+            f"config_locations={len(payload.get('config_locations') or {})} "
+            f"env_options={len(payload.get('env_options') or {})} "
             f"rules={len(payload['validation_rules'])} "
             f"cmds={len(payload['smith_commands'])}"
         )
-        self.line("  jetbrains -> native Almasix Idea (ide:index; no LSP4IJ)")
+        self.line("  jetbrains -> native Almasix Idea (ide:index; Ctrl-click keys/vars)")
 
         self.line(f"  ide-support -> {_IDE_SUPPORT_REPO}")
         self.line(f"  vscode  -> {_VS_MARKETPLACE}")

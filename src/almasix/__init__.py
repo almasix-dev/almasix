@@ -10,7 +10,7 @@ from almasix.debug import DumpAndDie, dd, dump, serialize, to_json
 # under the ``almasix`` namespace when the framework is installed editable.
 __path__ = extend_path(__path__, __name__)
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 __all__ = [
     "DumpAndDie",

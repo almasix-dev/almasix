@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from almasix.lsp.env_context import EnvVarInfo, discover_env_keys
+from almasix.lsp.env_context import EnvVarInfo, discover_env_keys, discover_env_options
 from almasix.lsp.schema_context import (
     TableInfo,
     discover_live_schema,
@@ -68,6 +68,8 @@ class AppIndex:
     vite_entries: dict[str, Path] = field(default_factory=dict)
     #: ``.env`` / ``.env.*`` declarations plus keys only read via ``env()``.
     env_keys: dict[str, EnvVarInfo] = field(default_factory=dict)
+    #: Suggested values for env keys (``QUEUE_CONNECTION`` → ``sync``/``redis``/…).
+    env_options: dict[str, tuple[str, ...]] = field(default_factory=dict)
     #: Tables and columns from migrations + models (+ a live connection when enabled).
     tables: dict[str, TableInfo] = field(default_factory=dict)
 
@@ -475,6 +477,8 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
     # Migrations describe a table more precisely than a model's `fillable`, so
     # they are merged last of the two static sources.
     static_tables = merge_tables(discover_model_tables(root), discover_migration_schema(root))
+    # Options before boot use AST + known maps; refreshed with config_keys after boot.
+    env_options = discover_env_options(root)
 
     try:
         app = _boot_application(root)
@@ -492,6 +496,7 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
             view_shared=shared,
             vite_entries=vite_entries,
             env_keys=env_keys,
+            env_options=env_options,
             tables=static_tables,
             error=f"Application failed to boot: {type(exc).__name__}: {exc}",
         )
@@ -520,6 +525,7 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
         )
 
     config_keys = tuple(sorted(flatten_config(app.config.all())))
+    env_options = discover_env_options(root, config_keys=config_keys)
     # The app is booted, so a connection exists — but only reach for it when
     # asked; see `live_schema_enabled`.
     tables = (
@@ -543,5 +549,6 @@ def build_index(base_path: Path | str | None = None) -> AppIndex:
         view_shared=shared,
         vite_entries=vite_entries,
         env_keys=env_keys,
+        env_options=env_options,
         tables=tables,
     )
