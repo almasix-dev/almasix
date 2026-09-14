@@ -11,6 +11,18 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.8.1
+
+- **Compared to other frameworks** — Prologue page covering Django, FastAPI,
+  Flask, Litestar, and Masonite (when to pick each, candid feature map)
+- **Editor setup** — JetBrains troubleshooting for `almasixLsp (pid=null)`,
+  including Windows IDE + WSL projects (plugin 0.1.13+)
+- **README downloads badge** — shields.io pepy total downloads (avoids
+  pypistats rate-limit noise)
+
+Published on [PyPI](https://pypi.org/project/almasix/0.8.1/) after the `v0.8.1`
+GitHub Release.
+
 ## 0.8.0
 
 - **Mail + Notifications exhaust** — Laravel 13 doc parity for the

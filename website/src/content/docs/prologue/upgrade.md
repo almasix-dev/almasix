@@ -7,6 +7,18 @@ Read the [Release Notes](/prologue/release-notes/) for what shipped. This page
 covers what to change in **your** application when you bump the `almasix`
 dependency.
 
+## From 0.8.0 to 0.8.1
+
+1. **Bump the package**
+
+   ```bash title="terminal"
+   pip install -U almasix==0.8.1
+   ```
+
+2. **Docs only** — no application code changes. Optionally skim
+   [Compared to other frameworks](/prologue/compared/) and the JetBrains notes
+   on [Editor setup](/editor-setup/) if you use PyCharm on Windows with WSL.
+
 ## From 0.7.x to 0.8.0
 
 1. **Bump the package**
