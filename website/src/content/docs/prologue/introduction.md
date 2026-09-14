@@ -27,6 +27,9 @@ community around it. We are grateful for that design tradition.
 These docs still teach Almasix on its own terms in Python. You do not need to
 know Laravel to follow along; if you already do, many shapes will feel familiar.
 
+For how Almasix sits next to Django, FastAPI, Flask, Litestar, and Masonite, see
+[Compared to other frameworks](/prologue/compared/).
+
 ## Code examples
 
 Every example shows a **file path** above the code (the tab on the code block).
