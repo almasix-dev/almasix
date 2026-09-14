@@ -5,7 +5,7 @@
 > Last aligned: 2026-09-10 (**Laravel 13** is the parity reference; user-facing docs are
 > for developers with **no** Laravel background; M32–M35 merged; **M44** multi-engine CI
 > and **M25** L13 Mongo audit closed; **M51** lint gate closed; **M38** deployment ops
-> closed; package line **0.7.0** prepared; **M39** docs journey + Prologue closed;
+> closed; package line **0.8.0** prepared; **M39** docs journey + Prologue closed;
 > **M37** Signet-class tokens closed; autopilot **M53 → M45 → M46 → M47 → M52** closed;
 > **M54** Conduit + **M55** Inertia + **M36** starter kits closed).
 
@@ -348,7 +348,7 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Laravel | Almasix docs slug (target) | Milestone | Docs action |
 | --- | --- | --- | --- |
 | Collections | `collections` | Support Collections, **M49** | **Done** — 155/155 methods, lazy collections, a section per method |
-| Localization | `localization` | **M4** (code **Done**) | **Docs gap** — write Starlight Localization page (code already exhausted) |
+| Localization | `localization` | **M4** (code **Done**) | **Done** — catalogs, locale, plurals, Number/dates, CLI, middleware |
 | Helpers | `helpers` | **M14**, **M50** | **Done** — `Arr` 59, `Number` 20, the global helpers, a section per method |
 | Strings | `strings` | **M14**, **M50** | **Done** — `Str` 91, `Stringable` 134 by delegation, a section per method |
 | Cache | `cache` | **M15** | Shipped |
@@ -366,9 +366,9 @@ Laravel’s Digging Deeper / Security / Packages clusters map onto Almasix as fo
 | Eloquent: Factories | `database/factories` | **Done (M24)** | Page published |
 | MongoDB / NoSQL | `database/documents` + `articulate/documents/*` | **M25** | Database overview + Articulate model docs; L13 compared page |
 | Scout / Search | `search` | **Done (M27)** | Page published |
-| Queues | `queues` | **M11** | Write when queues ship |
-| Mail | `mail` | **M12** | Write when mail ships |
-| Notifications | `notifications` | **M13** | Write when notifications ship |
+| Queues | `queues` | **M11** | Thin page shipped (expand toward Cache depth when revisited) |
+| Mail | `mail` | **M12** ladder; **M57** exhaust | **Done** — Laravel 13 Mail page exhausted (M57) |
+| Notifications | `notifications` | **M13** ladder; **M57** exhaust | **Done** — Laravel 13 Notifications page exhausted (M57) |
 | Testing | `testing` (+ HTTP / Console / Database / Mocking subpages) | **Done (M28)** | Pages published |
 | Packages | `package-development` | **M29** | Package development guidelines — **shipped** |
 
@@ -941,7 +941,7 @@ FlySystem-shaped **Storage** façade — app code never talks to raw `pathlib` f
 | Config | `config/mail.py` — default mailer, from address, transport settings |
 | Mailable | Class-based messages: `envelope` / `content` / `attachments` (Laravel 9+ shape) or exhaust an equivalent fluent API |
 | Mailer | `Mail.to(...).send(Mailable)` / `cc` / `bcc` / `send` / `queue` (queue when M11 exists; sync always) |
-| Transports | **log** + **array** (tests/dev) + **SMTP** (production baseline); optional extras later (SES, Mailgun, …) as drivers behind the same API |
+| Transports | **log** + **array** (tests/dev) + **SMTP** (production baseline); ESP matrix + failover → **M57** |
 | Markdown mail | Prism/Markdown templates under `resources/views/mail` (or agreed path); themeable components |
 | Attachments | From paths / `Storage` disks (M10) / raw bytes |
 | Assertions | Test helpers: assert sent / not sent / queued (array driver) |
@@ -954,14 +954,14 @@ FlySystem-shaped **Storage** façade — app code never talks to raw `pathlib` f
 | --- | --- |
 | Notification channels / `Notifiable` | **M13** |
 | Email verification UX | **M13** (+ auth) |
-| Broadcast / Slack / SMS channels | **M26** / first-party extras |
-| Full third-party ESP kit matrix | Optional extras after SMTP baseline |
+| Broadcast notification channel | **M26** (shipped) |
+| Slack / SMS / ESP / failover / locale / MailMessage / events | **M57** |
 
 **Depends on:** M6 Prism for Markdown/HTML mail views; M10 for attachment disks (soft — path attachments can ship earlier); M11 for `ShouldQueue` mailables (sync send ships without waiting on workers).
 
 **Gate:** ladder exhausted, Mail docs published, array/log drivers green in CI, SMTP documented, coverage ≥ 98% on `almasix.mail` (aim 100%).
 
-**Status (M12):** Ladder exhausted — `Mailable` (`envelope` / `content` / `attachments`); `ShouldQueue` honored on `send()` via serializable `SendQueuedMailable`; `Mail.to(…).send/queue`; log + array + SMTP; Markdown themes (`mail.themes.default` + builtin fallback) + `<x-mail.*>` components; Storage/path/bytes attachments; `MailAssertions`; living `WelcomeMail` via `progress:demo`; tests + Mail docs.
+**Status (M12):** Ladder exhausted — `Mailable` (`envelope` / `content` / `attachments`); `ShouldQueue` honored on `send()` via serializable `SendQueuedMailable`; `Mail.to(…).send/queue`; log + array + SMTP; Markdown themes (`mail.themes.default` + builtin fallback) + `<x-mail.*>` components; Storage/path/bytes attachments; `MailAssertions`; living `WelcomeMail` via `progress:demo`; tests + Mail docs. **Full Laravel 13 Mail page exhaust is M57.**
 
 ### M13 — Notifications (`almasix.notifications`)
 
@@ -984,7 +984,8 @@ FlySystem-shaped **Storage** façade — app code never talks to raw `pathlib` f
 
 | Item | Home |
 | --- | --- |
-| Broadcast / Slack / SMS / push | **M26** / first-party packages |
+| Broadcast notification channel | **M26** (shipped) |
+| Slack / Vonage / on-demand / locale / façade / custom channels / events | **M57** |
 | Notification inbox SPA | Starter kits / app code |
 | Marketing drip / bulk mail | Outside framework core |
 
@@ -992,7 +993,7 @@ FlySystem-shaped **Storage** façade — app code never talks to raw `pathlib` f
 
 **Gate:** ladder exhausted, Notifications docs published, mail + database channels tested, password-reset outbound no longer pluggable-only theater, coverage ≥ 98% on `almasix.notifications` (aim 100%).
 
-**Status (M13):** Ladder exhausted — `Notifiable` / `Notification` / channels (mail/database/log/array); `ShouldQueue` via serializable `SendQueuedNotification` (no double-send); `MustVerifyEmail` + **signed** verification URLs + **`verified` middleware** + progress `/email/verify*` routes; `ResetPasswordNotification` as password-broker default; Authentication + Passwords docs updated; living `progress:demo` notify path; progress `User` is Notifiable; tests + Notifications docs.
+**Status (M13):** Ladder exhausted — `Notifiable` / `Notification` / channels (mail/database/log/array); `ShouldQueue` via serializable `SendQueuedNotification` (no double-send); `MustVerifyEmail` + **signed** verification URLs + **`verified` middleware** + progress `/email/verify*` routes; `ResetPasswordNotification` as password-broker default; Authentication + Passwords docs updated; living `progress:demo` notify path; progress `User` is Notifiable; tests + Notifications docs. **Full Laravel 13 Notifications page exhaust is M57.**
 
 ### M14 — Helpers + Strings (`almasix.support`)
 
@@ -1472,6 +1473,52 @@ Full Laravel 12 **Available Validation Rules** catalog via a shared rule engine:
 
 **Gate:** every Laravel available rule registered + tested; docs headings sync; `almasix.validation` coverage ≥ 99%.
 
+### M57 — Mail + Notifications exhaust (Laravel 13 parity)
+
+M12/M13 closed a **narrowed** delivery ladder (SMTP + mail/database). **M57 exhausts** the Laravel 13 [Mail](https://laravel.com/docs/13.x/mail) and [Notifications](https://laravel.com/docs/13.x/notifications) documented surfaces — same correction pattern as Articulate (`M40–M44`) and Helpers (`M50`).
+
+**Parity target:** every framework-shaped section on those pages. Slack + Vonage ship **in core**. ESP drivers use **HTTP APIs** via `almasix.client`. Vendor calls are faked in CI.
+
+**Part 1 — Framework core (no vendor):**
+
+| Item | Contract |
+| --- | --- |
+| Notification façade | `Notification.send` / `send_now` / `locale` / `route` / `fake` |
+| On-demand | `Notification.route("mail", …).notify(…)` via `AnonymousNotifiable` |
+| Locale | `.locale()` on notification/mailable; `HasLocalePreference`; restore after send (incl. queued) |
+| Custom channels | `via()` may return a channel **class** with `send(notifiable, notification)` |
+| Queue polish | Honor `delay`, `connection`, `via_queues()`; `Mail.later` |
+| MailMessage | Fluent `greeting` / `line` / `action` / `error` / attach / mailer |
+| Render / preview | `Mailable.render()` |
+| Attachable + embeds | `Attachable` protocol; CID `embed` / `embed_data` |
+| Envelope | `headers`; `with_message` mutate hook |
+| Local always-to | `mail.to` / always address in config |
+| Events | `MessageSending` / `MessageSent`; `NotificationSending` (abort) / `NotificationSent` |
+| Composites | `failover` + `roundrobin` transports over named mailers |
+| Config channels | Register from `config/notifications.py` (include broadcast) |
+
+**Part 2 — ESP + sendmail:**
+
+| Driver | Approach |
+| --- | --- |
+| mailgun / postmark / resend / ses / cloudflare | HTTP via `Http` |
+| sendmail | Local binary pipe |
+| `config/services.py` | Scaffold credentials (Laravel shape) |
+
+**Part 3 — Slack, Vonage, docs, living proof:**
+
+- Channels `slack` + `vonage` with message builders + routing
+- Starlight Mail + Notifications at Laravel TOC depth
+- `smith progress:mail` (or extended demo); board M57; smoke `tests/smoke/test_m57_smoke.py`
+
+**Out of scope (named):** notification inbox SPA; marketing drip; community channel ecosystem beyond Slack/Vonage.
+
+**Depends on:** M12/M13 ladders, M18 events, M20 HTTP client, M26 broadcast (already wired).
+
+**Gate:** Laravel 13 Mail + Notifications pages exhausted or deviations named; ESP + Slack/Vonage green under fakes; docs published; progress proof; coverage ≥ 98% on touched modules.
+
+**Status (M57):** Exhausted — Notification façade + on-demand + locale + MailMessage + custom channels + events; failover/roundrobin; ESP HTTP (mailgun/postmark/resend/ses/cloudflare) + sendmail; `config/services.py`; Slack + Vonage; Starlight Mail/Notifications expanded; `smith progress:mail`; board + smoke.
+
 ### M37 — API tokens, OAuth, and social auth
 
 First-party packages in Laravel: [Sanctum](https://laravel.com/docs/sanctum), [Passport](https://laravel.com/docs/passport), [Socialite](https://laravel.com/docs/socialite). Almasix ships the Sanctum-class surface as **Signet**.
@@ -1776,7 +1823,6 @@ Laravel [Helpers](https://laravel.com/docs/helpers) + [Strings](https://laravel.
 
 Not milestones — outstanding pages for code that already shipped (write for beginners; no milestone IDs):
 
-- Localization Starlight page (code done)
 - Full `@vite` / hot-file Prism directive on top of `asset()` (partial)
 - **M25 revisit notes:** gap list vs Laravel 13 Mongo page (feeds the stability-track audit)
 

@@ -68,3 +68,4 @@ Bare `@empty` inside `@forelse` remains the empty branch. Standalone
 ```
 
 `__`, `trans`, and `trans_choice` are injected into every template context.
+See [Localization](/localization/) for catalogs, plurals, and locale middleware.

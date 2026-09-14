@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from almasix.mail.mailable import Address
+from almasix.mail.mailable import Address, EmbeddedImage
 
 
 @dataclass
@@ -29,8 +29,10 @@ class SentMessage:
     from_address: Address | None = None
     reply_to: list[Address] = field(default_factory=list)
     attachments: list[ResolvedAttachment] = field(default_factory=list)
+    embeds: list[EmbeddedImage] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
 
     def has_recipient(self, address: str) -> bool:
         needle = address.lower()

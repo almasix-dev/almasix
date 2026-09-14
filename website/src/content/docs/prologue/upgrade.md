@@ -7,6 +7,30 @@ Read the [Release Notes](/prologue/release-notes/) for what shipped. This page
 covers what to change in **your** application when you bump the `almasix`
 dependency.
 
+## From 0.7.x to 0.8.0
+
+1. **Bump the package**
+
+   ```bash title="terminal"
+   pip install -U almasix==0.8.0
+   ```
+
+2. **Optional `config/services.py`** — new apps get a scaffold for Mailgun /
+   Postmark / Resend / SES / Cloudflare / Vonage / Slack credentials. Existing
+   apps can copy the stub from a fresh `almasix new` or keep using SMTP-only
+   mail without it.
+
+3. **Mail config** — default `config/mail.py` now lists ESP, sendmail,
+   failover, and roundrobin mailers. Existing SMTP / log / array setups keep
+   working; merge new mailer entries only if you need them.
+
+4. **Notifications** — Slack and Vonage ship in core. No change required unless
+   you add `"slack"` / `"vonage"` to a notification’s `via()` list.
+
+5. **Event abort semantics** — a listener that returns `False` from
+   `MessageSending` / `NotificationSending` now cancels delivery (same as
+   Laravel). Review any listeners that returned `False` for other reasons.
+
 ## From 0.6.x to 0.7.0
 
 1. **Bump the package**

@@ -11,6 +11,22 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.8.0
+
+- **Mail + Notifications exhaust** — Laravel 13 doc parity for the
+  framework-shaped surface: Notification façade (send / on-demand / locale /
+  fake), `MailMessage`, custom channel classes, mail & notification events,
+  failover / round-robin mailers, ESP HTTP drivers (Mailgun, Postmark, Resend,
+  SES, Cloudflare) plus sendmail, Slack + Vonage channels, and `config/services.py`
+- **Localization docs** — Starlight Localization page for catalogs, plurals,
+  locale middleware, and Number helpers
+- **Mail / Notifications docs** — writing mailables and notification messages
+  covered at Laravel TOC depth (envelope, Markdown themes, `MailMessage`,
+  Vonage / Slack builders)
+
+Published on [PyPI](https://pypi.org/project/almasix/0.8.0/) after the `v0.8.0`
+GitHub Release.
+
 ## 0.7.0
 
 - **Validation exhaust** — `request.validate({...})` accepts pipe-string rules and

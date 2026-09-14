@@ -1031,7 +1031,7 @@ async def test_mail_channel_invalid_payload() -> None:
             del notifiable
             return "nope"
 
-    with pytest.raises(TypeError, match="Mailable or dict"):
+    with pytest.raises(TypeError, match="Mailable, MailMessage, or dict"):
         await MailChannel().send(_RouteUser(), BadMail())
 
 

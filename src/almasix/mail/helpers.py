@@ -21,6 +21,7 @@ def default_mail_config() -> dict[str, Any]:
             "address": "hello@example.com",
             "name": "Example",
         },
+        "to": None,  # local-dev always-to: {"address": "...", "name": "..."}
         "mailers": {
             "smtp": {
                 "transport": "smtp",
@@ -32,12 +33,30 @@ def default_mail_config() -> dict[str, Any]:
                 "timeout": None,
                 "local_domain": None,
             },
+            "ses": {"transport": "ses"},
+            "mailgun": {"transport": "mailgun"},
+            "postmark": {"transport": "postmark"},
+            "resend": {"transport": "resend"},
+            "cloudflare": {"transport": "cloudflare"},
+            "sendmail": {
+                "transport": "sendmail",
+                "path": "/usr/sbin/sendmail -t -i",
+            },
             "log": {
                 "transport": "log",
                 "channel": None,
             },
             "array": {
                 "transport": "array",
+            },
+            "failover": {
+                "transport": "failover",
+                "mailers": ["smtp", "log"],
+                "retry_after": 60,
+            },
+            "roundrobin": {
+                "transport": "roundrobin",
+                "mailers": ["smtp", "log"],
             },
         },
     }
