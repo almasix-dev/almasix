@@ -15,6 +15,7 @@ from almasix.ide.index import (
     _returns_relation,
     _string_dict,
     _string_list,
+    attach_models_to_tables,
     build_ide_index,
     discover_components,
     discover_config_slices,
@@ -191,6 +192,27 @@ def test_discover_helpers(tmp_path: Path) -> None:
     assert gmeta["Account"]["guarded"] == ["balance"]
     assert gmeta["Account"]["hidden"] == ["token"]
 
+    annotated = models_dir / "author.py"
+    annotated.write_text(
+        "class Author:\n"
+        "    guarded: tuple[str, ...] = ('id',)\n"
+        "    fillable: tuple[str, ...] = ('name',)\n"
+        "    hidden: tuple[str, ...] = ('secret',)\n",
+        encoding="utf-8",
+    )
+    ameta = discover_model_metadata({"author": annotated})
+    assert ameta["Author"]["guarded"] == ["id"]
+    assert ameta["Author"]["fillable"] == ["name"]
+    assert ameta["Author"]["hidden"] == ["secret"]
+
+    bare = models_dir / "note.py"
+    bare.write_text(
+        "class Note:\n    guarded: tuple[str, ...] = ('id')\n",
+        encoding="utf-8",
+    )
+    bmeta = discover_model_metadata({"note": bare})
+    assert bmeta["Note"]["guarded"] == ["id"]
+
     bad = models_dir / "broken.py"
     bad.write_text("class Broken(:\n", encoding="utf-8")
     assert discover_model_metadata({"broken": bad}) == {}
@@ -267,6 +289,7 @@ def test_ast_helpers_and_pathish() -> None:
     assert isinstance(assign, ast.Assign)
     assert _string_list(assign.value) == ["a"]
     assert _string_list(ast.parse("x = 1").body[0].value) == []  # type: ignore[arg-type]
+    assert _string_list(ast.parse("x = 'id'").body[0].value) == ["id"]  # type: ignore[arg-type]
     casts_assign = tree.body[1]
     assert isinstance(casts_assign, ast.Assign)
     assert _string_dict(casts_assign.value) == {"x": "int"}
@@ -283,6 +306,16 @@ def test_ast_helpers_and_pathish() -> None:
     assert _pathish({"a": Path("/b")}) == {"a": "/b"}
     assert _pathish([Path("/c"), 1]) == ["/c", 1]
     assert _pathish(5) == 5
+
+
+def test_attach_models_to_tables() -> None:
+    tables = {
+        "authors": {"name": "authors", "model": None, "columns": {}},
+        "users": {"name": "users", "model": "User", "columns": {}},
+    }
+    attach_models_to_tables(tables, {"Author": {}, "User": {}})
+    assert tables["authors"]["model"] == "Author"
+    assert tables["users"]["model"] == "User"  # unchanged
 
 
 def test_index_to_dict_with_error() -> None:
