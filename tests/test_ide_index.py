@@ -174,8 +174,22 @@ def test_discover_helpers(tmp_path: Path) -> None:
     assert "Post" in meta
     assert meta["Post"]["fillable"] == ["title", "body"]
     assert meta["Post"]["casts"]["id"] == "int"
+    assert meta["Post"].get("guarded") == []
+    assert meta["Post"].get("hidden") == []
     assert "author" in meta["Post"]["relations"]
     assert "comments" in meta["Post"]["relations"]
+
+    guarded_model = models_dir / "account.py"
+    guarded_model.write_text(
+        "class Account:\n"
+        "    fillable = ['name']\n"
+        "    guarded = ['balance']\n"
+        "    hidden = ['token']\n",
+        encoding="utf-8",
+    )
+    gmeta = discover_model_metadata({"account": guarded_model})
+    assert gmeta["Account"]["guarded"] == ["balance"]
+    assert gmeta["Account"]["hidden"] == ["token"]
 
     bad = models_dir / "broken.py"
     bad.write_text("class Broken(:\n", encoding="utf-8")

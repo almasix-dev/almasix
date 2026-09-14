@@ -156,6 +156,8 @@ def discover_model_metadata(models: dict[str, Path]) -> dict[str, dict[str, Any]
         except (OSError, SyntaxError):
             continue
         fillable: list[str] = []
+        guarded: list[str] = []
+        hidden: list[str] = []
         casts: dict[str, str] = {}
         relations: list[str] = []
         relation_lines: dict[str, int] = {}
@@ -167,9 +169,15 @@ def discover_model_metadata(models: dict[str, Path]) -> dict[str, dict[str, Any]
             for item in node.body:
                 if isinstance(item, ast.Assign):
                     for target in item.targets:
-                        if isinstance(target, ast.Name) and target.id == "fillable":
+                        if not isinstance(target, ast.Name):
+                            continue
+                        if target.id == "fillable":
                             fillable = _string_list(item.value)
-                        if isinstance(target, ast.Name) and target.id == "casts":
+                        elif target.id == "guarded":
+                            guarded = _string_list(item.value)
+                        elif target.id == "hidden":
+                            hidden = _string_list(item.value)
+                        elif target.id == "casts":
                             casts = _string_dict(item.value)
                 if isinstance(item, ast.FunctionDef) or isinstance(item, ast.AsyncFunctionDef):
                     if item.name.startswith("_"):
@@ -181,6 +189,8 @@ def discover_model_metadata(models: dict[str, Path]) -> dict[str, dict[str, Any]
             "module": stem,
             "path": str(path),
             "fillable": fillable,
+            "guarded": guarded,
+            "hidden": hidden,
             "casts": casts,
             "relations": sorted(set(relations)),
             "relation_lines": relation_lines,

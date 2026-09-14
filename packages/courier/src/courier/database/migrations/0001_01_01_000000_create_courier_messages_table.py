@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 
 class CreateCourierMessagesTable(Migration):
@@ -14,7 +12,7 @@ class CreateCourierMessagesTable(Migration):
     async def down(self) -> None:
         await Schema.drop_if_exists("courier_messages")
 
-    def define(self, table: Any) -> None:
+    def define(self, table: Blueprint) -> None:
         table.id()
         table.string("body")
         table.timestamps()

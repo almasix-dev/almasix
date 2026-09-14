@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 
 class CreatePersonalAccessTokensTable(Migration):
@@ -16,7 +14,7 @@ class CreatePersonalAccessTokensTable(Migration):
     async def down(self) -> None:
         await Schema.drop_if_exists("personal_access_tokens")
 
-    def tokens(self, table: Any) -> None:
+    def tokens(self, table: Blueprint) -> None:
         table.id()
         table.morphs("tokenable")
         table.string("name")

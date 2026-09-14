@@ -61,6 +61,33 @@ def test_m5_s2_make_model_and_migration(
     assert len(migrations) == 1
 
 
+def test_m5_s2b_make_model_clustered_controller_flags(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = scaffold_app("m5_make_c", destination=tmp_path / "m5_make_c")
+    monkeypatch.chdir(root)
+
+    plain = runner.invoke(smith_app, ["make:model", "Author", "-mc"], catch_exceptions=False)
+    assert plain.exit_code == 0, plain.stdout
+    assert (root / "app" / "models" / "author.py").is_file()
+    assert (root / "app" / "http" / "controllers" / "author_controller.py").is_file()
+    assert list((root / "database" / "migrations").glob("*create_authors_table.py"))
+    controller = (root / "app" / "http" / "controllers" / "author_controller.py").read_text(
+        encoding="utf-8"
+    )
+    assert "async def index" in controller
+    assert "async def show" not in controller  # plain controller, not resource
+
+    resource = runner.invoke(smith_app, ["make:model", "Book", "-mr"], catch_exceptions=False)
+    assert resource.exit_code == 0, resource.stdout
+    book_controller = (root / "app" / "http" / "controllers" / "book_controller.py").read_text(
+        encoding="utf-8"
+    )
+    assert "async def show" in book_controller
+    assert "from app.models.book import Book" in book_controller
+
+
 def test_m5_s3_progress_posts_eager_load(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

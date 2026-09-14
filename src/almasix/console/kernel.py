@@ -416,15 +416,7 @@ def _parse_argv(
         if token.startswith("--"):
             index = _consume_option(argv, index, token[2:], by_name, options)
         elif len(token) > 1 and token.startswith("-") and token[1] in by_shortcut:
-            meta = by_shortcut[token[1]]
-            inline = token[2:].lstrip("=")
-            index = _consume_option(
-                argv,
-                index,
-                f"{meta['name']}={inline}" if inline else meta["name"],
-                by_name,
-                options,
-            )
+            index = _consume_short_cluster(argv, index, token[1:], by_shortcut, by_name, options)
         else:
             positional.append(token)
         index += 1
@@ -446,6 +438,37 @@ def _option_defaults(options_meta: list[dict[str, Any]]) -> dict[str, Any]:
         else:
             defaults[key] = meta["default"]
     return defaults
+
+
+def _consume_short_cluster(
+    argv: list[str],
+    index: int,
+    cluster: str,
+    by_shortcut: dict[str, dict[str, Any]],
+    by_name: dict[str, dict[str, Any]],
+    options: dict[str, Any],
+) -> int:
+    """Expand ``-mc`` into ``-m -c``, and ``-Qbulk`` into ``--queue=bulk``.
+
+    Flag shortcuts keep consuming letters in the same token (Laravel / GNU style).
+    A value-taking shortcut takes the rest of the cluster as its value, or the
+    next argv token when nothing remains attached.
+    """
+    cursor = 0
+    while cursor < len(cluster):
+        char = cluster[cursor]
+        meta = by_shortcut.get(char)
+        if meta is None:
+            raise typer.BadParameter(f"Unknown option -{char}")
+        if meta["is_flag"]:
+            options[meta["name"].replace("-", "_")] = True
+            cursor += 1
+            continue
+        rest = cluster[cursor + 1 :].lstrip("=")
+        if rest:
+            return _consume_option(argv, index, f"{meta['name']}={rest}", by_name, options)
+        return _consume_option(argv, index, meta["name"], by_name, options)
+    return index
 
 
 def _consume_option(

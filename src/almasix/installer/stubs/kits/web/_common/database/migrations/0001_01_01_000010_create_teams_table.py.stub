@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 
 class CreateTeamsTable(Migration):
@@ -14,7 +12,7 @@ class CreateTeamsTable(Migration):
     async def down(self) -> None:
         await Schema.drop_if_exists("teams")
 
-    def teams(self, table: Any) -> None:
+    def teams(self, table: Blueprint) -> None:
         table.id()
         table.foreign_id("user_id").constrained("users").cascade_on_delete()
         table.string("name")

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 
 class {{ class }}(Migration):
@@ -16,7 +14,7 @@ class {{ class }}(Migration):
     async def down(self) -> None:
         await Schema.drop_if_exists("{{ table }}")
 
-    def sessions(self, table: Any) -> None:
+    def sessions(self, table: Blueprint) -> None:
         table.string("id").primary()
         table.integer("user_id").nullable().index()
         table.string("ip_address", 45).nullable()

@@ -43,6 +43,7 @@ needs no `await`.
 smith make:factory PostFactory
 smith make:factory PostFactory --model Post
 smith make:model Post -m -f     # model + migration + factory
+smith make:model Post -mf       # same flags, clustered
 ```
 
 Factories live in `database/factories/`, one class per file, named after the

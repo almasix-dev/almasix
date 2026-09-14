@@ -463,7 +463,7 @@ What the framework ships, 113 commands, as `smith list` groups them. An applicat
 | `make:mail` | Create a mailable in app/mail |
 | `make:middleware` | Create a middleware in app/http/middleware |
 | `make:migration` | Create a migration in database/migrations |
-| `make:model` | Create a model in app/models |
+| `make:model` | Create a model in app/models (`-m`/`-c`/`-r`/`-f`/`-s`/`-a`, …) |
 | `make:notification` | Create a notification in app/notifications |
 | `make:observer` | Create a model observer in app/observers |
 | `make:package` | Scaffold a discoverable Almasix package under packages/ |

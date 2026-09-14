@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 
 class CreateUsersTable(Migration):
@@ -20,7 +18,7 @@ class CreateUsersTable(Migration):
         await Schema.drop_if_exists("password_reset_tokens")
         await Schema.drop_if_exists("users")
 
-    def users(self, table: Any) -> None:
+    def users(self, table: Blueprint) -> None:
         table.id()
         table.string("name")
         table.string("email").unique()
@@ -29,12 +27,12 @@ class CreateUsersTable(Migration):
         table.remember_token()
         table.timestamps()
 
-    def password_reset_tokens(self, table: Any) -> None:
+    def password_reset_tokens(self, table: Blueprint) -> None:
         table.string("email").primary()
         table.string("token")
         table.timestamp("created_at").nullable()
 
-    def sessions(self, table: Any) -> None:
+    def sessions(self, table: Blueprint) -> None:
         # Read by the `database` session driver (SESSION_DRIVER=database).
         table.string("id").primary()
         table.integer("user_id").nullable().index()

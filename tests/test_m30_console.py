@@ -138,6 +138,40 @@ def test_argv_handles_shortcuts_and_arrays() -> None:
     assert options == {"queue": "high", "id": ["1", "2"], "force": True}
 
 
+def test_argv_expands_clustered_flag_shortcuts() -> None:
+    arguments_meta, options_meta = _meta(
+        "demo {name} {--m|migration} {--c|controller} {--r|resource} {--f|factory}"
+    )
+    arguments, options = _parse_argv(
+        ["Author", "-mc"],
+        arguments_meta,
+        options_meta,
+    )
+    assert arguments == {"name": "Author"}
+    assert options == {
+        "migration": True,
+        "controller": True,
+        "resource": False,
+        "factory": False,
+    }
+
+    _arguments, options = _parse_argv(["Author", "-mr"], arguments_meta, options_meta)
+    assert options["migration"] is True
+    assert options["resource"] is True
+    assert options["controller"] is False
+
+    _arguments, options = _parse_argv(["Author", "-mfrc"], arguments_meta, options_meta)
+    assert options == {
+        "migration": True,
+        "factory": True,
+        "resource": True,
+        "controller": True,
+    }
+
+    with pytest.raises(Exception, match=r"Unknown option -s"):
+        _parse_argv(["Author", "-mfsc"], arguments_meta, options_meta)
+
+
 def test_argv_accepts_attached_shortcut_values_and_terminator() -> None:
     arguments_meta, options_meta = _meta("demo {rest*} {--Q|queue=}")
     arguments, options = _parse_argv(

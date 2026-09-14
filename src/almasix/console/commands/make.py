@@ -223,19 +223,60 @@ class MakeCommandCommand(Generator):
 class MakeModelCommand(Generator):
     signature = (
         "make:model {name : Class name, e.g. Post or Admin/Post} "
-        "{--m|migration : Also create a migration} "
+        "{--a|all : Migration, factory, seeder, policy, resource controller, and form requests} "
+        "{--c|controller : Also create a controller} "
         "{--f|factory : Also create a factory} "
+        "{--m|migration : Also create a migration} "
+        "{--s|seed : Also create a seeder} "
+        "{--r|resource : Also create a resource controller bound to the model} "
+        "{--api : Resource controller without the form actions} "
+        "{--policy : Also create a policy} "
+        "{--R|requests : Also create Store and Update form requests} "
         "{--force : Overwrite an existing file}"
     )
     description = "Create a model in app/models"
     kind = "model"
 
     def handle(self) -> int:
+        self._expand_all()
         code = super().handle()
-        if code == self.SUCCESS and self.option("factory"):
-            code = self.write_factory()
-        if code != self.SUCCESS or not self.option("migration"):
+        if code != self.SUCCESS:
             return code
+        for writer in (
+            self._write_factory_if_requested,
+            self._write_migration_if_requested,
+            self._write_seeder_if_requested,
+            self._write_policy_if_requested,
+            self._write_controller_if_requested,
+            self._write_requests_if_requested,
+        ):
+            code = writer()
+            if code != self.SUCCESS:
+                return code
+        return self.SUCCESS
+
+    def _expand_all(self) -> None:
+        if not self.option("all"):
+            return
+        for name in (
+            "migration",
+            "factory",
+            "seed",
+            "controller",
+            "policy",
+            "resource",
+            "requests",
+        ):
+            self._options[name] = True
+
+    def _write_factory_if_requested(self) -> int:
+        if not self.option("factory"):
+            return self.SUCCESS
+        return self.write_factory()
+
+    def _write_migration_if_requested(self) -> int:
+        if not self.option("migration"):
+            return self.SUCCESS
         root = self.root()
         class_name = self.class_name()
         path = make_migration(
@@ -246,6 +287,55 @@ class MakeModelCommand(Generator):
             base_path=root,
         )
         self.success(f"Migration created: {path.relative_to(root)}")
+        return self.SUCCESS
+
+    def _write_seeder_if_requested(self) -> int:
+        if not self.option("seed"):
+            return self.SUCCESS
+        return self.call(
+            "make:seeder",
+            {
+                "name": f"{self.class_name()}Seeder",
+                "--force": bool(self.option("force")),
+            },
+        )
+
+    def _write_policy_if_requested(self) -> int:
+        if not self.option("policy"):
+            return self.SUCCESS
+        return self.call(
+            "make:policy",
+            {
+                "name": f"{self.class_name()}Policy",
+                "--model": str(self.argument("name")),
+                "--force": bool(self.option("force")),
+            },
+        )
+
+    def _write_controller_if_requested(self) -> int:
+        if not (self.option("controller") or self.option("resource") or self.option("api")):
+            return self.SUCCESS
+        parameters: dict[str, object] = {
+            "name": f"{self.class_name()}Controller",
+            "--force": bool(self.option("force")),
+        }
+        if self.option("resource") or self.option("api"):
+            parameters["--model"] = str(self.argument("name"))
+        if self.option("api"):
+            parameters["--api"] = True
+        return self.call("make:controller", parameters)
+
+    def _write_requests_if_requested(self) -> int:
+        if not self.option("requests"):
+            return self.SUCCESS
+        model = self.class_name()
+        for name in (f"Store{model}Request", f"Update{model}Request"):
+            code = self.call(
+                "make:request",
+                {"name": name, "--force": bool(self.option("force"))},
+            )
+            if code != self.SUCCESS:
+                return code
         return self.SUCCESS
 
 

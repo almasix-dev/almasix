@@ -19,6 +19,8 @@ filename order.
 smith make:migration create_flights_table
 smith make:migration add_slug_to_posts_table
 smith make:model Post -m          # model + create_posts_table migration
+smith make:model Post -mc         # model + migration + controller
+smith make:model Post -mr         # model + migration + resource controller
 ```
 
 ### Name inference
@@ -64,18 +66,16 @@ shape on every engine and needs no client binary installed.
 A create migration:
 
 ```python title="database/migrations/2026_01_01_000000_create_posts_table.py"
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 class CreatePostsTable(Migration):
     async def up(self) -> None:
-        await Schema.create(
-            "posts",
-            lambda table: (
-                table.id(),
-                table.string("title"),
-                table.timestamps(),
-            ),
-        )
+        def define(table: Blueprint) -> None:
+            table.id()
+            table.string("title")
+            table.timestamps()
+
+        await Schema.create("posts", define)
 
     async def down(self) -> None:
         await Schema.drop_if_exists("posts")
@@ -84,18 +84,26 @@ class CreatePostsTable(Migration):
 An update migration uses `Schema.table`:
 
 ```python title="database/migrations/2026_01_01_000001_add_slug_to_posts_table.py"
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 class AddSlugToPostsTable(Migration):
     async def up(self) -> None:
-        await Schema.table(
-            "posts",
-            lambda table: (table.string("slug").nullable().unique(),),
-        )
+        def define(table: Blueprint) -> None:
+            table.string("slug").nullable().unique()
+
+        await Schema.table("posts", define)
 
     async def down(self) -> None:
-        await Schema.table("posts", lambda table: table.drop_column("slug"))
+        def revert(table: Blueprint) -> None:
+            table.drop_column("slug")
+
+        await Schema.table("posts", revert)
 ```
+
+The nested `def` is the Laravel closure, in Python form. Lambdas are valid
+too, and type-checkers infer `table` as `Blueprint` from `Schema.create`, but
+Pylance / Cursor do not autocomplete members on contextually typed lambda
+parameters — so the scaffold annotates a nested function instead.
 
 Files must match `YYYY_MM_DD_HHMMSS_slug.py` and define a `Migration` subclass.
 The class name is the StudlyCase form of the slug (`create_posts_table` →

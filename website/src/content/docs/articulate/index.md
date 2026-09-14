@@ -21,11 +21,15 @@ class Flight(Model):
 flights = await Flight.query().with_("airline").where("active", True).get()
 ```
 
-Generate a model (and optionally a migration) with Smith:
+Generate a model (and companion classes) with Smith:
 
 ```bash title="terminal"
 smith make:model Flight
 smith make:model Flight -m
+smith make:model Flight -mc     # model + migration + controller
+smith make:model Flight -mr     # model + migration + resource controller
+smith make:model Flight -mfsc   # model + migration + factory + seeder + controller
+smith make:model Flight -a      # migration, factory, seeder, policy, resource controller, requests
 ```
 
 ## Articulate model conventions
