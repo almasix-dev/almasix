@@ -1709,13 +1709,14 @@ One LSP server, so every editor benefits from one implementation instead of each
 
 ### M47 — Editor integrations and type stubs (full VS Code + JetBrains)
 
-**Status: complete (2026-09-10).** Editor packages ship from
+**Status: complete (2026-09-10); JetBrains native rewrite 0.2.0 (2026-09-14).**
+Editor packages ship from
 [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support) (VS Code VSIX +
 JetBrains zip; Marketplace publish workflows + GitHub Releases);
-`smith ide:install` / `ide:stubs`; Starlight **Editor setup** with VS Code ↔
-PyCharm parity matrix; `smith progress:ide`.
+`smith ide:install` / `ide:stubs` / `ide:index`; Starlight **Editor setup** with
+VS Code (LSP) ↔ PyCharm (native Almasix Idea) parity matrix; `smith progress:ide`.
 
-**JetBrains Prism editor (0.1.8, 2026-09-10).** Highlighting is native and
+**JetBrains Prism editor (0.1.8, 2026-09-10; retained in 0.2.0).** Highlighting is native and
 composed at the editor level: `PrismLexer` separates Prism constructs from HTML
 host spans, and `PrismEditorHighlighterProvider` builds a
 `LayeredLexerEditorHighlighter` that hands every `TEMPLATE_DATA` span to the
@@ -1727,6 +1728,9 @@ root for HTML completion / inspections, and `PrismTypedHandler` closes `{{` as
 across an echo split, and the typing behaviour — the earlier attempts
 (lexer-level `LayeredLexer` → blank editor; TextMate grammar → uncolored file)
 each traded one silent regression for another because nothing tested them.
+
+**JetBrains Almasix Idea (0.2.0).** Drops LSP4IJ. Completions and unknown-string
+annotators are native Kotlin, fed by `smith ide:index --json`.
 
 #### Packaging (updated 2026-09-10)
 
@@ -1748,12 +1752,12 @@ upload to Marketplaces on `vX.Y.Z` Releases (secrets: `VSCE_PAT`,
 
 #### JetBrains (PyCharm Professional / Community, IntelliJ + Python)
 
-- **Architecture (decided):** **LSP-first** — the plugin is a thin Platform shell (Prism file type, highlighter, run configurations, New… generators, settings) that **runs `almasix-lsp`** for completions / diagnostics / navigation. Reimplement on native APIs only where LSP cannot express the UX; document any native-only pieces in the parity matrix. Avoid a second full intelligence stack.
-- Plugin project producing an installable `.zip` via Gradle
-- **Highlighting is native, not TextMate**: the IDE's HTML highlighter is layered over the template's HTML spans, Prism overlays on top; `TextMateBackedFileType` / `TextMateSyntaxHighlighterFactory` do not bind to a compound `*.prism.html` name
-- Smith **run configurations** and **New…** for `make:controller`, `make:model`, `make:migration`, `make:command`, `make:channel`, etc.
-- Debugger templates for serve / queue / tests
-- CI: `buildPlugin` on a supported IDE version; headless platform tests (`./gradlew test`) cover file type, layered colors, and `{{ }}` typing
+- **Architecture (decided 2026-09-14):** **native-heavy (Almasix Idea)** — the JetBrains plugin is the product, Laravel Idea–style. Completions, annotators, navigation, generators, and Tool Window live in Kotlin. Intelligence is driven by a plugin-owned index filled by `smith ide:index --json` (app boot, same discovery path as the LSP). **`almasix-lsp` is for VS Code / other editors only** — not wired into JetBrains (no LSP4IJ).
+- Plugin project producing an installable `.zip` via Gradle (0.2.0+)
+- **Highlighting is native, not TextMate**: the IDE's HTML highlighter is layered over the template's HTML spans, Prism overlays on top
+- **Completions + unknown-string annotations** for routes, views, config, translations, middleware, env, schema/columns, Articulate relations/casts, gates, validation rules, disks/queues/caches, Prism components/directives, Vite/Inertia, Smith commands
+- Smith **run configurations**; later: **New…** generators, debugger templates, Tool Window
+- CI: `buildPlugin` on a supported IDE version; headless platform tests cover Prism + index-driven completions
 
 #### Shared / other editors
 
@@ -1767,7 +1771,7 @@ upload to Marketplaces on `vX.Y.Z` Releases (secrets: `VSCE_PAT`,
 
 **Gate (M47):** fresh `almasix new` → working Prism + completions in **both** VS Code-family and PyCharm via Marketplace / Release install (`smith ide:install` + `almasix-dev/ide-support`); stubs type-check test; VS Code ↔ PyCharm parity matrix with no silent gaps. **Met**; packages and publish workflows live in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).
 
-**Named follow-ups (not gate blockers):** Marketplace / Open VSX / JetBrains listings; JetBrains New… generators and debugger templates; optional Prism inheritance preview; deeper type-checker plugins (`Model.query()` generics); live-schema column stubs beyond fillable/casts; committed CI artifacts for `.vsix` / `.zip` on every PR (local `make` targets ship now).
+**Named follow-ups (not gate blockers):** Marketplace / Open VSX / JetBrains listings; JetBrains New… generators, Tool Window, rename/navigation depth, Articulate helper-code generation, debugger templates; optional Prism inheritance preview; deeper type-checker plugins (`Model.query()` generics); live-schema column stubs beyond fillable/casts; committed CI artifacts for `.vsix` / `.zip` on every PR (local `make` targets ship now). `smith ide:index --json` powers the native JetBrains index (and can be reused by other tools).
 
 ### M48 — AI agent support (MCP server + guidelines)
 
@@ -1913,7 +1917,7 @@ Binding playbook for agent runs that exhaust this sequence **without pauses** be
 | 1 | **M53** Chrono | `almasix.chrono` + helpers + rich docs + `progress:dates` + smoke (~100% cov) | — |
 | 2 | **M45** Prism language support | Grammars, snippets, editor behavior, `smith prism:format` | done 2026-09-10 |
 | 3 | ~~**M46** `almasix-lsp`~~ | Full LSP surface + wire-protocol conformance CI | done 2026-09-10 |
-| 4 | ~~**M47** VS Code + JetBrains~~ | Local `.vsix` + JetBrains `.zip`, LSP-first PyCharm shell, stubs, `ide:install`, parity matrix | done 2026-09-10 (marketplace publish is post-gate) |
+| 4 | ~~**M47** VS Code + JetBrains~~ | Local `.vsix` + JetBrains `.zip`, native JetBrains (Almasix Idea) + VS Code LSP client, stubs, `ide:install` / `ide:index`, parity matrix | done 2026-09-10; JetBrains native rewrite 0.2.0 (2026-09-14) |
 | 5 | ~~**M52** Sonar~~ | Sonar server + `@almasix/sonar`; Pusher / Ably / Socket.IO alternatives | done 2026-09-10 |
 | — | **Later** | M36, M48, Socialite, Passport, client API keys, … | Not in this batch |
 

@@ -5,27 +5,31 @@ description: Install the Almasix VS Code extension and JetBrains plugin from the
 
 Almasix editor packages live in
 [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support): VS Code /
-Cursor / VSCodium extension, JetBrains plugin, and shared Prism grammar assets.
+Cursor / VSCodium extension, JetBrains plugin (Almasix Idea), and shared Prism
+grammar assets.
 
 Install from the **Visual Studio Marketplace** / **JetBrains Marketplace**, or
 sideload a `.vsix` / `.zip` from
 [GitHub Releases](https://github.com/almasix-dev/ide-support/releases).
 
 For language features themselves, see [Prism language support](/prism-language/)
-and the [Language server](/language-server/).
+and the [Language server](/language-server/) (VS Code family).
 
 ## Quick path
 
 ```bash title="terminal"
 # From an Almasix application root
-pip install 'almasix[lsp]'
-smith ide:install          # .vscode settings + JetBrains note
-smith ide:stubs            # .pyi for models + route name Literal
+pip install 'almasix[lsp]'   # LSP for VS Code; index dump used by JetBrains too
+smith ide:install            # .vscode settings + JetBrains note
+smith ide:stubs              # .pyi for models + route name Literal
+smith ide:index --json       # symbol index (JetBrains rebuilds this automatically)
 ```
 
 Then install the editor package for your IDE (below).
 
 ## VS Code / Cursor / VSCodium
+
+Intelligence comes from **`almasix-lsp`** (language server).
 
 1. Install **Almasix** from the
    [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=almasix.almasix)
@@ -48,9 +52,11 @@ and [`vscode/README.md`](https://github.com/almasix-dev/ide-support/blob/main/vs
 
 ## JetBrains (PyCharm / IntelliJ)
 
-Architecture is **LSP-first**: the plugin is a Platform shell (file type,
-native HTML+Prism highlighter, run configs) that runs `almasix-lsp` through
-LSP4IJ.
+Architecture is **native-heavy (Almasix Idea)**: Prism file type, native
+HTML+Prism highlighter, Smith run configs, and **Kotlin completions /
+annotators** driven by a plugin-owned index. The plugin runs
+`smith ide:index --json` (or `python -m almasix.ide.index`) against the project
+interpreter — it does **not** use LSP4IJ or `almasix-lsp`.
 
 Prism files must show as language **Prism** (not HTML). Highlighting is native:
 the IDE's own HTML highlighter is layered over the template's HTML spans, with
@@ -58,12 +64,11 @@ the IDE's own HTML highlighter is layered over the template's HTML spans, with
 second HTML PSI root, so HTML completion and inspections keep working, and
 typing `{{` closes itself as `{{  }}` with the caret in the middle.
 
-Completions and Ctrl-click for `{{ globals }}`, `route()`, `url()`, `asset()`,
-and `vite()` paths come from `almasix-lsp` (wired by language + `*.prism.html`
-filename). Ctrl+Space anywhere in a template offers the `@directive` list plus
-the globals and `view()` data available to that template. The same server also
-completes `env("…")` / dotenv `${…}` keys and table / column names from
-migrations; `.env` files are mapped to the LSP in both editors.
+Completions and unknown-string annotations cover routes, views, config,
+translations, middleware, env keys, tables/columns, Articulate relations and
+casts, gates, validation rules, disks/queues/caches, Prism components and
+directives, Vite entries, Inertia pages, and Smith command names. Use
+**Almasix → Rebuild Index** after large project changes if the cache is stale.
 
 ### Install
 
@@ -71,21 +76,9 @@ migrations; `.env` files are mapped to the LSP in both editors.
    `com.almasix.ide`), **or** **Settings → Plugins → ⚙ → Install Plugin from
    Disk…** with a zip from
    [`almasix-dev/ide-support` Releases](https://github.com/almasix-dev/ide-support/releases)
-2. Restart; open an Almasix app with `almasix[lsp]` in the **project**
-   interpreter (or `.venv` next to `bootstrap/app.py`)
-
-If the Language Servers tool window shows
-`Cannot start server … almasixLsp (pid=null)`, the IDE could not spawn
-`almasix-lsp`. Common fixes:
-
-- Install the extra into the interpreter PyCharm is using
-  (`pip install 'almasix[lsp]'`), confirm LSP4IJ is installed, and open the app
-  root — not a parent folder without that venv. Plugin **0.1.12+** also follows
-  the project Python SDK and walks up to `bootstrap/app.py`.
-- **Windows IDE + WSL project** (`\\wsl$\…` / `\\wsl.localhost\…`): Windows
-  cannot start Linux binaries directly. Use plugin **0.1.13+**, which launches
-  via `wsl.exe` (Marketplace update or
-  [release zip](https://github.com/almasix-dev/ide-support/releases/tag/v0.1.13)).
+   (plugin **0.2.0+** for the native Almasix Idea rewrite).
+2. Restart; open an Almasix app whose **project** interpreter has Almasix
+   installed (or a `.venv` next to `bootstrap/app.py`).
 
 `smith ide:install` also writes `.idea/almasix-editor.md` with these steps.
 
@@ -98,16 +91,26 @@ smith ide:stubs
 ```
 
 Writes `.pyi` stubs for Articulate models and a `Literal[...]` of route names
-so the editor can complete `route("…")` without runtime imports.
+so type checkers can complete `route("…")` without runtime imports.
+
+## Symbol index
+
+```bash title="terminal"
+smith ide:index --json
+```
+
+Boots the application and dumps views, routes, config keys, models, gates,
+components, validation rules, and related symbols. JetBrains caches this dump;
+VS Code’s language server builds the same discovery path in-process.
 
 ## VS Code ↔ PyCharm parity
 
 | Surface | VS Code | JetBrains |
 | --- | --- | --- |
 | Prism file type / highlighting | `prism-html` TextMate | Native Prism + HTML layer |
-| `almasix-lsp` | vscode-languageclient | LSP4IJ |
+| Language intelligence | `almasix-lsp` (LSP) | Native Kotlin + `ide:index` |
 | `smith` run configs | tasks.json via `ide:install` | Smith run configuration |
 | Marketplace | VS Marketplace | JetBrains Marketplace |
 
-Language intelligence is shared (`almasix-lsp`). Packaging and Marketplace
-publish live in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).
+Packaging and Marketplace publish live in
+[`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).

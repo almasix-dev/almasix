@@ -5,7 +5,9 @@ description: almasix-lsp — completions, diagnostics, hover, and go-to-definiti
 
 **`almasix-lsp`** is the first-party language server for Almasix. One
 implementation serves every editor that speaks LSP: VS Code / Cursor, Neovim,
-Helix, Zed, Sublime, and PyCharm (via its LSP client).
+Helix, Zed, and Sublime. **PyCharm / IntelliJ** use the native **Almasix Idea**
+plugin (completions from `smith ide:index --json`) instead of this LSP client —
+see [Editor setup](/editor-setup/).
 
 It boots your application the same way Smith does, then answers questions a
 type checker cannot: which views exist, which routes are named, which config

@@ -977,17 +977,18 @@ cd examples/progress && python smith progress:ide
 
 Packages ship from [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support)
 (VS Marketplace + JetBrains Marketplace + GitHub Release artifacts).
-LSP-first PyCharm shell (LSP4IJ → `almasix-lsp`). Starlight **Editor setup**
-holds the VS Code ↔ PyCharm parity matrix.
+VS Code uses `almasix-lsp`; JetBrains **0.2.0+** is native Almasix Idea
+(`smith ide:index --json`, no LSP4IJ). Starlight **Editor setup** holds the
+VS Code ↔ PyCharm parity matrix.
 
 ### M47 exit criteria
 
 - [x] VS Code-family extension in `almasix-dev/ide-support` (Marketplace + Release VSIX)
 - [x] JetBrains plugin in `almasix-dev/ide-support` (Marketplace + Release zip)
 - [x] JetBrains Prism editor: HTML colors layered under Prism overlays, HTML PSI root, `{{ }}` auto-close — asserted by editors-repo `./gradlew test`
-- [x] `smith ide:install` + `smith ide:stubs`
+- [x] `smith ide:install` + `smith ide:stubs` + `smith ide:index --json`
 - [x] Living example `progress:ide` + smoke; board marks M47 complete
-- [x] Parity matrix documented (no silent gaps)
+- [x] Parity matrix documented (no silent gaps) — VS Code = LSP; JetBrains = native index
 - [x] Publish workflows for VS / JetBrains Marketplaces (`almasix-dev/ide-support`)
 
 ## M52 — Sonar realtime

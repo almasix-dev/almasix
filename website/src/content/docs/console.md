@@ -336,7 +336,7 @@ Event.listen(CommandFinished, lambda event: log_duration(event.command, event.ex
 
 ## Command reference
 
-What the framework ships, 112 commands, as `smith list` groups them. An application's own commands appear alongside these.
+What the framework ships, 113 commands, as `smith list` groups them. An application's own commands appear alongside these.
 
 ### Top level
 
@@ -418,6 +418,7 @@ What the framework ships, 112 commands, as `smith list` groups them. An applicat
 
 | Command | Description |
 | --- | --- |
+| `ide:index` | Dump the Almasix app symbol index for IDE tooling |
 | `ide:install` | Write local editor config for Prism + Almasix LSP sideload |
 | `ide:stubs` | Generate .pyi stubs for models and named routes |
 

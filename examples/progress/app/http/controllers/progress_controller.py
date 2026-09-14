@@ -596,9 +596,9 @@ def _milestones() -> list[dict]:
             "status": "complete",
             "proof": [
                 "smith progress:ide",
-                "smith ide:install + ide:stubs",
+                "smith ide:install + ide:stubs + ide:index --json",
                 "almasix-dev/ide-support (VS Marketplace + JetBrains Marketplace)",
-                "LSP-first PyCharm via LSP4IJ → almasix-lsp",
+                "JetBrains Almasix Idea (native completions via ide:index; no LSP4IJ)",
                 "VS Code ↔ PyCharm parity matrix (Editor setup)",
             ],
         },
