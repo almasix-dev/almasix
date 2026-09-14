@@ -35,3 +35,16 @@ def _addr(address: Any) -> dict[str, str | None] | None:
 def services_section(services: dict[str, Any], key: str) -> dict[str, Any]:
     section = services.get(key) or {}
     return dict(section) if isinstance(section, dict) else {}
+
+
+def response_status(response: Any) -> Any:
+    """Resolve Response.status whether it is a property or method."""
+    status = getattr(response, "status", None)
+    if callable(status):
+        try:
+            return status()
+        except TypeError:
+            return status
+    if status is not None:
+        return status
+    return getattr(response, "status_code", "?")

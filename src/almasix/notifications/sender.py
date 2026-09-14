@@ -63,39 +63,42 @@ class NotificationSender:
         try:
             from almasix.notifications.jobs import SendQueuedNotification
             from almasix.queue.helpers import dispatch, get_manager
-        except Exception:
-            return False
 
-        manager = get_manager()
-        connection_name = getattr(notification, "connection", None) or manager.get_default_connection()
-        connection = manager.connection(connection_name)
-        if type(connection).__name__ == "SyncQueue":
-            return False
+            manager = get_manager()
+            connection_name = (
+                getattr(notification, "connection", None) or manager.get_default_connection()
+            )
+            connection = manager.connection(connection_name)
+            if type(connection).__name__ == "SyncQueue":
+                return False
 
-        notifiable_type = f"{type(notifiable).__module__}.{type(notifiable).__qualname__}"
-        key_fn = getattr(notifiable, "get_key", None)
-        notifiable_id = key_fn() if callable(key_fn) else getattr(notifiable, "id", None)
-        notification_class = f"{type(notification).__module__}.{type(notification).__qualname__}"
-        via_queues = {}
-        if hasattr(notification, "via_queues"):
-            via_queues = dict(notification.via_queues() or {})
-        queue_name = notification.queue_name() if hasattr(notification, "queue_name") else "default"
-        if via_queues:
-            # Prefer first channel-specific queue when present
-            queue_name = next(iter(via_queues.values()), queue_name)
-        job = SendQueuedNotification(
-            notifiable_type=notifiable_type,
-            notifiable_id=notifiable_id,
-            notification_class=notification_class,
-            notification_data=dict(getattr(notification, "__dict__", {})),
-            queue_name=queue_name,
-        )
-        delay = float(getattr(notification, "delay", 0) or 0)
-        if delay:
-            job.delay = delay  # type: ignore[attr-defined]
-        if getattr(notification, "connection", None):
-            job.connection = notification.connection  # type: ignore[attr-defined]
-        try:
+            notifiable_type = f"{type(notifiable).__module__}.{type(notifiable).__qualname__}"
+            key_fn = getattr(notifiable, "get_key", None)
+            notifiable_id = key_fn() if callable(key_fn) else getattr(notifiable, "id", None)
+            notification_class = (
+                f"{type(notification).__module__}.{type(notification).__qualname__}"
+            )
+            via_queues = {}
+            if hasattr(notification, "via_queues"):
+                via_queues = dict(notification.via_queues() or {})
+            queue_name = (
+                notification.queue_name() if hasattr(notification, "queue_name") else "default"
+            )
+            if via_queues:
+                # Prefer first channel-specific queue when present
+                queue_name = next(iter(via_queues.values()), queue_name)
+            job = SendQueuedNotification(
+                notifiable_type=notifiable_type,
+                notifiable_id=notifiable_id,
+                notification_class=notification_class,
+                notification_data=dict(getattr(notification, "__dict__", {})),
+                queue_name=queue_name,
+            )
+            delay = float(getattr(notification, "delay", 0) or 0)
+            if delay:
+                job.delay = delay  # type: ignore[attr-defined]
+            if getattr(notification, "connection", None):
+                job.connection = notification.connection  # type: ignore[attr-defined]
             await dispatch(job)
             return True
         except Exception:

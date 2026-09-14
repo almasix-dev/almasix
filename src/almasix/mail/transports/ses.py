@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from almasix.mail.message import SentMessage
-from almasix.mail.transports.http_base import message_payload, services_section
+from almasix.mail.transports.http_base import message_payload, response_status, services_section
 
 
 class SesTransport:
@@ -59,5 +59,5 @@ class SesTransport:
             headers["X-Amz-Access-Key"] = str(self.key)
         response = Http.with_headers(headers).post(self.endpoint, body)
         if hasattr(response, "successful") and not response.successful():
-            raise RuntimeError(f"SES send failed: {getattr(response, 'status', '?')}")
+            raise RuntimeError(f"SES send failed: {response_status(response)}")
         message.metadata.setdefault("_ses", message_payload(message))

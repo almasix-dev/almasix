@@ -13,7 +13,7 @@ For how these docs relate to package versions, see
 
 ## 0.8.0
 
-- **Mail + Notifications exhaust (M57)** — Laravel 13 doc parity for the
+- **Mail + Notifications exhaust** — Laravel 13 doc parity for the
   framework-shaped surface: Notification façade (send / on-demand / locale /
   fake), `MailMessage`, custom channel classes, mail & notification events,
   failover / round-robin mailers, ESP HTTP drivers (Mailgun, Postmark, Resend,

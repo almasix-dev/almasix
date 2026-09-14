@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from almasix.mail.message import SentMessage
-from almasix.mail.transports.http_base import message_payload, services_section
+from almasix.mail.transports.http_base import message_payload, response_status, services_section
 
 
 class CloudflareTransport:
@@ -40,9 +40,8 @@ class CloudflareTransport:
         )
         if hasattr(response, "successful") and not response.successful():
             # Fall back: still record for array-style debugging when endpoint differs.
-            if getattr(response, "status", 0) not in {0, 404}:
-                raise RuntimeError(
-                    f"Cloudflare send failed: {getattr(response, 'status', '?')}"
-                )
+            status = response_status(response)
+            if status not in {0, 404}:
+                raise RuntimeError(f"Cloudflare send failed: {status}")
         message.metadata.setdefault("_cloudflare", body)
         del url

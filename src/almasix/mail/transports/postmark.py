@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from almasix.mail.message import SentMessage
-from almasix.mail.transports.http_base import message_payload, services_section
+from almasix.mail.transports.http_base import message_payload, response_status, services_section
 
 
 class PostmarkTransport:
@@ -33,17 +33,15 @@ class PostmarkTransport:
             body["Cc"] = ", ".join(a.address for a in message.cc)
         if message.bcc:
             body["Bcc"] = ", ".join(a.address for a in message.bcc)
-        response = (
-            Http.with_headers(
-                {
-                    "X-Postmark-Server-Token": self.token,
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                }
-            ).post("https://api.postmarkapp.com/email", body)
-        )
+        response = Http.with_headers(
+            {
+                "X-Postmark-Server-Token": self.token,
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+        ).post("https://api.postmarkapp.com/email", body)
         if hasattr(response, "successful") and not response.successful():
-            raise RuntimeError(f"Postmark send failed: {getattr(response, 'status', '?')}")
+            raise RuntimeError(f"Postmark send failed: {response_status(response)}")
         message.metadata.setdefault("_postmark", message_payload(message))
 
 

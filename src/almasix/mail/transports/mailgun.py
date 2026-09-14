@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from almasix.mail.message import SentMessage
-from almasix.mail.transports.http_base import message_payload, services_section
+from almasix.mail.transports.http_base import message_payload, response_status, services_section
 
 
 class MailgunTransport:
@@ -54,13 +54,9 @@ class MailgunTransport:
                 data["o:tag"].append(tag)
         for key, value in message.metadata.items():
             data[f"v:{key}"] = value
-        response = (
-            Http.as_form()
-            .with_basic_auth("api", self.secret)
-            .post(url, data)
-        )
+        response = Http.as_form().with_basic_auth("api", self.secret).post(url, data)
         if hasattr(response, "successful") and not response.successful():
-            raise RuntimeError(f"Mailgun send failed: {getattr(response, 'status', '?')}")
+            raise RuntimeError(f"Mailgun send failed: {response_status(response)}")
         # Keep payload reference for fakes/debugging
         message.metadata.setdefault("_mailgun", payload)
 

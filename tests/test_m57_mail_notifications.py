@@ -118,6 +118,10 @@ def test_mail_events_can_abort() -> None:
 
 
 def test_mailgun_and_postmark_with_http_fake() -> None:
+    from almasix.client.facade import set_factory
+    from almasix.client.factory import Factory
+
+    set_factory(Factory())
     Http.fake(lambda req: Http.response({"ok": True}, 200))
     manager = MailManager(
         config={
@@ -155,6 +159,9 @@ async def test_notification_facade_ondemand_mailmessage_locale_custom() -> None:
 
 @pytest.mark.asyncio
 async def test_vonage_and_slack_channels() -> None:
+    from almasix.client.facade import set_factory
+    from almasix.client.factory import Factory
+
     class Sms(Notification):
         def via(self, notifiable):
             return ["vonage"]
@@ -169,6 +176,7 @@ async def test_vonage_and_slack_channels() -> None:
         def to_slack(self, notifiable):
             return SlackMessage().content("hi").section_block("body")
 
+    set_factory(Factory())
     Http.fake(lambda req: Http.response({"ok": True, "messages": [{"status": "0"}]}, 200))
     user = User()
     await notify_now(user, Sms())

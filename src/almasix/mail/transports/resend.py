@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from almasix.mail.message import SentMessage
-from almasix.mail.transports.http_base import message_payload, services_section
+from almasix.mail.transports.http_base import message_payload, response_status, services_section
 
 
 class ResendTransport:
@@ -36,12 +36,10 @@ class ResendTransport:
         if message.tags:
             body["tags"] = [{"name": t} for t in message.tags]
         response = (
-            Http.with_token(self.key)
-            .accept_json()
-            .post("https://api.resend.com/emails", body)
+            Http.with_token(self.key).accept_json().post("https://api.resend.com/emails", body)
         )
         if hasattr(response, "successful") and not response.successful():
-            raise RuntimeError(f"Resend send failed: {getattr(response, 'status', '?')}")
+            raise RuntimeError(f"Resend send failed: {response_status(response)}")
         message.metadata.setdefault("_resend", message_payload(message))
 
 

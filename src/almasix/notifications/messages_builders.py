@@ -49,15 +49,11 @@ class SlackMessage:
         return self
 
     def header_block(self, text: str) -> SlackMessage:
-        self.blocks.append(
-            {"type": "header", "text": {"type": "plain_text", "text": text}}
-        )
+        self.blocks.append({"type": "header", "text": {"type": "plain_text", "text": text}})
         return self
 
     def section_block(self, text: str) -> SlackMessage:
-        self.blocks.append(
-            {"type": "section", "text": {"type": "mrkdwn", "text": text}}
-        )
+        self.blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": text}})
         return self
 
     def to(self, channel: str) -> SlackMessage:

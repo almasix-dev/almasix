@@ -156,9 +156,9 @@ class VonageChannel:
             payload = dict(message)
         else:
             payload = {"text": str(message)}
-        to = notifiable.route_notification_for("vonage", notification) or notifiable.route_notification_for(
-            "sms", notification
-        )
+        to = notifiable.route_notification_for(
+            "vonage", notification
+        ) or notifiable.route_notification_for("sms", notification)
         if not to:
             raise ValueError("No Vonage route for notifiable")
         svc = _services("vonage")
@@ -172,7 +172,9 @@ class VonageChannel:
             .post("https://rest.nexmo.com/sms/json", payload)
         )
         if hasattr(response, "successful") and not response.successful():
-            raise RuntimeError(f"Vonage send failed: {getattr(response, 'status', '?')}")
+            from almasix.mail.transports.http_base import response_status
+
+            raise RuntimeError(f"Vonage send failed: {response_status(response)}")
         return payload
 
 
@@ -209,7 +211,9 @@ class SlackChannel:
                 .post("https://slack.com/api/chat.postMessage", payload)
             )
         if hasattr(response, "successful") and not response.successful():
-            raise RuntimeError(f"Slack send failed: {getattr(response, 'status', '?')}")
+            from almasix.mail.transports.http_base import response_status
+
+            raise RuntimeError(f"Slack send failed: {response_status(response)}")
         return payload
 
 

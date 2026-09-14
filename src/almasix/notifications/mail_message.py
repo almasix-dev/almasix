@@ -122,9 +122,7 @@ class MailMessage:
             from_address=Address.parse(
                 (self.from_address, self.from_name) if self.from_address else None
             ),
-            reply_to=[Address.parse(self.reply_to_address)]
-            if self.reply_to_address
-            else [],
+            reply_to=[Address.parse(self.reply_to_address)] if self.reply_to_address else [],
             tags=list(self.tag_list),
             metadata=dict(self.meta),
         )
@@ -152,8 +150,5 @@ class MailMessage:
 
 def _escape(value: str) -> str:
     return (
-        value.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
+        value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
     )
