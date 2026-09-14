@@ -4,14 +4,22 @@ from __future__ import annotations
 
 import mimetypes
 from collections.abc import Callable
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from almasix.mail.mailable import Address, Attachment, Mailable
+from almasix.mail.mailable import (
+    Address,
+    Attachable,
+    Attachment,
+    EmbeddedImage,
+    Mailable,
+)
 from almasix.mail.markdown import render_content
 from almasix.mail.message import ResolvedAttachment, SentMessage
 from almasix.mail.transport import Transport
 from almasix.mail.transports.array import ArrayTransport
+from almasix.mail.transports.composite import FailoverTransport, RoundRobinTransport
 from almasix.mail.transports.log import LogTransport
 from almasix.mail.transports.smtp import SmtpTransport
 
@@ -23,7 +31,7 @@ class MailManager:
         self.app = app
         self._config = config or {}
         self._mailers: dict[str, Mailer] = {}
-        self._transports: dict[str, Transport | ArrayTransport] = {}
+        self._transports: dict[str, Any] = {}
 
     def set_config(self, config: dict[str, Any]) -> None:
         self._config = config
@@ -54,13 +62,14 @@ class MailManager:
             raise KeyError(f"Mailer [{name}] is not configured.")
         return dict(cfg)
 
-    def _resolve_transport(self, name: str) -> Transport | ArrayTransport:
+    def _resolve_transport(self, name: str) -> Any:
         if name in self._transports:
             return self._transports[name]
         cfg = self._mailer_config(name)
         driver = str(cfg.get("transport") or cfg.get("driver") or "log")
+        transport: Any
         if driver == "array":
-            transport: Transport | ArrayTransport = ArrayTransport()
+            transport = ArrayTransport()
         elif driver == "log":
             transport = LogTransport(channel=cfg.get("channel"))
         elif driver == "smtp":
@@ -74,10 +83,55 @@ class MailManager:
                 local_domain=cfg.get("local_domain"),
                 client=cfg.get("client"),
             )
+        elif driver == "failover":
+            transport = FailoverTransport(
+                self._resolve_transport,
+                list(cfg.get("mailers") or []),
+                retry_after=int(cfg.get("retry_after") or 60),
+            )
+        elif driver in {"roundrobin", "round_robin"}:
+            transport = RoundRobinTransport(
+                self._resolve_transport,
+                list(cfg.get("mailers") or []),
+            )
+        elif driver == "mailgun":
+            from almasix.mail.transports.mailgun import MailgunTransport
+
+            transport = MailgunTransport.from_config(cfg, self._services())
+        elif driver == "postmark":
+            from almasix.mail.transports.postmark import PostmarkTransport
+
+            transport = PostmarkTransport.from_config(cfg, self._services())
+        elif driver == "resend":
+            from almasix.mail.transports.resend import ResendTransport
+
+            transport = ResendTransport.from_config(cfg, self._services())
+        elif driver == "ses":
+            from almasix.mail.transports.ses import SesTransport
+
+            transport = SesTransport.from_config(cfg, self._services())
+        elif driver == "cloudflare":
+            from almasix.mail.transports.cloudflare import CloudflareTransport
+
+            transport = CloudflareTransport.from_config(cfg, self._services())
+        elif driver == "sendmail":
+            from almasix.mail.transports.sendmail import SendmailTransport
+
+            transport = SendmailTransport(path=str(cfg.get("path") or "/usr/sbin/sendmail -bs"))
         else:
             raise ValueError(f"Unsupported mail transport: {driver!r}")
         self._transports[name] = transport
         return transport
+
+    def _services(self) -> dict[str, Any]:
+        if isinstance(self._config.get("services"), dict):
+            return dict(self._config["services"])
+        if self.app is None:
+            return {}
+        try:
+            return dict(self.app.config.get("services") or {})
+        except Exception:
+            return {}
 
     def default_from(self) -> Address | None:
         from_cfg = self._config.get("from") or {}
@@ -86,6 +140,17 @@ class MailManager:
             return None
         return Address(str(address), from_cfg.get("name"))
 
+    def always_to(self) -> list[Address]:
+        raw = self._config.get("to") or self._config.get("always")
+        if not raw:
+            return []
+        if isinstance(raw, dict):
+            address = raw.get("address")
+            if not address:
+                return []
+            return [Address(str(address), raw.get("name"))]
+        return Address.parse_many(raw)
+
 
 class Mailer:
     """Send or queue mailables through a configured transport."""
@@ -93,7 +158,7 @@ class Mailer:
     def __init__(
         self,
         name: str,
-        transport: Transport | ArrayTransport,
+        transport: Transport | ArrayTransport | Any,
         manager: MailManager,
     ) -> None:
         self.name = name
@@ -115,6 +180,18 @@ class Mailer:
             pending._to = list(to)
         return pending.queue(mailable)
 
+    def later(
+        self,
+        delay: int | float | timedelta | datetime,
+        mailable: Mailable,
+        *,
+        to: list[Address] | None = None,
+    ) -> SentMessage | None:
+        pending = PendingMail(self)
+        if to:
+            pending._to = list(to)
+        return pending.later(delay, mailable)
+
 
 class PendingMail:
     """Fluent recipient builder: ``Mail.to(...).cc(...).send(mailable)``."""
@@ -126,7 +203,8 @@ class PendingMail:
         self._bcc: list[Address] = []
 
     def to(self, *addresses: str | Address | tuple[str, str | None]) -> PendingMail:
-        self._to.extend(Address.parse_many(*addresses))
+        if addresses:
+            self._to.extend(Address.parse_many(*addresses))
         return self
 
     def cc(self, *addresses: str | Address | tuple[str, str | None]) -> PendingMail:
@@ -140,43 +218,80 @@ class PendingMail:
     def send(self, mailable: Mailable) -> SentMessage | None:
         from almasix.mail.mailable import ShouldQueue
 
-        if isinstance(mailable, ShouldQueue):
+        if isinstance(mailable, ShouldQueue) or (
+            getattr(mailable, "queue", False) is True
+            or (isinstance(getattr(mailable, "queue", None), str) and mailable.queue)
+        ):
             return self.queue(mailable)
-        message = self._build_message(mailable)
-        self._mailer.transport.send(message)
-        return message
+        return self._deliver(mailable, queued=False)
 
     def queue(self, mailable: Mailable) -> SentMessage | None:
-        message = self._build_message(mailable)
-        transport = self._mailer.transport
-        # Array transport is the test fake — record as queued only (Laravel Mail::fake).
-        if isinstance(transport, ArrayTransport):
-            transport.queue(message)
+        return self._deliver(mailable, queued=True)
+
+    def later(
+        self,
+        delay: int | float | timedelta | datetime,
+        mailable: Mailable,
+    ) -> SentMessage | None:
+        seconds = _delay_seconds(delay)
+        return self._deliver(mailable, queued=True, delay=seconds)
+
+    def _deliver(
+        self,
+        mailable: Mailable,
+        *,
+        queued: bool,
+        delay: float = 0,
+    ) -> SentMessage | None:
+        locale_token = _push_locale(mailable)
+        try:
+            message = self._build_message(mailable)
+            if not _fire_sending(message):
+                return None
+            transport = self._mailer.transport
+            if queued:
+                if isinstance(transport, ArrayTransport):
+                    transport.queue(message)
+                    _fire_sent(message)
+                    return message
+                if _dispatch_to_queue(self._mailer, message, delay, mailable):
+                    return message
+            transport.send(message)
+            _fire_sent(message)
             return message
-        if _dispatch_to_queue(self._mailer, message):
-            return message
-        self._mailer.transport.send(message)
-        return message
+        finally:
+            _pop_locale(locale_token)
 
     def _build_message(self, mailable: Mailable) -> SentMessage:
         envelope = mailable.envelope()
         content = mailable.content()
         html_body, text_body = render_content(content)
         from_address = envelope.from_address or self._mailer.manager.default_from()
-        return SentMessage(
+        always = self._mailer.manager.always_to()
+        to = list(always) if always else list(self._to)
+        cc = [] if always else list(self._cc)
+        bcc = [] if always else list(self._bcc)
+        embeds = list(mailable.embeds())
+        message = SentMessage(
             mailable=mailable,
-            to=list(self._to),
-            cc=list(self._cc),
-            bcc=list(self._bcc),
+            to=to,
+            cc=cc,
+            bcc=bcc,
             subject=envelope.subject,
             html=html_body,
             text=text_body,
             from_address=from_address,
             reply_to=list(envelope.reply_to),
             attachments=_resolve_attachments(mailable.attachments(), self._mailer.manager.app),
+            embeds=embeds,
             tags=list(envelope.tags),
             metadata=dict(envelope.metadata),
+            headers=dict(envelope.headers),
         )
+        hook = getattr(mailable, "with_message", None)
+        if callable(hook):
+            hook(message)
+        return message
 
 
 class Mail:
@@ -204,11 +319,22 @@ class Mail:
 
     @classmethod
     def send(cls, mailable: Mailable) -> SentMessage | None:
-        return cls.mailer().send(mailable)
+        name = getattr(mailable, "mailer_name", None)
+        return cls.mailer(name).send(mailable)
 
     @classmethod
     def queue(cls, mailable: Mailable) -> SentMessage | None:
-        return cls.mailer().queue(mailable)
+        name = getattr(mailable, "mailer_name", None)
+        return cls.mailer(name).queue(mailable)
+
+    @classmethod
+    def later(
+        cls,
+        delay: int | float | timedelta | datetime,
+        mailable: Mailable,
+    ) -> SentMessage | None:
+        name = getattr(mailable, "mailer_name", None)
+        return cls.mailer(name).later(delay, mailable)
 
     @classmethod
     def fake(cls, name: str = "array") -> Any:
@@ -231,11 +357,21 @@ class Mail:
 
 
 def _resolve_attachments(
-    attachments: list[Attachment],
+    attachments: list[Attachment | Attachable | Any],
     app: Any | None,
 ) -> list[ResolvedAttachment]:
     resolved: list[ResolvedAttachment] = []
-    for attachment in attachments:
+    for item in attachments:
+        attachment: Attachment
+        if isinstance(item, Attachment):
+            attachment = item
+        elif isinstance(item, Attachable):
+            attachment = item.to_mail_attachment()
+        elif hasattr(item, "to_mail_attachment"):
+            attachment = item.to_mail_attachment()
+        else:
+            raise TypeError(f"Unsupported attachment type: {type(item)!r}")
+
         name = attachment.name
         data = attachment.data
         mime = attachment.mime
@@ -269,7 +405,12 @@ def _read_storage(disk: str | None, path: str) -> bytes:
         raise RuntimeError(f"Unable to read attachment from storage disk: {path!r}") from exc
 
 
-def _dispatch_to_queue(mailer: Mailer, message: SentMessage) -> bool:
+def _dispatch_to_queue(
+    mailer: Mailer,
+    message: SentMessage,
+    delay: float = 0,
+    mailable: Mailable | None = None,
+) -> bool:
     """Push a serializable mail job. Returns True when queued successfully."""
     try:
         import asyncio
@@ -281,6 +422,15 @@ def _dispatch_to_queue(mailer: Mailer, message: SentMessage) -> bool:
         return False
 
     job = SendQueuedMailable.from_sent_message(mailer.name, message)
+    if mailable is not None:
+        queue_name = getattr(mailable, "queue", None)
+        if isinstance(queue_name, str) and queue_name:
+            job.queue = queue_name
+        connection = getattr(mailable, "connection", None)
+        if connection:
+            job.connection = connection  # type: ignore[attr-defined]
+    if delay:
+        job.delay = delay  # type: ignore[attr-defined]
 
     async def _push() -> Any:
         return await dispatch(job)
@@ -291,7 +441,6 @@ def _dispatch_to_queue(mailer: Mailer, message: SentMessage) -> bool:
         except RuntimeError:
             asyncio.run(_push())
             return True
-        # Sync façade called from async context — push on a side loop.
         with ThreadPoolExecutor(max_workers=1) as pool:
             pool.submit(lambda: asyncio.run(_push())).result()
         return True
@@ -299,4 +448,57 @@ def _dispatch_to_queue(mailer: Mailer, message: SentMessage) -> bool:
         return False
 
 
+def _delay_seconds(delay: int | float | timedelta | datetime) -> float:
+    if isinstance(delay, datetime):
+        return max(0.0, (delay - datetime.now(delay.tzinfo)).total_seconds())
+    if isinstance(delay, timedelta):
+        return max(0.0, delay.total_seconds())
+    return max(0.0, float(delay))
+
+
+def _push_locale(mailable: Mailable) -> Any:
+    locale = getattr(mailable, "locale", None)
+    if not locale:
+        return None
+    from almasix.translation.locale import get_locale, set_locale
+
+    previous = get_locale()
+    set_locale(locale)
+    return previous
+
+
+def _pop_locale(previous: Any) -> None:
+    if previous is None:
+        return
+    from almasix.translation.locale import set_locale
+
+    set_locale(previous)
+
+
+def _fire_sending(message: SentMessage) -> bool:
+    try:
+        from almasix.events.helpers import get_dispatcher
+        from almasix.mail.events import MessageSending
+
+        result = get_dispatcher().dispatch(MessageSending(message=message), halt=True)
+        if result is False:
+            return False
+    except Exception:
+        pass
+    return True
+
+
+def _fire_sent(message: SentMessage) -> None:
+    try:
+        from almasix.events.helpers import get_dispatcher
+        from almasix.mail.events import MessageSent
+
+        get_dispatcher().dispatch(MessageSent(message=message))
+    except Exception:
+        pass
+
+
 Callback = Callable[[SentMessage], None]
+
+# Re-export for type checkers that look for embeds on build path
+_ = EmbeddedImage

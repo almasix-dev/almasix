@@ -150,6 +150,7 @@ export default defineConfig({
 						{ label: 'Helpers', slug: 'helpers' },
 						{ label: 'Dates (Chrono)', slug: 'dates' },
 						{ label: 'Strings', slug: 'strings' },
+						{ label: 'Localization', slug: 'localization' },
 						{ label: 'Cache', slug: 'cache' },
 						{ label: 'Redis', slug: 'redis' },
 						{ label: 'Events', slug: 'events' },

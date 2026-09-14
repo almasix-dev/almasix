@@ -204,6 +204,7 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M49** | `smith progress:collections` — higher order messages, lazy streaming |
 | **M50** | `smith progress:helpers` — fluent `Stringable`, `Arr` / `Number` gaps, global helpers |
 | **M56** | `smith progress:validation` — DSL + Rule helpers; 112 Laravel rules; `POST /api/validate/dsl` |
+| **M57** | `smith progress:mail` — failover, Mailgun HTTP fake, MailMessage, on-demand, Vonage/Slack |
 | **M51** | `smith progress:lint` — pinned `ruff==0.16.6`, `make lint`, CI lint job |
 | **M38** | `smith progress:deploy` — `serve --workers`, `/up`, Deployment docs, `examples/deploy`, Trusted Publishing |
 | **M39** | `smith progress:docs` — Prologue, Basics teaching order, latest-major+main switcher, older-docs banner |
@@ -214,8 +215,8 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 
 ## Growing with Almasix
 
-M0–M56 are closed on the ladder (including **M36** starter kits and **M56**
-validation exhaust). M32–M35
+M0–M57 are closed on the ladder (including **M36** starter kits, **M56**
+validation exhaust, and **M57** Mail/Notifications Laravel 13 exhaust). M32–M35
 closed the installer, routing, security headers/CORS, and rate limiting; M25’s
 Laravel 13 Mongo audit, M51’s lint gate, M38’s deployment ops, and M39’s docs
 journey are closed with them. **Stability track:** API tokens (**M37**, Signet),
@@ -236,6 +237,7 @@ smith progress:prompts
 smith progress:demo
 smith progress:helpers
 smith progress:validation
+smith progress:mail
 smith progress:collections
 smith progress:queries
 smith progress:schema

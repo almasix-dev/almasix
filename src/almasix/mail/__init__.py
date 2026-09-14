@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from almasix.mail.events import MessageSending, MessageSent
 from almasix.mail.helpers import Mail, mail
 from almasix.mail.mailable import (
     Address,
+    Attachable,
     Attachment,
     Content,
+    EmbeddedImage,
     Envelope,
     Mailable,
     ShouldQueue,
@@ -17,14 +20,18 @@ from almasix.mail.testing import MailAssertions
 
 __all__ = [
     "Address",
+    "Attachable",
     "Attachment",
     "Content",
+    "EmbeddedImage",
     "Envelope",
     "Mail",
     "MailAssertions",
     "MailManager",
     "Mailable",
     "Mailer",
+    "MessageSending",
+    "MessageSent",
     "PendingMail",
     "SentMessage",
     "ShouldQueue",

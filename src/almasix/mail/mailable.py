@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 
 @dataclass(frozen=True)
@@ -55,6 +55,7 @@ class Envelope:
     reply_to: list[Address] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -70,8 +71,18 @@ class Content:
 
 
 @dataclass
+class EmbeddedImage:
+    """Inline CID attachment referenced from HTML as ``cid:<content_id>``."""
+
+    content_id: str
+    data: bytes
+    mime: str | None = None
+    name: str | None = None
+
+
+@dataclass
 class Attachment:
-    """Outgoing attachment from path, storage disk, or raw bytes."""
+    """Outgoing attachment from path, storage disk, raw bytes, or Attachable."""
 
     path: str | None = None
     data: bytes | None = None
@@ -111,6 +122,17 @@ class Attachment:
     ) -> Attachment:
         return cls(data=data, name=name, mime=mime)
 
+    @classmethod
+    def from_attachable(cls, attachable: Attachable) -> Attachment:
+        return attachable.to_mail_attachment()
+
+
+@runtime_checkable
+class Attachable(Protocol):
+    """Objects that can become a mail attachment (Laravel ``Attachable``)."""
+
+    def to_mail_attachment(self) -> Attachment: ...
+
 
 class ShouldQueue:
     """Marker for mailables that prefer queued delivery."""
@@ -119,11 +141,45 @@ class ShouldQueue:
 class Mailable:
     """Base class for class-based mail messages."""
 
+    queue: str | bool = False
+    connection: str | None = None
+    locale: str | None = None
+    mailer_name: str | None = None
+
     def envelope(self) -> Envelope:
         return Envelope()
 
     def content(self) -> Content:
         return Content()
 
-    def attachments(self) -> list[Attachment]:
+    def attachments(self) -> list[Attachment | Attachable]:
         return []
+
+    def embeds(self) -> list[EmbeddedImage]:
+        return []
+
+    def with_message(self, message: Any) -> None:
+        """Hook to mutate the transport-level message before send (Laravel ``withSymfonyMessage``)."""
+
+    def set_locale(self, locale: str) -> Mailable:
+        self.locale = locale
+        return self
+
+    def on_queue(self, queue: str) -> Mailable:
+        self.queue = queue
+        return self
+
+    def on_connection(self, connection: str) -> Mailable:
+        self.connection = connection
+        return self
+
+    def mailer(self, name: str) -> Mailable:
+        self.mailer_name = name
+        return self
+
+    def render(self) -> str:
+        """Render HTML (or text fallback) without sending — browser preview helper."""
+        from almasix.mail.markdown import render_content
+
+        html_body, text_body = render_content(self.content())
+        return html_body or text_body or ""

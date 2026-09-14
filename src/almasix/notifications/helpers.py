@@ -39,7 +39,33 @@ def default_notifications_config() -> dict[str, Any]:
         "channels": {
             "mail": {"driver": "mail"},
             "database": {"driver": "database"},
+            "broadcast": {"driver": "broadcast"},
+            "vonage": {"driver": "vonage"},
+            "slack": {"driver": "slack"},
             "log": {"driver": "log"},
             "array": {"driver": "array"},
+        },
+    }
+
+
+def default_services_config() -> dict[str, Any]:
+    """Laravel-shaped ``config/services.py`` credentials for mail/notifications."""
+    return {
+        "mailgun": {
+            "domain": None,
+            "secret": None,
+            "endpoint": "api.mailgun.net",
+            "scheme": "https",
+        },
+        "postmark": {"token": None},
+        "resend": {"key": None},
+        "ses": {"key": None, "secret": None, "region": "us-east-1"},
+        "cloudflare": {"api_token": None, "account_id": None},
+        "vonage": {"key": None, "secret": None, "sms_from": None},
+        "slack": {
+            "notifications": {
+                "bot_user_oauth_token": None,
+                "channel": None,
+            }
         },
     }

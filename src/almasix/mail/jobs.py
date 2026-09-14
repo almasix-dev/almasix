@@ -30,6 +30,8 @@ class SendQueuedMailable(ShouldQueue, Job):
         attachments: list[dict[str, Any]] | None = None,
         tags: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        embeds: list[dict[str, Any]] | None = None,
         mailable_class: str | None = None,
     ) -> None:
         self.mailer_name = mailer_name
@@ -44,6 +46,8 @@ class SendQueuedMailable(ShouldQueue, Job):
         self.attachments = attachments or []
         self.tags = tags or []
         self.metadata = metadata or {}
+        self.headers = headers or {}
+        self.embeds = embeds or []
         self.mailable_class = mailable_class
 
     @classmethod
@@ -64,6 +68,15 @@ class SendQueuedMailable(ShouldQueue, Job):
             }
             for item in message.attachments
         ]
+        embeds = [
+            {
+                "content_id": item.content_id,
+                "data": base64.b64encode(item.data).decode("ascii"),
+                "mime": item.mime,
+                "name": item.name,
+            }
+            for item in (message.embeds or [])
+        ]
         mailable_class = None
         if message.mailable is not None:
             mailable_class = (
@@ -82,6 +95,8 @@ class SendQueuedMailable(ShouldQueue, Job):
             attachments=attachments,
             tags=list(message.tags),
             metadata=dict(message.metadata),
+            headers=dict(message.headers),
+            embeds=embeds,
             mailable_class=mailable_class,
         )
 
@@ -92,6 +107,9 @@ class SendQueuedMailable(ShouldQueue, Job):
         Mail.manager().mailer(self.mailer_name).transport.send(message)
 
     def to_sent_message(self) -> SentMessage:
+        from almasix.mail.mailable import Address, EmbeddedImage
+        from almasix.mail.message import SentMessage
+
         def parse(raw: dict[str, Any] | None) -> Address | None:
             if not raw:
                 return None
@@ -104,6 +122,15 @@ class SendQueuedMailable(ShouldQueue, Job):
                 mime=item.get("mime"),
             )
             for item in self.attachments
+        ]
+        embeds = [
+            EmbeddedImage(
+                content_id=str(item["content_id"]),
+                data=base64.b64decode(item["data"]),
+                mime=item.get("mime"),
+                name=item.get("name"),
+            )
+            for item in getattr(self, "embeds", []) or []
         ]
         # Lightweight stub so array assertions can match by class name after workers run.
         mailable = None
@@ -121,6 +148,8 @@ class SendQueuedMailable(ShouldQueue, Job):
             from_address=parse(self.from_address),
             reply_to=[a for a in (parse(v) for v in self.reply_to) if a is not None],
             attachments=attachments,
+            embeds=embeds,
             tags=list(self.tags),
             metadata=dict(self.metadata),
+            headers=dict(getattr(self, "headers", {}) or {}),
         )

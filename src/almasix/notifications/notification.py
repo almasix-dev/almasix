@@ -9,20 +9,32 @@ class ShouldQueue:
     """Marker — notification is queued when a queue is available."""
 
 
+class HasLocalePreference:
+    """Mixin/protocol: notifiable prefers a locale for mail/notifications."""
+
+    def preferred_locale(self) -> str | None:
+        return getattr(self, "locale", None)
+
+
 class Notification:
     """Laravel-shaped notification: ``via`` + channel builders."""
 
     queue: ClassVar[str | bool] = False
     connection: ClassVar[str | None] = None
     delay: ClassVar[int | float] = 0
+    locale: str | None = None
 
-    def via(self, notifiable: Any) -> list[str]:
-        """Return channel names, e.g. ``['mail', 'database']``."""
+    def via(self, notifiable: Any) -> list[Any]:
+        """Return channel names or channel classes, e.g. ``['mail', 'database']``."""
         del notifiable
         return ["mail"]
 
+    def via_queues(self) -> dict[str, str]:
+        """Map channel name → queue name (Laravel ``viaQueues``)."""
+        return {}
+
     def to_mail(self, notifiable: Any) -> Any:
-        """Return a ``Mailable`` or mail payload dict."""
+        """Return a ``Mailable``, ``MailMessage``, or mail payload dict."""
         raise NotImplementedError(f"{type(self).__name__}.to_mail() is not implemented")
 
     def to_database(self, notifiable: Any) -> dict[str, Any]:
@@ -37,6 +49,12 @@ class Notification:
         except Exception:
             return {"notification": type(self).__name__}
 
+    def to_vonage(self, notifiable: Any) -> Any:
+        raise NotImplementedError(f"{type(self).__name__}.to_vonage() is not implemented")
+
+    def to_slack(self, notifiable: Any) -> Any:
+        raise NotImplementedError(f"{type(self).__name__}.to_slack() is not implemented")
+
     def should_queue(self) -> bool:
         if isinstance(self, ShouldQueue):
             return True
@@ -46,3 +64,7 @@ class Notification:
         if isinstance(self.queue, str) and self.queue:
             return self.queue
         return "default"
+
+    def set_locale(self, locale: str) -> Notification:
+        self.locale = locale
+        return self

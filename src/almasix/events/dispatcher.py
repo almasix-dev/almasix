@@ -78,7 +78,7 @@ class Dispatcher:
         for listener in self._collect(name):
             response = self._invoke(listener, event, payload, name)
             if response is False:
-                break
+                return False
             if halt and response is not None:
                 return response
             responses.append(response)

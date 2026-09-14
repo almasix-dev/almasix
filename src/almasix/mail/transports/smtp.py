@@ -83,6 +83,8 @@ class SmtpTransport:
             email["Cc"] = ", ".join(item.address for item in message.cc)
         if message.reply_to:
             email["Reply-To"] = ", ".join(item.address for item in message.reply_to)
+        for key, value in (message.headers or {}).items():
+            email[key] = value
 
         if message.text and message.html:
             email.set_content(message.text)
@@ -93,6 +95,25 @@ class SmtpTransport:
             email.set_content(message.text)
         else:
             email.set_content("")
+
+        for embed in message.embeds or []:
+            maintype, _, subtype = (embed.mime or "image/png").partition("/")
+            related = email
+            if message.html and message.text:
+                # multipart/alternative already; attach related under html part when possible
+                related = email
+            related.add_attachment(
+                embed.data,
+                maintype=maintype or "image",
+                subtype=subtype or "png",
+                filename=embed.name or embed.content_id,
+                disposition="inline",
+            )
+            # Ensure Content-ID header for cid: references
+            for part in related.iter_attachments():
+                if part.get_filename() == (embed.name or embed.content_id):
+                    part.add_header("Content-ID", f"<{embed.content_id}>")
+                    break
 
         for attachment in message.attachments:
             maintype, _, subtype = (attachment.mime or "application/octet-stream").partition("/")

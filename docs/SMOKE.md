@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.7.0` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.8.0` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -872,7 +872,7 @@ cd examples/progress && python smith progress:deploy
 - [x] Default `GET /up` health probe (`ApplicationBuilder.with_health`); outside Almasix middleware stacks
 - [x] Starlight **Deployment** page (env, serve, optimize, migrate/queues, bare metal, container, releasing)
 - [x] `examples/deploy/` Dockerfile + compose (web + queue worker + Postgres, `/up` healthcheck)
-- [x] Package version **0.7.0** in `pyproject.toml` / `__version__` (tag `v0.7.0` to publish)
+- [x] Package version **0.8.0** in `pyproject.toml` / `__version__` (tag `v0.8.0` to publish)
 - [x] Living example: `smith progress:deploy`; the board marks M38 complete
 
 ---
@@ -1250,6 +1250,20 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] Starlight Validation — one `###` section per rule; `docs/VALIDATION_PARITY.md`
 - [x] `smith progress:validation`; `POST /api/validate/dsl`; board M56; `tests/smoke/test_m56_smoke.py`
 - [x] Coverage HTML under `htmlcov/validation/` (engine omit `builtins.py` ≥90%; 112-rule behavioral suite is the parity gate)
+
+## M57 — Mail + Notifications exhaust (Laravel 13 parity)
+
+```bash
+pytest -q tests/test_m57_*.py tests/smoke/test_m57_smoke.py
+```
+
+### M57 exit criteria
+
+- [x] Notification façade + on-demand + locale preference + MailMessage
+- [x] Custom channel classes; mail/notification events; failover/roundrobin
+- [x] ESP HTTP drivers (mailgun/postmark/resend/ses/cloudflare) + sendmail; `config/services.py`
+- [x] Slack + Vonage channels
+- [x] Starlight Mail + Notifications expanded; `smith progress:mail`; board M57; smoke
 
 ---
 
