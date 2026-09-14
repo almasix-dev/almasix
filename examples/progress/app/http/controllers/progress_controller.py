@@ -493,7 +493,7 @@ def _milestones() -> list[dict]:
             "status": "complete",
             "proof": [
                 "smith progress:docs",
-                "Prologue: intro / release notes / upgrade / versions",
+                "Prologue: intro / compared / release notes / upgrade / versions",
                 "Basics teaching order + auth in Basics",
                 "header version switcher (latest major + main)",
                 "older-docs banner when not latest",

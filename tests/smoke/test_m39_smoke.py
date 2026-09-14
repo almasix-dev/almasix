@@ -55,6 +55,7 @@ def progress_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
 def test_m39_prologue_pages_exist() -> None:
     for slug in (
         "prologue/introduction",
+        "prologue/compared",
         "prologue/release-notes",
         "prologue/upgrade",
         "prologue/versions",
@@ -124,7 +125,7 @@ def test_m39_demo_command_runs() -> None:
     assert result.returncode == 0, out
     for line in (
         "Prologue sidebar -> present",
-        "Prologue pages -> introduction, release-notes, upgrade, versions",
+        "Prologue pages -> introduction, compared, release-notes, upgrade, versions",
         "Basics teaching order -> routing … rate-limiting",
         "user docs -> no milestone IDs (M##)",
         "version switcher -> latest major + main; older-docs banner",

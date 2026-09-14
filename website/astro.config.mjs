@@ -96,6 +96,7 @@ export default defineConfig({
 					collapsed: false,
 					items: [
 						{ label: 'How to read these docs', slug: 'prologue/introduction' },
+						{ label: 'Compared to other frameworks', slug: 'prologue/compared' },
 						{ label: 'Release Notes', slug: 'prologue/release-notes' },
 						{ label: 'Upgrade Guide', slug: 'prologue/upgrade' },
 						{ label: 'Documentation Versions', slug: 'prologue/versions' },

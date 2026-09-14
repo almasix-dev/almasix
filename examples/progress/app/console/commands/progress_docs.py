@@ -42,6 +42,7 @@ BASICS_ORDER = [
 
 PROLOGUE = [
     "prologue/introduction",
+    "prologue/compared",
     "prologue/release-notes",
     "prologue/upgrade",
     "prologue/versions",
@@ -68,7 +69,9 @@ class ProgressDocsCommand(Command):
             if not path.is_file():
                 self.error(f"missing {path.relative_to(ROOT)}")
                 return 1
-        self.info("Prologue pages -> introduction, release-notes, upgrade, versions")
+        self.info(
+            "Prologue pages -> introduction, compared, release-notes, upgrade, versions"
+        )
 
         # Extract Basics slugs in sidebar order.
         basics_block = re.search(
