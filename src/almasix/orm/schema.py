@@ -7,8 +7,8 @@ alter path into the ALTER statements each engine understands.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from typing import Any, TypeAlias
 
 import sqlalchemy as sa
@@ -64,9 +64,7 @@ class Schema:
         await Schema.create(table, callback, connection)
 
     @staticmethod
-    async def table(
-        table: str, callback: BlueprintCallback, connection: str | None = None
-    ) -> None:
+    async def table(table: str, callback: BlueprintCallback, connection: str | None = None) -> None:
         """Alter an existing table (Laravel ``Schema::table``)."""
         blueprint = Blueprint(table)
         callback(blueprint)
