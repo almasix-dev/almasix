@@ -13,6 +13,20 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.9.1
+
+- **`ide:index` depth** — `config_locations` (key → file/line), `env_options`
+  (driver/store/connection suggestions), and relation method lines for IDE
+  navigation
+- **Env intelligence** — two-way completion: keys from config/`env()` into
+  `.env`, and value options for keys like `QUEUE_CONNECTION` / `SESSION_DRIVER`
+  (LSP + index dump)
+- **Config go-to** — `config("app.env")` resolves to the `"env"` line in
+  `config/app.py`
+
+Published on [PyPI](https://pypi.org/project/almasix/0.9.1/) after the `v0.9.1`
+GitHub Release.
+
 ## 0.9.0
 
 - **`smith ide:index`** — JSON app symbol index (routes, views, config, gates,

@@ -158,7 +158,10 @@ def test_dotenv_find_and_context() -> None:
     assert find_calls("FOO=bar\n", language="dotenv")
     assert dotenv_context_at("x", -1, 0) is None
     assert dotenv_context_at("# APP_\n", 0, 5) is None
-    assert dotenv_context_at("APP_NAME=Progress\n", 0, 12) is None  # after = → key re skipped
+    # Value side of an assignment → env_value (option completion), not a bare key.
+    value_ctx = dotenv_context_at("APP_NAME=Progress\n", 0, 12)
+    assert value_ctx is not None and value_ctx.kind == "env_value"
+    assert value_ctx.receiver == "APP_NAME"
     assert dotenv_context_at("XYZ\n", 0, 3) is not None
 
     # Closed ${…} via context_at dotenv path
@@ -788,8 +791,10 @@ def test_analysis_remaining_branches() -> None:
 
     # Commented dotenv assignment
     assert find_dotenv_references("# FOO=bar\n") == []
-    # dotenv: open_ctx None and no call under cursor (value side of assignment)
-    assert context_at("APP_NAME=hello\n", 0, 10, language="dotenv") is None
+    # dotenv: value side of assignment → env_value option completion
+    val_ctx = context_at("APP_NAME=hello\n", 0, 10, language="dotenv")
+    assert val_ctx is not None and val_ctx.kind == "env_value"
+    assert val_ctx.receiver == "APP_NAME"
 
     # attribute_context: inside string with escape
     assert attribute_context_at("x = 'user.\\n", 0, len("x = 'user.")) is None or True
@@ -1005,9 +1010,11 @@ def test_analysis_dotenv_comment_and_dedupe() -> None:
     assert _echo_island_at("a{{--b", 5) is None
     assert _echo_island_at("{{--only", 7) is None
 
-    # dotenv context_at line 401: comment → no open ctx; value side → no call
+    # dotenv context_at: comment → no open ctx; value side → env_value
     assert context_at("# note\n", 0, 1, language="dotenv") is None
-    assert context_at("KEY=val\n", 0, 5, language="dotenv") is None
+    key_val = context_at("KEY=val\n", 0, 5, language="dotenv")
+    assert key_val is not None and key_val.kind == "env_value"
+    assert key_val.receiver == "KEY"
 
     # Directive arg: malformed / outside
     from almasix.lsp.analysis import _directive_arg_island_at

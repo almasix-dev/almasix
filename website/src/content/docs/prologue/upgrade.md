@@ -9,6 +9,18 @@ dependency inside the project virtualenv (`pip install -U almasix==…` with the
 env active). To refresh the global `almasix` installer itself, use
 `pipx upgrade almasix` or `uv tool upgrade almasix`.
 
+## From 0.9.0 to 0.9.1
+
+1. **Bump the package**
+
+   ```bash title="terminal"
+   pip install -U almasix==0.9.1
+   ```
+
+2. **IDE** — Rebuild the symbol index (`smith ide:index` / Almasix → Rebuild
+   Index). JetBrains **0.2.3+** uses the richer dump for config-key lines, env
+   value options, and template-var navigation. No app layout changes.
+
 ## From 0.8.x to 0.9.0
 
 1. **Bump the package**

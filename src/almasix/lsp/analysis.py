@@ -21,6 +21,8 @@ CallKind = Literal[
     "url",
     "asset",
     "env",
+    # Value after ``KEY=`` in ``.env``, or second arg of ``env("KEY", …)``.
+    "env_value",
     "table",
     "column",
     # Model instance attribute: ``user.name`` / ``{{ article.is_ }}``.
@@ -340,6 +342,17 @@ _OPEN_DOTENV_REFERENCE_RE = re.compile(r"\$\{(?P<prefix>[A-Za-z_][A-Za-z0-9_]*)?
 
 _OPEN_DOTENV_KEY_RE = re.compile(r"^\s*(?:export\s+)?(?P<prefix>[A-Za-z_][A-Za-z0-9_]*)?$")
 
+#: ``KEY=val`` / ``export KEY=val`` — value side for option completion.
+_OPEN_DOTENV_VALUE_RE = re.compile(
+    r"^\s*(?:export\s+)?(?P<key>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<prefix>[^#]*)$"
+)
+
+#: ``env("KEY", "pre`` or ``env("KEY", pre`` (second-arg / default completion).
+_OPEN_ENV_DEFAULT_RE = re.compile(
+    r"""\benv\s*\(\s*(?P<q1>['"])(?P<key>[A-Za-z_][A-Za-z0-9_]*)(?P=q1)\s*,\s*"""
+    r"""(?:(?P<q2>['"])(?P<quoted>[^'"]*)|(?P<bare>[A-Za-z_][\w.]*)?)?\s*$"""
+)
+
 
 def find_dotenv_references(source: str) -> list[StringCall]:
     """Env keys in a dotenv file: the key each line assigns, and ``${…}`` uses."""
@@ -354,13 +367,36 @@ def find_dotenv_references(source: str) -> list[StringCall]:
 
 
 def dotenv_context_at(source: str, line: int, character: int) -> CursorContext | None:
-    """Completion inside ``${…}``, or while typing a key at the start of a line."""
+    """Completion inside ``${…}``, a bare key, or the value after ``KEY=``."""
     lines = source.splitlines()
     if line < 0 or line >= len(lines):
         return None
     prefix_line = lines[line][:character]
     if prefix_line.lstrip().startswith("#"):
         return None
+
+    value_match = _OPEN_DOTENV_VALUE_RE.match(prefix_line)
+    if value_match is not None:
+        raw_prefix = value_match.group("prefix") or ""
+        # Prefer ``${…}`` interpolation when still inside an open reference.
+        open_interp = "${" in raw_prefix and "}" not in raw_prefix[raw_prefix.rfind("${") :]
+        if not open_interp:
+            prefix = raw_prefix.lstrip()
+            # Strip wrapping quotes the user may have started typing.
+            if prefix[:1] in "\"'" and (len(prefix) == 1 or prefix[-1] != prefix[0]):
+                prefix = prefix[1:]
+            elif len(prefix) >= 2 and prefix[0] == prefix[-1] and prefix[0] in "\"'":
+                prefix = prefix[1:-1]
+            key = value_match.group("key")
+            return CursorContext(
+                kind="env_value",
+                prefix=prefix,
+                start_line=line,
+                start_character=character - len(prefix),
+                end_line=line,
+                end_character=character,
+                receiver=key,
+            )
 
     for pattern in (_OPEN_DOTENV_REFERENCE_RE, _OPEN_DOTENV_KEY_RE):
         if pattern is _OPEN_DOTENV_KEY_RE and "=" in prefix_line:
@@ -378,6 +414,33 @@ def dotenv_context_at(source: str, line: int, character: int) -> CursorContext |
             end_character=character,
         )
     return None
+
+
+def env_default_context_at(source: str, line: int, character: int) -> CursorContext | None:
+    """Completion for the default / second argument of ``env("KEY", …)``."""
+    lines = source.splitlines()
+    if line < 0 or line >= len(lines):
+        return None
+    # Allow the call to span a couple of prior lines.
+    start = max(0, line - 2)
+    chunk = "\n".join(lines[start:line]) + "\n" + lines[line][:character]
+    match = _OPEN_ENV_DEFAULT_RE.search(chunk.replace("\n", " "))
+    if match is None:
+        return None
+    prefix = match.group("quoted")
+    if prefix is None:
+        prefix = match.group("bare") or ""
+    key = match.group("key")
+    return CursorContext(
+        kind="env_value",
+        prefix=prefix,
+        start_line=line,
+        start_character=character - len(prefix),
+        end_line=line,
+        end_character=character,
+        receiver=key,
+        wrap_quotes=match.group("q2") is None and match.group("bare") is None,
+    )
 
 
 def call_at(source: str, line: int, character: int, *, language: str) -> StringCall | None:
@@ -406,6 +469,10 @@ def context_at(source: str, line: int, character: int, *, language: str) -> Curs
             end_line=call.end_line,
             end_character=call.end_character,
         )
+    if lang in {"python", "py"}:
+        env_default = env_default_context_at(source, line, character)
+        if env_default is not None:
+            return env_default
     if lang in {"prism", "html", "prism-html"}:
         return _prism_context_at(source, line, character, language=language)
     call = call_at(source, line, character, language=language)

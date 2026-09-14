@@ -86,6 +86,7 @@ def index_to_dict(index: AppIndex, *, extras: dict[str, Any] | None = None) -> d
         },
         "config_keys": list(index.config_keys),
         "config_files": {stem: str(path) for stem, path in sorted(index.config_files.items())},
+        "config_locations": discover_config_key_locations(index.config_files),
         "models": {stem: str(path) for stem, path in sorted(index.models.items())},
         "controllers": {name: str(path) for name, path in sorted(index.controllers.items())},
         "controller_actions": _controller_actions(index),
@@ -104,6 +105,7 @@ def index_to_dict(index: AppIndex, *, extras: dict[str, Any] | None = None) -> d
         "env_keys": {
             name: _dataclass_to_jsonable(info) for name, info in sorted(index.env_keys.items())
         },
+        "env_options": {key: list(vals) for key, vals in sorted(index.env_options.items())},
         "tables": {name: _table_to_dict(table) for name, table in sorted(index.tables.items())},
         "directives": sorted(PRISM_DIRECTIVES),
     }
@@ -156,6 +158,7 @@ def discover_model_metadata(models: dict[str, Path]) -> dict[str, dict[str, Any]
         fillable: list[str] = []
         casts: dict[str, str] = {}
         relations: list[str] = []
+        relation_lines: dict[str, int] = {}
         class_name = stem
         for node in tree.body:
             if not isinstance(node, ast.ClassDef):
@@ -173,12 +176,14 @@ def discover_model_metadata(models: dict[str, Path]) -> dict[str, dict[str, Any]
                         continue
                     if _returns_relation(item):
                         relations.append(item.name)
+                        relation_lines[item.name] = max(item.lineno - 1, 0)
         out[class_name] = {
             "module": stem,
             "path": str(path),
             "fillable": fillable,
             "casts": casts,
             "relations": sorted(set(relations)),
+            "relation_lines": relation_lines,
         }
     return out
 
@@ -285,7 +290,76 @@ def discover_config_slices(config_keys: tuple[str, ...]) -> dict[str, list[str]]
         "queues": children("queue.connections"),
         "caches": children("cache.stores"),
         "mailers": children("mail.mailers"),
+        "database": children("database.connections"),
+        "logging": children("logging.channels"),
+        "broadcasting": children("broadcasting.connections"),
+        "auth_guards": children("auth.guards"),
+        "auth_passwords": children("auth.passwords"),
+        "concurrency": children("concurrency.drivers"),
+        "redis": children("redis.connections"),
     }
+
+
+def discover_config_key_locations(config_files: dict[str, Path]) -> dict[str, dict[str, Any]]:
+    """Map dotted config keys (``app.env``) → ``{path, line}`` via AST of ``config/*.py``.
+
+    Line numbers are 0-based. Nested dict keys under ``config = {…}`` or ``return {…}``
+    become ``{stem}.{nested…}``. Missing / dynamic keys are omitted (callers fall back
+    to the stem file).
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for stem, path in config_files.items():
+        try:
+            text = path.read_text(encoding="utf-8")
+            tree = ast.parse(text, filename=str(path))
+        except (OSError, SyntaxError):
+            continue
+        resolved = str(path.resolve())
+        for dict_node in _config_root_dicts(tree):
+            for rel_key, line in _walk_string_dict_keys(dict_node):
+                full = f"{stem}.{rel_key}" if rel_key else stem
+                out.setdefault(full, {"path": resolved, "line": line})
+        # Stem alone → top of file when present as a runtime key
+        out.setdefault(stem, {"path": resolved, "line": 0})
+    return dict(sorted(out.items()))
+
+
+def _config_root_dicts(tree: ast.Module) -> list[ast.Dict]:
+    """``config = {…}`` assignments and ``return {…}`` dicts in module functions."""
+    found: list[ast.Dict] = []
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if (
+                    isinstance(target, ast.Name)
+                    and target.id in {"config", "CONFIG"}
+                    and isinstance(node.value, ast.Dict)
+                ):
+                    found.append(node.value)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            for sub in node.body:
+                if isinstance(sub, ast.Return) and isinstance(sub.value, ast.Dict):
+                    found.append(sub.value)
+                # ``return { **base, "x": 1 }`` still yields a Dict node
+                if isinstance(sub, ast.Return) and isinstance(sub.value, ast.Call):
+                    continue
+    return found
+
+
+def _walk_string_dict_keys(node: ast.Dict, prefix: str = "") -> list[tuple[str, int]]:
+    """Flatten nested string-keyed dicts to ``(relative.key, 0-based line)``."""
+    out: list[tuple[str, int]] = []
+    for key, value in zip(node.keys, node.values, strict=False):
+        if key is None:
+            continue
+        if not (isinstance(key, ast.Constant) and isinstance(key.value, str)):
+            continue
+        name = f"{prefix}.{key.value}" if prefix else key.value
+        line = max(getattr(key, "lineno", 1) - 1, 0)
+        out.append((name, line))
+        if isinstance(value, ast.Dict):
+            out.extend(_walk_string_dict_keys(value, name))
+    return out
 
 
 def discover_inertia_pages(root: Path) -> list[str]:
