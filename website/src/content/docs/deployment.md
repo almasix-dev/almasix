@@ -176,9 +176,9 @@ traffic — do not rely on web processes to migrate.
 
 ## How Almasix is published (framework)
 
-The framework is on [PyPI](https://pypi.org/project/almasix/)
-(`pip install almasix`). Releases use GitHub Actions Trusted Publishing (OIDC)
-— see `.github/workflows/publish.yml`. No API tokens are stored in the repo.
+The framework is on [PyPI](https://pypi.org/project/almasix/). Releases use
+GitHub Actions Trusted Publishing (OIDC) — see `.github/workflows/publish.yml`.
+No API tokens are stored in the repo.
 
 To cut a release (maintainers):
 
@@ -189,13 +189,17 @@ To cut a release (maintainers):
 4. Create an annotated tag (for example `v0.8.1`) and a GitHub Release on that
    tag. Publishing the Release triggers the PyPI job.
 
-Install with:
+Install the global project generator with a tool installer (not system `pip` —
+PEP 668 blocks that on many machines):
 
 ```bash title="terminal"
-pip install almasix
-# or pin
-pip install almasix==0.8.1
+pipx install almasix
+# or: uv tool install almasix
+# pin: pipx install almasix==0.8.1
 ```
+
+Inside an application’s virtualenv, Almasix is a normal dependency
+(`pip install -e .` / your lockfile) — that is what production images install.
 
 ## Related
 

@@ -13,9 +13,10 @@ applications with `almasix new`, then drive them with **Smith** — Almasix’s
 in-app CLI:
 
 ```bash title="terminal"
+pipx install almasix
 almasix new blog
 cd blog
-pip install -e .
+# .venv comes next — see below — then:
 python smith migrate
 python smith serve
 ```
@@ -33,19 +34,37 @@ Python and basic web knowledge to follow these docs.
 ## Requirements
 
 - Python **3.11** or higher
-- `pip` and a virtual environment (or [uv](https://docs.astral.sh/uv/), which the installer prefers when it finds it)
+- A way to install the **global** `almasix` installer — [pipx](https://pipx.pypa.io/)
+  (recommended) or [uv](https://docs.astral.sh/uv/) (`uv tool install`)
+- A project virtual environment for each app (or uv, which the scaffold prefers
+  when it finds it)
 - Node.js **18+** for the Vite stacks — the `none` stack needs no Node at all
 
 ## Creating an Almasix project
 
+Install the framework once on your machine so `almasix` is on your PATH. That
+global install only gives you the project generator — each application still
+gets its own `.venv` with Almasix as a normal dependency. Modern Python
+distributions block bare `pip install …` into the system environment (PEP 668);
+use a tool installer instead.
+
 <Steps>
 
-1. **Install Almasix** (from PyPI, or from a local checkout while developing against main):
+1. **Install the `almasix` CLI globally** (pick one):
 
    ```bash title="terminal"
-   pip install almasix
-   # or, from a local clone of the framework:
-   pip install -e /path/to/almasix
+   pipx install almasix
+   # or:
+   uv tool install almasix
+   ```
+
+   Developing against a local checkout of the framework? Install that tree into
+   an isolated tool environment the same way:
+
+   ```bash title="terminal"
+   pipx install --editable /path/to/almasix
+   # or:
+   uv tool install --editable /path/to/almasix
    ```
 
 2. **Create a new application.** Run it bare and it asks; pass flags and it
@@ -126,7 +145,7 @@ python smith loupe
 That runs the root `smith` script (no PATH entry required). After
 `pip install -e .` of the application, a `smith` console script is also linked
 into **that** virtualenv — then bare `smith …` works with the env active.
-Installing only the framework (`pip install almasix` / `pipx install almasix`)
+Installing only the framework (`pipx install almasix` / `uv tool install almasix`)
 gives you the `almasix` installer command, not `smith`.
 :::
 

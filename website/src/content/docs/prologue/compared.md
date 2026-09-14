@@ -131,7 +131,7 @@ you do not need PHP experience — start at
 
 ## Where to go next
 
-- [Installation](/installation/) — `pip install almasix && almasix new …`
+- [Installation](/installation/) — `pipx install almasix && almasix new …`
 - [Directory Structure](/structure/) — where files live
 - [Starter Kits](/starter-kits/) — Web, API, and SPA overlays
 - [Deployment](/deployment/) — before production

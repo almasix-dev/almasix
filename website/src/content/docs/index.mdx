@@ -25,10 +25,10 @@ Almasix is a web application framework with expressive, elegant syntax. We belie
 You do not need prior framework experience. Create apps with `almasix new`. Drive them with `python smith …`. Write controllers, Articulate models, Prism views, and migrations in a layout that stays navigable as the app grows. New here? Start with [How to read these docs](/prologue/introduction/). Almasix is [inspired by Laravel](/prologue/introduction/#inspired-by-laravel) — credit and link live there.
 
 ```bash title="terminal"
-pip install almasix
+pipx install almasix
 almasix new blog
 cd blog
-pip install -e .
+# activate the app .venv (or pass --install to almasix new), then:
 python smith serve
 ```
 

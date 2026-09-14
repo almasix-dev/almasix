@@ -5,7 +5,9 @@ description: What changed in each Almasix release — for people building apps, 
 
 Almasix versions follow [SemVer](https://semver.org/). While the project is on
 **0.x**, minor bumps may include breaking changes; those are called out below.
-Install a specific version with `pip install almasix==X.Y.Z`.
+Install a specific version of the application dependency with
+`pip install almasix==X.Y.Z` (inside the project venv). Refresh the global
+installer with `pipx install almasix==X.Y.Z` or `uv tool install almasix==X.Y.Z`.
 
 For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
