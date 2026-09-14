@@ -10,7 +10,7 @@ JSON). They do **not** assume you know another web framework.
 
 | Term | Meaning |
 | --- | --- |
-| **Almasix** | The framework (`pip install almasix`) |
+| **Almasix** | The framework (`pipx install almasix` — global CLI; each app’s `.venv` holds the dependency) |
 | **`almasix new`** | Creates a new application directory |
 | **Smith** | The in-app CLI — prefer `python smith …` from the app root |
 | **Articulate** | The ORM — models, queries, migrations |

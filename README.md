@@ -29,8 +29,12 @@
 ## Get started
 
 ```bash
-pip install almasix && almasix new blog
+pipx install almasix && almasix new blog
 ```
+
+Prefer [uv](https://docs.astral.sh/uv/)? `uv tool install almasix` works the same.
+Each app then gets its own `.venv` — the global install only puts `almasix` on
+your PATH so you can scaffold.
 
 Full guide → **[Documentation](https://almasix-dev.github.io/almasix/)**
 

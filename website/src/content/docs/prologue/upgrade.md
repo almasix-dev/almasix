@@ -5,7 +5,9 @@ description: Move an Almasix application from one release to the next.
 
 Read the [Release Notes](/prologue/release-notes/) for what shipped. This page
 covers what to change in **your** application when you bump the `almasix`
-dependency.
+dependency inside the project virtualenv (`pip install -U almasix==…` with the
+env active). To refresh the global `almasix` installer itself, use
+`pipx upgrade almasix` or `uv tool upgrade almasix`.
 
 ## From 0.8.0 to 0.8.1
 
