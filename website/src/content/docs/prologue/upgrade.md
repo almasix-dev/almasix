@@ -9,6 +9,20 @@ dependency inside the project virtualenv (`pip install -U almasix==…` with the
 env active). To refresh the global `almasix` installer itself, use
 `pipx upgrade almasix` or `uv tool upgrade almasix`.
 
+## From 0.9.1 to 0.9.2
+
+1. **Bump the package**
+
+   ```bash title="terminal"
+   pip install -U almasix==0.9.2
+   ```
+
+2. **Generators** — `smith make:model` now accepts Laravel-style companions
+   (`-c` / `-r` / `-f` / `-s` / `-a`, `--policy`, `-R`, `--api`) and clustered
+   short options (`-mc`, `-mr`, `-mfsc`). Migration scaffolds annotate the
+   blueprint with `table: Blueprint` (nested `def` in `up()`) so editors can
+   autocomplete column helpers. No app layout changes required.
+
 ## From 0.9.0 to 0.9.1
 
 1. **Bump the package**

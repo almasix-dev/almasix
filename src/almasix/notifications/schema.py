@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm.schema import Schema
+from almasix.orm.schema import Blueprint, Schema
 
 
 async def ensure_tables(connection: str | None = None) -> None:
@@ -12,7 +10,7 @@ async def ensure_tables(connection: str | None = None) -> None:
         await Schema.create("notifications", _define_notifications, connection=connection)
 
 
-def _define_notifications(table: Any) -> None:
+def _define_notifications(table: Blueprint) -> None:
     table.uuid("id").primary()
     table.string("type")
     table.string("notifiable_type")

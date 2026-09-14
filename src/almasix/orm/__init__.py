@@ -72,7 +72,14 @@ from almasix.orm.relations import (
     MorphToMany,
     Relation,
 )
-from almasix.orm.schema import Blueprint, Column, ForeignKeyDefinition, Schema, SchemaError
+from almasix.orm.schema import (
+    Blueprint,
+    BlueprintCallback,
+    Column,
+    ForeignKeyDefinition,
+    Schema,
+    SchemaError,
+)
 from almasix.orm.seeder import (
     Seeder,
     SeederError,
@@ -93,6 +100,7 @@ __all__ = [
     "BelongsTo",
     "BelongsToMany",
     "Blueprint",
+    "BlueprintCallback",
     "CastError",
     "CastsAttributes",
     "CastsInboundAttributes",

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 
 class CreateJobsTable(Migration):
@@ -18,7 +16,7 @@ class CreateJobsTable(Migration):
         await Schema.drop_if_exists("failed_jobs")
         await Schema.drop_if_exists("jobs")
 
-    def jobs(self, table: Any) -> None:
+    def jobs(self, table: Blueprint) -> None:
         # INTEGER primary key, not BigInteger: SQLite only autoincrements the former.
         table.id()
         table.string("queue").index()
@@ -28,7 +26,7 @@ class CreateJobsTable(Migration):
         table.timestamp("available_at")
         table.timestamp("created_at")
 
-    def failed_jobs(self, table: Any) -> None:
+    def failed_jobs(self, table: Blueprint) -> None:
         table.id()
         table.uuid("uuid").unique()
         table.text("connection")

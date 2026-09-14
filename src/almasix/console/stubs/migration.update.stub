@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 
 class {{ class }}(Migration):
     """{{ class }}."""
 
     async def up(self) -> None:
-        await Schema.table(
-            "{{ table }}",
-            lambda table: (),  # e.g. table.string("slug")
-        )
+        def define(table: Blueprint) -> None:
+            pass  # e.g. table.string("slug")
+
+        await Schema.table("{{ table }}", define)
 
     async def down(self) -> None:
-        await Schema.table(
-            "{{ table }}",
-            lambda table: (),  # e.g. table.drop_column("slug")
-        )
+        def revert(table: Blueprint) -> None:
+            pass  # e.g. table.drop_column("slug")
+
+        await Schema.table("{{ table }}", revert)

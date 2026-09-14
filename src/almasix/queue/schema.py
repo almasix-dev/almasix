@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm.schema import Schema
+from almasix.orm.schema import Blueprint, Schema
 
 
 async def ensure_tables(connection: str | None = None) -> None:
@@ -15,7 +13,7 @@ async def ensure_tables(connection: str | None = None) -> None:
         await Schema.create("failed_jobs", _define_failed_jobs_table, connection=connection)
 
 
-def _define_jobs_table(table: Any) -> None:
+def _define_jobs_table(table: Blueprint) -> None:
     # INTEGER PK for SQLite autoincrement compatibility (BigInteger skips AUTOINCREMENT).
     table.id("id")
     table.string("queue")
@@ -26,7 +24,7 @@ def _define_jobs_table(table: Any) -> None:
     table.timestamp("created_at")
 
 
-def _define_failed_jobs_table(table: Any) -> None:
+def _define_failed_jobs_table(table: Blueprint) -> None:
     table.id("id")
     table.uuid("uuid")
     table.text("connection")

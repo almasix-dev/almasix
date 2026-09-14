@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-from almasix.orm import Migration, Schema
+from almasix.orm import Blueprint, Migration, Schema
 
 
 class {{ class }}(Migration):
@@ -18,12 +16,12 @@ class {{ class }}(Migration):
         await Schema.drop_if_exists("cache_locks")
         await Schema.drop_if_exists("cache")
 
-    def cache(self, table: Any) -> None:
+    def cache(self, table: Blueprint) -> None:
         table.string("key").primary()
         table.binary("value")
         table.integer("expiration").nullable()
 
-    def cache_locks(self, table: Any) -> None:
+    def cache_locks(self, table: Blueprint) -> None:
         table.string("key").primary()
         table.string("owner")
         table.integer("expiration")

@@ -40,10 +40,9 @@ def test_make_migration_infers_create_stub(tmp_path: Path) -> None:
     path = make_migration("create_users_table", tmp_path)
     text = path.read_text(encoding="utf-8")
     assert "class CreateUsersTable(Migration)" in text
-    assert (
-        'Schema.create(\n            "users"' in text
-        or 'Schema.create(\n            "users",' in text
-    )
+    assert 'Schema.create("users", define)' in text
+    assert "table: Blueprint" in text
+    assert "lambda table:" not in text
     assert 'drop_if_exists("users")' in text
     cls = _load(path)
     assert cls.__name__ == "CreateUsersTable"
@@ -53,7 +52,8 @@ def test_make_migration_infers_update_stub(tmp_path: Path) -> None:
     path = make_migration("add_slug_to_posts_table", tmp_path)
     text = path.read_text(encoding="utf-8")
     assert "class AddSlugToPostsTable(Migration)" in text
-    assert 'Schema.table(\n            "posts"' in text
+    assert 'Schema.table("posts", define)' in text
+    assert "table: Blueprint" in text
     assert "Schema.create" not in text
     assert _load(path).__name__ == "AddSlugToPostsTable"
 
@@ -61,7 +61,7 @@ def test_make_migration_infers_update_stub(tmp_path: Path) -> None:
     mistyped = make_migration("create_add_slug_to_posts_table", tmp_path / "mistyped")
     mistyped_text = mistyped.read_text(encoding="utf-8")
     assert "Schema.create" not in mistyped_text
-    assert 'Schema.table(\n            "posts"' in mistyped_text
+    assert 'Schema.table("posts", define)' in mistyped_text
 
 
 def test_make_migration_blank_and_overrides(tmp_path: Path) -> None:
@@ -79,7 +79,7 @@ def test_make_migration_blank_and_overrides(tmp_path: Path) -> None:
     assert '"accounts"' in text
 
     alter = make_migration("touch_notes", tmp_path / "alter", table="notes", create=False)
-    assert 'Schema.table(\n            "notes"' in alter.read_text(encoding="utf-8")
+    assert 'Schema.table("notes", define)' in alter.read_text(encoding="utf-8")
 
     with pytest.raises(MigrationError):
         make_migration("", tmp_path)

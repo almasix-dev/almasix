@@ -36,6 +36,8 @@ Generate a stub:
 
 ```bash title="terminal"
 python smith make:controller PostController
+python smith make:model Post -c      # model + plain controller
+python smith make:model Post -mr     # model + migration + resource controller
 ```
 
 Nested namespaces work (`python smith make:controller Admin/UserController`)

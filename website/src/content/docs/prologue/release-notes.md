@@ -13,6 +13,21 @@ For how to move between releases, see the [Upgrade Guide](/prologue/upgrade/).
 For how these docs relate to package versions, see
 [Documentation Versions](/prologue/versions/).
 
+## 0.9.2
+
+- **`make:model` companions** — `-c` / `--controller`, `-r` / `--resource`,
+  `-s` / `--seed`, `--policy`, `-R` / `--requests`, `--api`, and `-a` / `--all`
+  (plus the existing `-m` / `-f`) generate the matching classes in one shot
+- **Clustered short options** — `-mc`, `-mr`, `-mfsc`, and the like expand the
+  Laravel / GNU way instead of treating the rest as a value for the first flag
+- **Typed migration blueprints** — stubs and docs use `table: Blueprint` so
+  editors autocomplete column helpers; `BlueprintCallback` is exported for
+  explicit bindings
+- **`ide:index`** — model metadata also records `guarded` and `hidden`
+
+Published on [PyPI](https://pypi.org/project/almasix/0.9.2/) after the `v0.9.2`
+GitHub Release.
+
 ## 0.9.1
 
 - **`ide:index` depth** — `config_locations` (key → file/line), `env_options`

@@ -7,8 +7,9 @@ alter path into the ALTER statements each engine understands.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, TypeAlias
 
 import sqlalchemy as sa
 
@@ -26,6 +27,9 @@ from almasix.orm.facade import get_manager
 #: Laravel keeps this private name; Almasix's tests reach for it too.
 _guess_foreign_table = guess_foreign_table
 
+#: Blueprint callback — return value is ignored (lambdas may return a tuple).
+BlueprintCallback: TypeAlias = Callable[[Blueprint], object]
+
 
 def _schema_connection(connection: str | None = None) -> Any:
     """The connection schema work runs on.
@@ -42,7 +46,9 @@ class Schema:
     """Static schema façade."""
 
     @staticmethod
-    async def create(table: str, callback: Any, connection: str | None = None) -> None:
+    async def create(
+        table: str, callback: BlueprintCallback, connection: str | None = None
+    ) -> None:
         blueprint = Blueprint(table)
         callback(blueprint)
         target = _schema_connection(connection)
@@ -50,7 +56,7 @@ class Schema:
 
     @staticmethod
     async def create_if_not_exists(
-        table: str, callback: Any, connection: str | None = None
+        table: str, callback: BlueprintCallback, connection: str | None = None
     ) -> None:
         """Create the table only when it is not already there."""
         if await Schema.has_table(table, connection):
@@ -58,7 +64,7 @@ class Schema:
         await Schema.create(table, callback, connection)
 
     @staticmethod
-    async def table(table: str, callback: Any, connection: str | None = None) -> None:
+    async def table(table: str, callback: BlueprintCallback, connection: str | None = None) -> None:
         """Alter an existing table (Laravel ``Schema::table``)."""
         blueprint = Blueprint(table)
         callback(blueprint)
@@ -265,7 +271,10 @@ class Schema:
 
     @staticmethod
     async def when_table_has_column(
-        table: str, column: str, callback: Any, connection: str | None = None
+        table: str,
+        column: str,
+        callback: BlueprintCallback,
+        connection: str | None = None,
     ) -> None:
         """Run the blueprint only if the column is there — Laravel's conditional."""
         if await Schema.has_column(table, column, connection):
@@ -273,7 +282,10 @@ class Schema:
 
     @staticmethod
     async def when_table_doesnt_have_column(
-        table: str, column: str, callback: Any, connection: str | None = None
+        table: str,
+        column: str,
+        callback: BlueprintCallback,
+        connection: str | None = None,
     ) -> None:
         if not await Schema.has_column(table, column, connection):
             await Schema.table(table, callback, connection)
@@ -613,6 +625,7 @@ def _rename_index_sql(table: str, old: str, new: str, dialect: Any) -> str:
 
 __all__ = [
     "Blueprint",
+    "BlueprintCallback",
     "Column",
     "ForeignKeyDefinition",
     "Schema",
