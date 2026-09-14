@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.8.0` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.8.1` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -872,7 +872,7 @@ cd examples/progress && python smith progress:deploy
 - [x] Default `GET /up` health probe (`ApplicationBuilder.with_health`); outside Almasix middleware stacks
 - [x] Starlight **Deployment** page (env, serve, optimize, migrate/queues, bare metal, container, releasing)
 - [x] `examples/deploy/` Dockerfile + compose (web + queue worker + Postgres, `/up` healthcheck)
-- [x] Package version **0.8.0** in `pyproject.toml` / `__version__` (tag `v0.8.0` to publish)
+- [x] Package version **0.8.1** in `pyproject.toml` / `__version__` (tag `v0.8.1` to publish)
 - [x] Living example: `smith progress:deploy`; the board marks M38 complete
 
 ---
