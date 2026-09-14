@@ -76,10 +76,16 @@ migrations; `.env` files are mapped to the LSP in both editors.
 
 If the Language Servers tool window shows
 `Cannot start server … almasixLsp (pid=null)`, the IDE could not spawn
-`almasix-lsp`. Install the extra into the interpreter PyCharm is using
-(`pip install 'almasix[lsp]'`), confirm LSP4IJ is installed, and open the app
-root — not a parent folder without that venv. Plugin **0.1.12+** also follows
-the project Python SDK and walks up to `bootstrap/app.py`.
+`almasix-lsp`. Common fixes:
+
+- Install the extra into the interpreter PyCharm is using
+  (`pip install 'almasix[lsp]'`), confirm LSP4IJ is installed, and open the app
+  root — not a parent folder without that venv. Plugin **0.1.12+** also follows
+  the project Python SDK and walks up to `bootstrap/app.py`.
+- **Windows IDE + WSL project** (`\\wsl$\…` / `\\wsl.localhost\…`): Windows
+  cannot start Linux binaries directly. Use plugin **0.1.13+**, which launches
+  via `wsl.exe` (Marketplace update or
+  [release zip](https://github.com/almasix-dev/ide-support/releases/tag/v0.1.13)).
 
 `smith ide:install` also writes `.idea/almasix-editor.md` with these steps.
 
