@@ -118,7 +118,32 @@ def build_ide_index(base_path: Path | str | None = None) -> dict[str, Any]:
     """Boot the app, collect the full IDE symbol set, return a JSON-ready dict."""
     index = build_index(base_path)
     extras = discover_extras(index)
-    return index_to_dict(index, extras=extras)
+    payload = index_to_dict(index, extras=extras)
+    attach_models_to_tables(
+        payload.get("tables") or {},
+        extras.get("model_metadata") or {},
+    )
+    return payload
+
+
+def attach_models_to_tables(
+    tables: dict[str, Any],
+    model_metadata: dict[str, Any],
+) -> None:
+    """Fill ``tables.*.model`` from Articulate class names when migrations omit it."""
+    if not tables or not model_metadata:
+        return
+    from almasix.orm.inflector import table_name as derive_table_name
+
+    already = {str(t.get("model")) for t in tables.values() if t.get("model")}
+    for class_name in model_metadata:
+        if class_name in already:
+            continue
+        derived = derive_table_name(class_name)
+        entry = tables.get(derived)
+        if isinstance(entry, dict) and not entry.get("model"):
+            entry["model"] = class_name
+            already.add(class_name)
 
 
 def discover_extras(index: AppIndex) -> dict[str, Any]:
@@ -167,18 +192,22 @@ def discover_model_metadata(models: dict[str, Path]) -> dict[str, dict[str, Any]
                 continue
             class_name = node.name
             for item in node.body:
-                if isinstance(item, ast.Assign):
-                    for target in item.targets:
+                if isinstance(item, (ast.Assign, ast.AnnAssign)):
+                    targets = item.targets if isinstance(item, ast.Assign) else [item.target]
+                    value = item.value
+                    if value is None:
+                        continue
+                    for target in targets:
                         if not isinstance(target, ast.Name):
                             continue
                         if target.id == "fillable":
-                            fillable = _string_list(item.value)
+                            fillable = _string_list(value)
                         elif target.id == "guarded":
-                            guarded = _string_list(item.value)
+                            guarded = _string_list(value)
                         elif target.id == "hidden":
-                            hidden = _string_list(item.value)
+                            hidden = _string_list(value)
                         elif target.id == "casts":
-                            casts = _string_dict(item.value)
+                            casts = _string_dict(value)
                 if isinstance(item, ast.FunctionDef) or isinstance(item, ast.AsyncFunctionDef):
                     if item.name.startswith("_"):
                         continue
@@ -494,12 +523,15 @@ def _pathish(value: Any) -> Any:
 
 
 def _string_list(node: ast.AST) -> list[str]:
-    if isinstance(node, (ast.List, ast.Tuple)):
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
         out: list[str] = []
         for elt in node.elts:
             if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                 out.append(elt.value)
         return out
+    # ``guarded = ("id")`` is a bare string in Python — still treat as one key.
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return [node.value]
     return []
 
 
