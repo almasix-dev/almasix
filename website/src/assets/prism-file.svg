@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="Prism">
+  <!--
+    Solid file icon. Incoming and in-prism share width 1.6.
+    Left beam end = AB slant; right beam end = AC slant (clips enforce the cut).
+  -->
+  <defs>
+    <linearGradient id="p" x1="16" y1="5" x2="16" y2="26" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F6F9E"/>
+      <stop offset="1" stop-color="#286291"/>
+    </linearGradient>
+    <clipPath id="out" clipPathUnits="userSpaceOnUse">
+      <path fill-rule="evenodd" d="M0 0H32V32H0ZM16 5L5 26H27L16 5Z"/>
+    </clipPath>
+    <clipPath id="in" clipPathUnits="userSpaceOnUse">
+      <polygon points="16,5 5,26 27,26"/>
+    </clipPath>
+  </defs>
+
+  <polygon fill="url(#p)" points="16,5 5,26 27,26"/>
+
+  <!-- Extends under the prism; #out clip hides the end behind AB -->
+  <g clip-path="url(#out)">
+    <polygon fill="#F1511B" points="0.000,15.200 18.000,15.200 18.000,16.800 0.000,16.800"/>
+  </g>
+
+  <!-- Trapezoid with edges on AB and AC; same face span as incoming -->
+  <g clip-path="url(#in)">
+    <polygon fill="#F1511B" points="10.657,15.200 22.278,16.985 23.116,18.585 9.819,16.800"/>
+  </g>
+
+  <polygon fill="#F1511B" points="22.278,16.985 32.000,11.000 32.000,15.000 22.557,17.518"/>
+  <polygon fill="#FFB36B" points="22.557,17.518 32.000,15.000 32.000,20.000 22.837,18.052"/>
+  <polygon fill="#6BB0D9" points="22.837,18.052 32.000,20.000 32.000,25.000 23.116,18.585"/>
+</svg>

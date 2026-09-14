@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" fill="none" role="img" aria-label="Prism">
+  <!-- App tile: lighter prism (#6BB0D9 → #3D7EB0) so #286291-family reads on dark. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="150" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A1412"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="prism" x1="75" y1="29" x2="75" y2="117" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6BB0D9"/>
+      <stop offset="1" stop-color="#3D7EB0"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="8" y1="73" x2="50" y2="73" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1511B" stop-opacity="0"/>
+      <stop offset="0.25" stop-color="#F1511B"/>
+      <stop offset="1" stop-color="#FF7A4D"/>
+    </linearGradient>
+    <linearGradient id="core" x1="50" y1="73" x2="106" y2="81" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF7A4D"/>
+      <stop offset="1" stop-color="#F1511B"/>
+    </linearGradient>
+    <linearGradient id="ray1" x1="106" y1="81" x2="142" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1511B"/>
+      <stop offset="0.55" stop-color="#FF7A4D"/>
+      <stop offset="1" stop-color="#F1511B" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ray2" x1="106" y1="81" x2="142" y2="78" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB36B"/>
+      <stop offset="0.55" stop-color="#FF9A4D"/>
+      <stop offset="1" stop-color="#FFB36B" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ray3" x1="106" y1="81" x2="142" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6BB0D9"/>
+      <stop offset="0.55" stop-color="#3D7EB0"/>
+      <stop offset="1" stop-color="#286291" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="prismClip">
+      <polygon points="75,29 28,117 122,117"/>
+    </clipPath>
+  </defs>
+
+  <rect width="150" height="150" rx="34" fill="url(#tile)"/>
+
+  <g shape-rendering="geometricPrecision">
+    <path fill="url(#beam)" d="M8 72.2H50V73.8H8Z"/>
+    <polygon fill="url(#prism)" points="75,29 28,117 122,117"/>
+    <g clip-path="url(#prismClip)">
+      <path stroke="url(#core)" stroke-width="1.35" stroke-linecap="round"
+            d="M50 73L106 81"/>
+    </g>
+    <polygon fill="url(#ray1)" points="106,81 142,54 142,68"/>
+    <polygon fill="url(#ray2)" points="106,81 142,68 142,88"/>
+    <polygon fill="url(#ray3)" points="106,81 142,88 142,106"/>
+  </g>
+</svg>

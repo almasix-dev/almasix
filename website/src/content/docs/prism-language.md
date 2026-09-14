@@ -8,6 +8,10 @@ formatter in the framework, and editor grammar assets in
 [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support) (`prism/`), so
 every tool — editors, pre-commit, CI — shares one language surface.
 
+The Prism mark (optical prism + spectrum) lives in
+[`art/prism/`](https://github.com/almasix-dev/almasix/tree/main/art/prism) —
+use `prism-file.svg` for `.prism.html` file icons in editor packages.
+
 Full VS Code / JetBrains packaging is covered in [Editor setup](/editor-setup/).
 
 ## Grammar (TextMate)
