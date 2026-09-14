@@ -9,6 +9,21 @@ dependency inside the project virtualenv (`pip install -U almasix==…` with the
 env active). To refresh the global `almasix` installer itself, use
 `pipx upgrade almasix` or `uv tool upgrade almasix`.
 
+## From 0.8.x to 0.9.0
+
+1. **Bump the package**
+
+   ```bash title="terminal"
+   pip install -U almasix==0.9.0
+   ```
+
+2. **Optional IDE** — JetBrains Almasix Idea **0.2.0+** reads
+   `smith ide:index --json` from the project interpreter (no LSP4IJ). VS Code
+   still uses `almasix-lsp`. See [Editor setup](/editor-setup/).
+
+3. **No required app layout changes** for a typical 0.8 scaffold. Re-run your
+   test suite after upgrading.
+
 ## From 0.8.0 to 0.8.1
 
 1. **Bump the package**

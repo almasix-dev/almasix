@@ -186,7 +186,7 @@ To cut a release (maintainers):
    (CI refuses a tag that disagrees with the packaged version).
 2. Merge to `main`.
 3. Optional rehearsal: Actions → **Publish** → Run workflow → target `testpypi`.
-4. Create an annotated tag (for example `v0.8.1`) and a GitHub Release on that
+4. Create an annotated tag (for example `v0.9.0`) and a GitHub Release on that
    tag. Publishing the Release triggers the PyPI job.
 
 Install the global project generator with a tool installer (not system `pip` —
@@ -195,7 +195,7 @@ PEP 668 blocks that on many machines):
 ```bash title="terminal"
 pipx install almasix
 # or: uv tool install almasix
-# pin: pipx install almasix==0.8.1
+# pin: pipx install almasix==0.9.0
 ```
 
 Inside an application’s virtualenv, Almasix is a normal dependency
