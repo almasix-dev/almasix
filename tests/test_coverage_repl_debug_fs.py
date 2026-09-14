@@ -77,6 +77,7 @@ def test_namespace_dd_exits_and_skips_private_models(
     app.load_configuration()
     models = tmp_path / "app" / "models"
     models.mkdir(parents=True)
+    (tmp_path / "app" / "__init__.py").write_text("", encoding="utf-8")
     (models / "__init__.py").write_text("", encoding="utf-8")
     (models / "_hidden.py").write_text(
         "class Hidden:\n    pass\n",
@@ -96,6 +97,9 @@ def test_namespace_dd_exits_and_skips_private_models(
         yield SimpleNamespace(name="_forced_skip", ispkg=False)
 
     monkeypatch.setattr(pkgutil, "iter_modules", fake_iter)
+    # A prior test may have imported a different ``app.models``; drop it so the
+    # shell discovers the Post we just wrote under tmp_path.
+    purge_generated_app_modules()
     ns = build_namespace(app)
     assert "Post" in ns
     assert "Hidden" not in ns
