@@ -87,30 +87,22 @@ def index_to_dict(index: AppIndex, *, extras: dict[str, Any] | None = None) -> d
         "config_keys": list(index.config_keys),
         "config_files": {stem: str(path) for stem, path in sorted(index.config_files.items())},
         "models": {stem: str(path) for stem, path in sorted(index.models.items())},
-        "controllers": {
-            name: str(path) for name, path in sorted(index.controllers.items())
-        },
+        "controllers": {name: str(path) for name, path in sorted(index.controllers.items())},
         "controller_actions": _controller_actions(index),
         "translation_keys": list(index.translation_keys),
         "has_lang": index.has_lang,
         "middleware_aliases": list(index.middleware_aliases),
         "view_data": {
-            view: {
-                var: _dataclass_to_jsonable(info) for var, info in sorted(vars_.items())
-            }
+            view: {var: _dataclass_to_jsonable(info) for var, info in sorted(vars_.items())}
             for view, vars_ in sorted(index.view_data.items())
         },
         "view_helpers": [_dataclass_to_jsonable(h) for h in index.view_helpers],
         "view_shared": {
-            name: _dataclass_to_jsonable(info)
-            for name, info in sorted(index.view_shared.items())
+            name: _dataclass_to_jsonable(info) for name, info in sorted(index.view_shared.items())
         },
-        "vite_entries": {
-            name: str(path) for name, path in sorted(index.vite_entries.items())
-        },
+        "vite_entries": {name: str(path) for name, path in sorted(index.vite_entries.items())},
         "env_keys": {
-            name: _dataclass_to_jsonable(info)
-            for name, info in sorted(index.env_keys.items())
+            name: _dataclass_to_jsonable(info) for name, info in sorted(index.env_keys.items())
         },
         "tables": {name: _table_to_dict(table) for name, table in sorted(index.tables.items())},
         "directives": sorted(PRISM_DIRECTIVES),
@@ -139,9 +131,7 @@ def discover_extras(index: AppIndex) -> dict[str, Any]:
     validation = discover_validation_rules()
     return {
         "model_metadata": model_meta,
-        "relations": {
-            model: meta["relations"] for model, meta in model_meta.items()
-        },
+        "relations": {model: meta["relations"] for model, meta in model_meta.items()},
         "casts": list(KNOWN_CASTS),
         "components": components,
         "gates": gates,
