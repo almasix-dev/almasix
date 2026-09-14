@@ -173,14 +173,14 @@ def test_env_options_and_value_completion(progress_index) -> None:
     assert ctx.receiver == "QUEUE_CONNECTION"
     assert ctx.prefix == "re"
     labels = {
-        item.label for item in completions(progress_index, source, 0, len(source), language="dotenv")
+        item.label
+        for item in completions(progress_index, source, 0, len(source), language="dotenv")
     }
     assert "redis" in labels
 
     py = 'default = env("QUEUE_CONNECTION", "sy'
     py_labels = {
-        item.label
-        for item in completions(progress_index, py, 0, len(py), language="python")
+        item.label for item in completions(progress_index, py, 0, len(py), language="python")
     }
     assert "sync" in py_labels
 
