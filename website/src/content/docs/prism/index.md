@@ -5,6 +5,8 @@ description: Almasix's featherweight view engine for Python.
 
 # Prism
 
+<img src="../../../assets/prism.svg" alt="Prism" width="96" height="96" />
+
 Prism is Almasix's view engine — a **templating system for Python** with
 layouts, components, slots, and directives, compiled ahead of time for a thin
 render path.

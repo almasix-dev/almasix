@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" fill="none" role="img" aria-label="Prism">
+  <!-- currentColor silhouette of the approved mark. -->
+  <g fill="currentColor" shape-rendering="geometricPrecision">
+    <path opacity="0.9" d="M0 72.2H50V73.8H0Z"/>
+    <polygon points="75,29 28,117 122,117"/>
+    <polygon opacity="0.9" points="106,81 150,52 150,68"/>
+    <polygon opacity="0.7" points="106,81 150,68 150,88"/>
+    <polygon opacity="0.5" points="106,81 150,88 150,108"/>
+  </g>
+</svg>
