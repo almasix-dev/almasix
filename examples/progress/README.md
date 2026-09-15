@@ -192,9 +192,9 @@ curl -s "$BASE/api/posts/1/comments" | python -m json.tool
 | **M35** | `smith progress:rate-limiting` — `RateLimiter`, `throttle` middleware, login lockout, `/api/throttle-demo` |
 | **M37** | `smith progress:tokens` — Signet PATs, abilities, `/api/user`, `/signet/csrf-cookie` |
 | **M53** | `smith progress:dates` — Chrono parse / add / freeze |
-| **M45** | `smith progress:prism-lang` — `format_prism` idempotent; `almasix-dev/ide-support` prism + `smith prism:format` |
+| **M45** | `smith progress:prism-lang` — `format_prism` idempotent; `almasix-vscode` prism + `smith prism:format` |
 | **M46** | `smith progress:lsp` — index counts; `view()` + `[Controller, method]` nav; `{{ app_name }}` → controller data key; `route('')` names; Ctrl+Space in plain markup; indented `@if`…`@endif` snippets; `textDocument/formatting` → `format_prism`; `env()` / `${VAR}` keys; `DB.table` / `.where` columns; `user.email` model attrs |
-| **M47** | `smith progress:ide` — `ide:install` + `ide:stubs` + `ide:index`; JetBrains Almasix Idea (native); `almasix-dev/ide-support` |
+| **M47** | `smith progress:ide` — `ide:install` + `ide:stubs` + `ide:index`; JetBrains Almasix Idea (native); `almasix-vscode` + `almasix-idea` |
 | **M52** | `smith progress:sonar` — Sonar alias, private auth, `@almasix/sonar` (`almasix-dev/sonar`) |
 | **M40** | `User.display_name` accessor + `appends`, `Prunable` `Post`, `smith model:prune` |
 | **M41** | `/api/orm` relationship tour — pivot objects, `latest_of_many`, `with_default`, `chaperone`, aggregates |

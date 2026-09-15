@@ -1,4 +1,4 @@
-"""M45 — Prism language support: formatter (TextMate assets live in almasix-dev/ide-support)."""
+"""M45 — Prism language support: formatter (TextMate assets live in almasix-dev/almasix-vscode)."""
 
 from __future__ import annotations
 

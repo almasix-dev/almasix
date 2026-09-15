@@ -940,7 +940,7 @@ cd examples/progress && python smith progress:prism-lang
 
 ### M45 exit criteria
 
-- [x] TextMate grammar + language configuration + snippets in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support) (`prism/`)
+- [x] TextMate grammar + language configuration + snippets in [`almasix-dev/almasix-vscode`](https://github.com/almasix-dev/almasix-vscode) (`prism/`)
 - [x] Minimal tree-sitter grammar + highlights queries + README build notes
 - [x] `format_prism` library entry + `smith prism:format` (`--check` / write)
 - [x] Starlight **Prism language support**; living example `smith progress:prism-lang`
@@ -971,25 +971,27 @@ cd examples/progress && python smith progress:prism-lang
 ```bash
 pytest -q tests/smoke/test_m47_smoke.py
 cd examples/progress && python smith progress:ide
-# Editor packages (build / publish) live in almasix-dev/ide-support:
-#   https://github.com/almasix-dev/ide-support
+# Editor packages (build / publish):
+#   https://github.com/almasix-dev/almasix-vscode
+#   https://github.com/almasix-dev/almasix-idea
 ```
 
-Packages ship from [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support)
+Packages ship from [`almasix-vscode`](https://github.com/almasix-dev/almasix-vscode)
+and [`almasix-idea`](https://github.com/almasix-dev/almasix-idea)
 (VS Marketplace + JetBrains Marketplace + GitHub Release artifacts).
-VS Code uses `almasix-lsp`; JetBrains **0.2.0+** is native Almasix Idea
-(`smith ide:index --json`, no LSP4IJ). Starlight **Editor setup** holds the
-VS Code ↔ PyCharm parity matrix.
+VS Code **0.4.0+** is native index (`smith ide:index --json`, optional legacy LSP);
+JetBrains **0.3.2+** is native Almasix Idea (PyCharm + WebStorm, no LSP4IJ).
+Starlight **Editor setup** holds the VS Code ↔ PyCharm parity matrix.
 
 ### M47 exit criteria
 
-- [x] VS Code-family extension in `almasix-dev/ide-support` (Marketplace + Release VSIX)
-- [x] JetBrains plugin in `almasix-dev/ide-support` (Marketplace + Release zip)
+- [x] VS Code-family extension in `almasix-dev/almasix-vscode` (Marketplace + Release VSIX)
+- [x] JetBrains plugin in `almasix-dev/almasix-idea` (Marketplace + Release zip)
 - [x] JetBrains Prism editor: HTML colors layered under Prism overlays, HTML PSI root, `{{ }}` auto-close — asserted by editors-repo `./gradlew test`
 - [x] `smith ide:install` + `smith ide:stubs` + `smith ide:index --json`
 - [x] Living example `progress:ide` + smoke; board marks M47 complete
-- [x] Parity matrix documented (no silent gaps) — VS Code = LSP; JetBrains = native index
-- [x] Publish workflows for VS / JetBrains Marketplaces (`almasix-dev/ide-support`)
+- [x] Parity matrix documented (no silent gaps) — both IDEs = native index
+- [x] Publish workflows for VS / JetBrains Marketplaces (`almasix-vscode` / `almasix-idea`)
 
 ## M52 — Sonar realtime
 
