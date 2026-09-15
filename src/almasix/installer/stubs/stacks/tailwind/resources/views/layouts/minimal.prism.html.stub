@@ -9,15 +9,15 @@
 <body class="min-h-screen bg-paper text-ink antialiased flex flex-col">
   <header class="border-b border-slate-200/80 bg-white/80 backdrop-blur">
     <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-      <a href="/" class="text-lg font-semibold tracking-tight text-ink hover:text-brand">
+      <a href="{{ route('home') }}" class="text-lg font-semibold tracking-tight text-ink hover:text-brand">
         {{ name }}
       </a>
       <nav class="flex items-center gap-3 text-sm font-medium">
         @guest
-          <a class="text-muted hover:text-ink" href="/login">Log in</a>
-          <a class="rounded-lg bg-brand px-3 py-1.5 text-white shadow-sm hover:bg-brand-soft" href="/register">Sign up</a>
+          <a class="text-muted hover:text-ink" href="{{ route('login') }}">Log in</a>
+          <a class="rounded-lg bg-brand px-3 py-1.5 text-white shadow-sm hover:bg-brand-soft" href="{{ route('register') }}">Sign up</a>
         @else
-          <a class="text-muted hover:text-ink" href="/dashboard">Dashboard</a>
+          <a class="text-muted hover:text-ink" href="{{ route('dashboard') }}">Dashboard</a>
         @endguest
       </nav>
     </div>

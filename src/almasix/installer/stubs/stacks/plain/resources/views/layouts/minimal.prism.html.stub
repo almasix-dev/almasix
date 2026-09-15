@@ -8,13 +8,13 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="/">{{ name }}</a>
+    <a class="brand" href="{{ route('home') }}">{{ name }}</a>
     <nav class="site-nav">
       @guest
-        <a class="muted" href="/login">Log in</a>
-        <a class="btn" href="/register">Sign up</a>
+        <a class="muted" href="{{ route('login') }}">Log in</a>
+        <a class="btn" href="{{ route('register') }}">Sign up</a>
       @else
-        <a class="muted" href="/dashboard">Dashboard</a>
+        <a class="muted" href="{{ route('dashboard') }}">Dashboard</a>
       @endguest
     </nav>
   </header>

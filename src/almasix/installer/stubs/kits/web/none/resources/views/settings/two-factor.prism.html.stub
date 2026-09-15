@@ -2,10 +2,10 @@
 @section('title', 'Two-factor — {{ app_display }}')
 @section('content')
   <nav class="settings-nav">
-    <a href="/user/profile">Profile</a>
-    <a href="/user/password">Password</a>
-    <a href="/user/two-factor-authentication">Two-factor</a>
-    <a href="/user/appearance">Appearance</a>
+    <a href="{{ route('profile.show') }}">Profile</a>
+    <a href="{{ route('user-password.edit') }}">Password</a>
+    <a href="{{ route('two-factor.show') }}">Two-factor</a>
+    <a href="{{ route('appearance.edit') }}">Appearance</a>
   </nav>
 
   <h1 class="font-display" style="font-size:1.5rem;margin:0">Two-factor authentication</h1>

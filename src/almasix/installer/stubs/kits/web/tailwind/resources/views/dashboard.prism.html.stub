@@ -11,11 +11,11 @@
     You are signed in to {{ name }}@isset(team_name) · current team <span class="font-medium text-ink">{{ team_name }}</span>@endisset.
   </p>
   <div class="mt-8 grid gap-4 sm:grid-cols-2">
-    <a href="/user/profile" class="rounded-xl border border-line bg-surface p-5 transition hover:border-brand">
+    <a href="{{ route('profile.show') }}" class="rounded-xl border border-line bg-surface p-5 transition hover:border-brand">
       <h2 class="font-semibold">Settings</h2>
       <p class="mt-1 text-sm text-muted">Profile, password, appearance, and two-factor.</p>
     </a>
-    <a href="/teams" class="rounded-xl border border-line bg-surface p-5 transition hover:border-brand">
+    <a href="{{ route('teams.index') }}" class="rounded-xl border border-line bg-surface p-5 transition hover:border-brand">
       <h2 class="font-semibold">Teams</h2>
       <p class="mt-1 text-sm text-muted">Create, switch, invite, and manage members.</p>
     </a>

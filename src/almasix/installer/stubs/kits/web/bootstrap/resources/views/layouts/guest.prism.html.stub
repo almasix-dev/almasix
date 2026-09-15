@@ -13,7 +13,7 @@
 <body class="d-flex align-items-center min-vh-100">
   <div class="container" style="max-width:28rem">
     <div class="text-center mb-4">
-      <a href="/" class="font-display fs-3 fw-semibold text-decoration-none text-body">{{ name }}</a>
+      <a href="{{ route('home') }}" class="font-display fs-3 fw-semibold text-decoration-none text-body">{{ name }}</a>
     </div>
     <div class="card shadow-sm border-0">
       <div class="card-body p-4">

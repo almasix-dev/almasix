@@ -11,8 +11,8 @@
       <li class="list-group-item d-flex justify-content-between align-items-center">
         <span>{{ team.name }}</span>
         <span class="d-flex gap-2">
-          <form method="post" action="/teams/{{ team.id }}/switch">@csrf<button class="btn btn-sm btn-outline-secondary" type="submit">Switch</button></form>
-          <a class="btn btn-sm btn-outline-secondary" href="/teams/{{ team.id }}/settings">Settings</a>
+          <form method="post" action="{{ route('teams.switch', team) }}">@csrf<button class="btn btn-sm btn-outline-secondary" type="submit">Switch</button></form>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ route('teams.settings', team) }}">Settings</a>
         </span>
       </li>
     @empty
