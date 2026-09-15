@@ -18,8 +18,11 @@ For how these docs relate to package versions, see
 - **Starter-kit TOTP QR codes** — two-factor setup shows a scannable SVG QR
   (via `qrcode`) instead of a raw `otpauth://` URI; URI remains under
   “Can't scan?”
-- **Editor docs** — Open VSX install path for Cursor / VSCodium; Prism
-  `@section('name', 'value')` noted in LSP hover
+- **Editor packages** — docs and `smith ide:install` point at the split
+  [`almasix-vscode`](https://github.com/almasix-dev/almasix-vscode) and
+  [`almasix-idea`](https://github.com/almasix-dev/almasix-idea) repos; Open
+  VSX install path for Cursor / VSCodium; Prism `@section('name', 'value')`
+  noted in LSP hover
 
 Published on [PyPI](https://pypi.org/project/almasix/0.9.3/) after the `v0.9.3`
 GitHub Release.
