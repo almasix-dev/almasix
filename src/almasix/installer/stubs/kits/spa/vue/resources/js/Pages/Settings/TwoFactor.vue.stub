@@ -1,7 +1,15 @@
 <script setup>
 import { Head, useForm } from "@inertiajs/vue3";
 import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout.vue";
-defineProps({ enabled: Boolean, confirming: Boolean, qrUrl: String, secret: String, recoveryCodes: { type: Array, default: () => [] }, status: String });
+defineProps({
+  enabled: Boolean,
+  confirming: Boolean,
+  qrUrl: String,
+  qrSvg: String,
+  secret: String,
+  recoveryCodes: { type: Array, default: () => [] },
+  status: String,
+});
 const enable = useForm({});
 const confirm = useForm({ code: "" });
 const disable = useForm({});
@@ -19,8 +27,17 @@ const regen = useForm({});
           <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Enable</button>
         </form>
         <div v-if="confirming" class="mt-6 space-y-4">
-          <p v-if="qrUrl" class="break-all rounded-xl bg-paper p-3 font-mono text-xs">{{ qrUrl }}</p>
+          <p class="text-sm text-muted">Scan this QR code with your authenticator app, then enter a code to confirm.</p>
+          <div
+            v-if="qrSvg"
+            class="inline-block rounded-xl border border-line bg-white p-3 [&_svg]:block"
+            v-html="qrSvg"
+          />
           <p v-if="secret" class="text-sm text-muted">Secret: <code>{{ secret }}</code></p>
+          <details v-if="qrUrl" class="text-sm text-muted">
+            <summary class="cursor-pointer">Can't scan? Show setup URI</summary>
+            <p class="mt-2 break-all rounded-xl bg-paper p-3 font-mono text-xs text-ink">{{ qrUrl }}</p>
+          </details>
           <form class="space-y-4" @submit.prevent="confirm.post('/settings/two-factor/confirm')">
             <label class="block space-y-1.5"><span class="text-sm font-medium">Confirmation code</span><input v-model="confirm.code" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
             <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Confirm</button>

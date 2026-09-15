@@ -16,8 +16,17 @@
     <form method="post" action="{{ disable_url }}" style="display:inline">@csrf{!! method_field('DELETE') !!}<button class="btn btn-ghost" type="submit">Disable</button></form>
     <form method="post" action="{{ recovery_url }}" style="display:inline;margin-left:.5rem">@csrf<button class="btn-ghost" style="border:0;background:none;color:var(--brand);cursor:pointer" type="submit">Regenerate recovery codes</button></form>
   @elseif(pending)
-    <p class="muted" style="font-size:.875rem">Scan this URI, then confirm with a code.</p>
-    <code style="display:block;word-break:break-all;padding:.75rem;border:1px solid var(--line);border-radius:.5rem;font-size:.75rem;background:var(--surface)">{{ qr_uri }}</code>
+    <p class="muted" style="font-size:.875rem">Scan this QR code with your authenticator app, then confirm with a code.</p>
+    @isset(qr_svg)
+      <div style="display:inline-block;padding:.75rem;background:#fff;border:1px solid var(--line);border-radius:.75rem">{!! qr_svg !!}</div>
+    @endisset
+    <p class="muted" style="font-size:.75rem">Secret: <code>{{ secret }}</code></p>
+    @isset(qr_uri)
+      <details class="muted" style="font-size:.875rem">
+        <summary>Can't scan? Show setup URI</summary>
+        <code style="display:block;word-break:break-all;margin-top:.5rem;padding:.75rem;border:1px solid var(--line);border-radius:.5rem;font-size:.75rem;background:var(--surface)">{{ qr_uri }}</code>
+      </details>
+    @endisset
     <form method="post" action="{{ confirm_url }}" style="max-width:16rem;margin-top:1rem">@csrf
       <input type="text" name="code" required placeholder="6-digit code"/>
       <button class="btn" type="submit" style="margin-top:.5rem">Confirm</button>

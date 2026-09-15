@@ -1,7 +1,7 @@
 <script>
   import { Head, useForm } from "@inertiajs/svelte";
   import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout.svelte";
-  let { enabled = false, confirming = false, qrUrl = "", secret = "", recoveryCodes = [], status = "" } = $props();
+  let { enabled = false, confirming = false, qrUrl = "", qrSvg = "", secret = "", recoveryCodes = [], status = "" } = $props();
   const enable = useForm({});
   const confirm = useForm({ code: "" });
   const disable = useForm({});
@@ -21,8 +21,19 @@
       {/if}
       {#if confirming}
         <div class="mt-6 space-y-4">
-          {#if qrUrl}<p class="break-all rounded-xl bg-paper p-3 font-mono text-xs">{qrUrl}</p>{/if}
+          <p class="text-sm text-muted">Scan this QR code with your authenticator app, then enter a code to confirm.</p>
+          {#if qrSvg}
+            <div class="inline-block rounded-xl border border-line bg-white p-3 [&_svg]:block">
+              {@html qrSvg}
+            </div>
+          {/if}
           {#if secret}<p class="text-sm text-muted">Secret: <code>{secret}</code></p>{/if}
+          {#if qrUrl}
+            <details class="text-sm text-muted">
+              <summary class="cursor-pointer">Can't scan? Show setup URI</summary>
+              <p class="mt-2 break-all rounded-xl bg-paper p-3 font-mono text-xs text-ink">{qrUrl}</p>
+            </details>
+          {/if}
           <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); $confirm.post("/settings/two-factor/confirm"); }}>
             <label class="block space-y-1.5"><span class="text-sm font-medium">Confirmation code</span><input bind:value={$confirm.code} class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
             <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Confirm</button>

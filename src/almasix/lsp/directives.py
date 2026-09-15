@@ -25,7 +25,7 @@ PRISM_DIRECTIVES: dict[str, str] = {
     "while": "`@while(condition)` — while loop; `@endwhile`.",
     "endwhile": "`@endwhile` — closes a `@while` block.",
     "extends": "`@extends('layout')` — inherit a layout view.",
-    "section": "`@section('name')` — define a layout section; `@endsection` / `@show`.",
+    "section": "`@section('name')` … `@endsection` / `@show`, or inline `@section('name', 'value')`.",
     "endsection": "`@endsection` — closes a `@section` block.",
     "show": "`@show` — closes a section and yields it immediately.",
     "yield": "`@yield('name')` — render a section from a child view.",

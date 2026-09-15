@@ -20,12 +20,14 @@ class TwoFactorController(Controller):
         pending = bool(user and _attr(user, "two_factor_secret") and not enabled)
         secret = _attr(user, "two_factor_secret") if pending else ""
         qr = ""
+        qr_svg = ""
         if pending and secret:
             qr = totp_support.provisioning_uri(
                 secret,
                 account=str(_attr(user, "email")),
                 issuer=str(config("app.name", "{{ app_display }}")),
             )
+            qr_svg = totp_support.qr_svg(qr)
         recovery_plain = request.session.pull("two_factor_recovery_codes_plain")
         return view(
             "settings.two-factor",
@@ -35,6 +37,7 @@ class TwoFactorController(Controller):
                 "pending": pending,
                 "secret": secret,
                 "qr_uri": qr,
+                "qr_svg": qr_svg,
                 "recovery_codes": recovery_plain,
                 "status": request.session.get("status"),
                 "error": request.session.get("error"),

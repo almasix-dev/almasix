@@ -33,9 +33,17 @@
     </form>
   @elseif(pending)
     <div class="mt-6 max-w-lg space-y-4">
-      <p class="text-sm text-muted">Scan this URI in your authenticator, then confirm with a code.</p>
-      <code class="block break-all rounded-lg border border-line bg-paper p-3 text-xs">{{ qr_uri }}</code>
+      <p class="text-sm text-muted">Scan this QR code with your authenticator app, then confirm with a code.</p>
+      @isset(qr_svg)
+        <div class="inline-block rounded-xl border border-line bg-white p-3">{!! qr_svg !!}</div>
+      @endisset
       <p class="text-xs text-muted">Secret: <code>{{ secret }}</code></p>
+      @isset(qr_uri)
+        <details class="text-sm text-muted">
+          <summary class="cursor-pointer">Can't scan? Show setup URI</summary>
+          <code class="mt-2 block break-all rounded-lg border border-line bg-paper p-3 text-xs text-ink">{{ qr_uri }}</code>
+        </details>
+      @endisset
       <form method="post" action="{{ confirm_url }}" class="space-y-3">
         @csrf
         <input type="text" name="code" required placeholder="6-digit code" class="w-full rounded-lg border border-line bg-surface px-3 py-2"/>

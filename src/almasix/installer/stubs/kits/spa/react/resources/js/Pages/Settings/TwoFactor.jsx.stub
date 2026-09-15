@@ -3,7 +3,7 @@ import AuthenticatedLayout from "../../Layouts/AuthenticatedLayout";
 import TextInput from "../../Components/TextInput";
 import PrimaryButton from "../../Components/PrimaryButton";
 
-export default function TwoFactor({ enabled, confirming, qrUrl, secret, recoveryCodes = [], status }) {
+export default function TwoFactor({ enabled, confirming, qrUrl, qrSvg, secret, recoveryCodes = [], status }) {
   const enable = useForm({});
   const confirm = useForm({ code: "" });
   const disable = useForm({});
@@ -25,8 +25,20 @@ export default function TwoFactor({ enabled, confirming, qrUrl, secret, recovery
           ) : null}
           {confirming ? (
             <div className="mt-6 space-y-4">
-              {qrUrl ? <p className="break-all rounded-xl bg-paper p-3 font-mono text-xs">{qrUrl}</p> : null}
+              <p className="text-sm text-muted">Scan this QR code with your authenticator app, then enter a code to confirm.</p>
+              {qrSvg ? (
+                <div
+                  className="inline-block rounded-xl border border-line bg-white p-3 [&_svg]:block"
+                  dangerouslySetInnerHTML={{ __html: qrSvg }}
+                />
+              ) : null}
               {secret ? <p className="text-sm text-muted">Secret: <code className="text-ink">{secret}</code></p> : null}
+              {qrUrl ? (
+                <details className="text-sm text-muted">
+                  <summary className="cursor-pointer">Can&apos;t scan? Show setup URI</summary>
+                  <p className="mt-2 break-all rounded-xl bg-paper p-3 font-mono text-xs text-ink">{qrUrl}</p>
+                </details>
+              ) : null}
               <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); confirm.post("/settings/two-factor/confirm"); }}>
                 <TextInput label="Confirmation code" value={confirm.data.code} onChange={(e) => confirm.setData("code", e.target.value)} error={confirm.errors.code} />
                 <PrimaryButton className="w-auto" disabled={confirm.processing}>Confirm</PrimaryButton>

@@ -13,6 +13,7 @@ _IDEA_REPO = "https://github.com/almasix-dev/almasix-idea"
 _VSCODE_RELEASES = f"{_VSCODE_REPO}/releases"
 _IDEA_RELEASES = f"{_IDEA_REPO}/releases"
 _VS_MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=almasix.almasix"
+_OPEN_VSX = "https://open-vsx.org/extension/almasix/almasix"
 
 _VSCODE_EXTENSIONS = {
     "recommendations": [
@@ -81,7 +82,8 @@ def install_editor_config(
     result.notes.append(f"VS Code packages: {_VSCODE_REPO}")
     result.notes.append(f"JetBrains packages: {_IDEA_REPO}")
     result.notes.append(
-        f"VS Code: Marketplace {_VS_MARKETPLACE} or VSIX from {_VSCODE_RELEASES}"
+        f"VS Code: Marketplace {_VS_MARKETPLACE}; Cursor/VSCodium: Open VSX {_OPEN_VSX}; "
+        f"or VSIX from {_VSCODE_RELEASES}"
     )
     result.notes.append(
         f"JetBrains: Marketplace plugin com.almasix.ide or zip from {_IDEA_RELEASES}"

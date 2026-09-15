@@ -17,8 +17,17 @@
     <form method="post" action="{{ disable_url }}" class="d-inline">@csrf{!! method_field('DELETE') !!}<button class="btn btn-outline-danger btn-sm" type="submit">Disable</button></form>
     <form method="post" action="{{ recovery_url }}" class="d-inline ms-2">@csrf<button class="btn btn-link btn-sm" type="submit">Regenerate recovery codes</button></form>
   @elseif(pending)
-    <p class="small text-secondary mt-3">Scan this URI, then confirm with a code.</p>
-    <code class="d-block small p-2 bg-light border rounded mb-3">{{ qr_uri }}</code>
+    <p class="small text-secondary mt-3">Scan this QR code with your authenticator app, then confirm with a code.</p>
+    @isset(qr_svg)
+      <div class="d-inline-block p-3 bg-white border rounded mb-3">{!! qr_svg !!}</div>
+    @endisset
+    <p class="small text-secondary">Secret: <code>{{ secret }}</code></p>
+    @isset(qr_uri)
+      <details class="small text-secondary mb-3">
+        <summary>Can't scan? Show setup URI</summary>
+        <code class="d-block small p-2 bg-light border rounded mt-2">{{ qr_uri }}</code>
+      </details>
+    @endisset
     <form method="post" action="{{ confirm_url }}" class="col-md-4">@csrf
       <input type="text" name="code" required class="form-control mb-2" placeholder="6-digit code"/>
       <button class="btn btn-brand" type="submit">Confirm</button>

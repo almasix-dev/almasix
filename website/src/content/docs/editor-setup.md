@@ -13,8 +13,9 @@ Almasix editor packages live in dedicated repositories:
 The former monorepo [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support)
 is a redirect only.
 
-Install from the **Visual Studio Marketplace** / **JetBrains Marketplace**, or
-sideload a `.vsix` / `.zip` from each repo’s GitHub Releases.
+Install from the **Visual Studio Marketplace**, **Open VSX** (Cursor / VSCodium),
+or the **JetBrains Marketplace**, or sideload a `.vsix` / `.zip` from each
+repo’s GitHub Releases.
 
 For language features themselves, see [Prism language support](/prism-language/)
 and the [Language server](/language-server/) (optional legacy path on VS Code).
@@ -36,12 +37,16 @@ Then install the editor package for your IDE (below).
 Intelligence is **native** via `smith ide:index --json` (Idea parity). Optional
 legacy `almasix-lsp` when `almasix.useLsp` is enabled.
 
-1. Install **Almasix** from the
-   [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=almasix.almasix)
-   (publisher `almasix`), **or** **Install from VSIX…** with a release artifact
-   from [`almasix-vscode` Releases](https://github.com/almasix-dev/almasix-vscode/releases).
+1. Install **Almasix**:
+   - **VS Code** — [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=almasix.almasix)
+     (publisher `almasix`)
+   - **Cursor / VSCodium / Windsurf** — [Open VSX](https://open-vsx.org/extension/almasix/almasix)
+     (Extensions search), or **Install from VSIX…**
+   - Any client — `.vsix` from [`almasix-vscode` Releases](https://github.com/almasix-dev/almasix-vscode/releases)
 2. Open a folder that contains `bootstrap/app.py`
 3. Confirm the status bar shows **Almasix · N routes · M views**
+4. Optional — Prism explorer icons: **File Icon Theme → Almasix File Icons**
+   (Seti/Material often show an HTML icon for `*.prism.html` otherwise)
 
 Settings written by `smith ide:install`:
 
@@ -113,7 +118,7 @@ from this dump (VS Code optionally still uses `almasix-lsp` when enabled).
 | Prism file type / highlighting | `prism-html` TextMate | Native Prism + HTML layer |
 | Language intelligence | Native index (`ide:index`) | Native Kotlin + `ide:index` |
 | `smith` run configs | Task provider | Smith run configuration |
-| Marketplace | VS Marketplace | JetBrains Marketplace |
+| Marketplace | VS Marketplace + Open VSX | JetBrains Marketplace |
 
 Packaging and Marketplace publish live in
 [`almasix-vscode`](https://github.com/almasix-dev/almasix-vscode) and
