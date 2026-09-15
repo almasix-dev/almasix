@@ -16,29 +16,29 @@
     <aside class="sidebar border-end bg-white d-none d-md-flex flex-column">
       <div class="px-3 py-3 border-bottom d-flex align-items-center gap-2">
         <span class="rounded-circle bg-primary" style="width:.65rem;height:.65rem"></span>
-        <a href="/dashboard" class="font-display fw-semibold text-decoration-none text-body">{{ name }}</a>
+        <a href="{{ route('dashboard') }}" class="font-display fw-semibold text-decoration-none text-body">{{ name }}</a>
       </div>
       <nav class="nav flex-column p-2 small fw-medium">
-        <a class="nav-link" href="/dashboard">Dashboard</a>
-        <a class="nav-link" href="/notifications">Notifications</a>
-        <a class="nav-link" href="/user/profile">Settings</a>
-        <a class="nav-link" href="/teams">Teams</a>
+        <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a>
+        <a class="nav-link" href="{{ route('notifications.index') }}">Notifications</a>
+        <a class="nav-link" href="{{ route('profile.show') }}">Settings</a>
+        <a class="nav-link" href="{{ route('teams.index') }}">Teams</a>
       </nav>
       <div class="mt-auto border-top p-3 text-secondary small">Forge · {{ name }}</div>
     </aside>
     <div class="app-main d-flex flex-column">
       <header class="border-bottom px-3 py-2 d-flex justify-content-between align-items-center bg-white">
-        <a href="/dashboard" class="d-md-none font-display fw-semibold text-decoration-none text-body">{{ name }}</a>
+        <a href="{{ route('dashboard') }}" class="d-md-none font-display fw-semibold text-decoration-none text-body">{{ name }}</a>
         <div class="ms-auto d-flex align-items-center gap-3">
           @conduit('theme_toggle')
           <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Account</button>
             <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="/user/profile">Profile</a></li>
-              <li><a class="dropdown-item" href="/user/appearance">Appearance</a></li>
+              <li><a class="dropdown-item" href="{{ route('profile.show') }}">Profile</a></li>
+              <li><a class="dropdown-item" href="{{ route('appearance.edit') }}">Appearance</a></li>
               <li><hr class="dropdown-divider"/></li>
               <li>
-                <form method="post" action="/logout">
+                <form method="post" action="{{ route('logout') }}">
                   @csrf
                   <button class="dropdown-item text-danger" type="submit">Log out</button>
                 </form>

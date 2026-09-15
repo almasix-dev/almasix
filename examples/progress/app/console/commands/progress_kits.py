@@ -144,6 +144,25 @@ class ProgressKitsCommand(Command):
         migrations = list((root / "database" / "migrations").glob("*teams*"))
         assert migrations, "teams migration missing"
         assert (root / "app" / "support" / "totp.py").is_file()
+        # Nav / account links must use route() or url() so APP_BASE_PATH works.
+        views = root / "resources" / "views"
+        hard_coded = (
+            'href="/"',
+            'href="/dashboard"',
+            'href="/login"',
+            'href="/register"',
+            'href="/notifications"',
+            'href="/user/profile"',
+            'href="/teams"',
+            'action="/logout"',
+        )
+        for path in views.rglob("*.prism.html"):
+            text = path.read_text(encoding="utf-8")
+            for needle in hard_coded:
+                assert needle not in text, f"{path.relative_to(root)} still has {needle}"
+            if path.name == "app.prism.html":
+                assert "route('dashboard')" in text
+                assert "route('logout')" in text
 
     def _assert_spa(self, root: Path, frontend: str) -> None:
         pkg = (root / "package.json").read_text(encoding="utf-8")

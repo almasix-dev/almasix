@@ -17,12 +17,12 @@
 <body>
   <div class="shell">
     <aside class="sidebar">
-      <a class="brand" href="/dashboard"><span class="dot"></span>{{ name }}</a>
+      <a class="brand" href="{{ route('dashboard') }}"><span class="dot"></span>{{ name }}</a>
       <nav>
-        <a href="/dashboard">Dashboard</a>
-        <a href="/notifications">Notifications</a>
-        <a href="/user/profile">Settings</a>
-        <a href="/teams">Teams</a>
+        <a href="{{ route('dashboard') }}">Dashboard</a>
+        <a href="{{ route('notifications.index') }}">Notifications</a>
+        <a href="{{ route('profile.show') }}">Settings</a>
+        <a href="{{ route('teams.index') }}">Teams</a>
       </nav>
       <div class="muted" style="padding:1rem;font-size:.75rem;border-top:1px solid var(--line)">Forge · {{ name }}</div>
     </aside>
@@ -32,9 +32,9 @@
         <details>
           <summary class="btn btn-ghost" style="list-style:none">Account</summary>
           <div style="position:absolute;right:1rem;background:var(--surface);border:1px solid var(--line);border-radius:.75rem;padding:.35rem 0;min-width:10rem;z-index:20">
-            <a href="/user/profile" style="display:block;padding:.4rem 1rem">Profile</a>
-            <a href="/user/appearance" style="display:block;padding:.4rem 1rem">Appearance</a>
-            <form method="post" action="/logout">@csrf<button type="submit" class="btn-ghost" style="width:100%;text-align:left;border:0;padding:.4rem 1rem;color:#dc2626">Log out</button></form>
+            <a href="{{ route('profile.show') }}" style="display:block;padding:.4rem 1rem">Profile</a>
+            <a href="{{ route('appearance.edit') }}" style="display:block;padding:.4rem 1rem">Appearance</a>
+            <form method="post" action="{{ route('logout') }}">@csrf<button type="submit" class="btn-ghost" style="width:100%;text-align:left;border:0;padding:.4rem 1rem;color:#dc2626">Log out</button></form>
           </div>
         </details>
       </header>

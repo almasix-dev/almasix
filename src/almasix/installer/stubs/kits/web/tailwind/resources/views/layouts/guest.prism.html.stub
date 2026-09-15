@@ -14,7 +14,7 @@
 </head>
 <body class="min-h-full bg-paper text-ink antialiased font-sans">
   <div class="flex min-h-full flex-col items-center justify-center px-4 py-12">
-    <a href="/" class="mb-8 font-display text-2xl font-semibold tracking-tight text-ink hover:text-brand">{{ name }}</a>
+    <a href="{{ route('home') }}" class="mb-8 font-display text-2xl font-semibold tracking-tight text-ink hover:text-brand">{{ name }}</a>
     <div class="w-full max-w-md rounded-2xl border border-line bg-surface p-8 shadow-sm dark:shadow-none">
       @yield('content')
     </div>

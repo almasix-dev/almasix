@@ -23,11 +23,11 @@
           @endif
         </div>
         <div class="flex gap-2">
-          <form method="post" action="/teams/{{ team.id }}/switch">
+          <form method="post" action="{{ route('teams.switch', team) }}">
             @csrf
             <button type="submit" class="rounded-lg border border-line px-3 py-1.5 text-sm hover:border-brand">Switch</button>
           </form>
-          <a href="/teams/{{ team.id }}/settings" class="rounded-lg border border-line px-3 py-1.5 text-sm hover:border-brand">Settings</a>
+          <a href="{{ route('teams.settings', team) }}" class="rounded-lg border border-line px-3 py-1.5 text-sm hover:border-brand">Settings</a>
         </div>
       </li>
     @empty

@@ -15,7 +15,7 @@
 </head>
 <body>
   <div class="guest-wrap">
-    <a href="/" class="font-display" style="font-size:1.5rem;font-weight:600;color:var(--ink);margin-bottom:1.5rem">{{ name }}</a>
+    <a href="{{ route('home') }}" class="font-display" style="font-size:1.5rem;font-weight:600;color:var(--ink);margin-bottom:1.5rem">{{ name }}</a>
     <div class="guest-card">@yield('content')</div>
   </div>
 </body>

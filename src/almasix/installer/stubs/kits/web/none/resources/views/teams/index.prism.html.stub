@@ -11,8 +11,8 @@
       <li>
         <span>{{ team.name }}</span>
         <span style="display:flex;gap:.5rem">
-          <form method="post" action="/teams/{{ team.id }}/switch">@csrf<button class="btn btn-ghost" type="submit">Switch</button></form>
-          <a class="btn btn-ghost" href="/teams/{{ team.id }}/settings">Settings</a>
+          <form method="post" action="{{ route('teams.switch', team) }}">@csrf<button class="btn btn-ghost" type="submit">Switch</button></form>
+          <a class="btn btn-ghost" href="{{ route('teams.settings', team) }}">Settings</a>
         </span>
       </li>
     @empty

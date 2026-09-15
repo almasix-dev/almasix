@@ -9,13 +9,13 @@
 <body class="d-flex flex-column min-vh-100 bg-body-tertiary">
   <header class="border-bottom bg-white">
     <div class="container py-3 d-flex align-items-center justify-content-between">
-      <a href="/" class="fs-5 fw-semibold text-decoration-none text-dark">{{ name }}</a>
+      <a href="{{ route('home') }}" class="fs-5 fw-semibold text-decoration-none text-dark">{{ name }}</a>
       <nav class="d-flex align-items-center gap-3 small fw-medium">
         @guest
-          <a class="text-secondary text-decoration-none" href="/login">Log in</a>
-          <a class="btn btn-brand btn-sm" href="/register">Sign up</a>
+          <a class="text-secondary text-decoration-none" href="{{ route('login') }}">Log in</a>
+          <a class="btn btn-brand btn-sm" href="{{ route('register') }}">Sign up</a>
         @else
-          <a class="text-secondary text-decoration-none" href="/dashboard">Dashboard</a>
+          <a class="text-secondary text-decoration-none" href="{{ route('dashboard') }}">Dashboard</a>
         @endguest
       </nav>
     </div>

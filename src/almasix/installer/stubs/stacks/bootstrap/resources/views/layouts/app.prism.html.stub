@@ -9,11 +9,11 @@
 <body class="d-flex flex-column min-vh-100 bg-body-tertiary">
   <header class="border-bottom bg-white">
     <div class="container py-3 d-flex align-items-center justify-content-between">
-      <a href="/dashboard" class="fs-5 fw-semibold text-decoration-none text-dark">{{ name }}</a>
+      <a href="{{ route('dashboard') }}" class="fs-5 fw-semibold text-decoration-none text-dark">{{ name }}</a>
       <nav class="d-flex align-items-center gap-3 small fw-medium">
-        <a class="text-secondary text-decoration-none" href="/">Home</a>
-        <a class="text-secondary text-decoration-none" href="/dashboard">Dashboard</a>
-        <form method="post" action="/logout" class="d-inline">
+        <a class="text-secondary text-decoration-none" href="{{ route('home') }}">Home</a>
+        <a class="text-secondary text-decoration-none" href="{{ route('dashboard') }}">Dashboard</a>
+        <form method="post" action="{{ route('logout') }}" class="d-inline">
           @csrf
           <button type="submit" class="btn btn-link btn-sm text-secondary text-decoration-none p-0">Log out</button>
         </form>
