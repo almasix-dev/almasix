@@ -8,9 +8,12 @@ from pathlib import Path
 
 from almasix.lsp.index import find_app_root
 
-_IDE_SUPPORT_REPO = "https://github.com/almasix-dev/ide-support"
-_IDE_SUPPORT_RELEASES = f"{_IDE_SUPPORT_REPO}/releases"
+_VSCODE_REPO = "https://github.com/almasix-dev/almasix-vscode"
+_IDEA_REPO = "https://github.com/almasix-dev/almasix-idea"
+_VSCODE_RELEASES = f"{_VSCODE_REPO}/releases"
+_IDEA_RELEASES = f"{_IDEA_REPO}/releases"
 _VS_MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=almasix.almasix"
+_OPEN_VSX = "https://open-vsx.org/extension/almasix/almasix"
 
 _VSCODE_EXTENSIONS = {
     "recommendations": [
@@ -58,7 +61,8 @@ def install_editor_config(
     """Create ``.vscode`` recommendations/settings and a JetBrains note.
 
     Points at Marketplace / GitHub Releases for
-    `almasix-dev/ide-support <https://github.com/almasix-dev/ide-support>`_; does not
+    `almasix-vscode <https://github.com/almasix-dev/almasix-vscode>`_ and
+    `almasix-idea <https://github.com/almasix-dev/almasix-idea>`_; does not
     download packages itself.
     """
     root = Path(base_path) if base_path else find_app_root()
@@ -75,12 +79,14 @@ def install_editor_config(
     if jetbrains:
         _write_jetbrains_note(root, result, force=force)
 
-    result.notes.append(f"Editor packages: {_IDE_SUPPORT_REPO}")
+    result.notes.append(f"VS Code packages: {_VSCODE_REPO}")
+    result.notes.append(f"JetBrains packages: {_IDEA_REPO}")
     result.notes.append(
-        f"VS Code: Marketplace {_VS_MARKETPLACE} or VSIX from {_IDE_SUPPORT_RELEASES}"
+        f"VS Code: Marketplace {_VS_MARKETPLACE}; Cursor/VSCodium: Open VSX {_OPEN_VSX}; "
+        f"or VSIX from {_VSCODE_RELEASES}"
     )
     result.notes.append(
-        f"JetBrains: Marketplace plugin com.almasix.ide or zip from {_IDE_SUPPORT_RELEASES}"
+        f"JetBrains: Marketplace plugin com.almasix.ide or zip from {_IDEA_RELEASES}"
     )
     return result
 
@@ -152,16 +158,17 @@ def _write_jetbrains_note(root: Path, result: IdeInstallResult, *, force: bool) 
                 "",
                 "1. Install **Almasix** from the JetBrains Marketplace "
                 "(plugin id `com.almasix.ide`), **or** download a zip from",
-                f"   {_IDE_SUPPORT_RELEASES} and use",
+                f"   {_IDEA_RELEASES} and use",
                 "   **Settings → Plugins → ⚙ → Install Plugin from Disk…**",
-                "2. Restart when prompted. Plugin **0.2.0+** is native Almasix Idea:",
+                "2. Restart when prompted. Plugin **0.3.2+** is native Almasix Idea:",
                 "   completions come from `smith ide:index --json` (project interpreter),",
-                "   not LSP4IJ / almasix-lsp.",
+                "   not LSP4IJ / almasix-lsp. Supported IDEs: PyCharm + WebStorm.",
                 "3. Use **Almasix → Rebuild Index** after large route/config changes.",
                 "4. Run configurations for `smith serve` / `smith queue:work` ship",
                 "   with the plugin; or add them manually pointing at `.venv/bin/smith`.",
                 "",
-                f"Source and releases: {_IDE_SUPPORT_REPO}",
+                f"Source and releases: {_IDEA_REPO}",
+                f"VS Code extension: {_VSCODE_REPO}",
                 "",
             ]
         ),

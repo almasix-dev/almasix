@@ -21,12 +21,14 @@ class TwoFactorController(Controller):
         confirming = bool(user and _attr(user, "two_factor_secret") and not enabled)
         secret = _attr(user, "two_factor_secret") if confirming else ""
         qr = ""
+        qr_svg = ""
         if confirming and secret:
             qr = totp_support.provisioning_uri(
                 secret,
                 account=str(_attr(user, "email")),
                 issuer=str(config("app.name", "{{ app_display }}")),
             )
+            qr_svg = totp_support.qr_svg(qr)
         recovery_plain = request.session.pull("two_factor_recovery_codes_plain") or []
         return Inertia.render(
             "Settings/TwoFactor",
@@ -34,6 +36,7 @@ class TwoFactorController(Controller):
                 "enabled": enabled,
                 "confirming": confirming,
                 "qrUrl": qr or None,
+                "qrSvg": qr_svg or None,
                 "secret": secret or None,
                 "status": request.session.get("status"),
                 "recoveryCodes": recovery_plain,

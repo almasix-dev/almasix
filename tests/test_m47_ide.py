@@ -145,7 +145,9 @@ def test_install_writes_vscode_and_jetbrains(tmp_path: Path) -> None:
     assert any(p.name == "almasix-editor.md" for p in result.written)
     settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text(encoding="utf-8"))
     assert settings["files.associations"]["*.prism.html"] == "prism-html"
-    assert any("almasix-dev/ide-support" in n for n in result.notes)
+    assert any(
+        "almasix-dev/almasix-vscode" in n or "almasix-dev/almasix-idea" in n for n in result.notes
+    )
     assert any("Marketplace" in n for n in result.notes)
 
     # Second run without force keeps files.

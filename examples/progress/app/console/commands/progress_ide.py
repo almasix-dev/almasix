@@ -7,8 +7,10 @@ from almasix.ide.index import build_ide_index
 from almasix.ide.install import install_editor_config
 from almasix.ide.stubs import generate_stubs
 
-_IDE_SUPPORT_REPO = "https://github.com/almasix-dev/ide-support"
+_VSCODE_REPO = "https://github.com/almasix-dev/almasix-vscode"
+_IDEA_REPO = "https://github.com/almasix-dev/almasix-idea"
 _VS_MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=almasix.almasix"
+_OPEN_VSX = "https://open-vsx.org/extension/almasix/almasix"
 
 
 class ProgressIdeCommand(Command):
@@ -54,8 +56,10 @@ class ProgressIdeCommand(Command):
         )
         self.line("  jetbrains -> native Almasix Idea (ide:index; Ctrl-click keys/vars)")
 
-        self.line(f"  ide-support -> {_IDE_SUPPORT_REPO}")
+        self.line(f"  almasix-vscode -> {_VSCODE_REPO}")
+        self.line(f"  almasix-idea   -> {_IDEA_REPO}")
         self.line(f"  vscode  -> {_VS_MARKETPLACE}")
+        self.line(f"  openvsx -> {_OPEN_VSX}")
         self.line("  jetbrains -> Marketplace com.almasix.ide")
         self.line("  docs    -> Editor setup (Starlight) + VS Code ↔ PyCharm parity matrix")
         self.info("ide ok")

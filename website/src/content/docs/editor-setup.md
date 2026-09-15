@@ -3,40 +3,50 @@ title: Editor setup
 description: Install the Almasix VS Code extension and JetBrains plugin from the Marketplaces or GitHub Releases.
 ---
 
-Almasix editor packages live in
-[`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support): VS Code /
-Cursor / VSCodium extension, JetBrains plugin (Almasix Idea), and shared Prism
-grammar assets.
+Almasix editor packages live in dedicated repositories:
 
-Install from the **Visual Studio Marketplace** / **JetBrains Marketplace**, or
-sideload a `.vsix` / `.zip` from
-[GitHub Releases](https://github.com/almasix-dev/ide-support/releases).
+| Editor | Repository |
+| --- | --- |
+| VS Code / Cursor / VSCodium | [`almasix-dev/almasix-vscode`](https://github.com/almasix-dev/almasix-vscode) |
+| PyCharm / WebStorm (**Almasix Idea**) | [`almasix-dev/almasix-idea`](https://github.com/almasix-dev/almasix-idea) |
+
+The former monorepo [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support)
+is a redirect only.
+
+Install from the **Visual Studio Marketplace**, **Open VSX** (Cursor / VSCodium),
+or the **JetBrains Marketplace**, or sideload a `.vsix` / `.zip` from each
+repo’s GitHub Releases.
 
 For language features themselves, see [Prism language support](/prism-language/)
-and the [Language server](/language-server/) (VS Code family).
+and the [Language server](/language-server/) (optional legacy path on VS Code).
 
 ## Quick path
 
 ```bash title="terminal"
 # From an Almasix application root
-pip install 'almasix[lsp]'   # LSP for VS Code; index dump used by JetBrains too
+pip install almasix
 smith ide:install            # .vscode settings + JetBrains note
 smith ide:stubs              # .pyi for models + route name Literal
-smith ide:index --json       # symbol index (JetBrains rebuilds this automatically)
+smith ide:index --json       # symbol index (both IDEs rebuild from this)
 ```
 
 Then install the editor package for your IDE (below).
 
 ## VS Code / Cursor / VSCodium
 
-Intelligence comes from **`almasix-lsp`** (language server).
+Intelligence is **native** via `smith ide:index --json` (Idea parity). Optional
+legacy `almasix-lsp` when `almasix.useLsp` is enabled.
 
-1. Install **Almasix** from the
-   [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=almasix.almasix)
-   (publisher `almasix`), **or** **Install from VSIX…** with a release artifact
-   from [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support/releases).
+1. Install **Almasix**:
+   - **VS Code** — [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=almasix.almasix)
+     (publisher `almasix`)
+   - **Cursor / VSCodium / Windsurf** — [Open VSX](https://open-vsx.org/extension/almasix/almasix)
+     (Extensions search), or **Install from VSIX…**
+   - Any client — `.vsix` from [`almasix-vscode` Releases](https://github.com/almasix-dev/almasix-vscode/releases)
 2. Open a folder that contains `bootstrap/app.py`
-3. Confirm the status bar shows **Almasix** (not “LSP missing”)
+3. Confirm the status bar shows **Almasix · N routes · M views**
+4. Optional — Prism explorer icons: **File Icon Theme → Almasix File Icons**
+   (Seti/Material often show an HTML icon for `*.prism.html` otherwise)
 
 Settings written by `smith ide:install`:
 
@@ -44,13 +54,11 @@ Settings written by `smith ide:install`:
 - `almasix.pythonPath`: `${workspaceFolder}/.venv/bin/python`
 - Emmet / format-on-save for Prism
 
-Commands: **Almasix: Rebuild LSP Index**, **Show Application Info**,
-**Restart Language Server**.
+Commands: **Almasix: Rebuild Index**, **New…**, **New Model…**, **Show Application Info**.
 
-Full details: [`almasix-dev/ide-support` README](https://github.com/almasix-dev/ide-support)
-and [`vscode/README.md`](https://github.com/almasix-dev/ide-support/blob/main/vscode/README.md).
+Full details: [`almasix-vscode` README](https://github.com/almasix-dev/almasix-vscode).
 
-## JetBrains (PyCharm / IntelliJ)
+## JetBrains (PyCharm / WebStorm)
 
 Architecture is **native-heavy (Almasix Idea)**: Prism file type, native
 HTML+Prism highlighter, Smith run configs, and **Kotlin completions /
@@ -75,14 +83,14 @@ directives, Vite entries, Inertia pages, and Smith command names. Use
 1. Install **Almasix** from the JetBrains Marketplace (plugin id
    `com.almasix.ide`), **or** **Settings → Plugins → ⚙ → Install Plugin from
    Disk…** with a zip from
-   [`almasix-dev/ide-support` Releases](https://github.com/almasix-dev/ide-support/releases)
-   (plugin **0.2.0+** for the native Almasix Idea rewrite).
+   [`almasix-idea` Releases](https://github.com/almasix-dev/almasix-idea/releases)
+   (plugin **0.3.2+**; PyCharm / WebStorm only).
 2. Restart; open an Almasix app whose **project** interpreter has Almasix
    installed (or a `.venv` next to `bootstrap/app.py`).
 
 `smith ide:install` also writes `.idea/almasix-editor.md` with these steps.
 
-Full details: [`jetbrains/README.md`](https://github.com/almasix-dev/ide-support/blob/main/jetbrains/README.md).
+Full details: [`almasix-idea` README](https://github.com/almasix-dev/almasix-idea).
 
 ## Type stubs
 
@@ -100,17 +108,18 @@ smith ide:index --json
 ```
 
 Boots the application and dumps views, routes, config keys, models, gates,
-components, validation rules, and related symbols. JetBrains caches this dump;
-VS Code’s language server builds the same discovery path in-process.
+components, validation rules, and related symbols. Both IDEs cache / rebuild
+from this dump (VS Code optionally still uses `almasix-lsp` when enabled).
 
 ## VS Code ↔ PyCharm parity
 
 | Surface | VS Code | JetBrains |
 | --- | --- | --- |
 | Prism file type / highlighting | `prism-html` TextMate | Native Prism + HTML layer |
-| Language intelligence | `almasix-lsp` (LSP) | Native Kotlin + `ide:index` |
-| `smith` run configs | tasks.json via `ide:install` | Smith run configuration |
-| Marketplace | VS Marketplace | JetBrains Marketplace |
+| Language intelligence | Native index (`ide:index`) | Native Kotlin + `ide:index` |
+| `smith` run configs | Task provider | Smith run configuration |
+| Marketplace | VS Marketplace + Open VSX | JetBrains Marketplace |
 
 Packaging and Marketplace publish live in
-[`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).
+[`almasix-vscode`](https://github.com/almasix-dev/almasix-vscode) and
+[`almasix-idea`](https://github.com/almasix-dev/almasix-idea).

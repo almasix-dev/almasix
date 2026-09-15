@@ -104,7 +104,7 @@ by saving a document. Creating a view via the code action refreshes the index.
 
 Install the official extension from the Visual Studio Marketplace or a Release
 VSIX (see [Editor setup](/editor-setup/)). Source:
-[`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support).
+[`almasix-dev/almasix-vscode`](https://github.com/almasix-dev/almasix-vscode).
 
 Or, until the extension is installed, a minimal `settings.json`:
 

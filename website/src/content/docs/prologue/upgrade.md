@@ -9,6 +9,19 @@ dependency inside the project virtualenv (`pip install -U almasix==…` with the
 env active). To refresh the global `almasix` installer itself, use
 `pipx upgrade almasix` or `uv tool upgrade almasix`.
 
+## From 0.9.2 to 0.9.3
+
+1. **Bump the package**
+
+   ```bash title="terminal"
+   pip install -U almasix==0.9.3
+   ```
+
+2. **Two-factor QR** — starter kits render a scannable SVG QR for TOTP setup.
+   Existing apps that use the kit `totp` helper should add `qrcode>=7.4` to
+   their dependencies (`pip install 'qrcode>=7.4'`). No other layout changes
+   required.
+
 ## From 0.9.1 to 0.9.2
 
 1. **Bump the package**

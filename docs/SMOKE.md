@@ -40,7 +40,7 @@ Automated: `tests/smoke/test_m0_smoke.py`
 
 | ID | Check | Expected |
 | --- | --- | --- |
-| S1 | `almasix version` | Exit 0, `Almasix 0.9.2` |
+| S1 | `almasix version` | Exit 0, `Almasix 0.9.3` |
 | S2 | `almasix new <app>` | Tree with `smith`, `bootstrap/app.py`, controllers |
 | S3 | Invalid name / non-empty dir | Non-zero exit |
 | S4 | `GET /` on generated ASGI | `200` + Welcome JSON |
@@ -872,7 +872,7 @@ cd examples/progress && python smith progress:deploy
 - [x] Default `GET /up` health probe (`ApplicationBuilder.with_health`); outside Almasix middleware stacks
 - [x] Starlight **Deployment** page (env, serve, optimize, migrate/queues, bare metal, container, releasing)
 - [x] `examples/deploy/` Dockerfile + compose (web + queue worker + Postgres, `/up` healthcheck)
-- [x] Package version **0.9.2** in `pyproject.toml` / `__version__` (tag `v0.9.2` to publish)
+- [x] Package version **0.9.3** in `pyproject.toml` / `__version__` (tag `v0.9.3` to publish)
 - [x] Living example: `smith progress:deploy`; the board marks M38 complete
 
 ---
@@ -940,7 +940,7 @@ cd examples/progress && python smith progress:prism-lang
 
 ### M45 exit criteria
 
-- [x] TextMate grammar + language configuration + snippets in [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support) (`prism/`)
+- [x] TextMate grammar + language configuration + snippets in [`almasix-dev/almasix-vscode`](https://github.com/almasix-dev/almasix-vscode) (`prism/`)
 - [x] Minimal tree-sitter grammar + highlights queries + README build notes
 - [x] `format_prism` library entry + `smith prism:format` (`--check` / write)
 - [x] Starlight **Prism language support**; living example `smith progress:prism-lang`
@@ -971,25 +971,27 @@ cd examples/progress && python smith progress:prism-lang
 ```bash
 pytest -q tests/smoke/test_m47_smoke.py
 cd examples/progress && python smith progress:ide
-# Editor packages (build / publish) live in almasix-dev/ide-support:
-#   https://github.com/almasix-dev/ide-support
+# Editor packages (build / publish):
+#   https://github.com/almasix-dev/almasix-vscode
+#   https://github.com/almasix-dev/almasix-idea
 ```
 
-Packages ship from [`almasix-dev/ide-support`](https://github.com/almasix-dev/ide-support)
+Packages ship from [`almasix-vscode`](https://github.com/almasix-dev/almasix-vscode)
+and [`almasix-idea`](https://github.com/almasix-dev/almasix-idea)
 (VS Marketplace + JetBrains Marketplace + GitHub Release artifacts).
-VS Code uses `almasix-lsp`; JetBrains **0.2.0+** is native Almasix Idea
-(`smith ide:index --json`, no LSP4IJ). Starlight **Editor setup** holds the
-VS Code ↔ PyCharm parity matrix.
+VS Code **0.4.0+** is native index (`smith ide:index --json`, optional legacy LSP);
+JetBrains **0.3.2+** is native Almasix Idea (PyCharm + WebStorm, no LSP4IJ).
+Starlight **Editor setup** holds the VS Code ↔ PyCharm parity matrix.
 
 ### M47 exit criteria
 
-- [x] VS Code-family extension in `almasix-dev/ide-support` (Marketplace + Release VSIX)
-- [x] JetBrains plugin in `almasix-dev/ide-support` (Marketplace + Release zip)
+- [x] VS Code-family extension in `almasix-dev/almasix-vscode` (Marketplace + Release VSIX)
+- [x] JetBrains plugin in `almasix-dev/almasix-idea` (Marketplace + Release zip)
 - [x] JetBrains Prism editor: HTML colors layered under Prism overlays, HTML PSI root, `{{ }}` auto-close — asserted by editors-repo `./gradlew test`
 - [x] `smith ide:install` + `smith ide:stubs` + `smith ide:index --json`
 - [x] Living example `progress:ide` + smoke; board marks M47 complete
-- [x] Parity matrix documented (no silent gaps) — VS Code = LSP; JetBrains = native index
-- [x] Publish workflows for VS / JetBrains Marketplaces (`almasix-dev/ide-support`)
+- [x] Parity matrix documented (no silent gaps) — both IDEs = native index
+- [x] Publish workflows for VS / JetBrains Marketplaces (`almasix-vscode` / `almasix-idea`)
 
 ## M52 — Sonar realtime
 

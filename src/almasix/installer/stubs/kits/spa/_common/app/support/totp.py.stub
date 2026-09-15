@@ -1,4 +1,4 @@
-"""TOTP helpers (RFC 6238) — stdlib only, no pyotp."""
+"""TOTP helpers (RFC 6238) — no pyotp; QR SVGs via the ``qrcode`` package."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import base64
 import hashlib
 import hmac
 import json
+import re
 import secrets
 import struct
 import time
@@ -24,6 +25,27 @@ def provisioning_uri(secret: str, *, account: str, issuer: str = "{{ app_display
     label = quote(f"{issuer}:{account}")
     iss = quote(issuer)
     return f"otpauth://totp/{label}?secret={secret}&issuer={iss}&algorithm=SHA1&digits=6&period=30"
+
+
+def qr_svg(data: str, *, box_size: int = 6, border: int = 2, size: int = 192) -> str:
+    """Return an SVG QR code for ``data`` (typically a provisioning URI)."""
+    import qrcode
+    from qrcode.image.svg import SvgPathImage
+
+    qr = qrcode.QRCode(
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=box_size,
+        border=border,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    raw = qr.make_image(image_factory=SvgPathImage).to_string().decode("utf-8")
+    return re.sub(
+        r'\swidth="[^"]*"\sheight="[^"]*"',
+        f' width="{size}" height="{size}"',
+        raw,
+        count=1,
+    )
 
 
 def _normalize_secret(secret: str) -> bytes:

@@ -565,7 +565,7 @@ def _milestones() -> list[dict]:
             "status": "complete",
             "proof": [
                 "smith progress:prism-lang",
-                "almasix-dev/ide-support prism TextMate + tree-sitter",
+                "almasix-dev/almasix-vscode prism TextMate + tree-sitter",
                 "smith prism:format",
             ],
         },
@@ -597,7 +597,7 @@ def _milestones() -> list[dict]:
             "proof": [
                 "smith progress:ide",
                 "smith ide:install + ide:stubs + ide:index --json",
-                "almasix-dev/ide-support (VS Marketplace + JetBrains Marketplace)",
+                "almasix-vscode + almasix-idea (VS Marketplace + JetBrains Marketplace)",
                 "JetBrains Almasix Idea (native; ide:index; Ctrl-click config keys + {{ vars }})",
                 "VS Code ↔ PyCharm parity matrix (Editor setup)",
             ],
