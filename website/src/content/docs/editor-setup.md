@@ -56,7 +56,9 @@ Settings written by `smith ide:install`:
 
 Commands: **Almasix: Rebuild Index**, **New…**, **New Model…**, **Show Application Info**.
 
-Full details: [`almasix-vscode` README](https://github.com/almasix-dev/almasix-vscode).
+Full guide: [`almasix-vscode` README](https://github.com/almasix-dev/almasix-vscode#readme)
+(architecture, features, settings, troubleshooting). Parity with JetBrains:
+[PARITY.md](https://github.com/almasix-dev/almasix-vscode/blob/main/PARITY.md).
 
 ## JetBrains (PyCharm / WebStorm)
 
@@ -90,7 +92,8 @@ directives, Vite entries, Inertia pages, and Smith command names. Use
 
 `smith ide:install` also writes `.idea/almasix-editor.md` with these steps.
 
-Full details: [`almasix-idea` README](https://github.com/almasix-dev/almasix-idea).
+Full guide: [`almasix-idea` README](https://github.com/almasix-dev/almasix-idea#readme)
+(architecture, features, menus, troubleshooting).
 
 ## Type stubs
 
