@@ -116,5 +116,5 @@ def test_m55_docs_and_package_exist() -> None:
     sidebar = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
     assert "inertia" in sidebar
     docs = (DOCS / "inertia.md").read_text(encoding="utf-8")
-    assert "lazy" in docs.lower() and "defer" in docs.lower()
-    assert "APP_BASE_PATH" in docs or "subpath" in docs.lower()
+    # Full guide lives on the package docs site; framework page is a stub.
+    assert "inertia.almasix.com" in docs
