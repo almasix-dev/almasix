@@ -41,9 +41,10 @@ if (image) {
 }
 
 const usePublic = Boolean(publicDark);
+const copyOnly = !usePublic && !darkImage && !lightImage && !rawHtml;
 ---
 
-<div class="hero">
+<div class:list={['hero', { 'hero--copy-only': copyOnly }]}>
 	{
 		usePublic && publicDark && (
 			<img
@@ -155,6 +156,15 @@ const usePublic = Boolean(publicDark);
 				grid-template-columns: 7fr 4fr;
 				gap: 3%;
 				padding-block: clamp(2.5rem, calc(1rem + 10vmin), 10rem);
+			}
+
+			.hero.hero--copy-only {
+				grid-template-columns: 1fr;
+				padding-block: clamp(2rem, calc(0.75rem + 6vmin), 5rem);
+			}
+
+			.hero.hero--copy-only .copy > * {
+				max-width: 42rem;
 			}
 
 			.hero > img,

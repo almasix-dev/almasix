@@ -1,160 +1,59 @@
 ---
-title: Almasix
-description: An elegant Python web framework for expressive, async applications.
+title: Documentation
+description: Official documentation for the Almasix Python web framework — guides, reference, and the path from install to production.
 template: splash
 hero:
-  tagline: Build beautiful web applications with a familiar structure, a powerful ORM, and the Smith CLI — in Python.
-  image:
-    alt: Almasix
-    dark: ../../assets/almasix-dark.svg
-    light: ../../assets/almasix-light.svg
+  tagline: Guides, reference, and the path from install to production.
   actions:
     - text: Get started
       link: /installation/
       icon: right-arrow
-    - text: Read the docs
+    - text: How to read these docs
       link: /prologue/introduction/
       icon: open-book
       variant: secondary
 ---
 
-import { Card, CardGrid, LinkCard, Tabs, TabItem } from '@astrojs/starlight/components';
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-Almasix is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable, creative experience. Almasix eases common tasks used in many web projects — routing, validation, the database layer, views, queues, and more — with first-class `async`/`await` for ASGI.
-
-You do not need prior framework experience. Create apps with `almasix new`. Drive them with `python smith …`. Write controllers, Articulate models, Prism views, and migrations in a layout that stays navigable as the app grows. New here? Start with [How to read these docs](/prologue/introduction/). Almasix is [inspired by Laravel](/prologue/introduction/#inspired-by-laravel) — credit and link live there.
-
-```bash title="terminal"
-pipx install almasix
-almasix new blog
-cd blog
-# activate the app .venv (or pass --install to almasix new), then:
-python smith serve
-```
-
-## Why Almasix?
-
-<CardGrid>
-	<Card title="Familiar structure" icon="puzzle">
-		`app/`, `routes/`, `config/`, `database/`, and `bootstrap/app.py` — a layout you can navigate on day one.
-	</Card>
-	<Card title="Articulate ORM" icon="document">
-		Active Record models, a fluent query builder, relationships, migrations, and seeders — all async.
-	</Card>
-	<Card title="Prism views" icon="star">
-		A template engine with layouts, sections, components, and slots, compiled to Python and cached.
-	</Card>
-	<Card title="Smith CLI" icon="rocket">
-		Generate controllers, models, and migrations. Serve your app. Open Loupe. Migrate and seed your database.
-	</Card>
-	<Card title="Middleware & HTTP" icon="setting">
-		Register middleware in `bootstrap/app.py`, define routes in `routes/web.py` and `routes/api.py`, and keep FastAPI out of your application code.
-	</Card>
-	<Card title="Async all the way" icon="approve-check">
-		Controllers, queries, queue jobs, and scheduled tasks are coroutines — no thread pool bolted on afterwards.
-	</Card>
-</CardGrid>
-
-## A first look
-
-Four files are enough for a page backed by the database.
-
-<Tabs>
-	<TabItem label="routes/web.py">
-		```python title="examples/index.py"
-		# routes/web.py
-		from app.http.controllers.flight_controller import FlightController
-
-		from almasix.routing import Route
-
-		with Route.group(middleware=["web"]):
-			Route.get("/flights", [FlightController, "index"])
-		```
-	</TabItem>
-	<TabItem label="Controller">
-		```python title="examples/index.py"
-		# app/http/controllers/flight_controller.py
-		from app.models.flight import Flight
-
-		from almasix.http import Controller
-		from almasix.prism import view
-
-
-		class FlightController(Controller):
-			async def index(self):
-				flights = await Flight.query().with_("airline").get()
-				return view("flights.index", {"flights": flights})
-		```
-	</TabItem>
-	<TabItem label="Model">
-		```python title="examples/index.py"
-		# app/models/flight.py
-		from almasix.orm import Model, relation
-
-
-		class Flight(Model):
-			fillable = ("name", "airline_id")
-
-			@relation
-			def airline(self):
-				from app.models.airline import Airline
-
-				return self.belongs_to(Airline)
-		```
-	</TabItem>
-	<TabItem label="View">
-		```html title="resources/views/examples/index.prism.html"
-		<!-- resources/views/flights/index.prism.html -->
-		@extends("layouts.app")
-
-		@section("content")
-			<ul>
-				@foreach(flights as flight)
-					<li>{{ flight.name }} — {{ flight.airline.name }}</li>
-				@endforeach
-			</ul>
-		@endsection
-		```
-	</TabItem>
-</Tabs>
-
-## Batteries included
-
-<CardGrid>
-	<LinkCard title="Routing" href="/routing/" description="Route groups, parameters, model binding, and named routes." />
-	<LinkCard title="Articulate ORM" href="/articulate/" description="Models, relationships, casts, scopes, and serialization." />
-	<LinkCard title="Prism views" href="/prism/" description="Layouts, components, slots, and directives." />
-	<LinkCard title="Validation" href="/validation/" description="Validate requests with rules, messages, and custom logic." />
-	<LinkCard title="Authentication" href="/authentication/" description="Guards, providers, sessions, and password hashing." />
-	<LinkCard title="Queues" href="/queues/" description="Dispatch jobs, run workers, retry, and handle failures." />
-	<LinkCard title="Scheduling" href="/scheduling/" description="Run recurring work without writing cron entries." />
-	<LinkCard title="Cache" href="/cache/" description="Stores, tags, locks, and atomic operations." />
-	<LinkCard title="Mail & notifications" href="/mail/" description="Compose, queue, and deliver messages over multiple channels." />
-	<LinkCard title="Helpers & collections" href="/collections/" description="Fluent collections, string helpers, and array utilities." />
-</CardGrid>
-
-## Drive everything with Smith
-
-Smith is the CLI that ships inside every application. It generates code, runs
-migrations, serves the app, and opens Loupe — a REPL with your application
-already booted.
-
-```bash title="terminal"
-python smith list                     # every command available to your app
-python smith make:controller PostController
-python smith make:model Post -m       # model plus a migration
-python smith migrate                  # run pending migrations
-python smith db:seed                  # populate the database
-python smith queue:work               # process queued jobs
-python smith loupe                    # a REPL inside your booted app
-```
+This is the documentation for Almasix. For the product story, ecosystem packages, and editor tooling, see [almasix.com](https://almasix.com).
 
 ## Start here
 
 <CardGrid>
-	<LinkCard title="How to read these docs" href="/prologue/introduction/" description="Nouns, journey order, and what to open first." />
-	<LinkCard title="Installation" href="/installation/" description="Create a new Almasix application and start the development server." />
-	<LinkCard title="Directory Structure" href="/structure/" description="Find your way around a fresh application." />
-	<LinkCard title="Routing" href="/routing/" description="Map URLs to controllers — the first Basics page." />
-	<LinkCard title="Deployment" href="/deployment/" description="Run in production with workers, health checks, and env." />
+	<LinkCard
+		title="How to read these docs"
+		href="/prologue/introduction/"
+		description="Nouns, journey order, and what to open first."
+	/>
+	<LinkCard
+		title="Installation"
+		href="/installation/"
+		description="Create an app with almasix new and start the development server."
+	/>
+	<LinkCard
+		title="Directory structure"
+		href="/structure/"
+		description="Find your way around a fresh application."
+	/>
+	<LinkCard
+		title="Routing"
+		href="/routing/"
+		description="Map URLs to controllers — the first Basics page."
+	/>
+</CardGrid>
+
+## Browse by topic
+
+<CardGrid>
+	<LinkCard title="Articulate ORM" href="/articulate/" description="Models, relationships, migrations, and seeders." />
+	<LinkCard title="Prism views" href="/prism/" description="Layouts, components, slots, and directives." />
+	<LinkCard title="Smith CLI" href="/console/" description="Generate code, migrate, serve, and open Loupe." />
+	<LinkCard title="Validation" href="/validation/" description="Rules, messages, and form requests." />
+	<LinkCard title="Authentication" href="/authentication/" description="Guards, sessions, and password hashing." />
+	<LinkCard title="Queues" href="/queues/" description="Jobs, workers, retries, and failures." />
+	<LinkCard title="Scheduling" href="/scheduling/" description="Recurring work without hand-rolled cron." />
+	<LinkCard title="Cache" href="/cache/" description="Stores, tags, locks, and atomic ops." />
+	<LinkCard title="Mail & notifications" href="/mail/" description="Compose, queue, and deliver messages." />
+	<LinkCard title="Deployment" href="/deployment/" description="Production workers, health checks, and env." />
 </CardGrid>
