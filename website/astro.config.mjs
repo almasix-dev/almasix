@@ -18,7 +18,7 @@ export default defineConfig({
 		starlight({
 			title: 'Almasix',
 			description:
-				'The elegant Python web framework with Articulate, Prism, and the Smith CLI.',
+				'Official documentation for Almasix — Articulate, Prism, Smith, and the rest of the framework.',
 			logo: {
 				light: './src/assets/almasix-banner-light.svg',
 				dark: './src/assets/almasix-banner-dark.svg',
