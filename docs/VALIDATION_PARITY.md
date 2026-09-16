@@ -1,7 +1,7 @@
 # Available validation rules
 
 Machine-checked catalog of Almasix validation rules. User docs:
-[Validation](../website/src/content/docs/validation.md).
+[Validation](https://docs.almasix.com/validation/).
 
 | Rule | Status | Docs |
 | --- | --- | --- |

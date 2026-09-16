@@ -13,8 +13,9 @@ help:
 	@echo "make test-cov-ide       - M47 ide package coverage fail-under 98%"
 	@echo "make test-orm-engines   - M44 dialect conformance (ALMASIX_TEST_DB=sqlite|pgsql|mysql)"
 	@echo "make lint               - ruff check + format --check (pinned)"
-	@echo "make docs               - Starlight docs site (dev server)"
-	@echo "make docs-build         - build Starlight docs site"
+	@echo "make docs               - clone tip: docs live in almasix-docs (see README)"
+	@echo "make docs-build         - (removed) build Starlight in almasix-dev/almasix-docs"
+
 
 smoke:
 	$(PYTEST) -q tests/smoke -m smoke
@@ -46,7 +47,9 @@ lint:
 	$(PYTHON) -m ruff format --check src tests
 
 docs:
-	cd website && (npx astro dev stop >/dev/null 2>&1 || true) && npm run dev
+	@echo "App docs live in https://github.com/almasix-dev/almasix-docs"
+	@echo "  git clone git@github.com:almasix-dev/almasix-docs.git && cd almasix-docs && npm ci && npm run dev"
+	@echo "Hosted: https://docs.almasix.com/"
 
 docs-build:
-	cd website && npm run build
+	@echo "Build docs in the almasix-docs clone: cd almasix-docs && npm ci && npm run build"
