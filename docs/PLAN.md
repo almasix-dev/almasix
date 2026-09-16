@@ -1432,7 +1432,7 @@ Laravel [Starter Kits](https://laravel.com/docs/starter-kits) — opt-in applica
 
 Livewire 4–class stack in async Python: Prism components, Alpine `$wire`, morph updates, CSRF-safe wire protocol, islands, client `wire:bind` / `wire:text` for JS-feel UX.
 
-**Status: complete (extracted to [`almasix-dev/conduit`](https://github.com/almasix-dev/conduit) / PyPI `almasix-conduit`).** Formerly sketched as “Flux”; renamed **Conduit** to avoid collision with Livewire’s Flux UI kit and to nest under `almasix.conduit`.
+**Status: complete (extracted to [`almasix-dev/conduit`](https://github.com/almasix-dev/almasix-conduit) / PyPI `almasix-conduit`).** Formerly sketched as “Flux”; renamed **Conduit** to avoid collision with Livewire’s Flux UI kit and to nest under `almasix.conduit`.
 
 - Import: `from almasix.conduit import Component, Conduit, conduit`
 - Extra `almasix[conduit]`; `POST /conduit/update`; client `/conduit/conduit.js`
@@ -1447,7 +1447,7 @@ Livewire 4–class stack in async Python: Prism components, Alpine `$wire`, morp
 
 Server-only Inertia.js adapter compatible with official clients. **No forked client.** SSR via Inertia’s Node SSR protocol.
 
-**Status: complete (extracted to [`almasix-dev/inertia`](https://github.com/almasix-dev/inertia) / PyPI `almasix-inertia`).**
+**Status: complete (extracted to [`almasix-dev/inertia`](https://github.com/almasix-dev/almasix-inertia) / PyPI `almasix-inertia`).**
 
 - PyPI `almasix-inertia` / extra `almasix[inertia]`
 - `Inertia.render` Responsable; `X-Inertia` JSON; asset version 409; shared + partial props
@@ -1886,7 +1886,7 @@ Ship:
 
 **Gate:** default docs and demo use Sonar server + `@almasix/sonar`; private channel works; Pusher / Ably / Socket.IO alternatives documented; smoke + progress proof.
 
-**Status: complete (2026-09-10).** Driver alias `sonar` → websocket broadcaster; npm package `@almasix/sonar` at [`almasix-dev/sonar`](https://github.com/almasix-dev/sonar); Starlight Broadcasting leads with Sonar; `smith progress:sonar`; board M52 complete.
+**Status: complete (2026-09-10).** Driver alias `sonar` → websocket broadcaster; npm package `@almasix/sonar` at [`almasix-dev/sonar`](https://github.com/almasix-dev/almasix-sonar); Starlight Broadcasting leads with Sonar; `smith progress:sonar`; board M52 complete.
 
 ## Dates and time (M53)
 

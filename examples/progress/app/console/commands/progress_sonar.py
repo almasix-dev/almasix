@@ -13,7 +13,7 @@ from app.models.user import User
 from app.support.demo_db import ensure_demo_database
 
 _SONAR_NPM = "https://www.npmjs.com/package/@almasix/sonar"
-_SONAR_REPO = "https://github.com/almasix-dev/sonar"
+_SONAR_REPO = "https://github.com/almasix-dev/almasix-sonar"
 
 
 class FakeSocket:

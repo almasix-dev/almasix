@@ -43,7 +43,7 @@ usual.
 | Event contracts | `src/almasix/broadcasting/events.py` — `ShouldBroadcast`, mixins |
 | Drivers | `src/almasix/broadcasting/broadcasters/` — log, null, websocket/sonar, redis, pusher |
 | Sonar socket | `src/almasix/broadcasting/sockets.py`, `endpoints.py` |
-| Browser client | [`@almasix/sonar`](https://www.npmjs.com/package/@almasix/sonar) ([`almasix-dev/sonar`](https://github.com/almasix-dev/sonar)) |
+| Browser client | [`@almasix/sonar`](https://www.npmjs.com/package/@almasix/sonar) ([`almasix-dev/sonar`](https://github.com/almasix-dev/almasix-sonar)) |
 | Queued broadcast | `src/almasix/broadcasting/jobs.py` — `BroadcastEvent` |
 | Model broadcasting | `src/almasix/broadcasting/model.py` — `BroadcastsEvents` |
 | Signing | `src/almasix/broadcasting/signing.py` |
@@ -155,7 +155,7 @@ Private and presence channels POST `/broadcasting/auth` with cookies
 (`credentials: "include"`). The socket id is available as `sonar.socketId` for
 `to_others()`.
 
-See the [`@almasix/sonar` README](https://github.com/almasix-dev/sonar#readme) for options (`wsUrl`, `forceTLS`, reconnect).
+See the [`@almasix/sonar` README](https://github.com/almasix-dev/almasix-sonar#readme) for options (`wsUrl`, `forceTLS`, reconnect).
 
 ### Raw WebSocket (no package)
 
