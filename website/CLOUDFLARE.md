@@ -46,3 +46,19 @@ npx wrangler deploy   # needs Cloudflare auth
 First-party package docs (Conduit, Inertia, Permission) use the same Wrangler
 assets pattern in each package repo’s `website/`, on hosts like
 `conduit.almasix.com`. See those repos and the hub [`CLOUDFLARE.md`](https://github.com/almasix-dev/almasix-website/blob/main/CLOUDFLARE.md).
+
+## Package path redirects (zone Redirect Rules)
+
+After package docs hosts are live, add zone Redirect Rules so old framework paths keep working:
+
+| When (filter) | Then (301) |
+|---------------|------------|
+| `http.host eq "docs.almasix.com" and starts_with(http.request.uri.path, "/inertia")` | `concat("https://inertia.almasix.com", http.request.uri.path)` — or map `/inertia` → `/` and `/inertia/` → `/` |
+| Same for `/conduit` → `https://conduit.almasix.com` | Prefer mapping the single stub path `/conduit/` → `https://conduit.almasix.com/` |
+
+Simpler first cut (recommended):
+
+- `docs.almasix.com/inertia` and `/inertia/` → `https://inertia.almasix.com/`
+- `docs.almasix.com/conduit` and `/conduit/` → `https://conduit.almasix.com/`
+
+Leave short stubs in Starlight until search indexes refresh; redirects are optional once stubs are enough.

@@ -16,6 +16,13 @@ Register abilities in a provider `boot()` method (typically
 `app/providers/app_service_provider.py`) after the kernel boots. Checks are
 synchronous so they work in controllers, Form Requests, and Prism templates.
 
+:::tip[Roles & permissions package]
+For Spatie-style roles and permissions, see
+[permission.almasix.com](https://permission.almasix.com/) (`almasix-permission`).
+That package wires into `Gate.before` so `user.can(…)`, `@can`, and the `can`
+middleware keep working.
+:::
+
 ## Where the files live
 
 | Role | Path |
