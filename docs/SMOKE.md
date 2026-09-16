@@ -998,14 +998,14 @@ Starlight **Editor setup** holds the VS Code ↔ PyCharm parity matrix.
 ```bash
 pytest -q tests/test_m52_sonar.py tests/smoke/test_m52_smoke.py
 cd examples/progress && python smith progress:sonar
-# client package: https://github.com/almasix-dev/sonar (`npm i @almasix/sonar`)
+# client package: https://github.com/almasix-dev/almasix-sonar (`npm i @almasix/sonar`)
 ```
 
 Default = **Sonar** server + `@almasix/sonar`. Pusher.js / Ably / Socket.IO documented as alternatives.
 
 ### M52 exit criteria
 
-- [x] `@almasix/sonar` speaks to native Sonar `/broadcasting/socket` (public + private); package at [`almasix-dev/sonar`](https://github.com/almasix-dev/sonar) / npm
+- [x] `@almasix/sonar` speaks to native Sonar `/broadcasting/socket` (public + private); package at [`almasix-dev/sonar`](https://github.com/almasix-dev/almasix-sonar) / npm
 - [x] Default docs/demo do **not** require `pusher-js` (`progress:sonar` + Broadcasting docs)
 - [x] Pusher / Ably / Socket.IO alternative paths documented (Starlight Broadcasting)
 - [x] Living example + smoke; board marks M52 complete; `sonar` driver alias for `websocket`
@@ -1219,7 +1219,7 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] Parity matrix in Starlight **Conduit** — all rows `complete` (`almasix.conduit.parity.PARITY`)
 - [x] `Route.conduit()`, `WithPagination`, `Computed`/`Locked`, `make:conduit`, islands, navigate, entangle
 - [x] `smith progress:conduit`; board marks M54 complete; `tests/smoke/test_m54_smoke.py`
-- [x] Extracted to [`almasix-dev/conduit`](https://github.com/almasix-dev/conduit) / `almasix[conduit]`
+- [x] Extracted to [`almasix-dev/conduit`](https://github.com/almasix-dev/almasix-conduit) / `almasix[conduit]`
 
 ## M55 — almasix-inertia (Inertia adapter)
 
@@ -1228,7 +1228,7 @@ pytest -q tests/test_m29_packages.py tests/smoke/test_m29_smoke.py
 - [x] `almasix-inertia` provider, `Inertia.render`, `X-Inertia` JSON, version 409, shared/partial props
 - [x] Lazy / optional / defer / once / merge props; flash errors; subpath-aware page `url`
 - [x] Root `@inertia` / `@inertiaHead`; SSR Node contract + `inertia:start-ssr`; graceful fallback
-- [x] Starlight **Inertia**; extracted to [`almasix-dev/inertia`](https://github.com/almasix-dev/inertia)
+- [x] Starlight **Inertia**; extracted to [`almasix-dev/inertia`](https://github.com/almasix-dev/almasix-inertia)
 - [x] `smith progress:inertia`; board marks M55 complete; `tests/smoke/test_m55_smoke.py`
 
 ## M36 — Starter kits

@@ -1,17 +1,12 @@
-# Feature catalog
+# Feature notes
 
-Canonical how-to docs are the **Starlight site** under [`../../website/`](../../website/).
+Canonical how-to docs are the **Starlight site** in
+[`almasix-dev/almasix-docs`](https://github.com/almasix-dev/almasix-docs)
+([docs.almasix.com](https://docs.almasix.com/)).
 
-| Area | Docs site |
-| --- | --- |
-| Installation | [`installation`](../../website/src/content/docs/installation.mdx) |
-| Directory structure | [`structure`](../../website/src/content/docs/structure.md) |
-| Middleware | [`middleware`](../../website/src/content/docs/middleware.md) |
-| Database | [`database/`](../../website/src/content/docs/database/) |
-| Articulate (ORM) | [`articulate/`](../../website/src/content/docs/articulate/) |
+This folder holds contributor scratch notes only.
 
 ```bash
-make docs
+git clone git@github.com:almasix-dev/almasix-docs.git
+cd almasix-docs && npm ci && npm run dev
 ```
-
-Binding plan and gates for framework contributors remain here: [`../PLAN.md`](../PLAN.md), [`../SMOKE.md`](../SMOKE.md).

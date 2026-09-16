@@ -82,9 +82,9 @@ s3 = ["boto3>=1.34"]
 redis = ["redis>=5"]
 # Language server (`almasix-lsp` / `python -m almasix.lsp` / `smith lsp:serve`).
 lsp = ["pygls>=2.0.0,<3", "lsprotocol>=2024.0.0"]
-# Livewire-parity reactive components — https://github.com/almasix-dev/conduit
+# Livewire-parity reactive components — https://github.com/almasix-dev/almasix-conduit
 conduit = ["almasix-conduit>=0.1.0"]
-# Official Inertia.js server adapter — https://github.com/almasix-dev/inertia
+# Official Inertia.js server adapter — https://github.com/almasix-dev/almasix-inertia
 inertia = ["almasix-inertia>=0.1.0"]
 
 [project.scripts]

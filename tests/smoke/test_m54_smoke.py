@@ -127,9 +127,8 @@ def test_m54_docs_exist() -> None:
     sidebar = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
     assert "conduit" in sidebar
     docs = (DOCS / "conduit.md").read_text(encoding="utf-8")
-    assert "signed update" in docs.lower() or "signed:relative" in docs
-    matrix = docs.split("## Livewire 4 parity matrix", 1)[1].split("## ", 1)[0]
-    assert "| partial |" not in matrix and "| planned |" not in matrix
+    # Full guide lives on the package docs site; framework page is a stub.
+    assert "conduit.almasix.com" in docs
     from almasix.conduit.parity import parity_summary
 
     summary = parity_summary()

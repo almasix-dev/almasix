@@ -41,7 +41,7 @@ def test_m52_demo_command_runs() -> None:
         "sonar   ->",
         "package -> @almasix/sonar",
         "https://www.npmjs.com/package/@almasix/sonar",
-        "https://github.com/almasix-dev/sonar",
+        "https://github.com/almasix-dev/almasix-sonar",
         "private ->",
         "sonar demo ok",
     ):

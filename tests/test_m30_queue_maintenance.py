@@ -510,29 +510,30 @@ def test_docs_reports_a_browser_it_could_not_open(
     assert "https://docs.example.test" in out
 
 
-def test_docs_says_the_documentation_site_is_not_published_yet(
+def test_docs_opens_the_default_hosted_site(
     build: Build, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     kernel = build()
+    monkeypatch.delenv(DOCS_URL_VARIABLE, raising=False)
     urls = opened(monkeypatch)
 
     assert kernel.run_argv("docs", []) == 0
 
     out = capsys.readouterr().out
-    assert "Almasix's documentation site is not published yet." in out
-    assert "website/src/content/docs/" in out
-    assert DOCS_URL_VARIABLE in out
-    assert urls == []
+    assert urls == ["https://docs.almasix.com"]
+    assert "Opening https://docs.almasix.com" in out
 
 
-def test_docs_names_the_source_file_for_the_page_it_was_given(
+def test_docs_opens_the_page_on_the_default_hosted_site(
     build: Build, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     kernel = build()
-    opened(monkeypatch)
+    monkeypatch.delenv(DOCS_URL_VARIABLE, raising=False)
+    urls = opened(monkeypatch)
 
     assert kernel.run_argv("docs", ["queues"]) == 0
-    assert "website/src/content/docs/queues.md" in capsys.readouterr().out
+    assert urls == ["https://docs.almasix.com/queues"]
+    assert "Opening https://docs.almasix.com/queues" in capsys.readouterr().out
 
 
 def test_docs_answers_in_a_directory_that_is_not_an_application(
@@ -543,10 +544,12 @@ def test_docs_answers_in_a_directory_that_is_not_an_application(
     monkeypatch.chdir(tmp_path)
     kernel = ConsoleKernel.for_cwd(tmp_path)
     kernel.discover()
+    urls = opened(monkeypatch)
 
     assert kernel.commands["docs"].boots_application is False
     assert kernel.run_argv("docs", []) == 0
-    assert "not published yet" in capsys.readouterr().out
+    assert urls == ["https://docs.almasix.com"]
+    assert "Opening https://docs.almasix.com" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(
