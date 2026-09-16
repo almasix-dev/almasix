@@ -26,11 +26,10 @@ jobs:
         run: |
           pip install -e ".[dev]"
           # Namespace extras after editable almasix (avoids stripping overlapping paths).
-          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0" "almasix-permission>=0.1.0"; then
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
             pip install --force-reinstall --no-deps \
               "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
-              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main" \
-              "almasix-permission @ git+https://github.com/almasix-dev/permission.git@main"
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
           fi
 
       - name: Ruff version pin
@@ -61,11 +60,10 @@ jobs:
         run: |
           pip install -e ".[dev]"
           # Namespace extras after editable almasix (avoids stripping overlapping paths).
-          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0" "almasix-permission>=0.1.0"; then
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
             pip install --force-reinstall --no-deps \
               "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
-              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main" \
-              "almasix-permission @ git+https://github.com/almasix-dev/permission.git@main"
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
           fi
 
       - name: Smoke tests
@@ -91,11 +89,10 @@ jobs:
         run: |
           pip install -e ".[dev]"
           # Namespace extras after editable almasix (avoids stripping overlapping paths).
-          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0" "almasix-permission>=0.1.0"; then
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
             pip install --force-reinstall --no-deps \
               "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
-              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main" \
-              "almasix-permission @ git+https://github.com/almasix-dev/permission.git@main"
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
           fi
 
       - name: Full suite with coverage
@@ -132,11 +129,10 @@ jobs:
         run: |
           pip install -e ".[dev]"
           # Namespace extras after editable almasix (avoids stripping overlapping paths).
-          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0" "almasix-permission>=0.1.0"; then
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
             pip install --force-reinstall --no-deps \
               "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
-              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main" \
-              "almasix-permission @ git+https://github.com/almasix-dev/permission.git@main"
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
           fi
 
       - name: Regression suite
@@ -194,11 +190,10 @@ jobs:
       - name: Install
         run: |
           pip install -e ".[dev,pgsql,mysql]"
-          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0" "almasix-permission>=0.1.0"; then
+          if ! pip install "almasix-conduit>=0.1.0" "almasix-inertia>=0.1.0"; then
             pip install --force-reinstall --no-deps \
               "almasix-conduit @ git+https://github.com/almasix-dev/conduit.git@main" \
-              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main" \
-              "almasix-permission @ git+https://github.com/almasix-dev/permission.git@main"
+              "almasix-inertia @ git+https://github.com/almasix-dev/inertia.git@main"
           fi
 
       - name: Dialect conformance
