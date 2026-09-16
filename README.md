@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://cdn.jsdelivr.net/gh/almasix-dev/almasix@main/art/almasix-banner-dark.svg">
-    <img src="https://cdn.jsdelivr.net/gh/almasix-dev/almasix@main/art/almasix-banner-light.svg" alt="Almasix" width="320">
+    <source media="(prefers-color-scheme: dark)" srcset="art/almasix-banner-dark.png">
+    <img src="art/almasix-banner-light.png" alt="Almasix" width="320">
   </picture>
 </p>
 

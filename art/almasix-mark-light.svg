@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="112 86 288 288" fill="none" role="img" aria-label="Almasix">
+  <!--
+    Flat mark for light backgrounds.
+    A: #F1511B · Diamond: #286291
+    Pillar crotch at (256.0,208); diamond tip at (256.0,232).
+    Outer slant matched to Outfit ExtraBold "v" (slope 2.4573).
+  -->
+  <g shape-rendering="geometricPrecision">
+    <path fill="#F1511B" d="M256.0 88L140.4 372H197.4L256.0 208Z"/>
+    <path fill="#F1511B" d="M256.0 88L256.0 208L314.6 372H371.6Z"/>
+    <path fill="#286291" d="M182.3 300L256.0 232L329.7 300L256.0 348Z"/>
+  </g>
+</svg>
