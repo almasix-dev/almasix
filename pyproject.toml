@@ -44,8 +44,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://almasix-dev.github.io/almasix"
-Documentation = "https://almasix-dev.github.io/almasix"
+Homepage = "https://docs.almasix.com"
+Documentation = "https://docs.almasix.com"
 Repository = "https://github.com/almasix-dev/almasix"
 Issues = "https://github.com/almasix-dev/almasix/issues"
 
@@ -86,6 +86,8 @@ lsp = ["pygls>=2.0.0,<3", "lsprotocol>=2024.0.0"]
 conduit = ["almasix-conduit>=0.1.0"]
 # Official Inertia.js server adapter — https://github.com/almasix-dev/inertia
 inertia = ["almasix-inertia>=0.1.0"]
+# Roles and permissions — https://github.com/almasix-dev/permission
+permission = ["almasix-permission>=0.1.0"]
 
 [project.scripts]
 # Only the installer is global. `smith` drives one application, so a scaffolded

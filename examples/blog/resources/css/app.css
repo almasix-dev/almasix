@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap");
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #0d9488;
+  --color-brand-glow: #2dd4bf;
+  --color-accent: #e8ff47;
+  --color-ink: #0a0f1a;
+  --color-paper: #f4f7fb;
+  --color-muted: #5b6b7c;
+  --color-panel: #ffffff;
+  --color-line: #d7e0ea;
+}
+
+.dark {
+  --color-ink: #e8eef6;
+  --color-paper: #0b1219;
+  --color-muted: #93a4b5;
+  --color-panel: #121a24;
+  --color-line: #243041;
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-paper);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.forge-mesh {
+  background:
+    radial-gradient(1200px 600px at 12% 18%, color-mix(in oklab, var(--color-brand) 45%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 88% 12%, color-mix(in oklab, var(--color-brand-glow) 35%, transparent), transparent 55%),
+    radial-gradient(700px 480px at 70% 85%, color-mix(in oklab, var(--color-accent) 22%, transparent), transparent 50%),
+    linear-gradient(160deg, #061018 0%, #0d9488 48%, #0a1f24 100%);
+}

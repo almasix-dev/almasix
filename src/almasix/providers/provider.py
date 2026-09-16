@@ -97,9 +97,10 @@ class ServiceProvider:
     def publishes_migrations(self, paths: dict[str | Path, str | Path], *tags: str) -> None:
         """Offer migration files for publish; destinations get a fresh timestamp.
 
-        Like ``publishes``, but ``vendor:publish`` rewrites each destination
-        filename to ``YYYY_MM_DD_HHMMSS_{slug}.py`` so published migrations
-        run after the application's existing ones.
+        Package **sources** should be slug-only (``create_widgets_table.py``),
+        not pre-dated. Like ``publishes``, but ``vendor:publish`` rewrites each
+        destination to ``YYYY_MM_DD_HHMMSS_{slug}.py`` so published migrations
+        sort after the application's existing ones.
         """
         resolved = {Path(source): Path(destination) for source, destination in paths.items()}
         ServiceProvider._publish_migrations.update(resolved)
@@ -171,9 +172,21 @@ class ServiceProvider:
         return Path(source) in ServiceProvider._publish_migrations
 
     @classmethod
-    def migration_publish_destination(cls, source: Path, destination: Path) -> Path:
-        """Rewrite a migration destination with a fresh timestamp prefix."""
-        stamp = datetime.now(UTC).strftime("%Y_%m_%d_%H%M%S")
+    def migration_publish_destination(
+        cls,
+        source: Path,
+        destination: Path,
+        *,
+        sequence: int = 0,
+    ) -> Path:
+        """Rewrite a migration destination with a fresh timestamp prefix.
+
+        ``sequence`` offsets the stamp by seconds so multiple migrations
+        published in one ``vendor:publish`` keep a stable order.
+        """
+        from datetime import timedelta
+
+        stamp = (datetime.now(UTC) + timedelta(seconds=sequence)).strftime("%Y_%m_%d_%H%M%S")
         match = _MIGRATION_SLUG_RE.match(destination.name)
         slug = match.group(1) if match else destination.stem
         slug = slug.removesuffix(".py").removesuffix(".stub")

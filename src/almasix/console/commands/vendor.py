@@ -27,13 +27,15 @@ class VendorPublishCommand(Command):
         provider, tags = choice
 
         published = 0
+        migration_seq = 0
         for tag in tags or [None]:
             paths = ServiceProvider.paths_to_publish(provider, tag)
             if not paths:
                 self.warn(self._nothing_matched(provider, tag))
                 continue
             for source, destination in sorted(paths.items()):
-                published += self._publish(source, destination)
+                n, migration_seq = self._publish(source, destination, migration_seq)
+                published += n
 
         if not published:
             self.comment("Nothing to publish.")
@@ -74,31 +76,41 @@ class VendorPublishCommand(Command):
             return f"No files are tagged {tag!r}."
         return f"{provider} offers nothing to publish."
 
-    def _publish(self, source: Path, destination: Path) -> int:
+    def _publish(
+        self, source: Path, destination: Path, migration_seq: int = 0
+    ) -> tuple[int, int]:
         if not source.exists():
             self.error(f"Missing: {source}")
-            return 0
+            return 0, migration_seq
         if source.is_dir():
-            return sum(
-                self._publish(child, destination / child.relative_to(source))
-                for child in sorted(source.rglob("*"))
-                if child.is_file()
-            )
-        return self._publish_file(source, destination)
+            total = 0
+            for child in sorted(source.rglob("*")):
+                if child.is_file():
+                    n, migration_seq = self._publish(
+                        child, destination / child.relative_to(source), migration_seq
+                    )
+                    total += n
+            return total, migration_seq
+        return self._publish_file(source, destination, migration_seq)
 
-    def _publish_file(self, source: Path, destination: Path) -> int:
+    def _publish_file(
+        self, source: Path, destination: Path, migration_seq: int = 0
+    ) -> tuple[int, int]:
         if ServiceProvider.is_migration_publish(source):
-            destination = ServiceProvider.migration_publish_destination(source, destination)
+            destination = ServiceProvider.migration_publish_destination(
+                source, destination, sequence=migration_seq
+            )
+            migration_seq += 1
         exists = destination.exists()
         if exists and not self.option("force"):
             self.comment(f"Exists, skipped: {self._relative(destination)} (use --force)")
-            return 0
+            return 0, migration_seq
         if not exists and self.option("existing"):
-            return 0
+            return 0, migration_seq
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
         self.success(f"Published: {self._relative(destination)}")
-        return 1
+        return 1, migration_seq
 
     def _relative(self, path: Path) -> str:
         """A destination the way the user would name it, when it is inside the app."""

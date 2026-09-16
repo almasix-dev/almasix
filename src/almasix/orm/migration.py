@@ -21,8 +21,19 @@ from almasix.orm.schema import Schema
 
 _FILE_RE = re.compile(r"^(\d{4}_\d{2}_\d{2}_\d{6})_(.+)\.py$")
 
+#: Package migration sources may omit the timestamp prefix; ``vendor:publish``
+#: stamps them on copy. ``load_migrations_from`` still discovers slug-only names.
+_PACKAGE_FILE_RE = re.compile(r"^(?!__)(.+)\.py$")
+
 #: Migration directories packages registered via ``ServiceProvider.load_migrations_from``.
 _package_migration_paths: list[Path] = []
+
+
+def _is_migration_filename(name: str) -> bool:
+    """True for timestamped app migrations or slug-only package sources."""
+    if name.startswith("__") or not name.endswith(".py"):
+        return False
+    return bool(_FILE_RE.match(name) or _PACKAGE_FILE_RE.match(name))
 
 
 def register_migration_paths(paths: str | Path | Sequence[str | Path]) -> None:
@@ -166,13 +177,19 @@ class Migrator:
         self.connection = connection
 
     def files(self) -> list[Path]:
-        """Every migration in every path, ordered by the stamp in its name."""
+        """Every migration in every path, ordered for a stable run order.
+
+        Timestamped names (``YYYY_MM_DD_HHMMSS_slug.py``) sort first by stamp.
+        Package sources may use a bare ``slug.py``; those sort after stamped
+        files (digits before letters), then alphabetically by slug — so publish
+        order, not the package tree's fake dates, controls sequencing.
+        """
         found: dict[str, Path] = {}
         for directory in self.paths:
             if not directory.is_dir():
                 continue
             for path in directory.glob("*.py"):
-                if _FILE_RE.match(path.name):
+                if _is_migration_filename(path.name):
                     found.setdefault(path.name, path)
         return [found[name] for name in sorted(found)]
 

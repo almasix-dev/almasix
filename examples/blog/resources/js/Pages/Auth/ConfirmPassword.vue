@@ -1,0 +1,15 @@
+<script setup>
+import { Head, useForm } from "@inertiajs/vue3";
+import GuestLayout from "../../Layouts/GuestLayout.vue";
+const form = useForm({ password: "" });
+</script>
+<template>
+  <GuestLayout title="Confirm password">
+    <Head title="Confirm password" />
+    <p class="mb-4 text-sm text-muted">This is a secure area. Please confirm your password to continue.</p>
+    <form class="space-y-4" @submit.prevent="form.post('/confirm-password')">
+      <label class="block space-y-1.5"><span class="text-sm font-medium">Password</span><input v-model="form.password" type="password" class="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-sm" /></label>
+      <button type="submit" class="w-full rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white">Confirm</button>
+    </form>
+  </GuestLayout>
+</template>

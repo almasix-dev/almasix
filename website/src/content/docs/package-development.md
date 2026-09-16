@@ -46,7 +46,7 @@ class CourierServiceProvider(ServiceProvider):
         self.load_migrations_from(_HERE / "database" / "migrations")
         self.publishes_migrations(
             {
-                _HERE / "database" / "migrations" / "0001_01_01_000000_create_courier_messages_table.py": (
+                _HERE / "database" / "migrations" / "create_courier_messages_table.py": (
                     "database/migrations/create_courier_messages_table.py"
                 ),
             },
@@ -130,10 +130,13 @@ render("courier::welcome", {"driver": "pigeon"})
 
 `load_migrations_from` registers directories with the migrator so
 `smith migrate` finds package migrations **without** publishing them.
+Package sources use **slug-only** names (`create_widgets_table.py`) — no
+`YYYY_MM_DD_HHMMSS_` prefix.
 
-`publishes_migrations` is like `publishes`, but `vendor:publish` rewrites each
-destination filename with a fresh `YYYY_MM_DD_HHMMSS_` prefix so published
-migrations sort after the application's existing ones.
+`publishes_migrations` is like `publishes`, but `vendor:publish` stamps each
+destination as `YYYY_MM_DD_HHMMSS_{slug}.py` (incrementing the second when
+several migrations publish together) so they sort after the application's
+existing migrations.
 
 ### Translations — `load_translations_from`
 

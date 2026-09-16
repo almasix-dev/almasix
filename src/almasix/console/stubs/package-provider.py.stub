@@ -26,10 +26,7 @@ class {{ class }}ServiceProvider(ServiceProvider):
         self.load_migrations_from(_HERE / "database" / "migrations")
         self.publishes_migrations(
             {
-                _HERE
-                / "database"
-                / "migrations"
-                / "0001_01_01_000000_create_{{ module }}_table.py": (
+                _HERE / "database" / "migrations" / "create_{{ module }}_table.py": (
                     "database/migrations/create_{{ module }}_table.py"
                 ),
             },

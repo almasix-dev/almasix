@@ -1,0 +1,27 @@
+"""Create the cache tables (CACHE_STORE=database)."""
+
+from __future__ import annotations
+
+from almasix.orm import Blueprint, Migration, Schema
+
+
+class CreateCacheTable(Migration):
+    """What the database cache store and its locks read."""
+
+    async def up(self) -> None:
+        await Schema.create("cache", self.cache)
+        await Schema.create("cache_locks", self.cache_locks)
+
+    async def down(self) -> None:
+        await Schema.drop_if_exists("cache_locks")
+        await Schema.drop_if_exists("cache")
+
+    def cache(self, table: Blueprint) -> None:
+        table.string("key").primary()
+        table.binary("value")
+        table.integer("expiration").nullable()
+
+    def cache_locks(self, table: Blueprint) -> None:
+        table.string("key").primary()
+        table.string("owner")
+        table.integer("expiration")
