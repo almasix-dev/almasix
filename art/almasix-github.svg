@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="Almasix">
+  <!-- GitHub org/profile avatar: solid dark field + flat mark -->
+  <rect width="512" height="512" fill="#0B1220"/>
+  <g shape-rendering="geometricPrecision">
+    <path fill="#F1511B" d="M256.0 88L140.4 372H197.4L256.0 208Z"/>
+    <path fill="#F1511B" d="M256.0 88L256.0 208L314.6 372H371.6Z"/>
+    <path fill="#286291" d="M182.3 300L256.0 232L329.7 300L256.0 348Z"/>
+  </g>
+</svg>
