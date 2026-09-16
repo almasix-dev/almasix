@@ -29,5 +29,7 @@ config = {
         "inertia.provider.InertiaServiceProvider",
     ],
     "skip_provider_discovery": False,
-    "dont_discover": [],
+    # Progress demos its own `roles` pivot table; almasix-permission's schema
+    # would collide if discovered while the package is installed in CI.
+    "dont_discover": ["almasix-permission"],
 }
