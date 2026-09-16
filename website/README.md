@@ -1,7 +1,8 @@
 # Almasix docs site
 
 Application-developer documentation, built with [Astro Starlight](https://starlight.astro.build/).
-Published at [docs.almasix.com](https://docs.almasix.com/).
+Published at [docs.almasix.com](https://docs.almasix.com/) via **Cloudflare**
+(Worker static assets). See [`CLOUDFLARE.md`](./CLOUDFLARE.md).
 
 Framework binding docs for contributors stay in the repo:
 

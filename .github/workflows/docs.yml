@@ -1,15 +1,22 @@
 name: Docs
 
-# Builds the Starlight site in website/ and deploys it to GitHub Pages at
-# https://docs.almasix.com/ (custom domain; github.io remains a fallback origin).
+# Builds the Starlight site in website/ and deploys it to Cloudflare
+# (Worker static assets) at https://docs.almasix.com/.
 #
 # The published site tracks main: it deploys on every merge, so documentation
 # reaches readers as soon as it is written rather than waiting for a release.
 # Pull requests build without deploying, so broken docs are caught before they
 # reach the site, and workflow_dispatch allows an out-of-band refresh.
 #
-# Requires the repository's Pages source to be set to "GitHub Actions" and the
-# custom domain docs.almasix.com configured in the Pages settings.
+# Requires repository secrets:
+#   CLOUDFLARE_API_TOKEN   — Account → API Tokens (Workers Scripts Edit + Account read)
+#   CLOUDFLARE_ACCOUNT_ID  — Cloudflare account id
+#
+# First-time Cloudflare cutover (dashboard):
+#   1. Create/attach Worker or Pages project named `almasix-docs` (or let wrangler create it)
+#   2. Custom domain: docs.almasix.com (proxied)
+#   3. Remove the grey-cloud docs CNAME → almasix-dev.github.io once Active
+#   4. Disable GitHub Pages for this repo (or leave inactive)
 
 on:
   push:
@@ -26,9 +33,8 @@ on:
 permissions:
   contents: read
 
-# Let a running deploy finish rather than publishing a half-written site.
 concurrency:
-  group: pages
+  group: docs-deploy
   cancel-in-progress: false
 
 jobs:
@@ -51,16 +57,11 @@ jobs:
       - name: Install
         run: npm ci
 
-      # Authenticated so the star badge survives the shared Actions IP quota;
-      # SocialIcons memoizes to one api.github.com call per build.
       - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build
 
-      # Site is at the domain root. Fail if the old GitHub Pages subpath
-      # (`/almasix/` or `/almasix`) leaks into href/src. Asset names like
-      # /almasix-banner-*.svg are fine — only the path segment counts.
       - name: No legacy /almasix/ base path in links
         run: |
           stray=$(grep -rhoE '(href|src)="/almasix(/|")' --include='*.html' dist || true)
@@ -71,26 +72,45 @@ jobs:
           fi
           echo "No legacy /almasix/ link prefixes."
 
-      - name: Upload Pages artifact
+      - name: Upload dist artifact
         if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
+          name: docs-dist
           path: website/dist
+          retention-days: 3
 
   deploy:
-    name: Deploy to Pages
+    name: Deploy to Cloudflare
     if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
-
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: website
 
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-dist
+          path: website/dist
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: website
+          command: deploy
