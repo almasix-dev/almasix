@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from almasix.console.command import Command
 from almasix.config import config
+from almasix.console.command import Command
 
 
 class CourierStatusCommand(Command):

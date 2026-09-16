@@ -76,9 +76,7 @@ class VendorPublishCommand(Command):
             return f"No files are tagged {tag!r}."
         return f"{provider} offers nothing to publish."
 
-    def _publish(
-        self, source: Path, destination: Path, migration_seq: int = 0
-    ) -> tuple[int, int]:
+    def _publish(self, source: Path, destination: Path, migration_seq: int = 0) -> tuple[int, int]:
         if not source.exists():
             self.error(f"Missing: {source}")
             return 0, migration_seq
