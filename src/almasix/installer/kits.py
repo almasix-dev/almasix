@@ -147,6 +147,4 @@ def find_kit(name: str) -> Kit:
     if key in discovered:
         return discovered[key]
     available = ", ".join(kit_names())
-    raise ScaffoldError(
-        f"Unknown kit {name!r}. Choose one of: {available}.{_hint_for(key)}"
-    )
+    raise ScaffoldError(f"Unknown kit {name!r}. Choose one of: {available}.{_hint_for(key)}")

@@ -403,7 +403,9 @@ def _frontend_section(tree: Path, stack: Stack, kit: object | None = None) -> st
             if kit.stub_root is not None:
                 kit_readme = kit.stub_root / f"readme-kit.md{STUB_SUFFIX}"
             elif kit.folder:
-                kit_readme = tree / "kits" / kit.folder.split("/")[0] / f"readme-kit.md{STUB_SUFFIX}"
+                kit_readme = (
+                    tree / "kits" / kit.folder.split("/")[0] / f"readme-kit.md{STUB_SUFFIX}"
+                )
                 if not kit_readme.is_file() and kit.kind == "spa":
                     kit_readme = tree / "kits" / "spa" / f"readme-kit.md{STUB_SUFFIX}"
             if kit_readme is not None and kit_readme.is_file():
