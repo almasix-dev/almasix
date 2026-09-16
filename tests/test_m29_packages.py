@@ -450,6 +450,7 @@ def test_migrator_discovers_slug_only_package_migrations(tmp_path: Path) -> None
         "        return\n",
         encoding="utf-8",
     )
+    register_migration_paths(mig_dir)
     files = Migrator(mig_dir).files()
     names = [path.name for path in files]
     assert "2026_01_01_000000_create_users_table.py" in names
@@ -459,6 +460,17 @@ def test_migrator_discovers_slug_only_package_migrations(tmp_path: Path) -> None
     assert names.index("2026_01_01_000000_create_users_table.py") < names.index(
         "create_widgets_table.py"
     )
+    # An unregistered app directory still ignores bare helpers.
+    other = tmp_path / "app_migrations"
+    other.mkdir()
+    (other / "2026_01_01_000000_create_users_table.py").write_text(
+        (mig_dir / "2026_01_01_000000_create_users_table.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (other / "helpers.py").write_text("VALUE = 1\n", encoding="utf-8")
+    assert [path.name for path in Migrator(other).files()] == [
+        "2026_01_01_000000_create_users_table.py"
+    ]
 
 
 def test_package_manifest_skips_empty_entry_points(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -22,18 +22,31 @@ from almasix.orm.schema import Schema
 _FILE_RE = re.compile(r"^(\d{4}_\d{2}_\d{2}_\d{6})_(.+)\.py$")
 
 #: Package migration sources may omit the timestamp prefix; ``vendor:publish``
-#: stamps them on copy. ``load_migrations_from`` still discovers slug-only names.
+#: stamps them on copy. ``load_migrations_from`` directories accept these names;
+#: application ``database/migrations`` still requires the stamped form.
 _PACKAGE_FILE_RE = re.compile(r"^(?!__)(.+)\.py$")
 
 #: Migration directories packages registered via ``ServiceProvider.load_migrations_from``.
 _package_migration_paths: list[Path] = []
 
 
-def _is_migration_filename(name: str) -> bool:
-    """True for timestamped app migrations or slug-only package sources."""
+def _is_stamped_migration_filename(name: str) -> bool:
+    """True for ``YYYY_MM_DD_HHMMSS_slug.py`` application migrations."""
+    return bool(_FILE_RE.match(name))
+
+
+def _is_package_migration_filename(name: str) -> bool:
+    """True for stamped or slug-only files in a package migration directory."""
     if name.startswith("__") or not name.endswith(".py"):
         return False
     return bool(_FILE_RE.match(name) or _PACKAGE_FILE_RE.match(name))
+
+
+def _is_migration_filename(name: str, *, package_dir: bool = False) -> bool:
+    """True when ``name`` is a migration in this directory kind."""
+    if package_dir:
+        return _is_package_migration_filename(name)
+    return _is_stamped_migration_filename(name)
 
 
 def register_migration_paths(paths: str | Path | Sequence[str | Path]) -> None:
@@ -183,13 +196,20 @@ class Migrator:
         Package sources may use a bare ``slug.py``; those sort after stamped
         files (digits before letters), then alphabetically by slug — so publish
         order, not the package tree's fake dates, controls sequencing.
+
+        Slug-only names are accepted only in directories registered via
+        ``load_migrations_from`` / ``register_migration_paths``. Application
+        migration folders still require the stamped form so helpers and other
+        ``.py`` files are ignored.
         """
         found: dict[str, Path] = {}
+        package_dirs = {path.resolve() for path in _package_migration_paths}
         for directory in self.paths:
             if not directory.is_dir():
                 continue
+            allow_slug = directory.resolve() in package_dirs
             for path in directory.glob("*.py"):
-                if _is_migration_filename(path.name):
+                if _is_migration_filename(path.name, package_dir=allow_slug):
                     found.setdefault(path.name, path)
         return [found[name] for name in sorted(found)]
 
