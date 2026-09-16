@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "almasix"
-version = "0.9.3"
+version = "0.9.4"
 description = "Laravel-inspired Python web framework with Adonis-class DX on FastAPI/Starlette"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -86,6 +86,12 @@ lsp = ["pygls>=2.0.0,<3", "lsprotocol>=2024.0.0"]
 conduit = ["almasix-conduit>=0.1.0"]
 # Official Inertia.js server adapter — https://github.com/almasix-dev/almasix-inertia
 inertia = ["almasix-inertia>=0.1.0"]
+# Official starter kits (Conduit web, Signet API, Inertia SPA) — entry points almasix.kits
+kits = [
+    "almasix-starter-kit-web>=0.1.0",
+    "almasix-starter-kit-api>=0.1.0",
+    "almasix-starter-kit-spa>=0.1.0",
+]
 
 [project.scripts]
 # Only the installer is global. `smith` drives one application, so a scaffolded

@@ -15,8 +15,19 @@ def test_find_kit_aliases() -> None:
     assert find_kit("livewire").name == "web"
     assert find_kit("signet").name == "api"
     assert find_kit("spa").frontend == "react"
-    with pytest.raises(ScaffoldError):
+    with pytest.raises(ScaffoldError, match="Unknown kit"):
         find_kit("angular")
+
+
+def test_missing_kit_hints_package(monkeypatch: pytest.MonkeyPatch) -> None:
+    from almasix.installer import kits as kits_mod
+
+    kits_mod.clear_kit_cache()
+    monkeypatch.setattr(kits_mod, "_discovered", lambda: {})
+    with pytest.raises(ScaffoldError, match="almasix-starter-kit-web"):
+        find_kit("web")
+    with pytest.raises(ScaffoldError, match="almasix\\[kits\\]"):
+        find_kit("api")
 
 
 def test_scaffold_web_kit_forces_auth_surface(tmp_path: Path) -> None:
