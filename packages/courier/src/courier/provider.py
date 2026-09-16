@@ -29,7 +29,7 @@ class CourierServiceProvider(ServiceProvider):
                 _HERE
                 / "database"
                 / "migrations"
-                / "0001_01_01_000000_create_courier_messages_table.py": (
+                / "create_courier_messages_table.py": (
                     "database/migrations/create_courier_messages_table.py"
                 ),
             },

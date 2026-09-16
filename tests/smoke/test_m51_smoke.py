@@ -105,7 +105,7 @@ def test_m51_board_marks_lint_gate_complete(progress_client: TestClient) -> None
 def test_m51_readme_claims_match_ci() -> None:
     """README stays slim; lint-gate claims live in docs/SMOKE.md."""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "almasix-dev.github.io/almasix" in readme
+    assert "docs.almasix.com" in readme
     # The old honesty disclaimer must not return once the gate exists.
     assert "not a CI gate yet" not in readme
     assert "does not pass" not in readme

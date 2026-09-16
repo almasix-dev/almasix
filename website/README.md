@@ -1,6 +1,7 @@
 # Almasix docs site
 
 Application-developer documentation, built with [Astro Starlight](https://starlight.astro.build/).
+Published at [docs.almasix.com](https://docs.almasix.com/).
 
 Framework binding docs for contributors stay in the repo:
 

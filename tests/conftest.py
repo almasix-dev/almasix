@@ -19,8 +19,12 @@ def _forget_generated_app_modules() -> Iterator[None]:
     half an app decides what ``app.providers`` means for every test after it —
     which passes or fails depending on collection order.
     """
+    from almasix.orm.migration import forget_migration_paths
+
+    forget_migration_paths()
     yield
     purge_generated_app_modules()
+    forget_migration_paths()
 
 
 @pytest.fixture

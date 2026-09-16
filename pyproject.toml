@@ -44,8 +44,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://almasix-dev.github.io/almasix"
-Documentation = "https://almasix-dev.github.io/almasix"
+Homepage = "https://docs.almasix.com"
+Documentation = "https://docs.almasix.com"
 Repository = "https://github.com/almasix-dev/almasix"
 Issues = "https://github.com/almasix-dev/almasix/issues"
 

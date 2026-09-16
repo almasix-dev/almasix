@@ -4,14 +4,13 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// GitHub Pages serves this repo's site from a subpath, not the domain root.
-// Markdown-authored links like `/queues/` are prefixed with this while
-// rendering, by src/middleware.ts.
-const base = '/almasix';
+// Custom domain docs.almasix.com is served at the domain root.
+// If base is ever a subpath again, src/middleware.ts prefixes Markdown links.
+const base = '/';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://almasix-dev.github.io/almasix',
+	site: 'https://docs.almasix.com',
 	base,
 	// Astro's audit toolbar currently throws (M_ID) on these pages; docs don't need it.
 	devToolbar: { enabled: false },

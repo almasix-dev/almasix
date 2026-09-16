@@ -292,12 +292,7 @@ def make_package(
         ("package-lang.py.stub", root / "src" / module / "lang" / "en" / "messages.py"),
         (
             "package-migration.py.stub",
-            root
-            / "src"
-            / module
-            / "database"
-            / "migrations"
-            / f"0001_01_01_000000_create_{module}_table.py",
+            root / "src" / module / "database" / "migrations" / f"create_{module}_table.py",
         ),
     ]
 

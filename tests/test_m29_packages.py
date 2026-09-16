@@ -152,7 +152,7 @@ def test_load_translations_from_adds_namespace(app: Any, tmp_path: Path) -> None
 
 
 def test_publishes_migrations_marks_sources_for_timestamp_rewrite(app: Any, tmp_path: Path) -> None:
-    source = tmp_path / "0001_01_01_000000_create_courier_table.py"
+    source = tmp_path / "create_courier_table.py"
     source.write_text("# mig\n", encoding="utf-8")
 
     class Pkg(ServiceProvider):
@@ -311,6 +311,11 @@ def test_make_package_scaffolds_tree(tmp_path: Path) -> None:
     assert (root / "src" / "courier" / "resources" / "views" / "welcome.prism.html").is_file()
     assert (root / "src" / "courier" / "lang" / "en" / "messages.py").is_file()
     assert "CourierServiceProvider" in (root / "src" / "courier" / "provider.py").read_text()
+    mig = root / "src" / "courier" / "database" / "migrations" / "create_courier_table.py"
+    assert mig.is_file(), "package migrations must be slug-only (no timestamp prefix)"
+    provider = (root / "src" / "courier" / "provider.py").read_text(encoding="utf-8")
+    assert "create_courier_table.py" in provider
+    assert "0001_01_01_" not in provider
 
 
 def test_make_package_refuses_existing_without_force(tmp_path: Path) -> None:
@@ -329,7 +334,7 @@ def test_vendor_publish_rewrites_migration_timestamp(
 ) -> None:
     from almasix.console.commands.vendor import VendorPublishCommand
 
-    source = tmp_path / "pkg" / "0001_01_01_000000_create_widgets_table.py"
+    source = tmp_path / "pkg" / "create_widgets_table.py"
     source.parent.mkdir(parents=True)
     source.write_text("# migration\n", encoding="utf-8")
 
@@ -411,12 +416,61 @@ def test_load_views_from_file_hint_skips_publish(app: Any, tmp_path: Path) -> No
     assert "solo-views" not in ServiceProvider.publishable_tags()
 
 
-def test_migration_destination_falls_back_to_source_slug() -> None:
-    source = Path("/pkg/0001_01_01_000000_create_widgets_table.py")
-    # No extension → slug equals destination.name → fall back to the source stamp slug.
-    dest = Path("database/migrations") / "create_widgets_table"
-    out = ServiceProvider.migration_publish_destination(source, dest)
-    assert out.name.endswith("_create_widgets_table.py")
+def test_migration_publish_destination_sequences_seconds() -> None:
+    source = Path("/pkg/create_a_table.py")
+    dest = Path("database/migrations/create_a_table.py")
+    first = ServiceProvider.migration_publish_destination(source, dest, sequence=0)
+    second = ServiceProvider.migration_publish_destination(source, dest, sequence=1)
+    assert first.name != second.name
+    assert first.name.endswith("_create_a_table.py")
+    assert second.name.endswith("_create_a_table.py")
+
+
+def test_migrator_discovers_slug_only_package_migrations(tmp_path: Path) -> None:
+    from almasix.orm.migration import Migrator
+
+    mig_dir = tmp_path / "migrations"
+    mig_dir.mkdir()
+    (mig_dir / "create_widgets_table.py").write_text(
+        "from almasix.orm import Migration\n"
+        "class CreateWidgetsTable(Migration):\n"
+        "    async def up(self):\n"
+        "        return\n"
+        "    async def down(self):\n"
+        "        return\n",
+        encoding="utf-8",
+    )
+    (mig_dir / "__init__.py").write_text("", encoding="utf-8")
+    (mig_dir / "2026_01_01_000000_create_users_table.py").write_text(
+        "from almasix.orm import Migration\n"
+        "class CreateUsersTable(Migration):\n"
+        "    async def up(self):\n"
+        "        return\n"
+        "    async def down(self):\n"
+        "        return\n",
+        encoding="utf-8",
+    )
+    register_migration_paths(mig_dir)
+    files = Migrator(mig_dir).files()
+    names = [path.name for path in files]
+    assert "2026_01_01_000000_create_users_table.py" in names
+    assert "create_widgets_table.py" in names
+    assert "__init__.py" not in names
+    # Stamped app migrations sort before slug-only package sources.
+    assert names.index("2026_01_01_000000_create_users_table.py") < names.index(
+        "create_widgets_table.py"
+    )
+    # An unregistered app directory still ignores bare helpers.
+    other = tmp_path / "app_migrations"
+    other.mkdir()
+    (other / "2026_01_01_000000_create_users_table.py").write_text(
+        (mig_dir / "2026_01_01_000000_create_users_table.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (other / "helpers.py").write_text("VALUE = 1\n", encoding="utf-8")
+    assert [path.name for path in Migrator(other).files()] == [
+        "2026_01_01_000000_create_users_table.py"
+    ]
 
 
 def test_package_manifest_skips_empty_entry_points(monkeypatch: pytest.MonkeyPatch) -> None:

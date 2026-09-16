@@ -29,7 +29,8 @@ def write_app(root: Path, *, environment: str) -> None:
     (root / "bootstrap" / "app.py").write_text("# stub\n", encoding="utf-8")
     files = {
         "app.py": (
-            f'config = {{"name": "M30", "env": "{environment}", "debug": False, "providers": []}}\n'
+            f'config = {{"name": "M30", "env": "{environment}", "debug": False, '
+            f'"providers": [], "skip_provider_discovery": True}}\n'
         ),
         "logging.py": "config = {'default': 'null', 'channels': {'null': {'driver': 'null'}}}\n",
         "database.py": (
