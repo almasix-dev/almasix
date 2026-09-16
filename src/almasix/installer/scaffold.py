@@ -21,6 +21,7 @@ from pathlib import Path
 
 from almasix.console.stub import render_text
 from almasix.exceptions.publish import publish_errors
+from almasix.installer.errors import ScaffoldError
 
 _APP_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
 
@@ -162,8 +163,6 @@ DATABASES: tuple[Database, ...] = (
         extra="almasix[mongodb]",
     ),
 )
-
-from almasix.installer.errors import ScaffoldError
 
 DATABASE_NAMES = tuple(database.name for database in DATABASES)
 
