@@ -1,22 +1,16 @@
 name: Docs
 
-# Builds the Starlight site in website/ and deploys it to Cloudflare
-# (Worker static assets) at https://docs.almasix.com/.
+# Builds the Starlight site in website/. Deploy is Cloudflare Workers Builds
+# connected to this repo (root: website/, build: npm ci && npm run build,
+# deploy: npx wrangler deploy) — same pattern as almasix-website.
+# No CLOUDFLARE_API_TOKEN in GitHub secrets.
 #
-# The published site tracks main: it deploys on every merge, so documentation
-# reaches readers as soon as it is written rather than waiting for a release.
-# Pull requests build without deploying, so broken docs are caught before they
-# reach the site, and workflow_dispatch allows an out-of-band refresh.
-#
-# Requires repository secrets:
-#   CLOUDFLARE_API_TOKEN   — Account → API Tokens (Workers Scripts Edit + Account read)
-#   CLOUDFLARE_ACCOUNT_ID  — Cloudflare account id
-#
-# First-time Cloudflare cutover (dashboard):
-#   1. Create/attach Worker or Pages project named `almasix-docs` (or let wrangler create it)
-#   2. Custom domain: docs.almasix.com (proxied)
-#   3. Remove the grey-cloud docs CNAME → almasix-dev.github.io once Active
-#   4. Disable GitHub Pages for this repo (or leave inactive)
+# First-time cutover (dashboard):
+#   1. Workers & Pages → create/connect project `almasix-docs` to this repo
+#   2. Root directory: website/ ; build: npm ci && npm run build ; deploy: npx wrangler deploy
+#   3. Custom domain: docs.almasix.com (proxied)
+#   4. Remove grey-cloud docs CNAME → almasix-dev.github.io once Active
+#   5. Disable GitHub Pages for this repo
 
 on:
   push:
@@ -34,8 +28,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: docs-deploy
-  cancel-in-progress: false
+  group: docs-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -71,46 +65,3 @@ jobs:
             exit 1
           fi
           echo "No legacy /almasix/ link prefixes."
-
-      - name: Upload dist artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: docs-dist
-          path: website/dist
-          retention-days: 3
-
-  deploy:
-    name: Deploy to Cloudflare
-    if: github.event_name != 'pull_request'
-    needs: build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: website
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: website/package-lock.json
-
-      - name: Install
-        run: npm ci
-
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docs-dist
-          path: website/dist
-
-      - name: Deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: website
-          command: deploy

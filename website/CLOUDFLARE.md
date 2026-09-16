@@ -7,25 +7,27 @@ Framework Starlight docs live in this `website/` directory and deploy as
 
 [`wrangler.jsonc`](./wrangler.jsonc) serves `./dist` (Astro build output). There is no Worker `main` script.
 
-## CI
+## CI vs deploy
 
-[`.github/workflows/docs.yml`](../.github/workflows/docs.yml) builds on every PR touching `website/`, and on `main` runs `wrangler deploy`.
+GitHub Actions ([`.github/workflows/docs.yml`](../.github/workflows/docs.yml)) **builds only** — catches broken docs on PRs.
 
-Repository secrets (Settings → Secrets → Actions):
+**Deploy** is Cloudflare **Workers Builds** connected to this repo (no API tokens in GitHub):
 
-| Secret | Purpose |
-|--------|---------|
-| `CLOUDFLARE_API_TOKEN` | Token with Workers Scripts Edit + Account read |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account id |
+| Setting | Value |
+|---------|--------|
+| Root directory | `website/` |
+| Build command | `npm ci && npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Node | `24` (or `22`) |
 
 ## Cutover from GitHub Pages
 
-1. Ensure CI secrets above are set on `almasix-dev/almasix`.
-2. Merge a PR that includes this Wrangler config; confirm the deploy job succeeds.
-3. In Cloudflare → Workers & Pages → `almasix-docs` → **Custom domains** → add **`docs.almasix.com`** (accept DNS).
-4. Wait until the domain is **Active** + cert issued.
-5. Remove the old DNS record: `docs` CNAME → `almasix-dev.github.io` (DNS-only / grey cloud) if Cloudflare did not replace it.
-6. GitHub → Settings → Pages → disable or clear the custom domain so GitHub stops serving the old site.
+1. Connect Workers Builds to `almasix-dev/almasix` with the settings above (project name `almasix-docs`).
+2. Merge a PR that includes `website/wrangler.jsonc`.
+3. Custom domains → add **`docs.almasix.com`** (accept DNS).
+4. Wait until **Active** + cert issued.
+5. Remove the old DNS record: `docs` CNAME → `almasix-dev.github.io` (grey cloud) if still present.
+6. GitHub → Settings → Pages → disable or clear the custom domain.
 7. Verify:
 
 ```bash
@@ -38,27 +40,20 @@ curl -I https://docs.almasix.com/
 ```bash
 npm ci
 npm run build
-npx wrangler deploy   # needs Cloudflare auth
+npx wrangler deploy   # needs Cloudflare auth (local only)
 ```
 
 ## Package docs
 
-First-party package docs (Conduit, Inertia, Permission) use the same Wrangler
-assets pattern in each package repo’s `website/`, on hosts like
-`conduit.almasix.com`. See those repos and the hub [`CLOUDFLARE.md`](https://github.com/almasix-dev/almasix-website/blob/main/CLOUDFLARE.md).
+Conduit, Inertia, and Permission use the same Workers Builds recipe in each
+package repo’s `website/`. See the hub
+[`CLOUDFLARE.md`](https://github.com/almasix-dev/almasix-website/blob/main/CLOUDFLARE.md).
 
 ## Package path redirects (zone Redirect Rules)
 
-After package docs hosts are live, add zone Redirect Rules so old framework paths keep working:
-
-| When (filter) | Then (301) |
-|---------------|------------|
-| `http.host eq "docs.almasix.com" and starts_with(http.request.uri.path, "/inertia")` | `concat("https://inertia.almasix.com", http.request.uri.path)` — or map `/inertia` → `/` and `/inertia/` → `/` |
-| Same for `/conduit` → `https://conduit.almasix.com` | Prefer mapping the single stub path `/conduit/` → `https://conduit.almasix.com/` |
-
-Simpler first cut (recommended):
+Optional after package hosts are live:
 
 - `docs.almasix.com/inertia` and `/inertia/` → `https://inertia.almasix.com/`
 - `docs.almasix.com/conduit` and `/conduit/` → `https://conduit.almasix.com/`
 
-Leave short stubs in Starlight until search indexes refresh; redirects are optional once stubs are enough.
+Framework Digging Deeper pages are already stubs linking to those hosts.
