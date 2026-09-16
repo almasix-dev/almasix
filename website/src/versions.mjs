@@ -36,7 +36,8 @@ export function versionFromUrl(url) {
 	if (fromQuery && isKnownVersion(fromQuery)) {
 		return fromQuery;
 	}
-	// Path prefix: /almasix/0.x/installation/ or /almasix/main/… → that slug
+	// Path prefix: /0.x/installation/ or /main/… → that slug.
+	// Strip a legacy github.io `/almasix/` segment if present.
 	const parts = parsed.pathname.split('/').filter(Boolean);
 	const candidates = parts[0] === 'almasix' ? parts.slice(1) : parts;
 	const head = candidates[0];

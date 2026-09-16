@@ -1,14 +1,15 @@
 name: Docs
 
 # Builds the Starlight site in website/ and deploys it to GitHub Pages at
-# https://almasix-dev.github.io/almasix/.
+# https://docs.almasix.com/ (custom domain; github.io remains a fallback origin).
 #
 # The published site tracks main: it deploys on every merge, so documentation
 # reaches readers as soon as it is written rather than waiting for a release.
 # Pull requests build without deploying, so broken docs are caught before they
 # reach the site, and workflow_dispatch allows an out-of-band refresh.
 #
-# Requires the repository's Pages source to be set to "GitHub Actions".
+# Requires the repository's Pages source to be set to "GitHub Actions" and the
+# custom domain docs.almasix.com configured in the Pages settings.
 
 on:
   push:
@@ -57,20 +58,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build
 
-      # The site is served from a subpath. Starlight rewrites its own navigation
-      # for `base`, but Markdown-authored links are prefixed by src/middleware.ts
-      # while rendering; if that ever stops running, every cross-reference 404s
-      # in production while the build still looks green. Fail loudly instead.
-      - name: Every internal link is under the base path
+      # Site is at the domain root. Fail if the old GitHub Pages subpath
+      # (`/almasix/` or `/almasix`) leaks into href/src. Asset names like
+      # /almasix-banner-*.svg are fine — only the path segment counts.
+      - name: No legacy /almasix/ base path in links
         run: |
-          stray=$(grep -rhoE '(href|src)="/[^"]*"' --include='*.html' dist \
-                  | grep -vE '="/almasix/' || true)
+          stray=$(grep -rhoE '(href|src)="/almasix(/|")' --include='*.html' dist || true)
           if [ -n "$stray" ]; then
-            echo "::error::Links outside the /almasix base path:"
+            echo "::error::Links still use the legacy /almasix base path:"
             echo "$stray" | sort | uniq -c | sort -rn
             exit 1
           fi
-          echo "All internal links are correctly based."
+          echo "No legacy /almasix/ link prefixes."
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'

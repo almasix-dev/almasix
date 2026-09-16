@@ -36,7 +36,7 @@ Prefer [uv](https://docs.astral.sh/uv/)? `uv tool install almasix` works the sam
 Each app then gets its own `.venv` — the global install only puts `almasix` on
 your PATH so you can scaffold.
 
-Full guide → **[Documentation](https://almasix-dev.github.io/almasix/)**
+Full guide → **[Documentation](https://docs.almasix.com/)**
 
 <p align="center">
   <sub>
