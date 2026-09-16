@@ -14,11 +14,11 @@ from pathlib import Path
 import typer
 
 from almasix import __version__
+from almasix.installer.errors import ScaffoldError
 from almasix.installer.options import Answers, resolve_plan
 from almasix.installer.scaffold import (
     DATABASE_NAMES,
     STACK_NAMES,
-    ScaffoldError,
     scaffold_app,
 )
 from almasix.installer.steps import StepResult, run_steps
@@ -44,12 +44,18 @@ def version() -> None:
 @app.command("stacks")
 def stacks() -> None:
     """List stacks and starter kits `almasix new` accepts."""
-    from almasix.installer.kits import KITS
+    from almasix.installer.kits import get_kits
     from almasix.installer.scaffold import DATABASES, STACKS
 
+    kits = get_kits()
     typer.secho("Starter kits", bold=True)
-    for kit in KITS:
+    for kit in kits:
         typer.echo(f"  {kit.name:<10} {kit.label} — {kit.description}")
+    if len(kits) == 1:
+        typer.echo(
+            "  (install almasix[kits] or almasix-starter-kit-web/-api/-spa "
+            "for Conduit, Signet API, and Inertia SPA kits)"
+        )
     typer.secho("\nStacks", bold=True)
     for stack in STACKS:
         typer.echo(f"  {stack.name:<10} {stack.label} — {stack.description}")

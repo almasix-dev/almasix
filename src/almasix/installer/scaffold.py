@@ -21,6 +21,7 @@ from pathlib import Path
 
 from almasix.console.stub import render_text
 from almasix.exceptions.publish import publish_errors
+from almasix.installer.errors import ScaffoldError
 
 _APP_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
 
@@ -166,10 +167,6 @@ DATABASES: tuple[Database, ...] = (
 DATABASE_NAMES = tuple(database.name for database in DATABASES)
 
 
-class ScaffoldError(ValueError):
-    """Invalid scaffold request."""
-
-
 def validate_app_name(name: str) -> str:
     if not _APP_NAME_RE.match(name):
         raise ScaffoldError(
@@ -286,23 +283,32 @@ def _apply_kit(
     from almasix.installer.kits import Kit
 
     assert isinstance(kit, Kit)
-    if kit.kind == "none" or not kit.folder:
+    if kit.kind == "none":
         return
-    base = tree / "kits"
-    # SPA: kits/spa/_common then kits/spa/react|vue|svelte
-    # Web: kits/web/_common then kits/web/tailwind|bootstrap|none
-    # API: kits/api/_common (and optional kits/api/none)
-    if kit.kind == "spa":
-        _render_tree(base / "spa" / "_common", root, replacements)
-        _render_tree(base / kit.folder, root, replacements)
-    elif kit.kind == "web":
-        _render_tree(base / "web" / "_common", root, replacements)
-        stack_overlay = stack.name if stack.name in {"tailwind", "bootstrap", "none"} else "none"
-        _render_tree(base / "web" / stack_overlay, root, replacements)
-    elif kit.kind == "api":
-        _render_tree(base / "api" / "_common", root, replacements)
+    # Prefer package-provided stub_root (entry-point kits). Fall back to
+    # legacy in-tree ``stubs/kits/<folder>`` only if stub_root is unset.
+    if kit.stub_root is not None:
+        base = kit.stub_root
+    elif kit.folder:
+        base = tree / "kits" / kit.folder.split("/")[0]
     else:
-        _render_tree(base / kit.folder, root, replacements)
+        return
+    # SPA: stub_root/_common then stub_root/react|vue|svelte
+    # Web: stub_root/_common then stub_root/tailwind|bootstrap|none
+    # API: stub_root/_common
+    if kit.kind == "spa":
+        _render_tree(base / "_common", root, replacements)
+        variant = kit.frontend or (kit.folder.split("/")[-1] if kit.folder else None)
+        if variant:
+            _render_tree(base / variant, root, replacements)
+    elif kit.kind == "web":
+        _render_tree(base / "_common", root, replacements)
+        stack_overlay = stack.name if stack.name in {"tailwind", "bootstrap", "none"} else "none"
+        _render_tree(base / stack_overlay, root, replacements)
+    elif kit.kind == "api":
+        _render_tree(base / "_common", root, replacements)
+    else:
+        _render_tree(base, root, replacements)
 
 
 def _write_kit_migrations(root: Path, kit: object) -> None:
@@ -320,6 +326,11 @@ def publish_scaffold_stubs(base_path: Path | str, *, force: bool = False) -> tup
 
     Returns the directory and how many files landed, so a team can edit its own
     starting point and scaffold from it with ``almasix new --stubs``.
+
+    Starter-kit overlays (web/api/spa) are **not** shipped in core — they come
+    from ``almasix-starter-kit-*`` packages. Install those packages (or
+    ``almasix[kits]``) and copy from each package's ``stubs/`` if you need a
+    local kit overlay tree.
     """
     import shutil
 
@@ -387,11 +398,17 @@ def _frontend_section(tree: Path, stack: Stack, kit: object | None = None) -> st
     if kit is not None:
         from almasix.installer.kits import Kit
 
-        if isinstance(kit, Kit) and kit.kind != "none" and kit.folder:
-            kit_readme = tree / "kits" / kit.folder.split("/")[0] / f"readme-kit.md{STUB_SUFFIX}"
-            if not kit_readme.is_file() and kit.kind == "spa":
-                kit_readme = tree / "kits" / "spa" / f"readme-kit.md{STUB_SUFFIX}"
-            if kit_readme.is_file():
+        if isinstance(kit, Kit) and kit.kind != "none":
+            kit_readme = None
+            if kit.stub_root is not None:
+                kit_readme = kit.stub_root / f"readme-kit.md{STUB_SUFFIX}"
+            elif kit.folder:
+                kit_readme = (
+                    tree / "kits" / kit.folder.split("/")[0] / f"readme-kit.md{STUB_SUFFIX}"
+                )
+                if not kit_readme.is_file() and kit.kind == "spa":
+                    kit_readme = tree / "kits" / "spa" / f"readme-kit.md{STUB_SUFFIX}"
+            if kit_readme is not None and kit_readme.is_file():
                 body = body + "\n\n" + kit_readme.read_text(encoding="utf-8")
     return body
 

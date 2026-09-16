@@ -36,6 +36,13 @@ jobs:
               "almasix-conduit @ git+https://github.com/almasix-dev/almasix-conduit.git@main" \
               "almasix-inertia @ git+https://github.com/almasix-dev/almasix-inertia.git@main"
           fi
+          # Starter kits (entry points almasix.kits) — prefer PyPI, else sibling checkout.
+          if ! pip install "almasix-starter-kit-web>=0.1.0" "almasix-starter-kit-api>=0.1.0" "almasix-starter-kit-spa>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-starter-kit-web @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/web" \
+              "almasix-starter-kit-api @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/api" \
+              "almasix-starter-kit-spa @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/spa"
+          fi
 
       - name: Ruff version pin
         run: python -c "import importlib.metadata as m; v=m.version('ruff'); assert v=='0.16.6', v"
@@ -75,6 +82,13 @@ jobs:
               "almasix-conduit @ git+https://github.com/almasix-dev/almasix-conduit.git@main" \
               "almasix-inertia @ git+https://github.com/almasix-dev/almasix-inertia.git@main"
           fi
+          # Starter kits (entry points almasix.kits) — prefer PyPI, else sibling checkout.
+          if ! pip install "almasix-starter-kit-web>=0.1.0" "almasix-starter-kit-api>=0.1.0" "almasix-starter-kit-spa>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-starter-kit-web @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/web" \
+              "almasix-starter-kit-api @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/api" \
+              "almasix-starter-kit-spa @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/spa"
+          fi
 
       - name: Smoke tests
         run: pytest -q tests/smoke -m smoke
@@ -108,6 +122,13 @@ jobs:
             pip install --force-reinstall --no-deps \
               "almasix-conduit @ git+https://github.com/almasix-dev/almasix-conduit.git@main" \
               "almasix-inertia @ git+https://github.com/almasix-dev/almasix-inertia.git@main"
+          fi
+          # Starter kits (entry points almasix.kits) — prefer PyPI, else sibling checkout.
+          if ! pip install "almasix-starter-kit-web>=0.1.0" "almasix-starter-kit-api>=0.1.0" "almasix-starter-kit-spa>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-starter-kit-web @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/web" \
+              "almasix-starter-kit-api @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/api" \
+              "almasix-starter-kit-spa @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/spa"
           fi
 
       - name: Full suite with coverage
@@ -153,6 +174,13 @@ jobs:
             pip install --force-reinstall --no-deps \
               "almasix-conduit @ git+https://github.com/almasix-dev/almasix-conduit.git@main" \
               "almasix-inertia @ git+https://github.com/almasix-dev/almasix-inertia.git@main"
+          fi
+          # Starter kits (entry points almasix.kits) — prefer PyPI, else sibling checkout.
+          if ! pip install "almasix-starter-kit-web>=0.1.0" "almasix-starter-kit-api>=0.1.0" "almasix-starter-kit-spa>=0.1.0"; then
+            pip install --force-reinstall --no-deps \
+              "almasix-starter-kit-web @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/web" \
+              "almasix-starter-kit-api @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/api" \
+              "almasix-starter-kit-spa @ git+https://github.com/almasix-dev/almasix-starter-kits.git@main#subdirectory=packages/spa"
           fi
 
       - name: Regression suite

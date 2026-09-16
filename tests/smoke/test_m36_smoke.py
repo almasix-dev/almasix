@@ -72,10 +72,14 @@ def test_m36_docs_and_stubs_exist() -> None:
     docs = (DOCS / "starter-kits.md").read_text(encoding="utf-8")
     assert "Forge" in docs or "forge" in docs.lower()
     assert "--kit" in docs
-    kits = ROOT / "src" / "almasix" / "installer" / "stubs" / "kits"
-    assert (kits / "web" / "_common").is_dir()
-    assert (kits / "api" / "_common").is_dir()
-    assert (kits / "spa" / "react").is_dir()
+    # Kit overlays live in almasix-starter-kit-* packages (entry points).
+    from almasix.installer.kits import find_kit
+
+    for name in ("web", "api", "react"):
+        kit = find_kit(name)
+        assert kit.stub_root is not None
+        assert (kit.stub_root / "_common").is_dir(), name
+    assert (find_kit("react").stub_root / "react").is_dir()
     sidebar = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
     assert "starter-kits" in sidebar
 

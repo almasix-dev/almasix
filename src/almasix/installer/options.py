@@ -131,14 +131,22 @@ def resolve_plan(
     asker = prompter or Prompter()
     has_node = node_available or _node_available
 
-    from almasix.installer.kits import KITS, WEB_STACK_NAMES, find_kit
+    from almasix.installer.kits import WEB_STACK_NAMES, find_kit, get_kits
 
+    kits = get_kits()
     if answers.kit is not None:
         plan.kit = find_kit(answers.kit).name
     elif interactive:
+        choices = [(kit.name, f"{kit.label} — {kit.description}") for kit in kits]
+        if len(kits) == 1:
+            choices[0] = (
+                kits[0].name,
+                f"{kits[0].label} — {kits[0].description} "
+                "(install almasix[kits] or almasix-starter-kit-* for Conduit/API/SPA)",
+            )
         plan.kit = asker.select(
             "Which starter kit?",
-            [(kit.name, f"{kit.label} — {kit.description}") for kit in KITS],
+            choices,
             str(DEFAULTS["kit"]),
         )
         plan.asked.append("kit")
