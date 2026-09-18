@@ -1,0 +1,47 @@
+name: Documentation
+description: Docs gap, unclear guide, missing example, or broken link.
+title: "docs: "
+labels: ["documentation", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Point at the page or example that should change. Screenshots help for UI docs.
+
+  - type: input
+    id: page
+    attributes:
+      label: Docs page or path
+      description: URL or repo path
+      placeholder: https://docs.almasix.com/
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of issue
+      options:
+        - Missing content
+        - Unclear / outdated
+        - Broken link or screenshot
+        - Example / sample app
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong or missing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix
+      description: Outline or draft wording if you have it.
+      render: markdown
+    validations:
+      required: false

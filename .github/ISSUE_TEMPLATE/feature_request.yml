@@ -1,0 +1,62 @@
+name: Feature request
+description: Propose a concrete feature or API change you want implemented.
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prefer a **specific** ask (API shape, UX). For early brainstorming, use **Suggestion / idea**. For large design work, use **RFC**.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One-line description of the feature
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What pain or gap does this address?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Ideal API, UX, or behavior. Pseudocode welcome.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+
+  - type: dropdown
+    id: parity
+    attributes:
+      label: Laravel / Adonis parity?
+      options:
+          - Yes — matches a Laravel / Adonis feature
+          - Partial — inspired by Laravel / Adonis
+          - No — Almasix-specific
+          - Unsure
+    validations:
+      required: false
+
+  - type: input
+    id: parity-link
+    attributes:
+      label: Reference docs / issue
+      description: URL if this tracks external parity
+      placeholder: https://…
+    validations:
+      required: false
