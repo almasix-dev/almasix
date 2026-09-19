@@ -1,79 +1,13 @@
 name: RFC
-description: Design proposal for a larger change (layout, APIs, breaking work).
+description: Design discussion before a large change.
 title: "RFC: "
 labels: ["rfc", "needs-triage"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        RFCs discuss **before** implementation. Target a milestone when known.
-
-  - type: input
-    id: status
-    attributes:
-      label: Status
-      description: e.g. Draft, Accepted, Implemented
-      placeholder: Draft
-      value: Draft
-    validations:
-      required: true
-
-  - type: input
-    id: target
-    attributes:
-      label: Target release / milestone
-      description: Optional (e.g. v0.x.0)
-      placeholder: v0.x.0
-    validations:
-      required: false
-
-  - type: textarea
-    id: motivation
-    attributes:
-      label: Motivation
-      description: Why do we need this? What is painful today?
-      render: markdown
-    validations:
-      required: true
-
   - type: textarea
     id: proposal
     attributes:
       label: Proposal
-      description: Concrete design — APIs, migration path. Diagrams/mermaid welcome.
+      description: Why, what, and open questions. Keep it actionable — decisions to lock, not a questionnaire.
       render: markdown
     validations:
       required: true
-
-  - type: textarea
-    id: non-goals
-    attributes:
-      label: Non-goals
-      description: Explicitly out of scope for this RFC.
-      render: markdown
-    validations:
-      required: false
-
-  - type: textarea
-    id: open-questions
-    attributes:
-      label: Open questions
-      description: Decisions that need discussion before implementation.
-      render: markdown
-    validations:
-      required: true
-
-  - type: textarea
-    id: checklist
-    attributes:
-      label: Implementation checklist
-      description: Trackable items for follow-up PRs.
-      value: |
-        - [ ] Accept RFC (lock decisions)
-        - [ ] Implement
-        - [ ] Docs + examples
-        - [ ] Tests
-        - [ ] Release notes
-      render: markdown
-    validations:
-      required: false
