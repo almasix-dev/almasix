@@ -1,93 +1,27 @@
 name: Bug report
-description: Something isn't working as documented or expected.
+description: Something isn't working.
 title: "bug: "
 labels: ["bug", "needs-triage"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for filing a bug. Please fill every section you can — incomplete reports are harder to reproduce.
-
   - type: input
-    id: almasix-version
+    id: version
     attributes:
       label: Almasix version
-      description: e.g. `0.6.0` (`pip show almasix`)
-      placeholder: "0.6.0"
+      description: `pip show almasix` → e.g. 0.6.0
     validations:
       required: true
-
-  - type: input
-    id: python-version
-    attributes:
-      label: Python version
-      description: e.g. 3.13
-      placeholder: "3.13"
-    validations:
-      required: false
-
-  - type: dropdown
-    id: area
-    attributes:
-      label: Area
-      options:
-          - HTTP / routing / middleware
-          - ORM / database
-          - Auth / sessions
-          - Queue / jobs / scheduling
-          - Cache / filesystem / mail
-          - Prism / templating
-          - Smith CLI / scaffolding
-          - Broadcasting / Sonar
-          - Docs / examples
-          - Packaging / install
-          - Other
-    validations:
-      required: true
-
   - type: textarea
-    id: what-happened
+    id: bug
     attributes:
-      label: What happened?
-      description: Clear description of the bug.
-      placeholder: When I …
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-    validations:
-      required: true
-
-  - type: textarea
-    id: repro
-    attributes:
-      label: Steps to reproduce
-      description: Minimal steps or a small code sample.
-      placeholder: |
-        1. …
-        2. …
+      label: Bug
+      description: What you did, what happened, what you expected. Minimal repro if you have it.
       render: markdown
     validations:
       required: true
-
-  - type: textarea
-    id: environment
-    attributes:
-      label: Environment
-      description: OS, runtime, browser (if UI).
-      placeholder: |
-        - OS: Linux
-        - Python / Node: …
-    validations:
-      required: false
-
   - type: textarea
     id: logs
     attributes:
-      label: Logs / stack traces
+      label: Logs (optional)
       render: shell
     validations:
       required: false

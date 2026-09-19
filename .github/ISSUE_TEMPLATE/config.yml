@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Almasix documentation
+  - name: Almasix docs
     url: https://docs.almasix.com/
-    about: Framework guides, installation, and Digging Deeper.
+    about: Read the docs before filing — many answers are already there.
   - name: Discussions
     url: https://github.com/almasix-dev/almasix/discussions
-    about: Questions, show-and-tell, and open-ended conversation (not bug trackers).
+    about: Questions and open chat (not the bug tracker).
   - name: Almasix org
     url: https://github.com/almasix-dev
-    about: Other first-party packages and the Almasix organization.
+    about: Other first-party packages.

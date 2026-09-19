@@ -1,34 +1,13 @@
 name: Suggestion / idea
-description: Lightweight suggestion or idea — not a full feature spec or RFC.
+description: Early thought — not a full feature spec.
 title: "idea: "
 labels: ["idea", "needs-triage"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Use this for early thoughts. If you already know the API you want, prefer **Feature request**. For multi-step design with open questions, prefer **RFC**.
-
-  - type: input
-    id: title-idea
+  - type: textarea
+    id: idea
     attributes:
       label: Idea
-      description: Short title for the idea
-    validations:
-      required: true
-
-  - type: textarea
-    id: details
-    attributes:
-      label: Details
-      description: Context, motivation, rough sketch — whatever helps the conversation.
+      description: One sharp idea. Promote to Feature request when the ask is concrete.
       render: markdown
     validations:
       required: true
-
-  - type: textarea
-    id: why
-    attributes:
-      label: Why it matters
-      description: Who benefits? What would get easier?
-    validations:
-      required: false
