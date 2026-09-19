@@ -195,7 +195,7 @@ def resolve_plan(
     plan.git = _answer(
         answers.git,
         interactive,
-        lambda: asker.confirm("Initialize a git repository?", default=True),
+        lambda: asker.confirm("Initialize a git repository?", default=False),
         bool(DEFAULTS["git"]),
         plan.asked,
         "git",

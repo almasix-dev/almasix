@@ -62,7 +62,7 @@ STACKS: tuple[Stack, ...] = (
         label="Tailwind CSS",
         node=True,
         error_bundle="tailwind",
-        description="Vite + Tailwind CSS 4 (Laravel's default)",
+        description="Vite + Tailwind CSS 4",
     ),
     Stack(
         name="bootstrap",
@@ -177,8 +177,9 @@ def validate_app_name(name: str) -> str:
 
 
 def title_case(name: str) -> str:
+    """Human display title: ``orbit-demo`` → ``Orbit Demo``."""
     parts = re.split(r"[-_]+", name)
-    return "".join(p[:1].upper() + p[1:] for p in parts if p)
+    return " ".join(p[:1].upper() + p[1:].lower() for p in parts if p)
 
 
 def find_stack(name: str) -> Stack:
