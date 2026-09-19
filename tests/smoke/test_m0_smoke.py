@@ -56,7 +56,7 @@ def test_s4_welcome_http(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Non
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/html")
         assert "Build something remarkable" in response.text
-        assert module.asgi.title == "HttpSmoke"
+        assert module.asgi.title == "Http Smoke"
     finally:
         purge_generated_app_modules()
 

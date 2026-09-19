@@ -94,10 +94,10 @@ def test_scaffolded_app_serves_via_route_dsl(
         page = client.get("/")
         assert page.headers["content-type"].startswith("text/html")
         assert "Build something remarkable" in page.text
-        assert "M2Serve" in page.text
+        assert "M2 Serve" in page.text
 
         health = client.get("/api/health")
         assert health.headers["content-type"].startswith("application/json")
-        assert health.json() == {"status": "ok", "app": "M2Serve", "env": "local"}
+        assert health.json() == {"status": "ok", "app": "M2 Serve", "env": "local"}
     finally:
         purge_generated_app_modules()

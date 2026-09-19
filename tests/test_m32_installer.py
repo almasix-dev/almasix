@@ -225,7 +225,8 @@ def test_bad_input_is_refused_by_name(tmp_path: Path) -> None:
 
 
 def test_names_and_labels() -> None:
-    assert title_case("my-shiny_app") == "MyShinyApp"
+    assert title_case("my-shiny_app") == "My Shiny App"
+    assert title_case("orbit-demo") == "Orbit Demo"
     assert find_database("mariadb").label == "MariaDB"
     assert "DB_DATABASE=shop" in database_env(find_database("mysql"), app_name="shop")
     assert set(DATABASE_NAMES) == {"sqlite", "pgsql", "mysql", "mariadb", "mongodb"}

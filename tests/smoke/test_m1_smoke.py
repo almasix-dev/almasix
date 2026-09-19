@@ -35,7 +35,7 @@ def test_m1_s1_scaffold_bootstraps_kernel(
     try:
         app = Application(root).bootstrap()
         assert app.is_booted
-        assert config("app.name") == "KernelSmoke"
+        assert config("app.name") == "Kernel Smoke"
         assert app.path("config", "app.py").is_file()
     finally:
         purge_generated_app_modules()
@@ -55,7 +55,7 @@ def test_m1_s2_welcome_uses_config(tmp_path: Path, monkeypatch: pytest.MonkeyPat
         assert response.status_code == 200
         assert "Build something remarkable" in response.text
         # Web page and API both read app.name from config.
-        assert "ConfigSmoke" in response.text
-        assert client.get("/api/health").json()["app"] == "ConfigSmoke"
+        assert "Config Smoke" in response.text
+        assert client.get("/api/health").json()["app"] == "Config Smoke"
     finally:
         purge_generated_app_modules()
