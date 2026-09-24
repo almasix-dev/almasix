@@ -144,11 +144,30 @@ async def test_database_notification_model(memory_db: DatabaseManager) -> None:
     assert row.get_data()["hello"] == "world"
     assert row.is_unread()
     await row.mark_as_read()
+    assert await row.mark_as_read() is True  # already read
     refreshed = await DatabaseNotification.find(created["id"])
     assert refreshed is not None
     assert refreshed.is_read()
     await refreshed.mark_as_unread()
+    assert await refreshed.mark_as_unread() is True  # already unread
     assert (await DatabaseNotification.find(created["id"])).is_unread()
+
+    # get_data handles dict / invalid JSON / non-object JSON
+    broken = DatabaseNotification()
+    broken.data = {"a": 1}
+    assert broken.get_data() == {"a": 1}
+    broken.data = "{not-json"
+    assert broken.get_data() == {}
+    broken.data = '["x"]'
+    assert broken.get_data() == {}
+    broken.data = None
+    assert broken.get_data() == {}
+
+    found = await DatabaseNotificationStore().find(created["id"])
+    assert found is not None
+    assert found["id"] == created["id"]
+    assert await DatabaseNotificationStore().find("missing-id") is None
+    assert await DatabaseNotificationStore().mark_as_unread(created["id"])
 
 
 def test_notifications_table_stub_columns() -> None:
