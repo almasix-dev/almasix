@@ -27,6 +27,7 @@ from almasix.notifications.channels import DatabaseChannel
 from almasix.notifications.provider import NotificationServiceProvider
 from almasix.notifications.sender import NotificationSender
 from almasix.orm import DatabaseManager
+from tests.orm_support import memory_db  # noqa: F401
 
 
 class FakeUser(Notifiable, MustVerifyEmail):
@@ -120,6 +121,64 @@ async def test_database_channel(memory_db: DatabaseManager) -> None:
     assert len(unread) == 1
     assert await user.mark_notification_as_read(unread[0]["id"])
     assert await user.unread_notifications() == []
+    assert await user.mark_notification_as_unread(unread[0]["id"])
+    assert len(await user.unread_notifications()) == 1
+    await channel.send(user, WelcomeNotification())
+    assert await user.mark_notifications_as_read() >= 1
+    assert await user.unread_notifications() == []
+
+
+@pytest.mark.asyncio
+async def test_database_notification_model(memory_db: DatabaseManager) -> None:
+    del memory_db
+    from almasix.notifications import DatabaseNotification
+    from almasix.notifications.database import DatabaseNotificationStore
+
+    await ensure_tables()
+    user = FakeUser()
+    created = await DatabaseNotificationStore().create(
+        user, WelcomeNotification(), {"hello": "world"}
+    )
+    row = await DatabaseNotification.find(created["id"])
+    assert row is not None
+    assert row.get_data()["hello"] == "world"
+    assert row.is_unread()
+    await row.mark_as_read()
+    refreshed = await DatabaseNotification.find(created["id"])
+    assert refreshed is not None
+    assert refreshed.is_read()
+    await refreshed.mark_as_unread()
+    assert (await DatabaseNotification.find(created["id"])).is_unread()
+
+
+def test_notifications_table_stub_columns() -> None:
+    from pathlib import Path
+
+    stub = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "almasix"
+        / "console"
+        / "stubs"
+        / "migration.notifications.stub"
+    )
+    text = stub.read_text(encoding="utf-8")
+    for needle in (
+        'table.uuid("id").primary()',
+        'table.string("type")',
+        'table.string("notifiable_type")',
+        'table.string("notifiable_id")',
+        'table.text("data")',
+        'table.timestamp("read_at").nullable()',
+        "table.timestamps()",
+    ):
+        assert needle in text
+
+
+def test_make_notifications_table_alias() -> None:
+    from almasix.console.commands.tables import NotificationsTableCommand
+
+    assert "make:notifications-table" in NotificationsTableCommand.aliases
 
 
 @pytest.mark.asyncio

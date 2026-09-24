@@ -12,6 +12,11 @@ from almasix.notifications.channels import (
     SlackChannel,
     VonageChannel,
 )
+from almasix.notifications.database import (
+    DatabaseNotificationStore,
+    notifiable_id,
+    notifiable_type,
+)
 from almasix.notifications.events import NotificationSending, NotificationSent
 from almasix.notifications.facade import Notification as NotificationFacade
 from almasix.notifications.helpers import (
@@ -23,6 +28,7 @@ from almasix.notifications.helpers import (
 from almasix.notifications.mail_message import MailMessage
 from almasix.notifications.messages import ResetPasswordNotification, VerifyEmailNotification
 from almasix.notifications.messages_builders import SlackMessage, VonageMessage
+from almasix.notifications.models import DatabaseNotification
 from almasix.notifications.notifiable import Notifiable
 from almasix.notifications.notification import HasLocalePreference, Notification, ShouldQueue
 from almasix.notifications.schema import ensure_tables
@@ -41,6 +47,8 @@ __all__ = [
     "ArrayChannel",
     "BroadcastChannel",
     "DatabaseChannel",
+    "DatabaseNotification",
+    "DatabaseNotificationStore",
     "HasLocalePreference",
     "LogChannel",
     "MailChannel",
@@ -64,6 +72,8 @@ __all__ = [
     "ensure_tables",
     "hash_email",
     "mark_verified_from_request",
+    "notifiable_id",
+    "notifiable_type",
     "notify",
     "notify_now",
     "verify_signature",
