@@ -86,6 +86,8 @@ class SessionTableCommand(TableMigrationCommand):
 
 class NotificationsTableCommand(TableMigrationCommand):
     signature = "notifications:table"
+    #: Laravel 11+ naming — same migration stub.
+    aliases = ("make:notifications-table",)
     description = "Create a migration for the notifications table"
     stub = "migration.notifications.stub"
     slug = "create_notifications_table"

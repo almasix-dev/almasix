@@ -88,7 +88,6 @@ def test_m39_no_milestone_ids_in_user_docs() -> None:
 
 
 def test_m39_version_switcher_in_header() -> None:
-    header = (ROOT / "website" / "src" / "components" / "Header.astro").read_text(encoding="utf-8")
     select = (ROOT / "website" / "src" / "components" / "VersionSelect.astro").read_text(
         encoding="utf-8"
     )
@@ -97,11 +96,10 @@ def test_m39_version_switcher_in_header() -> None:
         encoding="utf-8"
     )
     banner_flat = " ".join(banner.split())
-    frame = (ROOT / "website" / "src" / "components" / "PageFrame.astro").read_text(
-        encoding="utf-8"
-    )
     astro = (ROOT / "website" / "astro.config.mjs").read_text(encoding="utf-8")
-    assert "VersionSelect" in header
+    # Theme owns Header/PageFrame; docs wires extras via the Almasix Starlight plugin.
+    assert "headerExtras: './src/components/VersionSelect.astro'" in astro
+    assert "pageBanner: './src/components/VersionBanner.astro'" in astro
     assert "LATEST_VERSION = '0.x'" in versions or 'LATEST_VERSION = "0.x"' in versions
     assert "main" in versions
     assert "0.x" in versions
@@ -109,8 +107,7 @@ def test_m39_version_switcher_in_header() -> None:
     assert "data-latest-link" in select
     assert not re.search(r"data-version=['\"]0\.\d['\"]", select)
     assert "not the latest version" in banner_flat
-    assert "VersionBanner" in frame
-    assert "PageFrame: './src/components/PageFrame.astro'" in astro
+    assert "display: none" in banner
 
 
 def test_m39_demo_command_runs() -> None:

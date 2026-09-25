@@ -1,7 +1,8 @@
 """Demo the docs journey rewrite + Prologue (M39).
 
 Checks teaching-order Basics, Prologue pages, no milestone IDs in Starlight
-content, and the header version switcher.
+content, and the header version switcher (wired via ``@almasix/starlight-theme``
+``headerExtras`` / ``pageBanner``).
 """
 
 from __future__ import annotations
@@ -14,8 +15,9 @@ from almasix.console.command import Command
 ROOT = Path(__file__).resolve().parents[5]
 DOCS = ROOT / "website" / "src" / "content" / "docs"
 ASTRO = ROOT / "website" / "astro.config.mjs"
-HEADER = ROOT / "website" / "src" / "components" / "Header.astro"
 VERSION_SELECT = ROOT / "website" / "src" / "components" / "VersionSelect.astro"
+VERSION_BANNER = ROOT / "website" / "src" / "components" / "VersionBanner.astro"
+VERSIONS_MJS = ROOT / "website" / "src" / "versions.mjs"
 
 # Teaching order from docs/PLAN.md (API Resources sits after Responses).
 BASICS_ORDER = [
@@ -110,18 +112,17 @@ class ProgressDocsCommand(Command):
             return 1
         self.info("user docs -> no milestone IDs (M##)")
 
-        if (
-            not VERSION_SELECT.is_file()
-            or not (ROOT / "website" / "src" / "versions.mjs").is_file()
-        ):
-            self.error("Header / VersionSelect / versions.mjs missing")
+        if not VERSION_SELECT.is_file() or not VERSIONS_MJS.is_file():
+            self.error("VersionSelect / versions.mjs missing")
             return 1
-        header = HEADER.read_text(encoding="utf-8")
-        if "VersionSelect" not in header:
-            self.error("Header does not include VersionSelect")
+        if "headerExtras: './src/components/VersionSelect.astro'" not in config:
+            self.error("astro.config must wire VersionSelect via headerExtras")
+            return 1
+        if "pageBanner: './src/components/VersionBanner.astro'" not in config:
+            self.error("astro.config must wire VersionBanner via pageBanner")
             return 1
         version_src = VERSION_SELECT.read_text(encoding="utf-8")
-        versions_mjs = (ROOT / "website" / "src" / "versions.mjs").read_text(encoding="utf-8")
+        versions_mjs = VERSIONS_MJS.read_text(encoding="utf-8")
         if (
             "LATEST_VERSION = '0.x'" not in versions_mjs
             and 'LATEST_VERSION = "0.x"' not in versions_mjs
@@ -143,22 +144,18 @@ class ProgressDocsCommand(Command):
         if "data-latest-link" not in version_src:
             self.error("VersionSelect must not rewrite the banner's switch-to-latest link")
             return 1
-        if "main" not in version_src:
-            self.error("VersionSelect must include main")
+        if "main" not in version_src and "main" not in versions_mjs:
+            self.error("VersionSelect / versions.mjs must include main")
             return 1
-        banner = ROOT / "website" / "src" / "components" / "VersionBanner.astro"
-        banner_text = " ".join(banner.read_text(encoding="utf-8").split())
-        if not banner.is_file() or "not the latest version" not in banner_text:
+        if not VERSION_BANNER.is_file():
+            self.error("VersionBanner missing")
+            return 1
+        banner_text = " ".join(VERSION_BANNER.read_text(encoding="utf-8").split())
+        if "not the latest version" not in banner_text:
             self.error("VersionBanner missing older-docs warning")
             return 1
-        if "display: none" not in banner.read_text(encoding="utf-8"):
+        if "display: none" not in VERSION_BANNER.read_text(encoding="utf-8"):
             self.error("VersionBanner must default to display:none (not flex overriding hidden)")
-            return 1
-        frame = (ROOT / "website" / "src" / "components" / "PageFrame.astro").read_text(
-            encoding="utf-8"
-        )
-        if "VersionBanner" not in frame:
-            self.error("PageFrame must mount VersionBanner")
             return 1
         self.info("version switcher -> latest major + main; older-docs banner")
 

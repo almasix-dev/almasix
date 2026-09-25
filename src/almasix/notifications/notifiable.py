@@ -49,3 +49,14 @@ class Notifiable:
         from almasix.notifications.database import DatabaseNotificationStore
 
         return await DatabaseNotificationStore().mark_as_read(notification_id)
+
+    async def mark_notification_as_unread(self, notification_id: str) -> bool:
+        from almasix.notifications.database import DatabaseNotificationStore
+
+        return await DatabaseNotificationStore().mark_as_unread(notification_id)
+
+    async def mark_notifications_as_read(self) -> int:
+        """Mark all unread database notifications for this notifiable as read."""
+        from almasix.notifications.database import DatabaseNotificationStore
+
+        return await DatabaseNotificationStore().mark_all_as_read(self)
